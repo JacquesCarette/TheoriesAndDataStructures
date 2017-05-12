@@ -37,20 +37,20 @@ record Hom {ℓ} (X Y : Pointed {ℓ}) : Set ℓ where
 open Hom renaming (h to mor)
 
 private
-  Alg : ∀ {ℓ} → OneSortedAlg {ℓ}
+  Alg : ∀ {ℓ} → OneSortedAlg ℓ
   Alg = record
     { Alg       =   Pointed
-    ; obj       =   Carrier
+    ; Carrier       =   Carrier
     ; Hom       =   Hom
-    ; func      =   mor
+    ; mor      =   mor
     ; comp      =   λ F G → MkHom (mor F ◎ mor G) (≣-trans (≣-cong (mor F) (pres-pt G)) (pres-pt F))
-    ; o-is-∘    =   refl∼
-    ; idH       =   MkHom idF ≣-refl
-    ; idH-is-id =   refl∼
+    ; comp-is-∘    =   ≐-refl
+    ; Id       =   MkHom idF ≣-refl
+    ; Id-is-id =   ≐-refl
     }
   
 PointedCat : ∀ o → Category _ o o
-PointedCat o = oneSorted o Alg
+PointedCat o = oneSortedCategory o Alg
 
 Forget : ∀ o → Functor (PointedCat o) (Sets o)
 Forget o = mkForgetful o Alg
@@ -59,9 +59,9 @@ Free : ∀ o → Functor (Sets o) (PointedCat o)
 Free o = record
   { F₀           = λ A → Maybe A ● nothing
   ; F₁           = λ f → MkHom (maybe′ (just ◎ f) nothing) ≣-refl
-  ; identity     = maybe refl∼ ≣-refl
-  ; homomorphism = maybe refl∼ ≣-refl
-  ; F-resp-≡     = λ F≡G → maybe (∘-resp-∼ (refl∼ {f = just}) (λ x → F≡G {x})) ≣-refl
+  ; identity     = maybe ≐-refl ≣-refl
+  ; homomorphism = maybe ≐-refl ≣-refl
+  ; F-resp-≡     = λ F≡G → maybe (∘-resp-≐ (≐-refl {f = just}) (λ x → F≡G {x})) ≣-refl
   }
 
 MaybeLeft : ∀ o → Adjunction (Free o) (Forget o)
@@ -69,9 +69,9 @@ MaybeLeft o = record
   { unit   = record { η = λ _ → just ; commute = λ _ → ≣-refl }
   ; counit = record
     { η        =  λ X → MkHom (maybe idF (pt X)) ≣-refl
-    ; commute  =  maybe refl∼ ◎ ≣-sym ◎ pres-pt
+    ; commute  =  maybe ≐-refl ◎ ≣-sym ◎ pres-pt
     }
-  ; zig  =  maybe refl∼ ≣-refl
+  ; zig  =  maybe ≐-refl ≣-refl
   ; zag  =  ≣-refl
   }
 

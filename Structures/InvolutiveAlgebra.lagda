@@ -14,7 +14,7 @@ open import Data.Sum     using (_⊎_; inj₁; inj₂; [_,_])          renaming 
 open import Data.Product using (_×_; proj₁; proj₂; Σ; _,_; swap) renaming (map to map× ; <_,_> to ⟨_,_⟩)
 open import Function     using (const ; flip)                    renaming (id to idF; _∘_ to _◎_)
 open import Function2    using (_$ᵢ)
-open import Equiv        using (_∼_; refl∼; sym∼; trans∼; ∘-resp-∼ ; isEquivalence∼)
+open import Equiv
 
 
 -- MA: avoid renaming by using this handy-dandy trick. Now write |≡.refl| and |≡.trans| ;)
@@ -52,16 +52,16 @@ InvCat : ∀ {ℓ} → Category _ ℓ ℓ
 InvCat = record
    { Obj = Inv
    ; _⇒_ = Hom
-   ; _≡_ = λ h₁ h₂ → f h₁ ∼ f h₂
-   ; id = record { f = idF ; pres-ᵒ = refl∼ }
+   ; _≡_ = λ h₁ h₂ → f h₁ ≐ f h₂
+   ; id = record { f = idF ; pres-ᵒ = ≐-refl }
    ; _∘_ = λ B⇒C A⇒B → record
      { f = f B⇒C ◎ f A⇒B
      ; pres-ᵒ = λ a → ≡.trans (≡.cong (f B⇒C) (pres-ᵒ A⇒B a)) (pres-ᵒ B⇒C (f A⇒B a)) }
-   ; assoc = refl∼
-   ; identityˡ = refl∼
-   ; identityʳ = refl∼
-   ; equiv = record { IsEquivalence isEquivalence∼ }
-   ; ∘-resp-≡ = ∘-resp-∼
+   ; assoc = ≐-refl
+   ; identityˡ = ≐-refl
+   ; identityʳ = ≐-refl
+   ; equiv = record { IsEquivalence ≐-isEquivalence }
+   ; ∘-resp-≡ = ∘-resp-≐
    }
    where open Hom ; open import Relation.Binary using (IsEquivalence)
 
@@ -94,10 +94,10 @@ from⊎ = [ idF , idF ]
 \begin{code}
 Left : ∀ o → Functor (Sets o) (InvCat {o})
 Left o = record
-  { F₀ = λ A → record { A = A ⊎ A ; _ᵒ = swap₊ ; involutive = [ refl∼ , refl∼ ] }
-  ; F₁ = λ f → record { f = map⊎ f f ; pres-ᵒ = [ refl∼ , refl∼ ] }
-  ; identity = [ refl∼ , refl∼ ]
-  ; homomorphism = [ refl∼ , refl∼ ]
+  { F₀ = λ A → record { A = A ⊎ A ; _ᵒ = swap₊ ; involutive = [ ≐-refl , ≐-refl ] }
+  ; F₁ = λ f → record { f = map⊎ f f ; pres-ᵒ = [ ≐-refl , ≐-refl ] }
+  ; identity = [ ≐-refl , ≐-refl ]
+  ; homomorphism = [ ≐-refl , ≐-refl ]
   ; F-resp-≡ = λ F∼G → [ (λ _ → ≡.cong inj₁ F∼G) , (λ _ → ≡.cong inj₂ F∼G) ] -- there has to be a better way!
   }
 \end{code}
@@ -112,11 +112,11 @@ AdjLeft o = record
   ; counit = record
     { η = λ A  → record
           { f      =  [ idF , inv A ]                        -- |≡  from⊎ ◎ map⊎ idF _ᵒ|
-          ; pres-ᵒ  =  [ refl∼ , ≡.sym ◎ involutive A ]
+          ; pres-ᵒ  =  [ ≐-refl , ≡.sym ◎ involutive A ]
           }
-    ; commute = λ F → [ refl∼ , ≡.sym ◎ Hom.pres-ᵒ F ]
+    ; commute = λ F → [ ≐-refl , ≡.sym ◎ Hom.pres-ᵒ F ]
     }
-  ; zig = [ refl∼ , refl∼ ]
+  ; zig = [ ≐-refl , ≐-refl ]
   ; zag = ≡.refl
   }
 
@@ -127,11 +127,11 @@ AdjLeft₂ o = record
   ; counit = record
     { η = λ A → record
           { f     = [ inv A , idF ]                          -- |≡  from⊎ ◎ map⊎ _ᵒ idF |
-          ; pres-ᵒ = [ ≡.sym ◎ involutive A , refl∼ ]
+          ; pres-ᵒ = [ ≡.sym ◎ involutive A , ≐-refl ]
           }
-    ; commute = λ F → [ ≡.sym ◎ Hom.pres-ᵒ F , refl∼ ]
+    ; commute = λ F → [ ≡.sym ◎ Hom.pres-ᵒ F , ≐-refl ]
     }
-  ; zig = [ refl∼ , refl∼ ]
+  ; zig = [ ≐-refl , ≐-refl ]
   ; zag = ≡.refl
   }
 \end{code}
@@ -143,10 +143,10 @@ AdjLeft₂ o = record
 -- for the proofs below, we "cheat" and let η for records make things easy.
 Right : ∀ o → Functor (Sets o) (InvCat {o})
 Right o = record
-  { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = refl∼ }
-  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = refl∼ }
-  ; identity      =  refl∼
-  ; homomorphism  =  refl∼
+  { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = ≐-refl }
+  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = ≐-refl }
+  ; identity      =  ≐-refl
+  ; homomorphism  =  ≐-refl
   ; F-resp-≡     =  λ F≡G a → ≡.cong₂ _,_ (F≡G {proj₁ a}) F≡G
   }
 
@@ -164,7 +164,7 @@ AdjRight o = record
     }
   ; counit   =   record { η = λ _ → proj₁ ; commute = λ _ → ≡.refl }
   ; zig      =   ≡.refl
-  ; zag      =   refl∼
+  ; zag      =   ≐-refl
   }
 
 -- MA: and here's another ;)
@@ -179,7 +179,7 @@ AdjRight₂ o = record
     }
   ; counit   =   record { η = λ _ → proj₂ ; commute = λ _ → ≡.refl }
   ; zig      =   ≡.refl
-  ; zag      =   refl∼
+  ; zag      =   ≐-refl
   }
 \end{code}
 

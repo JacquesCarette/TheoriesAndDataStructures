@@ -9,7 +9,7 @@ open import Function renaming (id to idF; _∘_ to _◎_)
 
 open import Data.List
 
-open import Equiv renaming (_∼_ to _≐_)
+open import Equiv
 open import Forget
 open import Function2
 open import Structures.Pointed using (PointedCat; Pointed; _●_) renaming (Hom to PHom ; MkHom to MkPHom)
@@ -36,23 +36,23 @@ record Hom {ℓ} (X Y : Unary {ℓ}) : Set ℓ where
 
 open Hom
 
-UnaryAlg : ∀ {o} → OneSortedAlg {o}
+UnaryAlg : ∀ {o} → OneSortedAlg o
 UnaryAlg = record
   { Alg = Unary
-  ; obj = Carrier
+  ; Carrier = Carrier
   ; Hom = Hom
-  ; func = mor
+  ; mor = mor
   ; comp = λ F G → record
     { mor      =  mor F ◎ mor G
     ; pres-op  =  λ a → ≡.trans (≡.cong (mor F) (pres-op G a)) (pres-op F (mor G a))
     }
-  ; o-is-∘     =  refl∼
-  ; idH        =  MkHom idF refl∼
-  ; idH-is-id  =  refl∼
+  ; comp-is-∘     =  ≐-refl
+  ; Id        =  MkHom idF ≐-refl
+  ; Id-is-id  =  ≐-refl
   }
 
 UnaryCat : ∀ {ℓ} → Category _ ℓ ℓ
-UnaryCat {o} = oneSorted o UnaryAlg
+UnaryCat {o} = oneSortedCategory o UnaryAlg
 
 Forget : ∀ o → Functor (UnaryCat {o}) (Sets o)
 Forget o = mkForgetful o UnaryAlg
@@ -150,7 +150,7 @@ fmMap-cong eq (step x) = ≡.cong step (fmMap-cong eq x)
 Free : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free o = record
   { F₀             =   λ A → MkUnary (ForeverMaybe A) step
-  ; F₁             =   λ f → MkHom (fmMap f) refl∼
+  ; F₁             =   λ f → MkHom (fmMap f) ≐-refl
   ; identity       =   fmMap-id
   ; homomorphism   =   fmMap-∘
   ; F-resp-≡      =   λ F≈G → fmMap-cong (λ _ → F≈G)
@@ -159,7 +159,7 @@ Free o = record
 AdjLeft : ∀ o → Adjunction (Free o) (Forget o)
 AdjLeft o = record
   { unit     =   record { η = λ _ → base ; commute = λ _ → ≡.refl }
-  ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateFM f) refl∼} ; commute = iterateFM-nat }
+  ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateFM f) ≐-refl} ; commute = iterateFM-nat }
   ; zig      =   iterateFM-fmMap-id
   ; zag      =   ≡.refl
   }
@@ -188,10 +188,10 @@ NoFree o record { F₀ = F₀ ; F₁ = F₁ ; identity = identity ; homomorphism
 -- for the proofs below, we "cheat" and let η for records make things easy.
 Right : ∀ o → Functor (Sets o) (InvCat {o})
 Right o = record
-  { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = refl∼ }
-  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = refl∼ }
-  ; identity = refl∼
-  ; homomorphism = refl∼
+  { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = ≐-refl }
+  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = ≐-refl }
+  ; identity = ≐-refl
+  ; homomorphism = ≐-refl
   ; F-resp-≡ = λ F≡G a → ≡.cong₂ _,_ (F≡G {proj₁ a}) F≡G
   }
 

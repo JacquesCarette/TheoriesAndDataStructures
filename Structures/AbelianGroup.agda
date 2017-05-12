@@ -28,7 +28,7 @@ open import Data.Integer.Properties using (commutativeRing)
 G1 : ∀ (c : Level) (A : Set c) → AbelianGroup c c
 G1 c A = record
   { Carrier = A → ℤ
-  ; _≈_ = _∼_
+  ; _≈_ = _≐_
   ; _∙_ = λ h₁ h₂ a → h₁ a + h₂ a
   ; ε = λ _ → + 0
   ; _⁻¹ = λ h₁ a → - h₁ a
@@ -36,7 +36,7 @@ G1 c A = record
     { isGroup = record
       { isMonoid = record
         { isSemigroup = record
-          { isEquivalence = isEquivalence∼
+          { isEquivalence = ≐-isEquivalence
           ; assoc = λ h₁ h₂ h₃ a → AG.+-assoc (h₁ a) (h₂ a) (h₃ a)
           ; ∙-cong = λ x≡y u≡v a → AG.+-cong (x≡y a) (u≡v a)
           }
@@ -65,19 +65,20 @@ AbelianGroupCat : ∀ o ℓ → Category (lsuc (o ⊔ ℓ)) (o ⊔ ℓ) o
 AbelianGroupCat o ℓ = record
   { Obj = AbelianGroup o ℓ
   ; _⇒_ = GroupHom
-  ; _≡_ = λ h₁ h₂ → h h₁ ∼ h h₂
-  ; id = abhom idF (λ _ _ → ≣-refl) ≣-refl refl∼
+  ; _≡_ = λ h₁ h₂ → h h₁ ≐ h h₂
+  ; id = abhom idF (λ _ _ → ≣-refl) ≣-refl ≐-refl
   ; _∘_ = λ {(abhom h₁ p+₁ p0₁ pinv₁) (abhom h₂ p+₂ p0₂ pinv₂) →
               abhom (h₁ ◎ h₂) (λ x y → ≣-trans (≣-cong h₁ (p+₂ x y)) (p+₁ (h₂ x) (h₂ y)))
               (≣-trans (≣-cong h₁ p0₂) p0₁) (λ x → ≣-trans (≣-cong h₁ (pinv₂ x)) (pinv₁ (h₂ x))) }
-  ; assoc = refl∼
-  ; identityˡ = refl∼
-  ; identityʳ = refl∼
-  ; equiv = record { refl = refl∼ ; sym = sym∼ ; trans = trans∼ }
-  ; ∘-resp-≡ = ∘-resp-∼
+  ; assoc = ≐-refl
+  ; identityˡ = ≐-refl
+  ; identityʳ = ≐-refl
+  ; equiv = record { IsEquivalence ≐-isEquivalence}
+  ; ∘-resp-≡ = ∘-resp-≐
   }
     where open AbelianGroup
           open GroupHom
+          open import Relation.Binary using (IsEquivalence)
 
 UG : ∀ o ℓ → Functor (AbelianGroupCat o ℓ) (Sets o)
 UG o ℓ = record
@@ -130,7 +131,7 @@ private
 G2 : ∀ (c : Level) (A : Set c) → AbelianGroup (lsuc c) c
 G2 c A = record
   { Carrier = DirectSum A
-  ; _≈_ = λ a₁ a₂ → f a₁ ∼ f a₂
+  ; _≈_ = λ a₁ a₂ → f a₁ ≐ f a₂
   ; _∙_ = λ { (FormalSum f₁ B₁ (n₁ , fin₁)) (FormalSum f₂ B₂ (n₂ , fin₂)) →
             FormalSum (λ a → f₁ a + f₂ a) (B₁ ∪ B₂)
                            (n₁ +ℕ n₂ , record { to = record { _⟨$⟩_ = λ { (a , inj₁ b) → inject+ n₂ (to fin₁ ⟨$⟩ (a , b))
@@ -148,7 +149,7 @@ G2 c A = record
     { isGroup = record
       { isMonoid = record
         { isSemigroup = record
-          { isEquivalence = record { refl = refl∼ ; sym = sym∼ ; trans = trans∼ }
+          { isEquivalence = record { IsEquivalence ≐-isEquivalence}
           ; assoc = λ h₁ h₂ h₃ a → AG.+-assoc (f h₁ a) (f h₂ a) (f h₃ a)
           ; ∙-cong = λ x≡y u≡v a → AG.+-cong (x≡y a) (u≡v a)
           }
@@ -164,3 +165,4 @@ G2 c A = record
     module AG = CommutativeRing commutativeRing
     open DirectSum
     open Injection
+    open import Relation.Binary using (IsEquivalence)

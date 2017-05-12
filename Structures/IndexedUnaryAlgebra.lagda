@@ -12,7 +12,7 @@ open import Function hiding (_$_)
 
 open import Data.List
 
-open import Equiv renaming (_∼_ to _≐_)
+open import Equiv
 open import Forget
 open import Function2
 open import Structures.Pointed using (PointedCat; Pointed; _●_) renaming (Hom to PHom ; MkHom to MkPHom)
@@ -88,7 +88,7 @@ Unsuprisngly, the indexed unary algebra's form a category.
     { Obj   =   UnaryAlg I ℓ
     ; _⇒_   =   Hom
     ; _≡_   =   λ F G → mor F ≐ mor G
-    ; id    =   λ {A} → MkHom id refl∼
+    ; id    =   λ {A} → MkHom id ≐-refl
     ; _∘_   =   λ {A} {B} {C} F G → MkHom (mor F ∘ mor G) (λ {i} x → let open ≡.≡-Reasoning {A = Carrier C} in begin
          (mor F ∘ mor G ∘ Op A) x
             ≡⟨ ≡.cong (mor F) (preservation G) ⟩
@@ -96,10 +96,10 @@ Unsuprisngly, the indexed unary algebra's form a category.
             ≡⟨ preservation F ⟩
          (Op C ∘ mor F ∘ mor G) x
             ∎)
-    ; assoc       =   refl∼
-    ; identityˡ   =   refl∼
-    ; identityʳ   =   refl∼
-    ; equiv      =   record { IsEquivalence isEquivalence∼ }
+    ; assoc       =   ≐-refl
+    ; identityˡ   =   ≐-refl
+    ; identityʳ   =   ≐-refl
+    ; equiv      =   record { IsEquivalence ≐-isEquivalence}
     ; ∘-resp-≡  = λ {A} {B} {C} {F} {G} {H} {K} F≈G H≈K x → let open ≡.≡-Reasoning {A = Carrier C} in begin
          (mor F ∘ mor H) x
             ≡⟨ F≈G _ ⟩
@@ -143,7 +143,7 @@ there is a unique homomorpism |fold : (List I, _∷_) ⟶ (A, Op)| sending |[] �
     fold₀ (x ∷ xs)  =  Op Q {x} (fold₀ xs)
 
     fold : Hom I* Q 
-    fold = MkHom fold₀ refl∼
+    fold = MkHom fold₀ ≐-refl
 
     fold-point : fold $ [] ≡ q₀
     fold-point = ≡.refl

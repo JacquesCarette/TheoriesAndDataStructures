@@ -34,22 +34,22 @@ record Hom {ℓ} (C D : Magma {ℓ}) : Set ℓ where
     pres-* : ∀ x y → h (x *₁ y) ≣ h x *₂ h y
 
 private
-  Alg : ∀ {ℓ} → OneSortedAlg {ℓ}
+  Alg : ∀ {ℓ} → OneSortedAlg ℓ
   Alg = record
           { Alg = Magma
-          ; obj = A
+          ; Carrier = A
           ; Hom = Hom
-          ; func = h
+          ; mor = h
           ; comp = λ h₁ h₂ → hom (h h₁ ◎ h h₂) (λ x y → ≣-trans (≣-cong (h h₁) (pres-* h₂ x y)) (pres-* h₁ (h h₂ x) (h h₂ y)))
-          ; o-is-∘ = refl∼
-          ; idH = hom idF (λ _ _ → ≣-refl)
-          ; idH-is-id = refl∼
+          ; comp-is-∘ = ≐-refl
+          ; Id = hom idF (λ _ _ → ≣-refl)
+          ; Id-is-id = ≐-refl
           }
       where open Magma
             open Hom
   
 MagmaCat : ∀ o → Category _ o o
-MagmaCat o = oneSorted o Alg
+MagmaCat o = oneSortedCategory o Alg
 
 Forget : ∀ o → Functor (MagmaCat o) (Sets o)
 Forget o = mkForgetful o Alg
@@ -76,8 +76,8 @@ TreeF : ∀ o → Functor (Sets o) (MagmaCat o)
 TreeF o = record
   { F₀ = λ A → mag (Tree A) Branch
   ; F₁ = λ f → hom (map f) (λ _ _ → ≣-refl)
-  ; identity = induct refl∼ (≣-cong₂ Branch)
-  ; homomorphism = induct refl∼ (≣-cong₂ Branch)
+  ; identity = induct ≐-refl (≣-cong₂ Branch)
+  ; homomorphism = induct ≐-refl (≣-cong₂ Branch)
   ; F-resp-≡ = λ F≡G → induct (λ _ → ≣-cong Leaf F≡G) (≣-cong₂ Branch)
   }
 
@@ -86,8 +86,8 @@ TreeLeft o = record
   { unit = record { η = λ _ → Leaf ; commute = λ _ → ≣-refl }
   ; counit = record { η = λ { (mag _ _+_) → hom (fold idF _+_) (λ _ _ → ≣-refl) }
                     ; commute = λ { {mag _ _*₁_} {mag _ _*₂_} (hom f pres-*) →
-                        induct refl∼ (λ {t₁} {t₂} p₁ p₂ → ≣-trans (≣-cong₂ _*₂_ p₁ p₂) (≣-sym (pres-* (fold idF _*₁_ t₁)  (fold idF _*₁_ t₂)))) } }
-  ; zig = induct refl∼ (≣-cong₂ Branch)
+                        induct ≐-refl (λ {t₁} {t₂} p₁ p₂ → ≣-trans (≣-cong₂ _*₂_ p₁ p₂) (≣-sym (pres-* (fold idF _*₁_ t₁)  (fold idF _*₁_ t₂)))) } }
+  ; zig = induct ≐-refl (≣-cong₂ Branch)
   ; zag = ≣-refl }
 
 -- Looks like there is no right adjoint, because its binary constructor would have to anticipate

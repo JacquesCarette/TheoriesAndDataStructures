@@ -10,7 +10,7 @@ open import Relation.Binary using (IsEquivalence)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; trans; cong; cong₂; module ≡-Reasoning)
 
-infix 4 _∼_
+infix 4 _≐_
 infix 4 _≃_
 infixr 5 _●_
 
@@ -20,34 +20,34 @@ infixr 7 _×≃_
 ------------------------------------------------------------------------------
 -- Extensional equivalence of (unary) functions
 
-_∼_ : ∀ {ℓ ℓ'} → {A : Set ℓ} {B : Set ℓ'} → (f g : A → B) → Set (ℓ ⊔ ℓ')
-_∼_ {A = A} f g = (x : A) → f x ≡ g x
+_≐_ : ∀ {ℓ ℓ'} → {A : Set ℓ} {B : Set ℓ'} → (f g : A → B) → Set (ℓ ⊔ ℓ')
+_≐_ {A = A} f g = (x : A) → f x ≡ g x
 
-refl∼ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f : A → B} → (f ∼ f)
-refl∼ _ = refl
+≐-refl : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f : A → B} → (f ≐ f)
+≐-refl _ = refl
 
-sym∼ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f g : A → B} → (f ∼ g) → (g ∼ f)
-sym∼ H x = sym (H x)
+≐-sym : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f g : A → B} → (f ≐ g) → (g ≐ f)
+≐-sym H x = sym (H x)
 
-trans∼ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f g h : A → B} → (f ∼ g) → (g ∼ h) → (f ∼ h)
-trans∼ H G x = trans (H x)  (G x)
+≐-trans : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {f g h : A → B} → (f ≐ g) → (g ≐ h) → (f ≐ h)
+≐-trans H G x = trans (H x)  (G x)
 
-∘-resp-∼ : ∀ {ℓA ℓB ℓC} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC} {f h : B → C} {g i : A → B} →
-  (f ∼ h) → (g ∼ i) → f ∘ g ∼ h ∘ i
-∘-resp-∼ {f = f} {i = i} f∼h g∼i x = trans (cong f (g∼i x)) (f∼h (i x)) 
+∘-resp-≐ : ∀ {ℓA ℓB ℓC} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC} {f h : B → C} {g i : A → B} →
+  (f ≐ h) → (g ≐ i) → f ∘ g ≐ h ∘ i
+∘-resp-≐ {f = f} {i = i} f≐h g≐i x = trans (cong f (g≐i x)) (f≐h (i x)) 
 
-isEquivalence∼ : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → IsEquivalence (_∼_ {ℓ} {ℓ′} {A} {B})
-isEquivalence∼ = record { refl = refl∼ ; sym = sym∼ ; trans = trans∼ }
+≐-isEquivalence : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → IsEquivalence (_≐_ {ℓ} {ℓ′} {A} {B})
+≐-isEquivalence = record { refl = ≐-refl ; sym = ≐-sym ; trans = ≐-trans }
 
 -- generally useful
 cong∘l : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″}
   {g i : A → B} → (f : B → C) →
-  (g ∼ i) → (f ∘ g) ∼ (f ∘ i)
+  (g ≐ i) → (f ∘ g) ≐ (f ∘ i)
 cong∘l f g~i x = cong f (g~i x)
 
 cong∘r : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} 
   {f h : B → C} → (g : A → B) →
-  (f ∼ h) → (f ∘ g) ∼ (h ∘ g)
+  (f ≐ h) → (f ∘ g) ≐ (h ∘ g)
 cong∘r g f~h x = f~h (g x)
 
 ------------------------------------------------------------------------------
@@ -56,8 +56,8 @@ record isqinv {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} (f : A → B) : Set (ℓ �
   constructor qinv
   field
     g : B → A
-    α : (f ∘ g) ∼ id
-    β : (g ∘ f) ∼ id
+    α : (f ∘ g) ≐ id
+    β : (g ∘ f) ≐ id
 
 -- We explicitly choose quasi-equivalences, even though these
 -- these are not a proposition.  This is fine for us, as we're
@@ -88,11 +88,11 @@ abstract
 
   -- since we're abstract, these all us to do restricted expansion
   β₁ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
-    proj₁ (f ● g) ∼ (proj₁ f ∘ proj₁ g)
+    proj₁ (f ● g) ≐ (proj₁ f ∘ proj₁ g)
   β₁ x = refl
 
   β₂ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
-    isqinv.g (proj₂ (f ● g)) ∼ (isqinv.g (proj₂ g) ∘ (isqinv.g (proj₂ f)))
+    isqinv.g (proj₂ (f ● g)) ≐ (isqinv.g (proj₂ g) ∘ (isqinv.g (proj₂ f)))
   β₂  x = refl
 
 ≃IsEquiv : IsEquivalence {Level.suc Level.zero} {Level.zero} {Set} _≃_
@@ -116,38 +116,38 @@ inj≃ (f , qinv g α β) x y p = trans
 
 abstract
   private
-    _⊎∼_ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
+    _⊎≐_ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
       {f : A → C} {finv : C → A} {g : B → D} {ginv : D → B} →
-      (α : f ∘ finv ∼ id) → (β : g ∘ ginv ∼ id) →
-      (f ⊎→ g) ∘ (finv ⊎→ ginv) ∼ id {A = C ⊎ D}
-    _⊎∼_ α β (inj₁ x) = cong inj₁ (α x)
-    _⊎∼_ α β (inj₂ y) = cong inj₂ (β y)
+      (α : f ∘ finv ≐ id) → (β : g ∘ ginv ≐ id) →
+      (f ⊎→ g) ∘ (finv ⊎→ ginv) ≐ id {A = C ⊎ D}
+    _⊎≐_ α β (inj₁ x) = cong inj₁ (α x)
+    _⊎≐_ α β (inj₂ y) = cong inj₂ (β y)
 
   _⊎≃_ :  ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
     → A ≃ C → B ≃ D → (A ⊎ B) ≃ (C ⊎ D)
   (fp , eqp) ⊎≃ (fq , eqq) =
     Data.Sum.map fp fq ,
-    qinv (P.g ⊎→ Q.g) (P.α ⊎∼ Q.α) (P.β ⊎∼ Q.β)
+    qinv (P.g ⊎→ Q.g) (P.α ⊎≐ Q.α) (P.β ⊎≐ Q.β)
     where module P = isqinv eqp
           module Q = isqinv eqq
 
   β⊎₁ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
-    → {f : A ≃ C} → {g : B ≃ D} → proj₁ (f ⊎≃ g) ∼ Data.Sum.map (proj₁ f) (proj₁ g)
+    → {f : A ≃ C} → {g : B ≃ D} → proj₁ (f ⊎≃ g) ≐ Data.Sum.map (proj₁ f) (proj₁ g)
   β⊎₁ _ = refl
 
   β⊎₂ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
-    → {f : A ≃ C} → {g : B ≃ D} → gg (f ⊎≃ g) ∼ Data.Sum.map (gg f) (gg g)
+    → {f : A ≃ C} → {g : B ≃ D} → gg (f ⊎≃ g) ≐ Data.Sum.map (gg f) (gg g)
   β⊎₂ _ = refl
 
 -- ⊗
 
 abstract
   private
-    _×∼_ :  ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
+    _×≐_ :  ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
       {f : A → C} {finv : C → A} {g : B → D} {ginv : D → B} →
-      (α : f ∘ finv ∼ id) → (β : g ∘ ginv ∼ id) →
-      (f ×→ g) ∘ (finv ×→ ginv) ∼ id {A = C × D}
-    _×∼_ α β (x , y) = cong₂ _,_ (α x) (β y)
+      (α : f ∘ finv ≐ id) → (β : g ∘ ginv ≐ id) →
+      (f ×→ g) ∘ (finv ×→ ginv) ≐ id {A = C × D}
+    _×≐_ α β (x , y) = cong₂ _,_ (α x) (β y)
 
   _×≃_ :  ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
     → A ≃ C → B ≃ D → (A × B) ≃ (C × D)
@@ -155,17 +155,17 @@ abstract
     Data.Product.map fp fq ,
     qinv
       (P.g ×→ Q.g)
-      (_×∼_ {f = fp} {g = fq} P.α Q.α)
-      (_×∼_ {f = P.g} {g = Q.g} P.β Q.β)
+      (_×≐_ {f = fp} {g = fq} P.α Q.α)
+      (_×≐_ {f = P.g} {g = Q.g} P.β Q.β)
     where module P = isqinv eqp
           module Q = isqinv eqq
 
   β×₁ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
-    → {f : A ≃ C} → {g : B ≃ D} → proj₁ (f ×≃ g) ∼ Data.Product.map (proj₁ f) (proj₁ g)
+    → {f : A ≃ C} → {g : B ≃ D} → proj₁ (f ×≃ g) ≐ Data.Product.map (proj₁ f) (proj₁ g)
   β×₁ _ = refl
 
   β×₂ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
-    → {f : A ≃ C} → {g : B ≃ D} → gg (f ×≃ g) ∼ Data.Product.map (gg f) (gg g)
+    → {f : A ≃ C} → {g : B ≃ D} → gg (f ×≃ g) ≐ Data.Product.map (gg f) (gg g)
   β×₂ _ = refl
 
 ------------------------------------------------------------------------------

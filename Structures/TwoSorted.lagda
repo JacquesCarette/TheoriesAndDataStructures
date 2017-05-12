@@ -7,7 +7,7 @@ open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
-open import Function using (const) renaming (id to idF; _∘_ to _◎_)
+open import Function using (id ; _∘_ ; const)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′; [_,_]) renaming (map to map⊎)
 
@@ -50,30 +50,50 @@ open Hom
 %}}}
 
 %{{{ TwoCat ; Forget
+
+We are using pairs of object and pairs of morphisms which is known to form a category:
+
 \begin{code}
-TwoCat : ∀ o → Category (lsuc o) o o
-TwoCat o = record
-  { Obj = TwoSorted o
-  ; _⇒_ = Hom
-  ; _≡_ = λ { {A} {B} (MkHom g₁ g₂) (MkHom one h₂) → (g₁ ≐ one) × (g₂ ≐ h₂)}
-  ; id = MkHom idF idF
-  ; _∘_ = λ { (MkHom one two) (MkHom g₁ g₂) → MkHom(one ◎ g₁) (two ◎ g₂)}
-  ; assoc = ≐-refl , ≐-refl
-  ; identityˡ = ≐-refl , ≐-refl
-  ; identityʳ = ≐-refl , ≐-refl
-  ; equiv = record { refl = ≐-refl , ≐-refl
-                   ; sym = λ { (i≡j₁ , i≡j₂)  → ≐-sym i≡j₁ , ≐-sym i≡j₂ }
-                   ; trans = λ { (i≡j₁ , i≡j₂) (j≡k₁ , j≡k₂) → (≐-trans i≡j₁ j≡k₁) , (≐-trans i≡j₂ j≡k₂)} }
-  ; ∘-resp-≡ = λ g≡i f≡h → ∘-resp-≐ (proj₁ g≡i) (proj₁ f≡h) , ∘-resp-≐ (proj₂ g≡i) (proj₂ f≡h)
+TwoCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+TwoCat ℓ = record
+  { Obj        =   TwoSorted ℓ
+  ; _⇒_       =   Hom
+  ; _≡_       =   λ F G → one F ≐ one G   ×  two F ≐ two G
+  ; id         =   MkHom id id
+  ; _∘_        =   λ F G → MkHom (one F ∘ one G) (two F ∘ two G)
+  ; assoc      =   ≐-refl , ≐-refl
+  ; identityˡ  =   ≐-refl , ≐-refl
+  ; identityʳ  =   ≐-refl , ≐-refl
+  ; equiv     =  record
+    { refl    =  ≐-refl , ≐-refl
+    ; sym     =  λ { (oneEq , twoEq)  → ≐-sym oneEq , ≐-sym twoEq }
+    ; trans   =  λ { (oneEq₁ , twoEq₁) (oneEq₂ , twoEq₂) → ≐-trans oneEq₁ oneEq₂ , ≐-trans twoEq₁ twoEq₂}
+    }
+  ; ∘-resp-≡ = λ{ (g≈₁k , g≈₂k) (f≈₁h , f≈₂h) → ∘-resp-≐ g≈₁k f≈₁h , ∘-resp-≐ g≈₂k f≈₂h }
+  }
+\end{code}
+
+We can forget about the first sort or the second to arrive at our starting
+category and so we have two forgetful functors.
+
+\begin{code}
+Forget : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Forget ℓ = record
+  { F₀             =   TwoSorted.One
+  ; F₁             =   Hom.one
+  ; identity       =   ≡.refl
+  ; homomorphism   =   ≡.refl
+  ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₁G x }
   }
 
-Forget : ∀ o → Functor (TwoCat o) (Sets o)
-Forget o = record
-  { F₀ = TwoSorted.One
-  ; F₁ = Hom.one
-  ; identity = ≡.refl
-  ; homomorphism = ≡.refl
-  ; F-resp-≡ = λ x {y} → proj₁ x y
+
+Forget₂ : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Forget₂ ℓ = record
+  { F₀             =   TwoSorted.Two
+  ; F₁             =   Hom.two
+  ; identity       =   ≡.refl
+  ; homomorphism   =   ≡.refl
+  ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₂G x }
   }
 \end{code}
 %}}}
@@ -87,7 +107,7 @@ open import Data.Unit
 Free : ∀ o → Functor (Sets o) (TwoCat o)
 Free o = record
   { F₀ = λ One → MkTwo One (Lift ⊥)
-  ; F₁ = λ f → MkHom f idF
+  ; F₁ = λ f → MkHom f id
   ; identity = ≐-refl , ≐-refl
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
@@ -96,7 +116,7 @@ Free o = record
 Cofree : ∀ o → Functor (Sets o) (TwoCat o)
 Cofree o = record
   { F₀ = λ One → MkTwo One (Lift ⊤)
-  ; F₁ = λ f → MkHom f idF
+  ; F₁ = λ f → MkHom f id
   ; identity = ≐-refl , ≐-refl
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
@@ -109,16 +129,16 @@ Cofree o = record
 Left : ∀ o → Adjunction (Free o) (Forget o)
 Left o = record
   { unit   = record { η = λ X x → x ; commute = λ _ → ≡.refl }
-  ; counit = record { η = λ { (MkTwo One B) → MkHom idF (λ { (lift ()) }) }
+  ; counit = record { η = λ { (MkTwo One B) → MkHom id (λ { (lift ()) }) }
                     ; commute = λ f → ≐-refl , (λ { (lift ())}) }
   ; zig = ≐-refl , (λ { (lift ()) })
   ; zag = ≡.refl }
 
 Right :  ∀ o → Adjunction (Forget o) (Cofree o)
 Right o = record
-  { unit = record { η = λ { (MkTwo One B) → MkHom idF (λ _ → lift tt) }
+  { unit = record { η = λ { (MkTwo One B) → MkHom id (λ _ → lift tt) }
                   ; commute = λ f → ≐-refl , ≐-refl }
-  ; counit = record { η = λ _ → idF ; commute = λ _ → ≡.refl }
+  ; counit = record { η = λ _ → id ; commute = λ _ → ≡.refl }
   ; zig = ≡.refl
   ; zag = ≐-refl , (λ {(lift tt) → ≡.refl }) }
 \end{code}
@@ -167,7 +187,7 @@ Choice o = record
   where open TwoSorted
 
 from⊎ : ∀ {ℓ} {One : Set ℓ} → One ⊎ One → One
-from⊎ = [ idF , idF ]′
+from⊎ = [ id , id ]′
 
 Left₂ : ∀ o → Adjunction (Choice o) (Dup o)
 Left₂ o = record

@@ -100,26 +100,52 @@ Forget₂ ℓ = record
 
 %{{{ Free and CoFree
 
-\begin{code}
-open import Data.Empty
-open import Data.Unit
+Given a type, we can pair it with the empty type or the singelton type
+and so we have a free and a co-free constructions. 
 
-Free : ∀ o → Functor (Sets o) (TwoCat o)
-Free o = record
-  { F₀ = λ One → MkTwo One (Lift ⊥)
-  ; F₁ = λ f → MkHom f id
-  ; identity = ≐-refl , ≐-refl
-  ; homomorphism = ≐-refl , ≐-refl
-  ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
+\begin{code}
+-- Generalised Empty and Unit, to avoid a flurry of |lift|'s.
+--
+data ⊥ {ℓ : Level} : Set ℓ where
+record ⊤ {ℓ : Level} : Set ℓ where
+  constructor tt
+
+Free : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Free ℓ = record
+  { F₀             =   λ A → MkTwo A ⊥
+  ; F₁             =   λ f → MkHom f id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
   }
 
-Cofree : ∀ o → Functor (Sets o) (TwoCat o)
-Cofree o = record
-  { F₀ = λ One → MkTwo One (Lift ⊤)
-  ; F₁ = λ f → MkHom f id
-  ; identity = ≐-refl , ≐-refl
-  ; homomorphism = ≐-refl , ≐-refl
-  ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
+Cofree : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree ℓ = record
+  { F₀             =   λ A → MkTwo A ⊤
+  ; F₁             =   λ f → MkHom f id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  }
+
+-- Dually,  ( also shorter due to eta reduction )
+
+Free₂ : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Free₂ ℓ = record
+  { F₀             =   MkTwo ⊥
+  ; F₁             =   MkHom id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
+  }
+
+Cofree₂ : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree₂ ℓ = record
+  { F₀             =   MkTwo ⊤
+  ; F₁             =   MkHom id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
   }
 \end{code}
 %}}}
@@ -129,18 +155,18 @@ Cofree o = record
 Left : ∀ o → Adjunction (Free o) (Forget o)
 Left o = record
   { unit   = record { η = λ X x → x ; commute = λ _ → ≡.refl }
-  ; counit = record { η = λ { (MkTwo One B) → MkHom id (λ { (lift ()) }) }
-                    ; commute = λ f → ≐-refl , (λ { (lift ())}) }
-  ; zig = ≐-refl , (λ { (lift ()) })
+  ; counit = record { η = λ { (MkTwo One B) → MkHom id (λ { () }) }
+                    ; commute = λ f → ≐-refl , (λ { ()}) }
+  ; zig = ≐-refl , (λ { () })
   ; zag = ≡.refl }
 
 Right :  ∀ o → Adjunction (Forget o) (Cofree o)
 Right o = record
-  { unit = record { η = λ { (MkTwo One B) → MkHom id (λ _ → lift tt) }
+  { unit = record { η = λ { (MkTwo One B) → MkHom id (λ _ → tt) }
                   ; commute = λ f → ≐-refl , ≐-refl }
   ; counit = record { η = λ _ → id ; commute = λ _ → ≡.refl }
   ; zig = ≡.refl
-  ; zag = ≐-refl , (λ {(lift tt) → ≡.refl }) }
+  ; zag = ≐-refl , (λ {tt → ≡.refl }) }
 \end{code}
 %}}}
 

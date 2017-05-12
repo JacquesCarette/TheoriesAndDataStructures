@@ -20,22 +20,31 @@ open import EqualityCombinators
 
 %{{{ TwoSorted ; Hom
 
-A Free TwoSorted container is a ?.
+A Free TwoSorted container is a ???. Let's formalise it and find out.
+
+A |TwoSorted| type is just a pair of sets in the same universe
+---in the future, we may consider those in different levels.
 
 \begin{code}
-record TwoSorted {a} : Set (lsuc a) where
-  constructor two
+record TwoSorted ℓ : Set (lsuc ℓ) where
+  constructor MkTwo
   field
-    A : Set a
-    B : Set a
-    
-record Hom {ℓ} (C D : TwoSorted {ℓ}) : Set ℓ where
-  constructor hom
-  open TwoSorted C renaming (A to A₁; B to B₁)
-  open TwoSorted D renaming (A to A₂; B to B₂)
+    One : Set ℓ
+    Two : Set ℓ
+
+open TwoSorted
+\end{code}
+
+Unastionishngly, a morphism between such types is a pair of functions
+between the \emph{multiple} underlying carriers.
+\begin{code}
+record Hom {ℓ} (Src Tgt : TwoSorted ℓ) : Set ℓ where
+  constructor MkHom
   field
-    h₁ : A₁ → A₂
-    h₂ : B₁ → B₂
+    one : One Src → One Tgt
+    two : Two Src → Two Tgt
+
+open Hom
 \end{code}
 
 %}}}
@@ -44,11 +53,11 @@ record Hom {ℓ} (C D : TwoSorted {ℓ}) : Set ℓ where
 \begin{code}
 TwoCat : ∀ o → Category (lsuc o) o o
 TwoCat o = record
-  { Obj = TwoSorted {o}
+  { Obj = TwoSorted o
   ; _⇒_ = Hom
-  ; _≡_ = λ { {A} {B} (hom g₁ g₂) (hom h₁ h₂) → (g₁ ≐ h₁) × (g₂ ≐ h₂)}
-  ; id = hom idF idF
-  ; _∘_ = λ { (hom h₁ h₂) (hom g₁ g₂) → hom (h₁ ◎ g₁) (h₂ ◎ g₂)}
+  ; _≡_ = λ { {A} {B} (MkHom g₁ g₂) (MkHom one h₂) → (g₁ ≐ one) × (g₂ ≐ h₂)}
+  ; id = MkHom idF idF
+  ; _∘_ = λ { (MkHom one two) (MkHom g₁ g₂) → MkHom(one ◎ g₁) (two ◎ g₂)}
   ; assoc = ≐-refl , ≐-refl
   ; identityˡ = ≐-refl , ≐-refl
   ; identityʳ = ≐-refl , ≐-refl
@@ -60,8 +69,8 @@ TwoCat o = record
 
 Forget : ∀ o → Functor (TwoCat o) (Sets o)
 Forget o = record
-  { F₀ = TwoSorted.A
-  ; F₁ = Hom.h₁
+  { F₀ = TwoSorted.One
+  ; F₁ = Hom.one
   ; identity = ≡.refl
   ; homomorphism = ≡.refl
   ; F-resp-≡ = λ x {y} → proj₁ x y
@@ -77,8 +86,8 @@ open import Data.Unit
 
 Free : ∀ o → Functor (Sets o) (TwoCat o)
 Free o = record
-  { F₀ = λ A → two A (Lift ⊥)
-  ; F₁ = λ f → hom f idF
+  { F₀ = λ One → MkTwo One (Lift ⊥)
+  ; F₁ = λ f → MkHom f idF
   ; identity = ≐-refl , ≐-refl
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
@@ -86,8 +95,8 @@ Free o = record
 
 Cofree : ∀ o → Functor (Sets o) (TwoCat o)
 Cofree o = record
-  { F₀ = λ A → two A (Lift ⊤)
-  ; F₁ = λ f → hom f idF
+  { F₀ = λ One → MkTwo One (Lift ⊤)
+  ; F₁ = λ f → MkHom f idF
   ; identity = ≐-refl , ≐-refl
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
@@ -100,14 +109,14 @@ Cofree o = record
 Left : ∀ o → Adjunction (Free o) (Forget o)
 Left o = record
   { unit   = record { η = λ X x → x ; commute = λ _ → ≡.refl }
-  ; counit = record { η = λ { (two A B) → hom idF (λ { (lift ()) }) }
+  ; counit = record { η = λ { (MkTwo One B) → MkHom idF (λ { (lift ()) }) }
                     ; commute = λ f → ≐-refl , (λ { (lift ())}) }
   ; zig = ≐-refl , (λ { (lift ()) })
   ; zag = ≡.refl }
 
 Right :  ∀ o → Adjunction (Forget o) (Cofree o)
 Right o = record
-  { unit = record { η = λ { (two A B) → hom idF (λ _ → lift tt) }
+  { unit = record { η = λ { (MkTwo One B) → MkHom idF (λ _ → lift tt) }
                   ; commute = λ f → ≐-refl , ≐-refl }
   ; counit = record { η = λ _ → idF ; commute = λ _ → ≡.refl }
   ; zig = ≡.refl
@@ -119,8 +128,8 @@ Right o = record
 \begin{code}
 Merge : ∀ o → Functor (TwoCat o) (Sets o)
 Merge o = record
-  { F₀ = λ S → A S × B S
-  ; F₁ = λ {(hom h₁ h₂) (a₁ , b₁) → (h₁ a₁) , (h₂ b₁)}
+  { F₀ = λ S → One S × Two S
+  ; F₁ = λ {(MkHom one two) (a₁ , b₁) → (one a₁) , (two b₁)}
   ; identity = ≡.refl
   ; homomorphism = ≡.refl
   ; F-resp-≡ = λ {(F≡G₁ , F≡G₂) {x} → ≡.cong₂ _,_ (F≡G₁ (proj₁ x)) (F≡G₂ (proj₂ x))}
@@ -129,8 +138,8 @@ Merge o = record
 
 Dup : ∀ o → Functor (Sets o) (TwoCat o)
 Dup o = record
-  { F₀ = λ A → two A A
-  ; F₁ = λ f → hom f f
+  { F₀ = λ One → MkTwo One One
+  ; F₁ = λ f → MkHom f f
   ; identity = ≐-refl , ≐-refl
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → (λ x → F≡G {x}) , λ _ → F≡G
@@ -139,7 +148,7 @@ Dup o = record
 Right₂ : ∀ o → Adjunction (Dup o) (Merge o)
 Right₂ o = record
   { unit = record { η = λ X x → x , x ; commute = λ f → ≡.refl }
-  ; counit = record { η = λ {(two A B) → hom proj₁ proj₂} ; commute = λ {(hom f g) → ≐-refl , ≐-refl} }
+  ; counit = record { η = λ {(MkTwo One B) → MkHom proj₁ proj₂} ; commute = λ {(MkHom f g) → ≐-refl , ≐-refl} }
   ; zig = ≐-refl , ≐-refl
   ; zag = ≡.refl }
 \end{code}
@@ -149,20 +158,20 @@ Right₂ o = record
 \begin{code}
 Choice : ∀ o → Functor (TwoCat o) (Sets o)
 Choice o = record
-  { F₀ = λ S → A S ⊎ B S
-  ; F₁ = λ { (hom f g) → map⊎ f g}
+  { F₀ = λ S → One S ⊎ Two S
+  ; F₁ = λ { (MkHom f g) → map⊎ f g}
   ; identity = λ {_} → λ { {(inj₁ x)} → ≡.refl ; {(inj₂ x)} → ≡.refl}
   ; homomorphism = λ { {x = (inj₁ x)} → ≡.refl ; {x = (inj₂ x)} → ≡.refl}
   ; F-resp-≡ = {!!} -- λ { ( F≡G₁ , F≡G₂ ) → λ { {(inj₁ x)} → ≡.cong inj₁ (F≡G₁ x) ; {(inj₂ x)} → ≡.cong inj₂ (F≡G₂ x)}}
   }
   where open TwoSorted
 
-from⊎ : ∀ {ℓ} {A : Set ℓ} → A ⊎ A → A
+from⊎ : ∀ {ℓ} {One : Set ℓ} → One ⊎ One → One
 from⊎ = [ idF , idF ]′
 
 Left₂ : ∀ o → Adjunction (Choice o) (Dup o)
 Left₂ o = record
-  { unit   = record { η = λ {(two A B) → hom inj₁ inj₂} ; commute = λ f → ≐-refl , ≐-refl }
+  { unit   = record { η = λ {(MkTwo One B) → MkHom inj₁ inj₂} ; commute = λ f → ≐-refl , ≐-refl }
            ; counit = record { η = λ _ → from⊎ ; commute = λ f → λ { { (inj₁ x) } → ≡.refl ; {(inj₂ x)} → ≡.refl}}
   ; zig = λ {_} → λ { {(inj₁ x)} → ≡.refl ; {(inj₂ x)} → ≡.refl}
   ; zag = ≐-refl , ≐-refl }

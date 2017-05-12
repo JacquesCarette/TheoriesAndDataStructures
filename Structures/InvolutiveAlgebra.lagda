@@ -19,7 +19,7 @@ open import Equiv        using (_∼_; refl∼; sym∼; trans∼; ∘-resp-∼ ;
 
 -- MA: avoid renaming by using this handy-dandy trick. Now write |≡.refl| and |≡.trans| ;)
 import Relation.Binary.PropositionalEquality
-module ≡ = Relation.Binary.PropositionalEquality
+private module ≡ = Relation.Binary.PropositionalEquality
 open ≡ using (_≡_)
 \end{code}
 %}}}

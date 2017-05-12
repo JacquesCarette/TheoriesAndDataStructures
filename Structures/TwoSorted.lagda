@@ -1,3 +1,4 @@
+%{{{ Imports
 \begin{code}
 module Structures.TwoSorted where
 
@@ -11,16 +12,17 @@ open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′; [_,_]) renaming (map to map⊎)
 
 open import Function2 using (_$ᵢ)
-open import Equiv
+
 open import Forget
+open import EqualityCombinators
+\end{code}
+%}}}
 
-open import Relation.Binary.PropositionalEquality using ()
-  renaming (_≡_ to _≣_; refl to ≣-refl; sym to ≣-sym; cong to ≣-cong;
-            trans to ≣-trans; cong₂ to ≣-cong₂)
+%{{{ TwoSorted ; Hom
 
------------
--- A Free TwoSorted container is a ?.
+A Free TwoSorted container is a ?.
 
+\begin{code}
 record TwoSorted {a} : Set (lsuc a) where
   constructor two
   field
@@ -34,7 +36,12 @@ record Hom {ℓ} (C D : TwoSorted {ℓ}) : Set ℓ where
   field
     h₁ : A₁ → A₂
     h₂ : B₁ → B₂
+\end{code}
 
+%}}}
+
+%{{{ TwoCat ; Forget
+\begin{code}
 TwoCat : ∀ o → Category (lsuc o) o o
 TwoCat o = record
   { Obj = TwoSorted {o}
@@ -55,11 +62,16 @@ Forget : ∀ o → Functor (TwoCat o) (Sets o)
 Forget o = record
   { F₀ = TwoSorted.A
   ; F₁ = Hom.h₁
-  ; identity = ≣-refl
-  ; homomorphism = ≣-refl
+  ; identity = ≡.refl
+  ; homomorphism = ≡.refl
   ; F-resp-≡ = λ x {y} → proj₁ x y
   }
+\end{code}
+%}}}
 
+%{{{ Free and CoFree
+
+\begin{code}
 open import Data.Empty
 open import Data.Unit
 
@@ -80,30 +92,38 @@ Cofree o = record
   ; homomorphism = ≐-refl , ≐-refl
   ; F-resp-≡ = λ F≡G → ( λ x → F≡G {x}) , ≐-refl
   }
+\end{code}
+%}}}
 
+%{{{ Left and Right adjunctions
+\begin{code}
 Left : ∀ o → Adjunction (Free o) (Forget o)
 Left o = record
-  { unit   = record { η = λ X x → x ; commute = λ _ → ≣-refl }
+  { unit   = record { η = λ X x → x ; commute = λ _ → ≡.refl }
   ; counit = record { η = λ { (two A B) → hom idF (λ { (lift ()) }) }
                     ; commute = λ f → ≐-refl , (λ { (lift ())}) }
   ; zig = ≐-refl , (λ { (lift ()) })
-  ; zag = ≣-refl }
+  ; zag = ≡.refl }
 
 Right :  ∀ o → Adjunction (Forget o) (Cofree o)
 Right o = record
   { unit = record { η = λ { (two A B) → hom idF (λ _ → lift tt) }
                   ; commute = λ f → ≐-refl , ≐-refl }
-  ; counit = record { η = λ _ → idF ; commute = λ _ → ≣-refl }
-  ; zig = ≣-refl
-  ; zag = ≐-refl , (λ {(lift tt) → ≣-refl }) }
+  ; counit = record { η = λ _ → idF ; commute = λ _ → ≡.refl }
+  ; zig = ≡.refl
+  ; zag = ≐-refl , (λ {(lift tt) → ≡.refl }) }
+\end{code}
+%}}}
 
+%{{{ Merge and Dup functors ; Right₂ adjunction
+\begin{code}
 Merge : ∀ o → Functor (TwoCat o) (Sets o)
 Merge o = record
   { F₀ = λ S → A S × B S
   ; F₁ = λ {(hom h₁ h₂) (a₁ , b₁) → (h₁ a₁) , (h₂ b₁)}
-  ; identity = ≣-refl
-  ; homomorphism = ≣-refl
-  ; F-resp-≡ = λ {(F≡G₁ , F≡G₂) {x} → ≣-cong₂ _,_ (F≡G₁ (proj₁ x)) (F≡G₂ (proj₂ x))}
+  ; identity = ≡.refl
+  ; homomorphism = ≡.refl
+  ; F-resp-≡ = λ {(F≡G₁ , F≡G₂) {x} → ≡.cong₂ _,_ (F≡G₁ (proj₁ x)) (F≡G₂ (proj₂ x))}
   }
   where open TwoSorted
 
@@ -118,18 +138,22 @@ Dup o = record
 
 Right₂ : ∀ o → Adjunction (Dup o) (Merge o)
 Right₂ o = record
-  { unit = record { η = λ X x → x , x ; commute = λ f → ≣-refl }
+  { unit = record { η = λ X x → x , x ; commute = λ f → ≡.refl }
   ; counit = record { η = λ {(two A B) → hom proj₁ proj₂} ; commute = λ {(hom f g) → ≐-refl , ≐-refl} }
   ; zig = ≐-refl , ≐-refl
-  ; zag = ≣-refl }
+  ; zag = ≡.refl }
+\end{code}
+%}}}
 
+%{{{ Choice ; from⊎ ; Left₂ adjunction
+\begin{code}
 Choice : ∀ o → Functor (TwoCat o) (Sets o)
 Choice o = record
   { F₀ = λ S → A S ⊎ B S
   ; F₁ = λ { (hom f g) → map⊎ f g}
-  ; identity = λ {_} → λ { {(inj₁ x)} → ≣-refl ; {(inj₂ x)} → ≣-refl}
-  ; homomorphism = λ { {x = (inj₁ x)} → ≣-refl ; {x = (inj₂ x)} → ≣-refl}
-  ; F-resp-≡ = {!!} -- λ { ( F≡G₁ , F≡G₂ ) → λ { {(inj₁ x)} → ≣-cong inj₁ (F≡G₁ x) ; {(inj₂ x)} → ≣-cong inj₂ (F≡G₂ x)}}
+  ; identity = λ {_} → λ { {(inj₁ x)} → ≡.refl ; {(inj₂ x)} → ≡.refl}
+  ; homomorphism = λ { {x = (inj₁ x)} → ≡.refl ; {x = (inj₂ x)} → ≡.refl}
+  ; F-resp-≡ = {!!} -- λ { ( F≡G₁ , F≡G₂ ) → λ { {(inj₁ x)} → ≡.cong inj₁ (F≡G₁ x) ; {(inj₂ x)} → ≡.cong inj₂ (F≡G₂ x)}}
   }
   where open TwoSorted
 
@@ -139,11 +163,11 @@ from⊎ = [ idF , idF ]′
 Left₂ : ∀ o → Adjunction (Choice o) (Dup o)
 Left₂ o = record
   { unit   = record { η = λ {(two A B) → hom inj₁ inj₂} ; commute = λ f → ≐-refl , ≐-refl }
-           ; counit = record { η = λ _ → from⊎ ; commute = λ f → λ { { (inj₁ x) } → ≣-refl ; {(inj₂ x)} → ≣-refl}}
-  ; zig = λ {_} → λ { {(inj₁ x)} → ≣-refl ; {(inj₂ x)} → ≣-refl}
+           ; counit = record { η = λ _ → from⊎ ; commute = λ f → λ { { (inj₁ x) } → ≡.refl ; {(inj₂ x)} → ≡.refl}}
+  ; zig = λ {_} → λ { {(inj₁ x)} → ≡.refl ; {(inj₂ x)} → ≡.refl}
   ; zag = ≐-refl , ≐-refl }
-
 \end{code}
+%}}}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

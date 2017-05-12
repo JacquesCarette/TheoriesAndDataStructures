@@ -94,11 +94,7 @@ Unsuprisngly, the indexed unary algebra's form a category.
     ; assoc       =   refl∼
     ; identityˡ   =   refl∼
     ; identityʳ   =   refl∼
-    ; equiv       =   λ {A} {B} → record
-        { refl    =   refl∼
-        ; sym     =   λ F≈G x → ≡.sym (F≈G x)
-        ; trans   =   λ F≈G G≈H x → ≡.trans (F≈G x) (G≈H x)
-        }
+    ; equiv      =   record { IsEquivalence isEquivalence∼ }
     ; ∘-resp-≡  = λ {A} {B} {C} {F} {G} {H} {K} F≈G H≈K x → let open ≡.≡-Reasoning {A = Carrier C} in begin
          (mor F ∘ mor H) x
             ≡⟨ F≈G _ ⟩
@@ -107,6 +103,8 @@ Unsuprisngly, the indexed unary algebra's form a category.
          (mor G ∘ mor K) x
             ∎ 
     }
+    where
+      open import Relation.Binary using (IsEquivalence)
 \end{code}
 
 Needless to say, we can ignore the extra structure to arrive at the underlying carrier.

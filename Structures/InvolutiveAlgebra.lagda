@@ -14,7 +14,7 @@ open import Data.Sum     using (_⊎_; inj₁; inj₂; [_,_])          renaming 
 open import Data.Product using (_×_; proj₁; proj₂; Σ; _,_; swap) renaming (map to map× ; <_,_> to ⟨_,_⟩)
 open import Function     using (const ; flip)                    renaming (id to idF; _∘_ to _◎_)
 open import Function2    using (_$ᵢ)
-open import Equiv        using (_∼_; refl∼; sym∼; trans∼; ∘-resp-∼)
+open import Equiv        using (_∼_; refl∼; sym∼; trans∼; ∘-resp-∼ ; isEquivalence∼)
 
 
 -- MA: avoid renaming by using this handy-dandy trick. Now write |≡.refl| and |≡.trans| ;)
@@ -60,10 +60,10 @@ InvCat = record
    ; assoc = refl∼
    ; identityˡ = refl∼
    ; identityʳ = refl∼
-   ; equiv = record { refl = refl∼ ; sym = sym∼ ; trans = trans∼ }
+   ; equiv = record { IsEquivalence isEquivalence∼ }
    ; ∘-resp-≡ = ∘-resp-∼
    }
-   where open Hom
+   where open Hom ; open import Relation.Binary using (IsEquivalence)
 
 U : (o : Level) → Functor (InvCat {o}) (Sets o)
 U  _ = record

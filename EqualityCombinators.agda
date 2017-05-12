@@ -13,7 +13,8 @@ open ≡ using (_≡_) public
 _⟨≡≡⟩_ = ≡.trans  -- handy synonyms
 
 
-
 -- Function Extensionality
 
 open import Equiv public
+
+_⟨≐≐⟩_ = ≐-trans

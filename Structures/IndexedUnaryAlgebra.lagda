@@ -8,7 +8,7 @@ open import Categories.Category using (Category; module Category)
 open import Categories.Functor using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
-open import Function
+open import Function hiding (_$_)
 
 open import Data.List
 
@@ -61,10 +61,15 @@ is a function of their underlying carriers that respects the actions.
     infixr 5 mor
     field
       mor           :  Carrier X → Carrier Y
-      preservation  :  {i : I} → mor ∘ Op X {i}  ≐ Op Y {i} ∘ mor
+      preservation  :  {i : I} → mor ∘ Op X {i}  ≐  Op Y {i} ∘ mor
 
-  open Hom
-  open Hom using () renaming (mor to _⟨$⟩_) -- alternative for readability
+  open Hom using (mor)
+  open Hom using () renaming (mor to _$_) -- override application to take a |Hom|
+
+  -- arguments can usually be inferred, so implicit variant
+  preservation : {ℓ : Level} {X Y : UnaryAlg I ℓ} (F : Hom X Y) 
+               → {i : I} {x : Carrier X} → F $ Op X {i} x  ≡  Op Y {i} (F $ x)
+  preservation F = Hom.preservation F _             
 \end{code}
 
 Notice that the |preservation| proof looks like a usual homomorphism condition ---after excusing the implicits.
@@ -86,9 +91,9 @@ Unsuprisngly, the indexed unary algebra's form a category.
     ; id    =   λ {A} → MkHom id refl∼
     ; _∘_   =   λ {A} {B} {C} F G → MkHom (mor F ∘ mor G) (λ {i} x → let open ≡.≡-Reasoning {A = Carrier C} in begin
          (mor F ∘ mor G ∘ Op A) x
-            ≡⟨ ≡.cong (mor F) (preservation G _) ⟩
+            ≡⟨ ≡.cong (mor F) (preservation G) ⟩
          (mor F ∘ Op B ∘ mor G) x
-            ≡⟨ preservation F _ ⟩
+            ≡⟨ preservation F ⟩
          (Op C ∘ mor F ∘ mor G) x
             ∎)
     ; assoc       =   refl∼
@@ -140,14 +145,14 @@ there is a unique homomorpism |fold : (List I, _∷_) ⟶ (A, Op)| sending |[] �
     fold : Hom I* Q 
     fold = MkHom fold₀ refl∼
 
-    fold-point : fold ⟨$⟩ [] ≡ q₀
+    fold-point : fold $ [] ≡ q₀
     fold-point = ≡.refl
 
-    fold-unique : (F : Hom I* Q)(point : F ⟨$⟩ [] ≡ q₀) → mor F ≐ mor fold
+    fold-unique : (F : Hom I* Q)(point : F $ [] ≡ q₀) → mor F ≐ mor fold
     fold-unique F point [] = point
     fold-unique F point (x ∷ xs) = let open ≡.≡-Reasoning {A = Carrier Q} in begin
          mor F (x ∷ xs)
-            ≡⟨ preservation F _ ⟩
+            ≡⟨ preservation F ⟩
          Op Q {x} (mor F xs)
             ≡⟨ induction-hypothesis ⟩
          Op Q {x} (fold₀ xs)

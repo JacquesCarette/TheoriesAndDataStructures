@@ -6,66 +6,93 @@ module Forget where
 
 open import Level
 
-open import Categories.Category using (Category;_[_,_])
-open import Categories.Functor using (Functor)
-open import Categories.Agda using (Sets)
+open import Categories.Category using (Category)
+open import Categories.Functor  using (Functor)
+open import Categories.Agda     using (Sets)
 
-open import Equiv hiding (_●_)
 open import Function2
 
-open import Function renaming (id to idF; _∘_ to _◎_)
-open import Relation.Binary.PropositionalEquality using ()
-  renaming (_≡_ to _≣_; cong to ≣-cong; trans to _●_; sym to ≣-sym)
+open import Function
+open import EqualityCombinators
 \end{code}
 %}}}
 
 %{{{ OneSortedAlg
+
+It is a common scenario where we have an algebraic structure with a single
+carrier set and we are interested in the categories of such structures along
+with functions preserving the structure.
+
+We consider a type of ``algebras'' built upon the category of Sets
+---in that, every algebra has a carrier set and every homomorphism is a
+essentially a function between carrier sets where the composition of
+homomorphisms is essentially the composition of functions and the identity
+homomorphism is essentially the identity function.
+
 \begin{code}
-record OneSortedAlg {ℓ} : Set (suc (suc ℓ)) where
+record OneSortedAlg (ℓ : Level) : Set (suc (suc ℓ)) where
   field
-    Alg : Set (suc ℓ)
-    obj : Alg → Set ℓ
-    Hom : Alg → Alg → Set ℓ
-    func : ∀ {a b : Alg} → Hom a b → (obj a → obj b)
-    comp : ∀ {a b c : Alg} → Hom b c → Hom a b →  Hom a c
-    .o-is-∘ : ∀ {a b c : Alg} {g : Hom b c} {f : Hom a b} → func (comp g f) ∼ (func g) ◎ (func f)
-    idH : ∀ {a} → Hom a a
-    .idH-is-id : ∀ {a : Alg} → func (idH {a}) ∼ idF
+    Alg          :   Set (suc ℓ)
+    Carrier      :   Alg → Set ℓ
+    Hom          :   Alg → Alg → Set ℓ
+    mor          :   {A B : Alg} → Hom A B → (Carrier A → Carrier B)
+    comp         :   {A B C : Alg} → Hom B C → Hom A B →  Hom A C
+    .comp-is-∘   :   {A B C : Alg} {g : Hom B C} {f : Hom A B} → mor (comp g f) ≐ mor g ∘ mor f
+    Id           :   {A : Alg} → Hom A A
+    .Id-is-id    :   {A : Alg} → mor (Id {A}) ≐ id
 \end{code}
 %}}}
 
 %{{{ oneSorted
+
+The aforementioned claim that algebras and their structure preserving morphisms
+form a category can be realised due to the coherency conditions we requested viz
+the morphism operation on homomorphisms is functorial.
+
 \begin{code}
-oneSorted : ∀ o → OneSortedAlg {o} → Category (suc o) o o
-oneSorted o A = record
-  { Obj = Alg
-  ; _⇒_ = Hom
-  ; _≡_ = λ h₁ h₂ → (func h₁) ∼ (func h₂)
-  ; id = idH
-  ; _∘_ = comp
-  ; assoc = λ {A} {_} {_} {_} {f} {g} {h} x → o-is-∘ x ● (o-is-∘ (func f x) ● (≣-cong (func h) (≣-sym (o-is-∘ x)) ● ≣-sym (o-is-∘ _)))
-  ; identityˡ = λ {_} {_} {f} → trans∼ o-is-∘ (λ x → idH-is-id (func f x))
-  ; identityʳ = λ {_} {_} {f} → trans∼ o-is-∘ (λ x → ≣-cong (func f) (idH-is-id x))
-  ; equiv = record { refl = refl∼ ; sym = sym∼ ; trans = trans∼ }
-  ; ∘-resp-≡ = λ f≡h g≡i → trans∼ o-is-∘ (trans∼ (∘-resp-∼ f≡h g≡i) (sym∼ o-is-∘))
+open import Relation.Binary.SetoidReasoning
+oneSortedCategory : (ℓ : Level) → OneSortedAlg ℓ → Category (suc ℓ) ℓ ℓ
+oneSortedCategory ℓ A = record
+  { Obj     =   Alg
+  ; _⇒_    =   Hom
+  ; _≡_    =   λ F G → mor F ≐ mor G
+  ; id      =   Id
+  ; _∘_     =   comp
+  ; assoc   =   λ {A B C D} {F} {G} {H} → begin⟨ ≐-setoid (Carrier A) (Carrier D) ⟩
+          mor (comp (comp H G) F)
+            ≈⟨ comp-is-∘ ⟩
+          mor (comp H G) ∘ mor F
+            ≈⟨ ∘-≐-cong₁ _ comp-is-∘ ⟩ 
+          mor H ∘ mor G ∘ mor F
+            ≈⟨ ≐-sym (∘-≐-cong₂ _ comp-is-∘) ⟩
+          mor H ∘ mor (comp G F)  
+            ≈⟨ ≐-sym comp-is-∘ ⟩
+          mor (comp H (comp G F))
+            ∎
+  ; identityˡ   =   λ{ {f = f} → comp-is-∘ ⟨≐≐⟩ Id-is-id ∘ mor f } 
+  ; identityʳ   =   λ{ {f = f} → comp-is-∘ ⟨≐≐⟩ ≡.cong (mor f) ∘ Id-is-id }
+  ; equiv       =   record { IsEquivalence ≐-isEquivalence }
+  ; ∘-resp-≡   =   λ f≈h g≈k → comp-is-∘ ⟨≐≐⟩ ∘-resp-≐ f≈h g≈k ⟨≐≐⟩ ≐-sym comp-is-∘
   }
-  where open OneSortedAlg A
+  where open OneSortedAlg A ; open import Relation.Binary using (IsEquivalence)
 \end{code}
 %}}}
 
 %{{{ mkForgetful
+
+The fact that the algebras are built on the category of sets is captured by the
+existence of a forgetful functor.
+
 \begin{code}
-mkForgetful : ∀ o → (A : OneSortedAlg {o}) → Functor (oneSorted o A) (Sets o)
-mkForgetful o A = record
-  { F₀ = obj
-  ; F₁ = func
-  ; identity = λ {_} {x} → idH-is-id x
-  ; homomorphism = λ { {x = x} → o-is-∘ x}
-  ; F-resp-≡ =  _$ᵢ
+mkForgetful : (ℓ : Level) (A : OneSortedAlg ℓ) → Functor (oneSortedCategory ℓ A) (Sets ℓ)
+mkForgetful ℓ A = record
+  { F₀             =   Carrier
+  ; F₁             =   mor
+  ; identity       =   Id-is-id  $ᵢ
+  ; homomorphism   =   comp-is-∘ $ᵢ
+  ; F-resp-≡      =    _$ᵢ
   }
-  where
-    open OneSortedAlg A
-    module B = Category (oneSorted o A)
+  where open OneSortedAlg A
 \end{code}
 %}}}
 

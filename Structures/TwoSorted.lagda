@@ -87,8 +87,8 @@ Forget ℓ = record
   }
 
 
-Forget₂ : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
-Forget₂ ℓ = record
+Forget² : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Forget² ℓ = record
   { F₀             =   TwoSorted.Two
   ; F₁             =   Hom.two
   ; identity       =   ≡.refl
@@ -130,8 +130,8 @@ Cofree ℓ = record
 
 -- Dually,  ( also shorter due to eta reduction )
 
-Free₂ : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
-Free₂ ℓ = record
+Free² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Free² ℓ = record
   { F₀             =   MkTwo ⊥
   ; F₁             =   MkHom id
   ; identity       =   ≐-refl , ≐-refl
@@ -139,8 +139,8 @@ Free₂ ℓ = record
   ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
   }
 
-Cofree₂ : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
-Cofree₂ ℓ = record
+Cofree² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree² ℓ = record
   { F₀             =   MkTwo ⊤
   ; F₁             =   MkHom id
   ; identity       =   ≐-refl , ≐-refl
@@ -152,21 +152,57 @@ Cofree₂ ℓ = record
 
 %{{{ Left and Right adjunctions
 \begin{code}
-Left : ∀ o → Adjunction (Free o) (Forget o)
-Left o = record
-  { unit   = record { η = λ X x → x ; commute = λ _ → ≡.refl }
-  ; counit = record { η = λ { (MkTwo One B) → MkHom id (λ { () }) }
-                    ; commute = λ f → ≐-refl , (λ { ()}) }
+Left : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
+Left ℓ = record
+  { unit   = record
+    { η       = λ A a → a
+    ; commute = λ _ → ≡.refl
+    }
+  ; counit = record
+    { η       = λ _ → MkHom id (λ {()})
+    ; commute = λ f → ≐-refl , (λ {()})
+    }
   ; zig = ≐-refl , (λ { () })
-  ; zag = ≡.refl }
+  ; zag = ≡.refl
+  }
 
-Right :  ∀ o → Adjunction (Forget o) (Cofree o)
-Right o = record
-  { unit = record { η = λ { (MkTwo One B) → MkHom id (λ _ → tt) }
-                  ; commute = λ f → ≐-refl , ≐-refl }
-  ; counit = record { η = λ _ → id ; commute = λ _ → ≡.refl }
-  ; zig = ≡.refl
-  ; zag = ≐-refl , (λ {tt → ≡.refl }) }
+Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
+Right ℓ = record
+  { unit = record
+    { η = λ _ → MkHom id (λ _ → tt) 
+    ; commute = λ _ → ≐-refl , ≐-refl
+    }
+  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
+  ; zig      =   ≡.refl
+  ; zag      =   ≐-refl , λ {tt → ≡.refl }
+  }
+
+-- Dually,
+
+Left² : (ℓ : Level) → Adjunction (Free² ℓ) (Forget² ℓ)
+Left² ℓ = record
+  { unit   = record
+    { η       = λ A a → a
+    ; commute = λ _ → ≡.refl
+    }
+  ; counit = record
+    { η       = λ _ → MkHom (λ {()}) id
+    ; commute = λ f →  (λ {()}) , ≐-refl
+    }
+  ; zig = (λ { () }) , ≐-refl
+  ; zag = ≡.refl
+  }
+
+Right² :  (ℓ : Level) → Adjunction (Forget² ℓ) (Cofree² ℓ)
+Right² ℓ = record
+  { unit = record
+    { η = λ _ → MkHom (λ _ → tt) id
+    ; commute = λ _ → ≐-refl , ≐-refl
+    }
+  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
+  ; zig      =   ≡.refl
+  ; zag      =   (λ {tt → ≡.refl }) , ≐-refl
+  }
 \end{code}
 %}}}
 
@@ -208,7 +244,7 @@ Choice o = record
   ; F₁ = λ { (MkHom f g) → map⊎ f g}
   ; identity = λ {_} → λ { {(inj₁ x)} → ≡.refl ; {(inj₂ x)} → ≡.refl}
   ; homomorphism = λ { {x = (inj₁ x)} → ≡.refl ; {x = (inj₂ x)} → ≡.refl}
-  ; F-resp-≡ = {!!} -- λ { ( F≡G₁ , F≡G₂ ) → λ { {(inj₁ x)} → ≡.cong inj₁ (F≡G₁ x) ; {(inj₂ x)} → ≡.cong inj₂ (F≡G₂ x)}}
+  ; F-resp-≡ = λ{ (F≈₁G , F≈₂G) {inj₁ x} → ≡.cong inj₁ (F≈₁G x) ; (F≈₁G , F≈₂G) {inj₂ x} → ≡.cong inj₂ (F≈₂G x)}
   }
   where open TwoSorted
 

@@ -1,9 +1,4 @@
--*- eval: (orgstruct-mode t) -*-
-
-Musa: Go on star and press SHIT+TAB ;)
-      Tab on a star to (un)fold that section.
-  
-* Imports
+%{{{ Imports
 \begin{code}
 module Structures.InvolutiveAlgebra where
 
@@ -27,9 +22,9 @@ import Relation.Binary.PropositionalEquality
 module ≡ = Relation.Binary.PropositionalEquality
 open ≡ using (_≡_)
 \end{code}
+%}}}
 
-
-* Inv and Hom
+%{{{ Inv and Hom
 
 \begin{code}
 record Inv {ℓ} : Set (lsuc ℓ) where
@@ -48,9 +43,9 @@ record Hom {ℓ} (X Y : Inv {ℓ}) : Set ℓ where
 
 open Hom renaming (f to mor)
 \end{code}
+%}}}
 
-
-* InvCat and foregtful functor U
+%{{{ InvCat and foregtful functor U
 
 \begin{code}
 InvCat : ∀ {ℓ} → Category _ ℓ ℓ
@@ -72,16 +67,16 @@ InvCat = record
 
 U : (o : Level) → Functor (InvCat {o}) (Sets o)
 U  _ = record
-  { F₀           = Carrier
-  ; F₁           = mor
-  ; identity     = ≡.refl
-  ; homomorphism = ≡.refl
-  ; F-resp-≡     = _$ᵢ
+  { F₀            =   Carrier
+  ; F₁            =   mor
+  ; identity      =   ≡.refl
+  ; homomorphism  =   ≡.refl
+  ; F-resp-≡     =   _$ᵢ
   }
 \end{code}
+%}}}
 
-
-* |swap₊| and |from⊎|
+%{{{ |swap₊| and |from⊎|
 
 The double of a type has an involution on it by swapping the tags:
 
@@ -92,9 +87,9 @@ swap₊ = [ inj₂ , inj₁ ]
 from⊎ : ∀ {ℓ} {A : Set ℓ} → A ⊎ A → A
 from⊎ = [ idF , idF ]
 \end{code}
+%}}}
 
-
-* Left and AdjLeft
+%{{{ Left and AdjLeft
 
 \begin{code}
 Left : ∀ o → Functor (Sets o) (InvCat {o})
@@ -140,9 +135,9 @@ AdjLeft₂ o = record
   ; zag = ≡.refl
   }
 \end{code}
+%}}}
 
-
-* Right, diag, AdjRight
+%{{{ Right, diag, AdjRight
 
 \begin{code}
 -- for the proofs below, we "cheat" and let η for records make things easy.
@@ -192,7 +187,9 @@ Note that we have TWO proofs for AdjRight since we can construe |A×A| as
 |{ (a , aᵒ) ∣ a ∈ A}| or as |{(aᵒ , a) ∣ a ∈ A}| ---similarly for why
 we have two AdjLeft proofs.
 
-* Monad constructions
+%}}}
+
+%{{{ Monad constructions
 
 \begin{code}
 SetMonad : ∀ {o} → Monad (Sets o)
@@ -201,4 +198,17 @@ SetMonad {o} = Adjunction.monad (AdjLeft o)
 InvComonad : ∀ {o} → Comonad (InvCat {o})
 InvComonad {o} = Adjunction.comonad (AdjLeft o)
 \end{code}
-  
+%}}}
+
+% Quick Folding Instructions:
+% C-c C-s :: show/unfold region
+% C-c C-h :: hide/fold region
+% C-c C-w :: whole file fold
+% C-c C-o :: whole file unfold
+%
+% Local Variables:
+% folded-file: t
+% eval: (fold-set-marks "%{{{ " "%}}}")
+% eval: (fold-whole-buffer)
+% fold-internal-margins: 0
+% end:

@@ -8,13 +8,11 @@ open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
 open import Function using (id ; _∘_ ; const)
-open import Data.Product using (_×_; _,_; proj₁; proj₂)
-open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′; [_,_]) renaming (map to map⊎)
-
 open import Function2 using (_$ᵢ)
 
 open import Forget
 open import EqualityCombinators
+open import DataProperties
 \end{code}
 %}}}
 
@@ -216,12 +214,6 @@ The category of sets contains products and so |TwoSorted| algebras can be repres
 and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
 
 \begin{code}
-open import Data.Product using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry ; curry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
-
--- This' also defined in |Involutive|; perhaps extract elsewhere to avoid duplicity.
-diag : {ℓ : Level} {A : Set ℓ} (a : A) → A × A
-diag a = a , a
-
 -- The category of Sets has products and so the |TwoSorted| type can be reified there.
 Merge : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
 Merge ℓ = record
@@ -262,27 +254,6 @@ The category of sets admits sums and so an alternative is to represet a |TwoSort
 algebra as a sum, and moreover this is adjoint to the aforementioned duplication functor.
 
 \begin{code}
-open import Data.Sum     using (_⊎_; inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
-
--- Disappoingly, I could not locate these in the standard library.
-
-⊎-id : {a b : Level} {A : Set a} {B : Set b} → id ⊎₁ id ≐ id {A = A ⊎ B}
-⊎-id (inj₁ _) = ≡.refl
-⊎-id (inj₂ _) = ≡.refl
-
-⊎-∘ : {a b c a' b' c' : Level}
-        {A : Set a} {A' : Set a'} {B : Set b} {B' : Set b'} {C' : Set c} {C : Set c'}
-        {f  : A → A'} {g : B → B'} {f' : A' → C} {g' : B' → C'}
-      → (f' ∘ f) ⊎₁ (g' ∘ g) ≐ (f' ⊎₁ g') ∘ (f ⊎₁ g) --- aka “the exchange rule for sums”
-⊎-∘ (inj₁ _) = ≡.refl
-⊎-∘ (inj₂ _) = ≡.refl
-
-⊎-cong : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
-         {f f' : A → C} {g g' : B → D}
-       → f ≐ f' → g ≐ g' → f ⊎₁ g ≐ f' ⊎₁ g'
-⊎-cong f≈f' g≈g' (inj₁ x) = ≡.cong inj₁ (f≈f' x)
-⊎-cong f≈f' g≈g' (inj₂ y) = ≡.cong inj₂ (g≈g' y)
-
 Choice : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
 Choice ℓ =   record
   { F₀             =   λ S → One S ⊎  Two S
@@ -291,28 +262,7 @@ Choice ℓ =   record
   ; homomorphism   =   λ{ {x = x} → ⊎-∘ x }
   ; F-resp-≡      =   λ F≈G {x} → uncurry ⊎-cong F≈G x
   }
-
--- also defined in |InvolutiveAlgebra|; need to avoid such duplicity!
-from⊎ : ∀ {ℓ} {A : Set ℓ} → A ⊎ A → A
-from⊎ = [ id , id ]′
-
-∘-[,] : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
-        {f : A → C} {g : B → C} {h : C → D}
-     → h ∘ [ f , g ] ≐ [ h ∘ f , h ∘ g ]
-∘-[,] (inj₁ _) = ≡.refl
-∘-[,] (inj₂ _) = ≡.refl
-
--- |from⊎| is a natural transformation
-from⊎-nat : {a b : Level} {A : Set a} {B : Set b}
-        {f : A → B} → f ∘ from⊎  ≐ from⊎ ∘ (f ⊎₁ f)
-from⊎-nat (inj₁ _) = ≡.refl
-from⊎-nat (inj₂ _) = ≡.refl
-
--- |from⊎| is injective and so is pre-invertible,
-from⊎-preInverse : {a b : Level} {A : Set a} {B : Set b} → id ≐ from⊎ {A = A ⊎ B} ∘ (inj₁ ⊎₁ inj₂)
-from⊎-preInverse (inj₁ _) = ≡.refl
-from⊎-preInverse (inj₂ _) = ≡.refl
-
+  
 Left₂ : (ℓ : Level) → Adjunction (Choice ℓ) (Dup ℓ)
 Left₂ ℓ = record
   { unit     =   record { η = λ _ → MkHom inj₁ inj₂ ; commute = λ _ → ≐-refl , ≐-refl }

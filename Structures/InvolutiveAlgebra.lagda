@@ -10,12 +10,11 @@ open import Categories.Agda       using (Sets)
 open import Categories.Monad      using (Monad)
 open import Categories.Comonad    using (Comonad)
 
-open import Data.Sum     using (_⊎_; inj₁; inj₂; [_,_])          renaming (map to map⊎)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; _,_; swap) renaming (map to map× ; <_,_> to ⟨_,_⟩)
 open import Function     using (const ; flip)                    renaming (id to idF; _∘_ to _◎_)
 open import Function2    using (_$ᵢ)
 open import Equiv
 
+open import DataProperties
 
 -- MA: avoid renaming by using this handy-dandy trick. Now write |≡.refl| and |≡.trans| ;)
 import Relation.Binary.PropositionalEquality
@@ -76,16 +75,13 @@ U  _ = record
 \end{code}
 %}}}
 
-%{{{ |swap₊| and |from⊎|
+%{{{ |swap₊|
 
 The double of a type has an involution on it by swapping the tags:
 
 \begin{code}
 swap₊ : {ℓ : Level} {A : Set ℓ} → A ⊎ A → A ⊎ A
 swap₊ = [ inj₂ , inj₁ ]
-
-from⊎ : ∀ {ℓ} {A : Set ℓ} → A ⊎ A → A
-from⊎ = [ idF , idF ]
 \end{code}
 %}}}
 
@@ -95,7 +91,7 @@ from⊎ = [ idF , idF ]
 Left : ∀ o → Functor (Sets o) (InvCat {o})
 Left o = record
   { F₀ = λ A → record { A = A ⊎ A ; _ᵒ = swap₊ ; involutive = [ ≐-refl , ≐-refl ] }
-  ; F₁ = λ f → record { f = map⊎ f f ; pres-ᵒ = [ ≐-refl , ≐-refl ] }
+  ; F₁ = λ f → record { f = f ⊎₁ f ; pres-ᵒ = [ ≐-refl , ≐-refl ] }
   ; identity = [ ≐-refl , ≐-refl ]
   ; homomorphism = [ ≐-refl , ≐-refl ]
   ; F-resp-≡ = λ F∼G → [ (λ _ → ≡.cong inj₁ F∼G) , (λ _ → ≡.cong inj₂ F∼G) ] -- there has to be a better way!
@@ -144,14 +140,11 @@ AdjLeft₂ o = record
 Right : ∀ o → Functor (Sets o) (InvCat {o})
 Right o = record
   { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = ≐-refl }
-  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = ≐-refl }
+  ; F₁ = λ g → record { f = g ×₁ g ; pres-ᵒ = ≐-refl }
   ; identity      =  ≐-refl
   ; homomorphism  =  ≐-refl
   ; F-resp-≡     =  λ F≡G a → ≡.cong₂ _,_ (F≡G {proj₁ a}) F≡G
   }
-
-diag : ∀ {ℓ} {A : Set ℓ} (a : A) → A × A
-diag a = a , a
 
 AdjRight : ∀ o → Adjunction (U o) (Right o)
 AdjRight o = record

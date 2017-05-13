@@ -151,11 +151,15 @@ Cofree² ℓ = record
 %}}}
 
 %{{{ Left and Right adjunctions
+
+Now for the actual proofs that the |Free| and |Cofree| functors
+are deserving of their names.
+
 \begin{code}
 Left : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
 Left ℓ = record
   { unit   = record
-    { η       = λ A a → a
+    { η       = λ _ → id
     ; commute = λ _ → ≡.refl
     }
   ; counit = record
@@ -182,7 +186,7 @@ Right ℓ = record
 Left² : (ℓ : Level) → Adjunction (Free² ℓ) (Forget² ℓ)
 Left² ℓ = record
   { unit   = record
-    { η       = λ A a → a
+    { η       = λ _ → id
     ; commute = λ _ → ≡.refl
     }
   ; counit = record
@@ -207,32 +211,49 @@ Right² ℓ = record
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction
+
+The category of sets contains products and so |TwoSorted| algebras can be represented there
+and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
+
 \begin{code}
-Merge : ∀ o → Functor (TwoCat o) (Sets o)
-Merge o = record
-  { F₀ = λ S → One S × Two S
-  ; F₁ = λ {(MkHom one two) (a₁ , b₁) → (one a₁) , (two b₁)}
-  ; identity = ≡.refl
-  ; homomorphism = ≡.refl
-  ; F-resp-≡ = λ {(F≡G₁ , F≡G₂) {x} → ≡.cong₂ _,_ (F≡G₁ (proj₁ x)) (F≡G₂ (proj₂ x))}
-  }
-  where open TwoSorted
+open import Data.Sum     using (_⊎_; inj₁; inj₂; [_,_])          renaming (map to map⊎)
+open import Data.Product using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry ; curry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
 
-Dup : ∀ o → Functor (Sets o) (TwoCat o)
-Dup o = record
-  { F₀ = λ One → MkTwo One One
-  ; F₁ = λ f → MkHom f f
-  ; identity = ≐-refl , ≐-refl
-  ; homomorphism = ≐-refl , ≐-refl
-  ; F-resp-≡ = λ F≡G → (λ x → F≡G {x}) , λ _ → F≡G
+-- This' also defined in |Involutive|; perhaps extract elsewhere to avoid duplicity.
+diag : {ℓ : Level} {A : Set ℓ} (a : A) → A × A
+diag a = a , a
+
+-- The category of Sets has products and so the |TwoSorted| type can be reified there.
+Merge : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Merge ℓ = record
+  { F₀             =   λ S → One S ×  Two S
+  ; F₁             =   λ F → one F ×₁ two F
+  ; identity       =   ≡.refl
+  ; homomorphism   =   ≡.refl
+  ; F-resp-≡      =   λ { (F≈₁G , F≈₂G) {x , y} → ≡.cong₂ _,_ (F≈₁G x) (F≈₂G y) }
   }
 
-Right₂ : ∀ o → Adjunction (Dup o) (Merge o)
-Right₂ o = record
-  { unit = record { η = λ X x → x , x ; commute = λ f → ≡.refl }
-  ; counit = record { η = λ {(MkTwo One B) → MkHom proj₁ proj₂} ; commute = λ {(MkHom f g) → ≐-refl , ≐-refl} }
-  ; zig = ≐-refl , ≐-refl
-  ; zag = ≡.refl }
+-- Every set gives rise to its square as a |TwoSorted| type.
+Dup : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Dup ℓ = record
+  { F₀             =   λ A → MkTwo A A
+  ; F₁             =   λ f → MkHom f f
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ F≈G → diag (λ _ → F≈G)
+  }
+\end{code}
+
+Then the proof that these two form the desired adjunction
+
+\begin{code}
+Right₂ : (ℓ : Level) → Adjunction (Dup ℓ) (Merge ℓ)
+Right₂ ℓ = record
+  { unit     =   record { η = λ _ → diag ; commute = λ _ → ≡.refl }
+  ; counit   =   record { η = λ _ → MkHom proj₁ proj₂ ; commute = λ _ → ≐-refl , ≐-refl }
+  ; zig      =   ≐-refl , ≐-refl
+  ; zag      =   ≡.refl
+  }
 \end{code}
 %}}}
 

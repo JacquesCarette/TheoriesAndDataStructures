@@ -96,18 +96,19 @@ Forget² ℓ = record
 \end{code}
 %}}}
 
+Generalised Empty and Unit, to avoid a flurry of |lift|'s.
+\begin{code}
+data ⊥ {ℓ : Level} : Set ℓ where
+record ⊤ {ℓ : Level} : Set ℓ where
+  constructor tt
+\end{code}
+
 %{{{ Free and CoFree
 
 Given a type, we can pair it with the empty type or the singelton type
 and so we have a free and a co-free constructions. 
 
 \begin{code}
--- Generalised Empty and Unit, to avoid a flurry of |lift|'s.
---
-data ⊥ {ℓ : Level} : Set ℓ where
-record ⊤ {ℓ : Level} : Set ℓ where
-  constructor tt
-
 Free : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
 Free ℓ = record
   { F₀             =   λ A → MkTwo A ⊥
@@ -258,7 +259,7 @@ Choice : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
 Choice ℓ =   record
   { F₀             =   λ S → One S ⊎  Two S
   ; F₁             =   λ F → one F ⊎₁ two F
-  ; identity       =   λ{S} → ⊎-id $ᵢ
+  ; identity       =   ⊎-id $ᵢ
   ; homomorphism   =   λ{ {x = x} → ⊎-∘ x }
   ; F-resp-≡      =   λ F≈G {x} → uncurry ⊎-cong F≈G x
   }

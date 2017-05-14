@@ -8,7 +8,8 @@ open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
 open import Function renaming (id to idF; _∘_ to _◎_)
 
-open import Data.List
+open import Data.Nat using (ℕ; suc)
+open import Data.Product using (proj₁; proj₂)
 
 open import Equiv
 open import Forget
@@ -58,29 +59,7 @@ UnaryCat {o} = oneSortedCategory o UnaryAlg
 Forget : ∀ o → Functor (UnaryCat {o}) (Sets o)
 Forget o = mkForgetful o UnaryAlg
 
--- Type-polymorphic naturals
-data ℕ {ℓ} : Set ℓ where
-  zero : ℕ {ℓ}
-  suc  : ℕ {ℓ} → ℕ {ℓ}
-  
-iter : ∀ {ℓ o} {A : Set o} (n : ℕ {ℓ}) (g : A → A) → A → A
-iter zero    g a = a
-iter (suc n) g a = iter n g (g a)
-
--- eliminator
-induct : ∀ {ℓ o} {P : ℕ {ℓ} → Set o}
-  (base : P zero) (inductiveStep : ∀ (i : ℕ) → P i → P (suc i) )
-  → (n : ℕ) → P n
-induct base step zero    = base
-induct base step (suc n) = step n (induct base step n)
-
--- |iter g n| is essentially |gⁿ| and so |g ∙ gⁿ = gⁿ · g|, as expected.
-iter-nat : ∀ {ℓ o} (n : ℕ {ℓ}) → ∀ {A : Set o} (g : A → A) → iter n g ◎ g ≐ g ◎ iter n g
-iter-nat = induct {P = λ n →  ∀ {A} (g : A → A) (a : A) → iter n g (g a) ≡ g (iter n g a)} (λ g a → ≡.refl) (λ i pf g a → pf g (g a))
---
--- MA: This looks unnatural, a shorter and more natural approach seems to be direct pattern matching.
-
--- MA: A new maybe-nat hybrid type
+-- An 'Eventually' type
 data ForeverMaybe {ℓ} (A : Set ℓ) : Set ℓ where
   base : A → ForeverMaybe A
   step : ForeverMaybe A → ForeverMaybe A
@@ -104,14 +83,6 @@ iterateFM f (step x) = f (iterateFM f x)
 fmMap : ∀{a b}{A : Set a}{B : Set b} → (A → B) → ForeverMaybe A → ForeverMaybe B
 fmMap F (base x) = base (F x)
 fmMap F (step e) = step (fmMap F e)
---
--- note that fmMap preserves the number of |step|s
---
-fmMap-nat : ∀{ℓ a b}  {A : Set a} {B : Set b} {f : A → B} { n : ℕ {ℓ}}
-  → fmMap f ◎ iter n step ≐ iter n step ◎ fmMap f
-fmMap-nat {f = f} {zero} e   =  ≡.refl
-fmMap-nat {f = f} {suc n} e  =  fmMap-nat {n = n} (step e)
-
 
 iterateFM-nat : ∀ {o} {X Y : Unary {o}} (F : Hom X Y)
               → iterateFM (Op Y) ◎ fmMap (mor F) ≐ mor F ◎ iterateFM (Op X)
@@ -146,8 +117,6 @@ fmMap-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → fmMap F ≐ fm
 fmMap-cong eq (base x) = ≡.cong base (eq x)
 fmMap-cong eq (step x) = ≡.cong step (fmMap-cong eq x)
 
--- MA: This orginally had |F₀ = λ A → MkUnary ℕ suc|, which seems exceedingly suspcious
--- since no mention of |A| occurs on the LHS. So I've changed things.
 Free : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free o = record
   { F₀             =   λ A → MkUnary (ForeverMaybe A) step
@@ -164,54 +133,33 @@ AdjLeft o = record
   ; zig      =   iterateFM-fmMap-id
   ; zag      =   ≡.refl
   }
+\end{code}
 
-open import Relation.Nullary using (¬_)
-open import Data.Empty
-open import Data.Bool
-open import Relation.Unary
+And now for a different way of looking at the same algebra.
 
-contr : .(true ≡ false) → ⊥
-contr ()
-
-NoFree : ∀ o → (Free : Functor (Sets o) UnaryCat) → ¬ Adjunction Free (Forget o)
-NoFree o record { F₀ = F₀ ; F₁ = F₁ ; identity = identity ; homomorphism = homomorphism ; F-resp-≡ = F-resp-≡ }
-         record { unit = record { η = η′ ; commute = commute′ } ; counit = record { η = η ; commute = commute } ; zig = zig ; zag = zag } =
-     let swap : Lift {lzero} {o} Bool → Lift Bool
-         swap = λ {(lift true) → lift false; (lift false) → lift true} in
-     let u = MkUnary (Lift Bool) swap in
-     let v = MkUnary (Lift Bool) swap in
-     let hh = MkHom {o} {u} {v} swap (λ {(lift true) → ≡.refl; (lift false) → ≡.refl}) in
-      contr (≡.cong lower (≡.trans (zag {u} {lift true})
-                          (≡.trans {!!} (≡.sym (zag {v} {lift false})))))
-
--- Hom.pres-f (η (unar (Lift Bool) (λ {(lift true) → lift false; (lift false) → lift true})))
-{-
--- for the proofs below, we "cheat" and let η for records make things easy.
-Right : ∀ o → Functor (Sets o) (InvCat {o})
-Right o = record
-  { F₀ = λ B → record { A = B × B ; _ᵒ = swap ; involutive = ≐-refl }
-  ; F₁ = λ g → record { f = map× g g ; pres-ᵒ = ≐-refl }
+\begin{code}
+Free² : ∀ o → Functor (Sets o) (UnaryCat {o})
+Free² o = record
+  { F₀ = λ A → MkUnary (A × ℕ) (λ { (x , n) → (x , suc n) })
+  ; F₁ = λ f → MkHom (λ { (x , n) → (f x , n) }) (λ _ → ≡.refl)
   ; identity = ≐-refl
   ; homomorphism = ≐-refl
-  ; F-resp-≡ = λ F≡G a → ≡.cong₂ _,_ (F≡G {proj₁ a}) F≡G
+  ; F-resp-≡ = λ F≡G → λ { (x , n) → ≡.cong₂ _,_ (F≡G {x}) ≡.refl }
   }
 
-diag : ∀ {ℓ} {A : Set ℓ} (a : A) → A × A
-diag a = a , a
+iter : {o : Level} {A : Set o} (f : A → A) (n : ℕ) → A → A
+iter f ℕ.zero x = x
+iter f (suc n) x = iter f n (f x)
 
-AdjRight : ∀ o → Adjunction (U o) (Right o)
-AdjRight o = record
-  { unit = record { η = λ inv → record { f = λ a → map× idF (_ᵒ inv) (diag a)
-                                       ; pres-ᵒ = λ a → ≡.cong₂ _,_ ≡.refl (involutive inv a) }
-                  ; commute = λ f a → ≡.cong₂ _,_ ≡.refl (≡.sym (Hom.pres-ᵒ f a)) }
-  ; counit = record { η = λ _ → proj₁ ; commute = λ _ → ≡.refl }
-  ; zig = ≡.refl
-  ; zag = λ _ → ≡.refl
+AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
+AdjLeft² o = record
+  { unit = record { η = λ _ x → x , 0 ; commute = λ _ → ≡.refl }
+  ; counit = record
+    { η = λ { (MkUnary A f) → MkHom (λ { (x , n) → iter f n x }) {!!} }
+    ; commute = {!!} }
+  ; zig = {!!}
+  ; zag = ≡.refl
   }
-  where open Inv
--}
-
-
 \end{code}
 
 % Quick Folding Instructions:

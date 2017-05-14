@@ -182,3 +182,6 @@ TSWLatexianTemp*
 # Agda
 *.agdai
 *~
+
+# Apple-isms
+.DS_Store

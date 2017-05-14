@@ -64,7 +64,7 @@ oneSortedCategory ℓ A = record
           mor (comp H G) ∘ mor F
             ≈⟨ ∘-≐-cong₁ _ comp-is-∘ ⟩ 
           mor H ∘ mor G ∘ mor F
-            ≈⟨ ≐-sym (∘-≐-cong₂ _ comp-is-∘) ⟩
+            ≈⟨ ≐-sym (∘-≐-cong₂ (mor H) comp-is-∘) ⟩
           mor H ∘ mor (comp G F)  
             ≈⟨ ≐-sym comp-is-∘ ⟩
           mor (comp H (comp G F))

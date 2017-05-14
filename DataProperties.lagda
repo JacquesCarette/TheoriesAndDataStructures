@@ -27,21 +27,18 @@ diag a = a , a
 
 \begin{code}
 ⊎-id : {a b : Level} {A : Set a} {B : Set b} → id ⊎₁ id ≐ id {A = A ⊎ B}
-⊎-id (inj₁ _) = ≡.refl
-⊎-id (inj₂ _) = ≡.refl
+⊎-id = [ ≐-refl , ≐-refl ]
 
 ⊎-∘ : {a b c a' b' c' : Level}
         {A : Set a} {A' : Set a'} {B : Set b} {B' : Set b'} {C' : Set c} {C : Set c'}
         {f  : A → A'} {g : B → B'} {f' : A' → C} {g' : B' → C'}
       → (f' ∘ f) ⊎₁ (g' ∘ g) ≐ (f' ⊎₁ g') ∘ (f ⊎₁ g) --- aka “the exchange rule for sums”
-⊎-∘ (inj₁ _) = ≡.refl
-⊎-∘ (inj₂ _) = ≡.refl
+⊎-∘ = [ ≐-refl , ≐-refl ]
 
 ⊎-cong : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
          {f f' : A → C} {g g' : B → D}
        → f ≐ f' → g ≐ g' → f ⊎₁ g ≐ f' ⊎₁ g'
-⊎-cong f≈f' g≈g' (inj₁ x) = ≡.cong inj₁ (f≈f' x)
-⊎-cong f≈f' g≈g' (inj₂ y) = ≡.cong inj₂ (g≈g' y)
+⊎-cong f≈f' g≈g' = [ ∘-≐-cong₂ inj₁ f≈f' , ∘-≐-cong₂ inj₂ g≈g' ]
 \end{code}
 
 %}}}
@@ -52,8 +49,7 @@ diag a = a , a
 ∘-[,] : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
         {f : A → C} {g : B → C} {h : C → D}
      → h ∘ [ f , g ] ≐ [ h ∘ f , h ∘ g ]
-∘-[,] (inj₁ _) = ≡.refl
-∘-[,] (inj₂ _) = ≡.refl
+∘-[,] = [ ≐-refl , ≐-refl ]
 \end{code}
 
 %}}}
@@ -71,14 +67,12 @@ from⊎ = [ id , id ]
 --
 from⊎-nat : {a b : Level} {A : Set a} {B : Set b}
         {f : A → B} → f ∘ from⊎  ≐ from⊎ ∘ (f ⊎₁ f)
-from⊎-nat (inj₁ _) = ≡.refl
-from⊎-nat (inj₂ _) = ≡.refl
+from⊎-nat = [ ≐-refl , ≐-refl ]
 
 -- |from⊎| is injective and so is pre-invertible,
 --
 from⊎-preInverse : {a b : Level} {A : Set a} {B : Set b} → id ≐ from⊎ {A = A ⊎ B} ∘ (inj₁ ⊎₁ inj₂)
-from⊎-preInverse (inj₁ _) = ≡.refl
-from⊎-preInverse (inj₂ _) = ≡.refl
+from⊎-preInverse = [ ≐-refl , ≐-refl ]
 \end{code}
 %}}}
 

@@ -11,7 +11,7 @@ open import Categories.Agda       using (Sets)
 open import Forget
 
 open import Data.Nat using (ℕ; suc)
-open import Data.Product using (_×_; _,_ ; Σ; proj₁; proj₂; uncurry; map)
+open import DataProperties
 
 open import Function2
 open import Function
@@ -207,8 +207,8 @@ We ``mark'' a piece of data with its depth.
 \begin{code}
 Free² : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free² o = record
-  { F₀             =   λ A → MkUnary (A × ℕ) (map id suc)
-  ; F₁             =   λ f → MkHom (map f id) (λ _ → ≡.refl)
+  { F₀             =   λ A → MkUnary (A × ℕ) (id ×₁ suc)
+  ; F₁             =   λ f → MkHom (f ×₁ id) (λ _ → ≡.refl)
   ; identity       =   ≐-refl
   ; homomorphism   =   ≐-refl
   ; F-resp-≡      =   λ F≈G → λ { (x , n) → ≡.cong₂ _,_ (F≈G {x}) ≡.refl }
@@ -219,9 +219,9 @@ f ^ ℕ.zero = id
 f ^ suc n = f ^ n ∘ f
 
 -- important property of iteration that allows it to be defined in an alternative fashion
-iter-alt : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
-iter-alt {n = ℕ.zero} = ≐-refl
-iter-alt {f = f} {n = suc n} = ∘-≐-cong₁ f iter-alt
+iter-swap : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
+iter-swap {n = ℕ.zero} = ≐-refl
+iter-swap {f = f} {n = suc n} = ∘-≐-cong₁ f iter-swap
 
 -- iteration of commutable functions
 iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
@@ -235,29 +235,39 @@ iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
 iter f x n = (f ^ n) x
 
 iter-ℕ : {o : Level} {A : Set o} {f : A → A} (a : A) (n : ℕ) → iter f (f a) n ≡ f (iter f a n)
-iter-ℕ {f = f} a n = iter-alt {f = f} {n = n} a
+iter-ℕ {f = f} a n = iter-swap {f = f} {n = n} a
 
 iter-comm-old : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ∘ g ≐ h ∘ f) →
   ∀ (b : B) (n : ℕ) → iter h (f b) n ≡ f (iter g b n)
 iter-comm-old eq b n = iter-comm eq {n} b
 
-
 ×-induct : {a b c : Level} {A : Set a} {B : A → Set b} {C : Σ A B → Set c}
   (g : (a : A) (b : B a) → C (a , b)) → ((p : Σ A B) → C p)
 ×-induct g = uncurry g
 
+
+at : {a : Level} {A : Set a} → ℕ → A → A × ℕ
+at n = λ x → (x , n)
+
+-- exponentation distributes over product
+^-over-× : {a b : Level} {A : Set a} {B : Set b} {f : A → A} {g : B → B}
+         → {n : ℕ} → (f ×₁ g) ^ n ≐ (f ^ n) ×₁ (g ^ n)
+^-over-× {n = ℕ.zero} = λ{ (x , y) → ≡.refl}
+^-over-× {f = f} {g} {n = suc n} = ^-over-× {n = n} ∘ (f ×₁ g)
+
+ziggy : {a : Level} {A : Set a} {n : ℕ} → at n  ≐  (id {A = A} ×₁ suc) ^ n ∘ at 0
+ziggy {n = ℕ.zero} = ≐-refl
+ziggy {A = A} {n = suc n} = begin⟨ ≐-setoid A (A × ℕ) ⟩
+   (id ×₁ suc) ∘ at n                   ≈⟨ ∘-≐-cong₂ (id ×₁ suc) ziggy ⟩
+   (id ×₁ suc) ∘ (id ×₁ suc) ^ n ∘ at 0 ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym iter-swap) ⟩
+   (id ×₁ suc) ^ n ∘ (id ×₁ suc) ∘ at 0 ∎
+  where open import Relation.Binary.SetoidReasoning
+
 -- There has to be a simpler way, but this will do
 zig′ : {a : Level} {A : Set a} (x : A) (n : ℕ) →
-  (x , n) ≡ iter (map id suc) (x , 0) n
-zig′ _ ℕ.zero = ≡.refl
-zig′ x (suc n) = ≡.sym (
-  begin
-    iter (map id suc) (map id suc (x , 0)) n ≡⟨ iter-ℕ (x , 0) n ⟩
-    map id suc (iter (map id suc) (x , 0) n) ≡⟨ ≡.cong (map id suc) (≡.sym (zig′ x n)) ⟩
-    map id suc (x , n) ≡⟨ ≡.refl ⟩
-    (x , suc n)
-  ∎)
-  where open ≡.≡-Reasoning
+  (x , n) ≡ iter (id ×₁ suc) (x , 0) n
+zig′ x n = ziggy {n = n} x
+
 
 AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record

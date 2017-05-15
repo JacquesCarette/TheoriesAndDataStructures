@@ -83,7 +83,8 @@ data Eventually {ℓ} (A : Set ℓ) : Set ℓ where
 \end{code}
 The elements of this type are of the form |stepⁿ (base a)| for |a : A|.
 
-Alternatively, |Eventually A   ≅   Σ n ∶ ℕ • A| viz |stepⁿ (base a) ↔ (n , a)|.
+Alternatively, |Eventually A   ≅   Σ n ∶ ℕ • A| viz |stepⁿ (base a) ↔ (n , a)| ---cf |Free²| below.
+Consequently, |Eventually ⊤ ≅ ℕ|.
 
 Given an unary algebra |(B, 𝒷, 𝓈)| we can interpret the terms of |Eventually A|
 where the injection |base| is reified by |𝒷| and the unary operation |step| is
@@ -108,22 +109,31 @@ indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
 
 There's gotta be a way to put these two together into a single operation...
 
-fold : E A → B
-       E B → B
+   %{{{ mapeE ; ⟦⟧-naturality
+Eventually is clearly a functor,
 
 \begin{code}
 mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
 mapE f = ⟦ base ∘ f , step ⟧
+\end{code}
 
+Whence the folding operation is natural,
+
+\begin{code}
 ⟦⟧-naturality : {a b : Level} {A : Set a} {B : Set b}
               → {𝒷′ 𝓈′ : A → A} {𝒷 𝓈 : B → B} {f : A → B}
               → (basis : 𝒷 ∘ f ≐ f ∘ 𝒷′)
               → (next  : 𝓈 ∘ f ≐ f ∘ 𝓈′)
               → ⟦ 𝒷 , 𝓈 ⟧ ∘ mapE f ≐ f ∘ ⟦ 𝒷′ , 𝓈′ ⟧
 ⟦⟧-naturality {𝓈 = 𝓈} basis next = indE (basis $ᵢ) (λ ind → ≡.trans (≡.cong 𝓈 ind) (next _))
---  
---      .
+\end{code}
+%}}}
 
+   %{{{ fromE ; iterateE ; iterateE-nat
+
+Other instances of the fold include:
+
+\begin{code}
 fromE : ∀{ℓ} {A : Set ℓ} → Eventually A → A
 fromE = ⟦ id , id ⟧ -- cf |from⊎| ;)
 
@@ -137,22 +147,40 @@ iterateE f = ⟦ id , f ⟧
 iterateE-nat : {ℓ : Level} {X Y : Unary {ℓ}} (F : Hom X Y)
               → iterateE (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateE (Op X)
 iterateE-nat F = ⟦⟧-naturality {f = mor F} ≐-refl (≡.sym ∘ pres-op F)
+\end{code}
 
-iterateE-mapE-id : ∀ {o} {X : Set o} → id {A = Eventually X} ≐ iterateE step ∘ mapE base
+%}}}
+
+   %{{{ iterateE-mapeE-id , mapE-id , mapE-∘ , mapE-cong
+
+The induction rule yields identical looking proofs for clearly distinct results:
+
+\begin{code}
+iterateE-mapE-id : {ℓ : Level} {X : Set ℓ} → id {A = Eventually X} ≐ iterateE step ∘ mapE base
 iterateE-mapE-id = indE ≡.refl (≡.cong step)
 
-mapE-id : ∀{a}  {A : Set a} → mapE (id {A = A}) ≐ id
+mapE-id : {a : Level}  {A : Set a} → mapE (id {A = A}) ≐ id
 mapE-id = indE ≡.refl (≡.cong step)
 
-mapE-∘ : ∀ {o} {X Y Z : Set o} {f : X → Y} {g : Y → Z}
+mapE-∘ : {ℓ : Level} {X Y Z : Set ℓ} {f : X → Y} {g : Y → Z}
         →  mapE (g ∘ f) ≐ mapE g ∘ mapE f
 mapE-∘ = indE ≡.refl (≡.cong step)
 
 mapE-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → mapE F ≐ mapE G
 mapE-cong eq = indE (≡.cong base ∘ eq $ᵢ) (≡.cong step)
+\end{code}
 
-Free : ∀ o → Functor (Sets o) (UnaryCat {o})
-Free o = record
+These results could be generalised to ⟦_,_⟧ if needed.
+
+%}}}
+
+   %{{{ Free ; AdjLeft
+
+That |Eventually| furnishes a set with its free unary algebra can now be realised.
+
+\begin{code}
+Free : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat {ℓ})
+Free ℓ = record
   { F₀             =   λ A → MkUnary (Eventually A) step
   ; F₁             =   λ f → MkHom (mapE f) ≐-refl
   ; identity       =   mapE-id
@@ -160,14 +188,18 @@ Free o = record
   ; F-resp-≡      =   λ F≈G → mapE-cong (λ _ → F≈G)
   }
 
-AdjLeft : ∀ o → Adjunction (Free o) (Forget o)
-AdjLeft o = record
+AdjLeft : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
+AdjLeft ℓ = record
   { unit     =   record { η = λ _ → base ; commute = λ _ → ≡.refl }
-  ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateE f) ≐-refl} ; commute = iterateE-nat }
+  ; counit   =   record { η = λ A → MkHom (iterateE (Op A)) ≐-refl ; commute = iterateE-nat }
   ; zig      =   iterateE-mapE-id
   ; zag      =   ≡.refl
   }
 \end{code}
+
+%}}}
+
+%{{{ Direct representation
 
 And now for a different way of looking at the same algebra.
 We ``mark'' a piece of data with its depth.
@@ -175,21 +207,27 @@ We ``mark'' a piece of data with its depth.
 \begin{code}
 Free² : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free² o = record
-  { F₀ = λ A → MkUnary (A × ℕ) (map id suc)
-  ; F₁ = λ f → MkHom (map f id) (λ _ → ≡.refl)
-  ; identity = ≐-refl
-  ; homomorphism = ≐-refl
-  ; F-resp-≡ = λ F≡G → λ { (x , n) → ≡.cong₂ _,_ (F≡G {x}) ≡.refl }
+  { F₀             =   λ A → MkUnary (A × ℕ) (map id suc)
+  ; F₁             =   λ f → MkHom (map f id) (λ _ → ≡.refl)
+  ; identity       =   ≐-refl
+  ; homomorphism   =   ≐-refl
+  ; F-resp-≡      =   λ F≈G → λ { (x , n) → ≡.cong₂ _,_ (F≈G {x}) ≡.refl }
   }
 
-iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
-iter f x ℕ.zero = x
-iter f x (suc n) = iter f (f x) n
+_^_ : {a : Level} {A : Set a} (f : A → A) → ℕ → (A → A)
+f ^ ℕ.zero = id
+f ^ suc n = f ^ n ∘ f
 
--- important property of iteration
+-- important property of iteration that allows it to be defined in an alternative fashion
+iter-alt : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
+iter-alt {n = ℕ.zero} = ≐-refl
+iter-alt {f = f} {n = suc n} = ∘-≐-cong₁ f iter-alt
+
+iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
+iter f x n = (f ^ n) x
+
 iter-ℕ : {o : Level} {A : Set o} {f : A → A} (a : A) (n : ℕ) → iter f (f a) n ≡ f (iter f a n)
-iter-ℕ a ℕ.zero = ≡.refl
-iter-ℕ {f = f} a (suc n) = iter-ℕ {f = f} (f a) n
+iter-ℕ {f = f} a n = iter-alt {f = f} {n = n} a
 
 -- iteration of commutable functions
 iter-comm : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ∘ g ≐ h ∘ f) →

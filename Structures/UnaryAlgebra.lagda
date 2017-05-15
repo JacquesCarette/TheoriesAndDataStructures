@@ -10,7 +10,7 @@ open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
 open import Forget
 
-open import Data.Nat using (ℕ; suc)
+open import Data.Nat using (ℕ; suc ; zero)
 open import DataProperties
 
 open import Function2
@@ -59,16 +59,16 @@ UnaryAlg = record
   ; Id-is-id  =  ≐-refl
   }
 
-UnaryCat : {ℓ : Level} → Category (lsuc ℓ) ℓ ℓ
-UnaryCat {ℓ} = oneSortedCategory ℓ UnaryAlg
+UnaryCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+UnaryCat ℓ = oneSortedCategory ℓ UnaryAlg
 
-Forget : (ℓ : Level) → Functor (UnaryCat {ℓ}) (Sets ℓ)
+Forget : (ℓ : Level) → Functor (UnaryCat ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ UnaryAlg
 \end{code}
 
 %}}}
 
-%{{{ Eventually ; 
+%{{{ Eventually ; ⟦_,_⟧ ; indE
 
 We now turn to finding a free unary algebra.
 
@@ -109,7 +109,9 @@ indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
 
 There's gotta be a way to put these two together into a single operation...
 
-   %{{{ mapeE ; ⟦⟧-naturality
+%}}}
+
+%{{{ mapeE ; ⟦⟧-naturality
 Eventually is clearly a functor,
 
 \begin{code}
@@ -129,7 +131,7 @@ Whence the folding operation is natural,
 \end{code}
 %}}}
 
-   %{{{ fromE ; iterateE ; iterateE-nat
+%{{{ fromE ; iterateE ; iterateE-nat
 
 Other instances of the fold include:
 
@@ -151,7 +153,7 @@ iterateE-nat F = ⟦⟧-naturality {f = mor F} ≐-refl (≡.sym ∘ pres-op F)
 
 %}}}
 
-   %{{{ iterateE-mapeE-id , mapE-id , mapE-∘ , mapE-cong
+%{{{ iterateE-mapeE-id , mapE-id , mapE-∘ , mapE-cong
 
 The induction rule yields identical looking proofs for clearly distinct results:
 
@@ -174,12 +176,12 @@ These results could be generalised to ⟦_,_⟧ if needed.
 
 %}}}
 
-   %{{{ Free ; AdjLeft
+%{{{ Free ; AdjLeft
 
 That |Eventually| furnishes a set with its free unary algebra can now be realised.
 
 \begin{code}
-Free : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat {ℓ})
+Free : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat ℓ)
 Free ℓ = record
   { F₀             =   λ A → MkUnary (Eventually A) step
   ; F₁             =   λ f → MkHom (mapE f) ≐-refl
@@ -199,67 +201,76 @@ AdjLeft ℓ = record
 
 %}}}
 
-%{{{ Direct representation
-
-And now for a different way of looking at the same algebra.
-We ``mark'' a piece of data with its depth.
+%{{{ Iteration and properties
 
 \begin{code}
-Free² : ∀ o → Functor (Sets o) (UnaryCat {o})
-Free² o = record
-  { F₀             =   λ A → MkUnary (A × ℕ) (id ×₁ suc)
-  ; F₁             =   λ f → MkHom (f ×₁ id) (λ _ → ≡.refl)
-  ; identity       =   ≐-refl
-  ; homomorphism   =   ≐-refl
-  ; F-resp-≡      =   λ F≈G → λ { (x , n) → ≡.cong₂ _,_ (F≈G {x}) ≡.refl }
-  }
 
 _^_ : {a : Level} {A : Set a} (f : A → A) → ℕ → (A → A)
-f ^ ℕ.zero = id
+f ^ zero = id
 f ^ suc n = f ^ n ∘ f
 
 -- important property of iteration that allows it to be defined in an alternative fashion
 iter-swap : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
-iter-swap {n = ℕ.zero} = ≐-refl
+iter-swap {n = zero} = ≐-refl
 iter-swap {f = f} {n = suc n} = ∘-≐-cong₁ f iter-swap
 
 -- iteration of commutable functions
 iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
   → (leap-frog : f ∘ g ≐ h ∘ f)
   → {n : ℕ} → h ^ n ∘ f ≐ f ∘ g ^ n
-iter-comm leap {ℕ.zero} = ≐-refl
+iter-comm leap {zero} = ≐-refl
 iter-comm {g = g} {h} leap {suc n} =    ∘-≐-cong₂ (h ^ n) (≐-sym leap) 
                                     ⟨≐≐⟩ ∘-≐-cong₁ g (iter-comm leap)
-
--- tagging operation
-at : {a : Level} {A : Set a} → ℕ → A → A × ℕ
-at n = λ x → (x , n)
 
 -- exponentation distributes over product
 ^-over-× : {a b : Level} {A : Set a} {B : Set b} {f : A → A} {g : B → B}
          → {n : ℕ} → (f ×₁ g) ^ n ≐ (f ^ n) ×₁ (g ^ n)
-^-over-× {n = ℕ.zero} = λ{ (x , y) → ≡.refl}
+^-over-× {n = zero} = λ{ (x , y) → ≡.refl}
 ^-over-× {f = f} {g} {n = suc n} = ^-over-× {n = n} ∘ (f ×₁ g)
+\end{code}
 
-ziggy : {a : Level} {A : Set a} (n : ℕ) → at n  ≐  (id {A = A} ×₁ suc) ^ n ∘ at 0
-ziggy ℕ.zero = ≐-refl
-ziggy {A = A} (suc n) = begin⟨ ≐-setoid A (A × ℕ) ⟩
-   (id ×₁ suc) ∘ at n                   ≈⟨ ∘-≐-cong₂ (id ×₁ suc) (ziggy n) ⟩
-   (id ×₁ suc) ∘ (id ×₁ suc) ^ n ∘ at 0 ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym iter-swap) ⟩
-   (id ×₁ suc) ^ n ∘ (id ×₁ suc) ∘ at 0 ∎
+%}}}
+
+%{{{ Direct representation
+
+And now for a different way of looking at the same algebra.
+We ``mark'' a piece of data with its depth.
+
+\begin{code}
+Free² : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat ℓ)
+Free² ℓ = record
+  { F₀             =   λ A → MkUnary (ℕ × A) (suc ×₁ id)
+  ; F₁             =   λ f → MkHom (id ×₁ f) (λ _ → ≡.refl)
+  ; identity       =   ≐-refl
+  ; homomorphism   =   ≐-refl
+  ; F-resp-≡      =   λ F≈G → λ { (n , x) → ≡.cong₂ _,_ ≡.refl (F≈G {x}) }
+  }
+
+-- tagging operation
+at : {a : Level} {A : Set a} → ℕ → A → ℕ × A
+at n = λ x → (n , x)
+
+ziggy : {a : Level} {A : Set a} (n : ℕ) → at n  ≐  (suc ×₁ id {A = A}) ^ n ∘ at 0
+ziggy zero = ≐-refl
+ziggy {A = A} (suc n) = begin⟨ ≐-setoid A (ℕ × A) ⟩
+   (suc ×₁ id)             ∘ at n                            ≈⟨ ∘-≐-cong₂ (suc ×₁ id) (ziggy n) ⟩
+   (suc ×₁ id)             ∘ (suc ×₁ id {A = A}) ^ n ∘ at 0  ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym iter-swap) ⟩
+   (suc ×₁ id {A = A}) ^ n ∘ (suc ×₁ id)             ∘ at 0  ∎
   where open import Relation.Binary.SetoidReasoning
 
 AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
-  { unit = record { η = λ _ → at 0 ; commute = λ _ → ≡.refl }
-  ; counit = record
-    { η = λ A → MkHom (uncurry (flip  (Op A ^_))) (uncurry (flip (λ _ → iter-swap)))
-    ; commute = λ F → uncurry (flip (λ _ → iter-comm (pres-op F)))
+  { unit        =   record { η = λ _ → at 0 ; commute = λ _ → ≡.refl }
+  ; counit      =   record
+    { η         =   λ A → MkHom (uncurry (Op A ^_)) (uncurry (λ _ → iter-swap))
+    ; commute   =   λ F → uncurry $ λ _ → iter-comm $ pres-op F
     }
-  ; zig = λ{ (x , n) → ziggy n x}
-  ; zag = ≡.refl
+  ; zig         =   uncurry ziggy
+  ; zag         =   ≡.refl
   }
 \end{code}
+
+%}}}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

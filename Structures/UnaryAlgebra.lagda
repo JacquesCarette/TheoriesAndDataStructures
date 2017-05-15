@@ -9,7 +9,7 @@ open import Categories.Agda using (Sets)
 open import Function renaming (id to idF; _∘_ to _◎_)
 
 open import Data.Nat using (ℕ; suc)
-open import Data.Product using (proj₁; proj₂)
+open import Data.Product using (Σ; proj₁; proj₂; uncurry; map)
 
 open import Equiv
 open import Forget
@@ -18,7 +18,7 @@ open import Structures.Pointed using (PointedCat; Pointed; _●_) renaming (Hom 
 
 import Relation.Binary.PropositionalEquality
 module ≡ = Relation.Binary.PropositionalEquality
-open ≡ using (_≡_)
+open ≡ using (_≡_; module ≡-Reasoning)
 
 open import Data.Product using (_×_; _,_)
 
@@ -136,30 +136,70 @@ AdjLeft o = record
 \end{code}
 
 And now for a different way of looking at the same algebra.
+We ``mark'' a piece of data with its depth.
 
 \begin{code}
 Free² : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free² o = record
-  { F₀ = λ A → MkUnary (A × ℕ) (λ { (x , n) → (x , suc n) })
-  ; F₁ = λ f → MkHom (λ { (x , n) → (f x , n) }) (λ _ → ≡.refl)
+  { F₀ = λ A → MkUnary (A × ℕ) (map idF suc)
+  ; F₁ = λ f → MkHom (map f idF) (λ _ → ≡.refl)
   ; identity = ≐-refl
   ; homomorphism = ≐-refl
   ; F-resp-≡ = λ F≡G → λ { (x , n) → ≡.cong₂ _,_ (F≡G {x}) ≡.refl }
   }
 
-iter : {o : Level} {A : Set o} (f : A → A) (n : ℕ) → A → A
-iter f ℕ.zero x = x
-iter f (suc n) x = iter f n (f x)
+iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
+iter f x ℕ.zero = x
+iter f x (suc n) = iter f (f x) n
+
+-- important property of iteration
+iter-ℕ : {o : Level} {A : Set o} {f : A → A} (a : A) (n : ℕ) → iter f (f a) n ≡ f (iter f a n)
+iter-ℕ a ℕ.zero = ≡.refl
+iter-ℕ {f = f} a (suc n) = iter-ℕ {f = f} (f a) n
+
+-- iteration of commutable functions
+iter-comm : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ◎ g ≐ h ◎ f) →
+  ∀ (b : B) (n : ℕ) → iter h (f b) n ≡ f (iter g b n)
+iter-comm eq a ℕ.zero = ≡.refl
+iter-comm {f = f} {g} {h} eq a (suc n) = 
+  begin
+    iter h (h (f a)) n ≡⟨ iter-ℕ (f a) n ⟩
+    h (iter h (f a) n) ≡⟨ ≡.cong h (iter-comm eq a n) ⟩
+    h (f (iter g a n)) ≡⟨ ≡.sym (eq (iter g a n)) ⟩
+    f (g (iter g a n)) ≡⟨ ≡.cong f (≡.sym (iter-ℕ a n))  ⟩
+    f (iter g (g a) n)
+  ∎
+  where open ≡-Reasoning
+
+×-induct : {a b c : Level} {A : Set a} {B : A → Set b} {C : Σ A B → Set c}
+  (g : (a : A) (b : B a) → C (a , b)) → ((p : Σ A B) → C p)
+×-induct g = uncurry g
+
+-- There has to be a simpler way, but this will do
+zig′ : {a : Level} {A : Set a} (x : A) (n : ℕ) →
+  (x , n) ≡ iter (map idF suc) (x , 0) n
+zig′ _ ℕ.zero = ≡.refl
+zig′ x (suc n) = ≡.sym (
+  begin
+    iter (map idF suc) (map idF suc (x , 0)) n ≡⟨ iter-ℕ (x , 0) n ⟩
+    map idF suc (iter (map idF suc) (x , 0) n) ≡⟨ ≡.cong (map idF suc) (≡.sym (zig′ x n)) ⟩
+    map idF suc (x , n) ≡⟨ ≡.refl ⟩
+    (x , suc n)
+  ∎)
+  where open ≡-Reasoning
 
 AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
   { unit = record { η = λ _ x → x , 0 ; commute = λ _ → ≡.refl }
   ; counit = record
-    { η = λ { (MkUnary A f) → MkHom (λ { (x , n) → iter f n x }) {!!} }
-    ; commute = {!!} }
-  ; zig = {!!}
+    { η = λ { (MkUnary A f) → MkHom (uncurry (iter f)) (uncurry iter-ℕ) }
+    ; commute = λ { {MkUnary X x̂} {MkUnary Y ŷ} (MkHom f pres) → 
+      uncurry (iter-comm {f = f} {x̂} {ŷ} pres) } }
+  ; zig = uncurry zig′
   ; zag = ≡.refl
   }
+  where
+    open ≡-Reasoning
 \end{code}
 
 % Quick Folding Instructions:

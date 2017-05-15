@@ -95,6 +95,8 @@ reified by |𝓈|.
 ⟦ 𝒷 , 𝓈 ⟧ (step e) = 𝓈 (⟦ 𝒷 , 𝓈 ⟧ e)
 --
 -- “The number of 𝓈teps is preserved” : ⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧
+--
+-- Essentially, ⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x
 
 indE : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
      → ({x : A} → P (base x))
@@ -106,9 +108,21 @@ indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
 
 There's gotta be a way to put these two together into a single operation...
 
+fold : E A → B
+       E B → B
+
 \begin{code}
 mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
 mapE f = ⟦ base ∘ f , step ⟧
+
+⟦⟧-naturality : {a b : Level} {A : Set a} {B : Set b}
+              → {𝒷′ 𝓈′ : A → A} {𝒷 𝓈 : B → B} {f : A → B}
+              → (basis : 𝒷 ∘ f ≐ f ∘ 𝒷′)
+              → (next  : 𝓈 ∘ f ≐ f ∘ 𝓈′)
+              → ⟦ 𝒷 , 𝓈 ⟧ ∘ mapE f ≐ f ∘ ⟦ 𝒷′ , 𝓈′ ⟧
+⟦⟧-naturality {𝓈 = 𝓈} basis next = indE (basis $ᵢ) (λ ind → ≡.trans (≡.cong 𝓈 ind) (next _))
+--  
+--      .
 
 fromE : ∀{ℓ} {A : Set ℓ} → Eventually A → A
 fromE = ⟦ id , id ⟧ -- cf |from⊎| ;)
@@ -120,21 +134,9 @@ iterateE f = ⟦ id , f ⟧
 --
 -- that is, |iterateE f (stepⁿ base x) ≈ fⁿ x|
 
-iterateE-nat : ∀ {o} {X Y : Unary {o}} (F : Hom X Y)
+iterateE-nat : {ℓ : Level} {X Y : Unary {ℓ}} (F : Hom X Y)
               → iterateE (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateE (Op X)
-iterateE-nat F (base x) = ≡.refl
-iterateE-nat {X = X} {Y = Y} F (step x) = begin
-  (iterateE (Op Y) ∘ mapE (mor F) ∘ step) x
-    ≡⟨ ≡.refl ⟩  -- definitions of mapE and then iterateE
-  (Op Y ∘ iterateE (Op Y) ∘ mapE (mor F)) x
-    ≡⟨ ≡.cong (Op Y) (iterateE-nat F x) ⟩
-  (Op Y ∘ mor F ∘ iterateE (Op X)) x
-    ≡⟨ ≡.sym (pres-op F _) ⟩ 
-  (mor F ∘ Op X ∘ iterateE (Op X)) x
-    ≡⟨ ≡.refl ⟩ -- definition of iterateE, in reverse
-  (mor F ∘ iterateE (Op X) ∘ step) x
-     ∎
-     where open ≡.≡-Reasoning {A = Carrier Y}
+iterateE-nat F = ⟦⟧-naturality {f = mor F} ≐-refl (≡.sym ∘ pres-op F)
 
 iterateE-mapE-id : ∀ {o} {X : Set o} → id {A = Eventually X} ≐ iterateE step ∘ mapE base
 iterateE-mapE-id = indE ≡.refl (≡.cong step)

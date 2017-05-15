@@ -85,15 +85,16 @@ The elements of this type are of the form |stepⁿ (base a)| for |a : A|.
 
 Alternatively, |Eventually A   ≅   Σ n ∶ ℕ • A| viz |stepⁿ (base a) ↔ (n , a)|.
 
-\begin{code}
+Given an unary algebra |(B, 𝒷, 𝓈)| we can interpret the terms of |Eventually A|
+where the injection |base| is reified by |𝒷| and the unary operation |step| is
+reified by |𝓈|.
 
--- interpretation
+\begin{code}
 ⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝒷 : A → B) (𝓈 : B → B) → Eventually A → B
 ⟦ 𝒷 , 𝓈 ⟧ (base x) = 𝒷 x
 ⟦ 𝒷 , 𝓈 ⟧ (step e) = 𝓈 (⟦ 𝒷 , 𝓈 ⟧ e)
-
-mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
-mapE f = ⟦ base ∘ f , step ⟧
+--
+-- “The number of 𝓈teps is preserved” : ⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧
 
 indE : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
      → ({x : A} → P (base x))
@@ -101,35 +102,42 @@ indE : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
      → (ev : Eventually A) → P ev
 indE {P = P} b s (base x) = b
 indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
+\end{code}
 
-fromFM : ∀{ℓ} {A : Set ℓ} → Eventually A → A
-fromFM = ⟦ id , id ⟧ -- cf |from⊎| ;)
---
+There's gotta be a way to put these two together into a single operation...
+
+\begin{code}
+mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
+mapE f = ⟦ base ∘ f , step ⟧
+
+fromE : ∀{ℓ} {A : Set ℓ} → Eventually A → A
+fromE = ⟦ id , id ⟧ -- cf |from⊎| ;)
+
 -- More generally,
---
-iterateFM : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
-iterateFM f = ⟦ id , f ⟧
---
--- that is, |iterateFM f (stepⁿ base x) ≈ fⁿ x|
 
-iterateFM-nat : ∀ {o} {X Y : Unary {o}} (F : Hom X Y)
-              → iterateFM (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateFM (Op X)
-iterateFM-nat F (base x) = ≡.refl
-iterateFM-nat {X = X} {Y = Y} F (step x) = begin
-  (iterateFM (Op Y) ∘ mapE (mor F) ∘ step) x
-    ≡⟨ ≡.refl ⟩  -- definitions of mapE and then iterateFM
-  (Op Y ∘ iterateFM (Op Y) ∘ mapE (mor F)) x
-    ≡⟨ ≡.cong (Op Y) (iterateFM-nat F x) ⟩
-  (Op Y ∘ mor F ∘ iterateFM (Op X)) x
+iterateE : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
+iterateE f = ⟦ id , f ⟧
+--
+-- that is, |iterateE f (stepⁿ base x) ≈ fⁿ x|
+
+iterateE-nat : ∀ {o} {X Y : Unary {o}} (F : Hom X Y)
+              → iterateE (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateE (Op X)
+iterateE-nat F (base x) = ≡.refl
+iterateE-nat {X = X} {Y = Y} F (step x) = begin
+  (iterateE (Op Y) ∘ mapE (mor F) ∘ step) x
+    ≡⟨ ≡.refl ⟩  -- definitions of mapE and then iterateE
+  (Op Y ∘ iterateE (Op Y) ∘ mapE (mor F)) x
+    ≡⟨ ≡.cong (Op Y) (iterateE-nat F x) ⟩
+  (Op Y ∘ mor F ∘ iterateE (Op X)) x
     ≡⟨ ≡.sym (pres-op F _) ⟩ 
-  (mor F ∘ Op X ∘ iterateFM (Op X)) x
-    ≡⟨ ≡.refl ⟩ -- definition of iterateFM, in reverse
-  (mor F ∘ iterateFM (Op X) ∘ step) x
+  (mor F ∘ Op X ∘ iterateE (Op X)) x
+    ≡⟨ ≡.refl ⟩ -- definition of iterateE, in reverse
+  (mor F ∘ iterateE (Op X) ∘ step) x
      ∎
      where open ≡.≡-Reasoning {A = Carrier Y}
 
-iterateFM-mapE-id : ∀ {o} {X : Set o} → id {A = Eventually X} ≐ iterateFM step ∘ mapE base
-iterateFM-mapE-id = indE ≡.refl (≡.cong step)
+iterateE-mapE-id : ∀ {o} {X : Set o} → id {A = Eventually X} ≐ iterateE step ∘ mapE base
+iterateE-mapE-id = indE ≡.refl (≡.cong step)
 
 mapE-id : ∀{a}  {A : Set a} → mapE (id {A = A}) ≐ id
 mapE-id = indE ≡.refl (≡.cong step)
@@ -153,8 +161,8 @@ Free o = record
 AdjLeft : ∀ o → Adjunction (Free o) (Forget o)
 AdjLeft o = record
   { unit     =   record { η = λ _ → base ; commute = λ _ → ≡.refl }
-  ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateFM f) ≐-refl} ; commute = iterateFM-nat }
-  ; zig      =   iterateFM-mapE-id
+  ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateE f) ≐-refl} ; commute = iterateE-nat }
+  ; zig      =   iterateE-mapE-id
   ; zag      =   ≡.refl
   }
 \end{code}

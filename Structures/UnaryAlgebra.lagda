@@ -3,26 +3,29 @@
 module Structures.UnaryAlgebra where
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Categories.Category using (Category; module Category)
-open import Categories.Functor using (Functor; Contravariant)
+
+open import Categories.Category   using (Category; module Category)
+open import Categories.Functor    using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-open import Function renaming (id to id)
+open import Categories.Agda       using (Sets)
+open import Forget
 
 open import Data.Nat using (ℕ; suc)
 open import Data.Product using (_×_; _,_ ; Σ; proj₁; proj₂; uncurry; map)
 
-open import Forget
 open import Function2
+open import Function
 
 open import EqualityCombinators
 \end{code}
 %}}}
 
-%{{{ Unary ; Hom
+%{{{ Unary ; Hom ; UnaryAlg ; UnaryCat ; Forget
 
 A single-sorted |Unary| algebra consists of a type along with a function on that type.
 For example, the naturals and addition-by-1 or lists and the reverse operation.
+
+Along with functions that preserve the elected operation, such algberas form a category.
 
 \begin{code}
 record Unary {ℓ} : Set (lsuc ℓ) where
@@ -41,27 +44,32 @@ record Hom {ℓ} (X Y : Unary {ℓ}) : Set ℓ where
 
 open Hom
 
-UnaryAlg : ∀ {o} → OneSortedAlg o
+UnaryAlg : {ℓ : Level} → OneSortedAlg ℓ
 UnaryAlg = record
-  { Alg = Unary
-  ; Carrier = Carrier
-  ; Hom = Hom
-  ; mor = mor
-  ; comp = λ F G → record
-    { mor      =  mor F ∘ mor G
-    ; pres-op  =  λ a → ≡.trans (≡.cong (mor F) (pres-op G a)) (pres-op F (mor G a))
+  { Alg       = Unary
+  ; Carrier   = Carrier
+  ; Hom       = Hom
+  ; mor       = mor
+  ; comp      = λ F G → record
+    { mor     =  mor F ∘ mor G
+    ; pres-op =  λ a → ≡.trans (≡.cong (mor F) (pres-op G a)) (pres-op F (mor G a))
     }
-  ; comp-is-∘     =  ≐-refl
+  ; comp-is-∘ =  ≐-refl
   ; Id        =  MkHom id ≐-refl
   ; Id-is-id  =  ≐-refl
   }
 
-UnaryCat : ∀ {ℓ} → Category _ ℓ ℓ
-UnaryCat {o} = oneSortedCategory o UnaryAlg
+UnaryCat : {ℓ : Level} → Category (lsuc ℓ) ℓ ℓ
+UnaryCat {ℓ} = oneSortedCategory ℓ UnaryAlg
 
-Forget : ∀ o → Functor (UnaryCat {o}) (Sets o)
-Forget o = mkForgetful o UnaryAlg
+Forget : (ℓ : Level) → Functor (UnaryCat {ℓ}) (Sets ℓ)
+Forget ℓ = mkForgetful ℓ UnaryAlg
+\end{code}
 
+%}}}
+
+
+\begin{code}
 -- An 'Eventually' type
 data ForeverMaybe {ℓ} (A : Set ℓ) : Set ℓ where
   base : A → ForeverMaybe A

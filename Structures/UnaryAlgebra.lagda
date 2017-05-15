@@ -68,40 +68,57 @@ Forget ℓ = mkForgetful ℓ UnaryAlg
 
 %}}}
 
+%{{{ Eventually ; 
+
+We now turn to finding a free unary algebra.
+
+Indeed, we do so by simply not ``interpreting'' the single function symbol that is required
+as part of the definition. That is, we form the ``term algebra'' over the signature for
+unary algebras.
 
 \begin{code}
--- An 'Eventually' type
-data ForeverMaybe {ℓ} (A : Set ℓ) : Set ℓ where
-  base : A → ForeverMaybe A
-  step : ForeverMaybe A → ForeverMaybe A
---
--- Elements of this type are of the form |stepⁿ (base a)| for |a : A|.
---
--- really this is the ``term algebra'' over unary signatures.
+data Eventually {ℓ} (A : Set ℓ) : Set ℓ where
+  base : A → Eventually A
+  step : Eventually A → Eventually A
+\end{code}
+The elements of this type are of the form |stepⁿ (base a)| for |a : A|.
 
-fromFM : ∀{ℓ} {A : Set ℓ} → ForeverMaybe A → A
-fromFM (base x) = x
-fromFM (step m) = fromFM m
+Alternatively, |Eventually A   ≅   Σ n ∶ ℕ • A| viz |stepⁿ (base a) ↔ (n , a)|.
+
+\begin{code}
+
+-- interpretation
+⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝒷 : A → B) (𝓈 : B → B) → Eventually A → B
+⟦ 𝒷 , 𝓈 ⟧ (base x) = 𝒷 x
+⟦ 𝒷 , 𝓈 ⟧ (step e) = 𝓈 (⟦ 𝒷 , 𝓈 ⟧ e)
+
+mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
+mapE f = ⟦ base ∘ f , step ⟧
+
+indE : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
+     → ({x : A} → P (base x))
+     → ({sofar : Eventually A} → P sofar → P (step sofar))
+     → (ev : Eventually A) → P ev
+indE {P = P} b s (base x) = b
+indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
+
+fromFM : ∀{ℓ} {A : Set ℓ} → Eventually A → A
+fromFM = ⟦ id , id ⟧ -- cf |from⊎| ;)
 --
 -- More generally,
 --
-iterateFM : ∀ {ℓ } {A : Set ℓ} (f : A → A) → ForeverMaybe A → A
-iterateFM f (base x) = x
-iterateFM f (step x) = f (iterateFM f x)
+iterateFM : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
+iterateFM f = ⟦ id , f ⟧
 --
 -- that is, |iterateFM f (stepⁿ base x) ≈ fⁿ x|
 
-fmMap : ∀{a b}{A : Set a}{B : Set b} → (A → B) → ForeverMaybe A → ForeverMaybe B
-fmMap F (base x) = base (F x)
-fmMap F (step e) = step (fmMap F e)
-
 iterateFM-nat : ∀ {o} {X Y : Unary {o}} (F : Hom X Y)
-              → iterateFM (Op Y) ∘ fmMap (mor F) ≐ mor F ∘ iterateFM (Op X)
+              → iterateFM (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateFM (Op X)
 iterateFM-nat F (base x) = ≡.refl
 iterateFM-nat {X = X} {Y = Y} F (step x) = begin
-  (iterateFM (Op Y) ∘ fmMap (mor F) ∘ step) x
-    ≡⟨ ≡.refl ⟩  -- definitions of fmMap and then iterateFM
-  (Op Y ∘ iterateFM (Op Y) ∘ fmMap (mor F)) x
+  (iterateFM (Op Y) ∘ mapE (mor F) ∘ step) x
+    ≡⟨ ≡.refl ⟩  -- definitions of mapE and then iterateFM
+  (Op Y ∘ iterateFM (Op Y) ∘ mapE (mor F)) x
     ≡⟨ ≡.cong (Op Y) (iterateFM-nat F x) ⟩
   (Op Y ∘ mor F ∘ iterateFM (Op X)) x
     ≡⟨ ≡.sym (pres-op F _) ⟩ 
@@ -111,37 +128,33 @@ iterateFM-nat {X = X} {Y = Y} F (step x) = begin
      ∎
      where open ≡.≡-Reasoning {A = Carrier Y}
 
-iterateFM-fmMap-id : ∀ {o} {X : Set o} → id {A = ForeverMaybe X} ≐ iterateFM step ∘ fmMap base
-iterateFM-fmMap-id (base x) = ≡.refl
-iterateFM-fmMap-id (step x) = ≡.cong step (iterateFM-fmMap-id x)
+iterateFM-mapE-id : ∀ {o} {X : Set o} → id {A = Eventually X} ≐ iterateFM step ∘ mapE base
+iterateFM-mapE-id = indE ≡.refl (≡.cong step)
 
-fmMap-id : ∀{a}  {A : Set a} → fmMap (id {A = A}) ≐ id
-fmMap-id (base e) = ≡.refl
-fmMap-id (step e) = ≡.cong step (fmMap-id e)
+mapE-id : ∀{a}  {A : Set a} → mapE (id {A = A}) ≐ id
+mapE-id = indE ≡.refl (≡.cong step)
 
-fmMap-∘ : ∀ {o} {X Y Z : Set o} {f : X → Y} {g : Y → Z}
-        →  fmMap (g ∘ f) ≐ fmMap g ∘ fmMap f
-fmMap-∘ (base x) = ≡.refl
-fmMap-∘ (step e) = ≡.cong step (fmMap-∘ e)
+mapE-∘ : ∀ {o} {X Y Z : Set o} {f : X → Y} {g : Y → Z}
+        →  mapE (g ∘ f) ≐ mapE g ∘ mapE f
+mapE-∘ = indE ≡.refl (≡.cong step)
 
-fmMap-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → fmMap F ≐ fmMap G
-fmMap-cong eq (base x) = ≡.cong base (eq x)
-fmMap-cong eq (step x) = ≡.cong step (fmMap-cong eq x)
+mapE-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → mapE F ≐ mapE G
+mapE-cong eq = indE (≡.cong base ∘ eq $ᵢ) (≡.cong step)
 
 Free : ∀ o → Functor (Sets o) (UnaryCat {o})
 Free o = record
-  { F₀             =   λ A → MkUnary (ForeverMaybe A) step
-  ; F₁             =   λ f → MkHom (fmMap f) ≐-refl
-  ; identity       =   fmMap-id
-  ; homomorphism   =   fmMap-∘
-  ; F-resp-≡      =   λ F≈G → fmMap-cong (λ _ → F≈G)
+  { F₀             =   λ A → MkUnary (Eventually A) step
+  ; F₁             =   λ f → MkHom (mapE f) ≐-refl
+  ; identity       =   mapE-id
+  ; homomorphism   =   mapE-∘
+  ; F-resp-≡      =   λ F≈G → mapE-cong (λ _ → F≈G)
   }
 
 AdjLeft : ∀ o → Adjunction (Free o) (Forget o)
 AdjLeft o = record
   { unit     =   record { η = λ _ → base ; commute = λ _ → ≡.refl }
   ; counit   =   record { η = λ { (MkUnary A f) → MkHom (iterateFM f) ≐-refl} ; commute = iterateFM-nat }
-  ; zig      =   iterateFM-fmMap-id
+  ; zig      =   iterateFM-mapE-id
   ; zag      =   ≡.refl
   }
 \end{code}

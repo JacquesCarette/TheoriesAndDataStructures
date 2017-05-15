@@ -1,3 +1,4 @@
+%{{{ Imports
 \begin{code}
 module Structures.UnaryAlgebra where
 
@@ -9,19 +10,16 @@ open import Categories.Agda using (Sets)
 open import Function renaming (id to idF; _∘_ to _◎_)
 
 open import Data.Nat using (ℕ; suc)
-open import Data.Product using (Σ; proj₁; proj₂; uncurry; map)
+open import Data.Product using (_×_; _,_ ; Σ; proj₁; proj₂; uncurry; map)
 
-open import Equiv
 open import Forget
 open import Function2
-open import Structures.Pointed using (PointedCat; Pointed; _●_) renaming (Hom to PHom ; MkHom to MkPHom)
 
-import Relation.Binary.PropositionalEquality
-module ≡ = Relation.Binary.PropositionalEquality
-open ≡ using (_≡_; module ≡-Reasoning)
+open import EqualityCombinators
+\end{code}
+%}}}
 
-open import Data.Product using (_×_; _,_)
-
+\begin{code}
 record Unary {ℓ} : Set (lsuc ℓ) where
   constructor MkUnary
   field
@@ -169,7 +167,7 @@ iter-comm {f = f} {g} {h} eq a (suc n) =
     f (g (iter g a n)) ≡⟨ ≡.cong f (≡.sym (iter-ℕ a n))  ⟩
     f (iter g (g a) n)
   ∎
-  where open ≡-Reasoning
+  where open ≡.≡-Reasoning
 
 ×-induct : {a b c : Level} {A : Set a} {B : A → Set b} {C : Σ A B → Set c}
   (g : (a : A) (b : B a) → C (a , b)) → ((p : Σ A B) → C p)
@@ -186,7 +184,7 @@ zig′ x (suc n) = ≡.sym (
     map idF suc (x , n) ≡⟨ ≡.refl ⟩
     (x , suc n)
   ∎)
-  where open ≡-Reasoning
+  where open ≡.≡-Reasoning
 
 AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
@@ -199,7 +197,7 @@ AdjLeft² o = record
   ; zag = ≡.refl
   }
   where
-    open ≡-Reasoning
+    open ≡.≡-Reasoning
 \end{code}
 
 % Quick Folding Instructions:

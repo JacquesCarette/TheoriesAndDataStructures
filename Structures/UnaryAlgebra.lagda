@@ -223,25 +223,24 @@ iter-alt : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f
 iter-alt {n = ℕ.zero} = ≐-refl
 iter-alt {f = f} {n = suc n} = ∘-≐-cong₁ f iter-alt
 
+-- iteration of commutable functions
+iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
+  → (leap-frog : f ∘ g ≐ h ∘ f)
+  → {n : ℕ} → h ^ n ∘ f ≐ f ∘ g ^ n
+iter-comm leap {ℕ.zero} = ≐-refl
+iter-comm {g = g} {h} leap {suc n} =    ∘-≐-cong₂ (h ^ n) (≐-sym leap) 
+                                    ⟨≐≐⟩ ∘-≐-cong₁ g (iter-comm leap)
+
 iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
 iter f x n = (f ^ n) x
 
 iter-ℕ : {o : Level} {A : Set o} {f : A → A} (a : A) (n : ℕ) → iter f (f a) n ≡ f (iter f a n)
 iter-ℕ {f = f} a n = iter-alt {f = f} {n = n} a
 
--- iteration of commutable functions
-iter-comm : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ∘ g ≐ h ∘ f) →
+iter-comm-old : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ∘ g ≐ h ∘ f) →
   ∀ (b : B) (n : ℕ) → iter h (f b) n ≡ f (iter g b n)
-iter-comm eq a ℕ.zero = ≡.refl
-iter-comm {f = f} {g} {h} eq a (suc n) = 
-  begin
-    iter h (h (f a)) n ≡⟨ iter-ℕ (f a) n ⟩
-    h (iter h (f a) n) ≡⟨ ≡.cong h (iter-comm eq a n) ⟩
-    h (f (iter g a n)) ≡⟨ ≡.sym (eq (iter g a n)) ⟩
-    f (g (iter g a n)) ≡⟨ ≡.cong f (≡.sym (iter-ℕ a n))  ⟩
-    f (iter g (g a) n)
-  ∎
-  where open ≡.≡-Reasoning
+iter-comm-old eq b n = iter-comm eq {n} b
+
 
 ×-induct : {a b c : Level} {A : Set a} {B : A → Set b} {C : Σ A B → Set c}
   (g : (a : A) (b : B a) → C (a , b)) → ((p : Σ A B) → C p)
@@ -266,7 +265,7 @@ AdjLeft² o = record
   ; counit = record
     { η = λ { (MkUnary A f) → MkHom (uncurry (iter f)) (uncurry iter-ℕ) }
     ; commute = λ { {MkUnary X x̂} {MkUnary Y ŷ} (MkHom f pres) → 
-      uncurry (iter-comm {f = f} {x̂} {ŷ} pres) } }
+      uncurry (iter-comm-old {f = f} {x̂} {ŷ} pres) } }
   ; zig = uncurry zig′
   ; zag = ≡.refl
   }

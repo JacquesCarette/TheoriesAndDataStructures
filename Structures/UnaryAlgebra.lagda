@@ -231,21 +231,7 @@ iter-comm leap {ℕ.zero} = ≐-refl
 iter-comm {g = g} {h} leap {suc n} =    ∘-≐-cong₂ (h ^ n) (≐-sym leap) 
                                     ⟨≐≐⟩ ∘-≐-cong₁ g (iter-comm leap)
 
-iter : {o : Level} {A : Set o} (f : A → A) → A → ℕ → A
-iter f x n = (f ^ n) x
-
-iter-ℕ : {o : Level} {A : Set o} {f : A → A} (a : A) (n : ℕ) → iter f (f a) n ≡ f (iter f a n)
-iter-ℕ {f = f} a n = iter-swap {f = f} {n = n} a
-
-iter-comm-old : {o : Level} {B C : Set o} {f : B → C} {g : B → B} {h : C → C} → (f ∘ g ≐ h ∘ f) →
-  ∀ (b : B) (n : ℕ) → iter h (f b) n ≡ f (iter g b n)
-iter-comm-old eq b n = iter-comm eq {n} b
-
-×-induct : {a b c : Level} {A : Set a} {B : A → Set b} {C : Σ A B → Set c}
-  (g : (a : A) (b : B a) → C (a , b)) → ((p : Σ A B) → C p)
-×-induct g = uncurry g
-
-
+-- tagging operation
 at : {a : Level} {A : Set a} → ℕ → A → A × ℕ
 at n = λ x → (x , n)
 
@@ -255,32 +241,24 @@ at n = λ x → (x , n)
 ^-over-× {n = ℕ.zero} = λ{ (x , y) → ≡.refl}
 ^-over-× {f = f} {g} {n = suc n} = ^-over-× {n = n} ∘ (f ×₁ g)
 
-ziggy : {a : Level} {A : Set a} {n : ℕ} → at n  ≐  (id {A = A} ×₁ suc) ^ n ∘ at 0
-ziggy {n = ℕ.zero} = ≐-refl
-ziggy {A = A} {n = suc n} = begin⟨ ≐-setoid A (A × ℕ) ⟩
-   (id ×₁ suc) ∘ at n                   ≈⟨ ∘-≐-cong₂ (id ×₁ suc) ziggy ⟩
+ziggy : {a : Level} {A : Set a} (n : ℕ) → at n  ≐  (id {A = A} ×₁ suc) ^ n ∘ at 0
+ziggy ℕ.zero = ≐-refl
+ziggy {A = A} (suc n) = begin⟨ ≐-setoid A (A × ℕ) ⟩
+   (id ×₁ suc) ∘ at n                   ≈⟨ ∘-≐-cong₂ (id ×₁ suc) (ziggy n) ⟩
    (id ×₁ suc) ∘ (id ×₁ suc) ^ n ∘ at 0 ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym iter-swap) ⟩
    (id ×₁ suc) ^ n ∘ (id ×₁ suc) ∘ at 0 ∎
   where open import Relation.Binary.SetoidReasoning
 
--- There has to be a simpler way, but this will do
-zig′ : {a : Level} {A : Set a} (x : A) (n : ℕ) →
-  (x , n) ≡ iter (id ×₁ suc) (x , 0) n
-zig′ x n = ziggy {n = n} x
-
-
 AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
-  { unit = record { η = λ _ x → x , 0 ; commute = λ _ → ≡.refl }
+  { unit = record { η = λ _ → at 0 ; commute = λ _ → ≡.refl }
   ; counit = record
-    { η = λ { (MkUnary A f) → MkHom (uncurry (iter f)) (uncurry iter-ℕ) }
-    ; commute = λ { {MkUnary X x̂} {MkUnary Y ŷ} (MkHom f pres) → 
-      uncurry (iter-comm-old {f = f} {x̂} {ŷ} pres) } }
-  ; zig = uncurry zig′
+    { η = λ A → MkHom (uncurry (flip  (Op A ^_))) (uncurry (flip (λ _ → iter-swap)))
+    ; commute = λ F → uncurry (flip (λ _ → iter-comm (pres-op F)))
+    }
+  ; zig = λ{ (x , n) → ziggy n x}
   ; zag = ≡.refl
   }
-  where
-    open ≡.≡-Reasoning
 \end{code}
 
 % Quick Folding Instructions:

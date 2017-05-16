@@ -15,7 +15,7 @@ open import Function2 using (_$ᵢ)
 open import Forget
 open import EqualityCombinators
 open import DataProperties
-open import Structures.TwoSorted using (TwoCat)
+open import Structures.TwoSorted using (TwoCat ; MkTwo) renaming (MkHom to MkTwoHom)
 \end{code}
 %}}}
 
@@ -47,7 +47,7 @@ open Hom
 
 %}}}
 
-%{{{ TwoCat ; Forget
+%{{{ HRelCat ; Forget
 
 \begin{code}
 HRelCat : (ℓ ℓ′ : Level) → Category (lsuc (ℓ ⊍ ℓ′)) (ℓ ⊍ ℓ′) ℓ
@@ -70,28 +70,38 @@ HRelCat ℓ ℓ′ = record
 \end{code}
 
 We can forget about the first sort or the second to arrive at our starting
-category and so we have two forgetful functors.
+category and so we have two forgetful functors. Moreover, we can simply
+forget about the relation to arrive at the two-sorted category :-)
 
-\begin{spec}
-Forget : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
-Forget ℓ = record
-  { F₀             =   TwoSorted.One
+\begin{code}
+Forget : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
+Forget ℓ ℓ′ = record
+  { F₀             =   HetroRel.One
   ; F₁             =   Hom.one
   ; identity       =   ≡.refl
   ; homomorphism   =   ≡.refl
   ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₁G x }
   }
 
-
-Forget² : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
-Forget² ℓ = record
-  { F₀             =   TwoSorted.Two
+Forget² : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
+Forget² ℓ ℓ′ = record
+  { F₀             =   HetroRel.Two
   ; F₁             =   Hom.two
   ; identity       =   ≡.refl
   ; homomorphism   =   ≡.refl
   ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₂G x }
   }
-\end{spec}
+
+-- Whence, HRelCat is a subcategory of TwoCat
+Forget³ : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (TwoCat ℓ)
+Forget³ ℓ ℓ′ = record
+  { F₀             =   λ S → MkTwo (One S) (Two S)
+  ; F₁             =   λ F → MkTwoHom (one F) (two F)
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  }
+\end{code}
 %}}}
 
 Generalised Empty and Unit, to avoid a flurry of |lift|'s.

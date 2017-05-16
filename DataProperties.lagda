@@ -4,6 +4,16 @@ I could not locate these in the standard library.
 
 Moreover, this module also re-exports (some of) the contents of |Data.Product| and |Data.Sum|.
 
+Generalised Empty and Unit, to avoid a flurry of |lift|'s.
+\begin{code}
+open import Level
+
+data ⊥ {ℓ : Level} : Set ℓ where
+
+record ⊤ {ℓ : Level} : Set ℓ where
+  constructor tt
+\end{code}
+
 %{{{ Imports
 \begin{code}
 module DataProperties where

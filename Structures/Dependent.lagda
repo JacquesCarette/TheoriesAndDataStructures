@@ -99,14 +99,6 @@ ToDo ∷ construct another forgetful functor
 
 %}}}
 
-Generalised Empty and Unit, to avoid a flurry of |lift|'s.
-\begin{code}
-data ⊥ {ℓ : Level} : Set ℓ where
-record ⊤ {ℓ : Level} : Set ℓ where
-  constructor tt
-\end{code}
-( These exist in TwoSorted; consider extracting both out to common module. )
-
 %{{{ Free and CoFree
 
 Given a type, we can pair it with the empty type or the singelton type

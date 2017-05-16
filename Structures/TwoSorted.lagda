@@ -96,13 +96,6 @@ Forget² ℓ = record
 \end{code}
 %}}}
 
-Generalised Empty and Unit, to avoid a flurry of |lift|'s.
-\begin{code}
-data ⊥ {ℓ : Level} : Set ℓ where
-record ⊤ {ℓ : Level} : Set ℓ where
-  constructor tt
-\end{code}
-
 %{{{ Free and CoFree
 
 Given a type, we can pair it with the empty type or the singelton type

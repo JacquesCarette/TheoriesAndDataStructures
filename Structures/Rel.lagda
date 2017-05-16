@@ -15,7 +15,7 @@ open import Function2 using (_$ᵢ)
 open import Forget
 open import EqualityCombinators
 open import DataProperties
-open import Structures.TwoSorted using (TwoCat ; MkTwo) renaming (MkHom to MkTwoHom)
+open import Structures.TwoSorted using (TwoSorted; TwoCat ; MkTwo) renaming (Hom to TwoHom ; MkHom to MkTwoHom)
 \end{code}
 %}}}
 
@@ -109,45 +109,88 @@ Forget³ ℓ ℓ′ = record
 Given a type, we can pair it with the empty type or the singelton type
 and so we have a free and a co-free constructions. 
 
-\begin{spec}
-Free : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
-Free ℓ = record
-  { F₀             =   λ A → MkTwo A ⊥
-  ; F₁             =   λ f → MkHom f id
+\begin{code}
+Free : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
+Free ℓ ℓ′ = record
+  { F₀             =   λ A → MkHRel A A (λ _ _ → ⊥)
+  ; F₁             =   λ f → MkHom f f id
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , (λ x → f≈g {x})
   }
 
-Cofree : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
-Cofree ℓ = record
-  { F₀             =   λ A → MkTwo A ⊤
-  ; F₁             =   λ f → MkHom f id
+Cofree : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
+Cofree ℓ ℓ′ = record
+  { F₀             =   λ A → MkHRel A A (λ _ _ → ⊤)
+  ; F₁             =   λ f → MkHom f f id
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , (λ x → f≈g {x})
   }
 
--- Dually,  ( also shorter due to eta reduction )
+-- Dually,
 
-Free² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
-Free² ℓ = record
-  { F₀             =   MkTwo ⊥
-  ; F₁             =   MkHom id
+Free² : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
+Free² ℓ ℓ′ = record
+  { F₀             =   λ A → MkHRel A ⊥ (λ{ _ ()})
+  ; F₁             =   λ f → MkHom f id (λ{ {y = ()} })
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl  
   }
 
-Cofree² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
 Cofree² ℓ = record
-  { F₀             =   MkTwo ⊤
-  ; F₁             =   MkHom id
+  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → A)
+  ; F₁             =   λ f → MkHom f id f 
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
   }
-\end{spec}
+\end{code}
+
+Note that we may form yet another free/cofree pair via
+|F₀ = λ A → MkHRel ⊥ A …| and |F₀ = λ A → MkHRel ⊤ A …|.
+
+\begin{code}
+Cofree²′ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+Cofree²′ ℓ = record
+  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → ⊤)
+  ; F₁             =   λ f → MkHom f id id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  }
+
+Free³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Free³ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊥)
+  ; F₁             =   λ F → MkHom (one F) (two F) id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
+
+
+Cofree³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Cofree³ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊤)
+  ; F₁             =   λ F → MkHom (one F) (two F) id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
+
+Cofree³′ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Cofree³′ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → One S × Two S)
+  ; F₁             =   λ F → MkHom (one F) (two F) (one F ×₁ two F)
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
+\end{code}
+
 %}}}
 
 %{{{ Left and Right adjunctions

@@ -15,6 +15,9 @@ module ≡ = Relation.Binary.PropositionalEquality
 open ≡ using (_≡_) public
 
 _⟨≡≡⟩_ = ≡.trans
+
+_⟨≡≡˘⟩_ : {a : Level} {A : Set a} {x y z : A} → x ≡ y → z ≡ y → x ≡ z
+x≈y ⟨≡≡˘⟩ z≈y = x≈y ⟨≡≡⟩ ≡.sym z≈y 
 \end{code}
 %}}}
 

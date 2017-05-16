@@ -1,3 +1,4 @@
+%{{{ Imports
 \begin{code}
 module Structures.Magma where
 
@@ -6,95 +7,125 @@ open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
-open import Function using (const) renaming (id to idF; _∘_ to _◎_)
+open import Function using (const ; id ; _∘_ ; _$_)
 open import Data.Empty
 
 open import Function2 using (_$ᵢ)
-open import Equiv
 open import Forget
 
-open import Relation.Binary.PropositionalEquality using ()
-  renaming (_≡_ to _≣_; refl to ≣-refl; sym to ≣-sym; cong to ≣-cong;
-            trans to ≣-trans; cong₂ to ≣-cong₂)
+open import EqualityCombinators
+\end{code}
+%}}}
 
------------
--- A Free Magma is a binary tree.
+%{{{ Magma ; Hom
+
+A Free Magma is a binary tree.
+\begin{code}
 
 record Magma {a} : Set (lsuc a) where
-  constructor mag
+  constructor MkMagma
   field
-    A : Set a
-    _*_ : A → A → A
-    
-record Hom {ℓ} (C D : Magma {ℓ}) : Set ℓ where
-  constructor hom
-  open Magma C renaming (_*_ to _*₁_)
-  open Magma D renaming (A to B; _*_ to _*₂_)
+    Carrier : Set a
+    Op    : Carrier → Carrier → Carrier
+
+open Magma
+bop = Magma.Op
+syntax bop M x y = x ⟨ M ⟩ y
+
+record Hom {ℓ} (X Y : Magma {ℓ}) : Set ℓ where
+  constructor MkHom
   field
-    h : A → B
-    pres-* : ∀ x y → h (x *₁ y) ≣ h x *₂ h y
+    mor          : Carrier X → Carrier Y
+    preservation : {x y : Carrier X} → mor (x ⟨ X ⟩ y) ≡ mor x ⟨ Y ⟩ mor y
 
-private
-  Alg : ∀ {ℓ} → OneSortedAlg ℓ
-  Alg = record
-          { Alg = Magma
-          ; Carrier = A
-          ; Hom = Hom
-          ; mor = h
-          ; comp = λ h₁ h₂ → hom (h h₁ ◎ h h₂) (λ x y → ≣-trans (≣-cong (h h₁) (pres-* h₂ x y)) (pres-* h₁ (h h₂ x) (h h₂ y)))
-          ; comp-is-∘ = ≐-refl
-          ; Id = hom idF (λ _ _ → ≣-refl)
-          ; Id-is-id = ≐-refl
-          }
-      where open Magma
-            open Hom
-  
-MagmaCat : ∀ o → Category _ o o
-MagmaCat o = oneSortedCategory o Alg
+open Hom
+\end{code}
 
-Forget : ∀ o → Functor (MagmaCat o) (Sets o)
-Forget o = mkForgetful o Alg
+%}}}
 
+%{{{ MagmaAlg ; MagmaCat ; Forget
+
+\begin{code}
+MagmaAlg : ∀ {ℓ} → OneSortedAlg ℓ
+MagmaAlg = record
+  { Alg         =   Magma
+  ; Carrier     =   Carrier
+  ; Hom         =   Hom
+  ; mor         =   mor
+  ; comp        =   λ F G → record
+    { mor            =   mor F ∘ mor G
+    ; preservation   =   ≡.trans (≡.cong (mor F) (preservation G)) (preservation F)
+    }
+  ; comp-is-∘   =   ≐-refl
+  ; Id          =   MkHom id ≡.refl
+  ; Id-is-id    =   ≐-refl
+  }
+   
+MagmaCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+MagmaCat ℓ = oneSortedCategory ℓ MagmaAlg
+
+Forget : (ℓ : Level) → Functor (MagmaCat ℓ) (Sets ℓ)
+Forget ℓ = mkForgetful ℓ MagmaAlg
+\end{code}
+
+%}}}
+
+%{{{ Tree ; ⟦_,_⟧ ; mapT ; indT
+
+\begin{code}
 data Tree {a : Level} (A : Set a) : Set a where
- Leaf : A → Tree A
+ Leaf   : A → Tree A
  Branch : Tree A → Tree A → Tree A
 
-map : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Tree A → Tree B
-map f (Leaf x)      = Leaf (f x)
-map f (Branch s t) = Branch (map f s) (map f t)
+⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝓁 : A → B) (𝒷 : B → B → B) → Tree A → B
+⟦ 𝓁 , 𝒷 ⟧ (Leaf x)     = 𝓁 x
+⟦ 𝓁 , 𝒷 ⟧ (Branch l r) = 𝒷 (⟦ 𝓁 , 𝒷 ⟧ l) (⟦ 𝓁 , 𝒷 ⟧ r)
 
-induct : ∀ {a c} {A : Set a} {P : Tree A → Set c}
-  → ((x : A) → P (Leaf x)) → ({t₁ t₂ : Tree A} → P t₁ → P t₂ → P (Branch t₁ t₂))
+mapT : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Tree A → Tree B
+mapT f = ⟦ Leaf ∘ f , Branch ⟧  -- cf UnaryAlgebra's map for |Eventually|
+
+indT : ∀ {a c} {A : Set a} {P : Tree A → Set c}
+  → (base : {x : A} → P (Leaf x))
+  → (ind : {l r : Tree A} → P l → P r → P (Branch l r))
   → (t : Tree A) → P t
-induct         f g (Leaf x)     = f x
-induct {P = P} f g (Branch s t) = g (induct {P = P} f g s) (induct {P = P} f g t)
+indT         base ind (Leaf x    ) = base
+indT {P = P} base ind (Branch l r) = ind (indT {P = P} base ind l) (indT {P = P} base ind r)
+\end{code}
 
-fold : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) (g : B → B → B) → Tree A → B
-fold f g (Leaf x)      = f x
-fold f g (Branch s t) = g (fold f g s) (fold f g t)
+%}}}
 
-TreeF : ∀ o → Functor (Sets o) (MagmaCat o)
-TreeF o = record
-  { F₀ = λ A → mag (Tree A) Branch
-  ; F₁ = λ f → hom (map f) (λ _ _ → ≣-refl)
-  ; identity = induct ≐-refl (≣-cong₂ Branch)
-  ; homomorphism = induct ≐-refl (≣-cong₂ Branch)
-  ; F-resp-≡ = λ F≡G → induct (λ _ → ≣-cong Leaf F≡G) (≣-cong₂ Branch)
+%{{{ TreeF ; TreeLeft
+
+\begin{code}
+TreeF : (ℓ : Level) → Functor (Sets ℓ) (MagmaCat ℓ)
+TreeF ℓ = record
+  { F₀             =   λ A → MkMagma(Tree A) Branch
+  ; F₁             =   λ f → MkHom (mapT f) ≡.refl
+  ; identity       =   indT ≡.refl (≡.cong₂ Branch)
+  ; homomorphism   =   indT ≡.refl (≡.cong₂ Branch)
+  ; F-resp-≡      =   λ F≈G → indT (≡.cong Leaf F≈G) (≡.cong₂ Branch)
   }
 
-TreeLeft : ∀ o → Adjunction (TreeF o) (Forget o)
-TreeLeft o = record
-  { unit = record { η = λ _ → Leaf ; commute = λ _ → ≣-refl }
-  ; counit = record { η = λ { (mag _ _+_) → hom (fold idF _+_) (λ _ _ → ≣-refl) }
-                    ; commute = λ { {mag _ _*₁_} {mag _ _*₂_} (hom f pres-*) →
-                        induct ≐-refl (λ {t₁} {t₂} p₁ p₂ → ≣-trans (≣-cong₂ _*₂_ p₁ p₂) (≣-sym (pres-* (fold idF _*₁_ t₁)  (fold idF _*₁_ t₂)))) } }
-  ; zig = induct ≐-refl (≣-cong₂ Branch)
-  ; zag = ≣-refl }
+TreeLeft : (ℓ : Level) → Adjunction (TreeF ℓ) (Forget ℓ)
+TreeLeft ℓ = record
+  { unit    =  record { η = λ _ → Leaf ; commute = λ _ → ≡.refl }
+  ; counit  =  record
+    { η        =  λ A → MkHom ⟦ id , Op A ⟧ ≡.refl
+    ; commute  =  λ {_} {Y} F → indT ≡.refl $ λ pf₁ pf₂ → ≡.cong₂ (Op Y) pf₁ pf₂ ⟨≡≡˘⟩ preservation F
+    } 
+  ; zig   =   indT ≡.refl (≡.cong₂ Branch)
+  ; zag   =   ≡.refl
+  }
+\end{code}
+
 
 -- Looks like there is no right adjoint, because its binary constructor would have to anticipate
 -- all magma _*_, so that "singleton (x * y)" has to be the same as "Binary x y".
 
-\end{code}
+How does this relate to the notion of ``co-trees'' ---infinitely long trees?
+─similar to the lists vs streams view.
+
+%}}}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

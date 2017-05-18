@@ -37,4 +37,4 @@ MonoidCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
 MonoidCat = {!!}
 
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget ℓ = ?
+Forget ℓ = {!!}

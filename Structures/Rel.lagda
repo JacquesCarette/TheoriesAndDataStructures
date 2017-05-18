@@ -239,7 +239,17 @@ Right′ ℓ  = record
   ; zig      =   ≡.refl
   ; zag      =   ≐-refl , λ{ tt → ≡.refl}
   }
+\end{code}
 
+But wait, adjoints are necessarily unique, up to isomorphism, whence
+|Cofree² ≅ Cofree²′|.
+Intuitively, the relation part is a ``subset'' of the given carriers
+and when one of the carriers is a singleton then the largest relation
+is the universal relation which can be seen as either the first non-singleton carrier
+or the ``always-true'' relation which happens to be formalized by ignoring its arguments
+and going to a singleton set.
+
+\begin{code}
 -- Dually,
 
 Free²² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)

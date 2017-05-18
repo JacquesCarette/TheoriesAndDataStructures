@@ -67,6 +67,8 @@ Forget ℓ = mkForgetful ℓ SGAlg
 \end{code}
 %}}}
 
+%{{{ List₁ ; _++_ ; ⟦_,_⟧ ; mapNE ; list₁ ; indNE
+
 The non-empty lists constitute a free semigroup algebra.
 
 They can be presented as |X × List X| or via
@@ -121,23 +123,26 @@ list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
         ⟦⟧-over-++ {x ∷ xs} = ≡.cong (Op S (f x)) ⟦⟧-over-++ ⟨≡≡⟩ assoc S
 \end{code}
 
-mapNE : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → NEList A → NEList B
-mapNE f (x , l) = (f x) , map f l
+In particular, the map operation over lists is:
 
-{-
-induct : ∀ {a c} {A : Set a} {P : Tree A → Set c}
-  → ((x : A) → P (Leaf x)) → ({t₁ t₂ : Tree A} → P t₁ → P t₂ → P (Branch t₁ t₂))
-  → (t : Tree A) → P t
-induct         f g (Leaf x)     = f x
-induct {P = P} f g (Branch s t) = g (induct {P = P} f g s) (induct {P = P} f g t)
+\begin{code}
+mapNE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → List₁ A → List₁ B
+mapNE f = ⟦ [_] ∘ f , _++_ ⟧
+\end{code}
 
-fold : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) (g : B → B → B) → Tree A → B
-fold f g (Leaf x)      = f x
-fold f g (Branch s t) = g (fold f g s) (fold f g t)
--}
+At the dependent level, we have the induction principle,
 
-concat : ∀ {a} {A : Set a} → NEList A → NEList A → NEList A
-concat (x₀ , l₀) (x₁ , l₁) = (x₀ , l₀ ++ (x₁ ∷ l₁))
+\begin{code}
+indNE : {a b : Level} {A : Set a} {P : List₁ A → Set b}
+      → (base : {x : A} → P [ x ])
+      → (ind  : {x : A} {xs : List₁ A} → P [ x ] → P xs → P (x ∷ xs))
+      → {xs : List₁ A} → P xs
+indNE {P = P} base ind {[ x ]} = base
+indNE {P = P} base ind {x ∷ xs} = ind {x} {xs} (base {x}) (indNE {P = P} base ind {xs})
+\end{code}
+
+%}}}
+
 
 Free : ∀ o → Functor (Sets o) (SemigroupCat o)
 Free o = record

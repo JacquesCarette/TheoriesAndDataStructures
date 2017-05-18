@@ -136,26 +136,44 @@ At the dependent level, we have the induction principle,
 indNE : {a b : Level} {A : Set a} {P : List₁ A → Set b}
       → (base : {x : A} → P [ x ])
       → (ind  : {x : A} {xs : List₁ A} → P [ x ] → P xs → P (x ∷ xs))
-      → {xs : List₁ A} → P xs
-indNE {P = P} base ind {[ x ]} = base
-indNE {P = P} base ind {x ∷ xs} = ind {x} {xs} (base {x}) (indNE {P = P} base ind {xs})
+      → (xs : List₁ A) → P xs
+indNE {P = P} base ind [ x ] = base
+indNE {P = P} base ind (x ∷ xs) = ind {x} {xs} (base {x}) (indNE {P = P} base ind xs)
+\end{code}
+
+For example, map preserves identity:
+
+\begin{code}
+map-id : {a : Level} {A : Set a} → mapNE id ≐ id {A = List₁ A}
+map-id = indNE {P = λ xs → mapNE id xs ≡ xs} ≡.refl (λ {x} {xs} refl ind → ≡.cong (x ∷_) ind)
+
+map-∘ : {ℓ : Level} {A B C : Set ℓ} {f : A → B} {g : B → C}
+        → mapNE (g ∘ f) ≐ mapNE g ∘ mapNE f
+map-∘ {f = f} {g} = indNE {P = λ xs → mapNE (g ∘ f) xs ≡ mapNE g (mapNE f xs)}
+                               ≡.refl (λ {x} {xs} refl ind → ≡.cong ((g (f x)) ∷_) ind)
+
+map-cong : {ℓ : Level} {A B : Set ℓ} {f g : A → B}
+  → f ≐ g → mapNE f ≐ mapNE g
+map-cong {f = f} {g} f≐g = indNE {P = λ xs → mapNE f xs ≡ mapNE g xs}
+                                 (≡.cong [_] (f≐g _))
+                                 (λ {x} {xs} refl ind → ≡.cong₂ _∷_ (f≐g x) ind)
 \end{code}
 
 %}}}
 
-
-Free : ∀ o → Functor (Sets o) (SemigroupCat o)
-Free o = record
-  { F₀ = λ A → MkSG (NEList A) concat {!!}
-  ; F₁ = λ f → MkHom (mapNE f) {!!}
-  ; identity = {!!}
-  ; homomorphism = {!!}
-  ; F-resp-≡ = λ F≡G → {!!}
+\begin{code}
+Free : (ℓ : Level) → Functor (Sets ℓ) (SemigroupCat ℓ)
+Free ℓ = record
+  { F₀             =   List₁SG
+  ; F₁             =   λ f → list₁ ([_] ∘ f)
+  ; identity       =   map-id
+  ; homomorphism   =   map-∘
+  ; F-resp-≡      =   λ F≈G → map-cong (λ x → F≈G {x})
   }
 
 TreeLeft : ∀ o → Adjunction (Free o) (Forget o)
 TreeLeft o = record
-  { unit   = record { η = λ _ x → x , [] ; commute = λ _ → ≡.refl }
+  { unit   = record { η = {!!} ; commute = λ _ → ≡.refl }
   ; counit = record { η = λ {(MkSG Carrier _*_ _) → MkHom {!!} {!!}} ; commute = {!!} }
   ; zig = {!!}
   ; zag = {!!} }

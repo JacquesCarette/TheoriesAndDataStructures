@@ -199,6 +199,7 @@ Now for the actual proofs that the |Free| and |Cofree| functors
 are deserving of their names.
 
 \begin{code}
+-- | (MkRel X ⊥ ⊥ ⟶ Alg) ≅ (X ⟶ One Alg)|
 Left : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget ℓ ℓ′)
 Left ℓ ℓ′ = record
   { unit   = record
@@ -213,10 +214,25 @@ Left ℓ ℓ′ = record
   ; zag = ≡.refl
   }
 
+-- | (One Alg ⟶ X) ≅ (Alg ⟶ MkRel X ⊤ (λ _ _ → X)|
 Right :  (ℓ : Level) → Adjunction (Forget ℓ ℓ) (Cofree² ℓ)
 Right ℓ  = record
   { unit = record
     { η = λ _ → MkHom id (λ _ → tt) (λ {x} {y} _ → x)
+    ; commute = λ _ → ≐-refl , (λ x → ≡.refl)
+    }
+  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
+  ; zig      =   ≡.refl
+  ; zag      =   ≐-refl , λ{ tt → ≡.refl}
+  }
+
+-- Another cofree functor:
+--
+-- | (One Alg ⟶ X) ≅ (Alg ⟶ MkRel X ⊤ (λ _ _ → ⊤)|
+Right′ :  (ℓ : Level) → Adjunction (Forget ℓ ℓ) (Cofree²′ ℓ)
+Right′ ℓ  = record
+  { unit = record
+    { η = λ _ → MkHom id (λ _ → tt) (λ {x} {y} _ → tt)
     ; commute = λ _ → ≐-refl , (λ x → ≡.refl)
     }
   ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
@@ -235,6 +251,7 @@ Free²² ℓ = record
   ; F-resp-≡      =   λ F≈G → ≐-refl , (λ x → F≈G {x})
   }
 
+-- | (MkRel ⊥ X ⊥ ⟶ Alg) ≅ (X ⟶ Two Alg)|
 Left² : (ℓ : Level) → Adjunction (Free²² ℓ) (Forget² ℓ ℓ)
 Left² ℓ = record
   { unit   = record

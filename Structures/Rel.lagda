@@ -212,17 +212,19 @@ Left ℓ ℓ′ = record
   ; zig = ≐-refl , (λ ())
   ; zag = ≡.refl
   }
-\end{code}
-Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
-Right ℓ = record
+
+Right :  (ℓ : Level) → Adjunction (Forget ℓ ℓ) (Cofree² ℓ)
+Right ℓ  = record
   { unit = record
-    { η = λ _ → MkHom id (λ _ → tt) 
-    ; commute = λ _ → ≐-refl , ≐-refl
+    { η = λ _ → MkHom id (λ _ → tt) (λ {x} {y} _ → x)
+    ; commute = λ _ → ≐-refl , (λ x → ≡.refl)
     }
   ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
   ; zig      =   ≡.refl
-  ; zag      =   ≐-refl , λ {tt → ≡.refl }
+  ; zag      =   ≐-refl , λ{ tt → ≡.refl}
   }
+
+\end{code}
 
 -- Dually,
 

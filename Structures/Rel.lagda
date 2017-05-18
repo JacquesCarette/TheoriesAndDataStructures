@@ -276,6 +276,31 @@ Left² ℓ = record
   ; zag = ≡.refl
   }
 
+CoFree²² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree²² ℓ = record
+  { F₀             =   λ A → MkHRel ⊤ A (λ _ _ → ⊤)
+  ; F₁             =   λ f → MkHom id f id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ F≈G → ≐-refl , (λ x → F≈G {x})
+  }
+
+-- |(Two Alg ⟶ X) ≅ (Alg ⟶ ⊤ X ⊤|
+Right² : (ℓ : Level) → Adjunction (Forget² ℓ ℓ) (CoFree²² ℓ)
+Right² ℓ = record
+  { unit   = record
+    { η       = λ _ → MkHom (λ _ → tt) id (λ _ → tt)
+    ; commute = λ f → ≐-refl , ≐-refl
+    }
+  ; counit = record
+    { η       = λ _ → id
+    ; commute = λ _ →  ≡.refl
+    }
+  ; zig = ≡.refl
+  ; zag = (λ{ tt → ≡.refl}) , ≐-refl
+  }
+
+
 \end{code}
 
 Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)

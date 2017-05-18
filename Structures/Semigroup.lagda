@@ -104,11 +104,22 @@ We can interpret the syntax of a |List₁| in any semigroup provided we have
 a function between the carriers. That is to say, a function of sets is freely
 lifted to a homomorphism of semigroups.
 
+\begin{code}
+⟦_,_⟧ : {ℓ ℓ′ : Level} {X : Set ℓ} {Y : Set ℓ′}
+    → (wrap : X → Y)
+    → (op   : Y → Y → Y)
+    → (List₁ X → Y)
+⟦ 𝔀 , _𝓸_ ⟧ [ x ]     =  𝔀 x
+⟦ 𝔀 , _𝓸_ ⟧ (x ∷ xs)  =  (𝔀 x)  𝓸  (⟦ 𝔀 , _𝓸_ ⟧ xs)
 
-list₁ : {a b : Level} {X : Set a} {S : Semigroup {b} }
-     →  (X → Carrier S)  →  Hom (List₁ X) S
-list₁ f = ?
-
+list₁ : {ℓ : Level} {X : Set ℓ} {S : Semigroup {ℓ} }
+     →  (X → Carrier S)  →  Hom (List₁SG X) S
+list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
+  where 𝒽  = ⟦ f , Op S ⟧
+        ⟦⟧-over-++ : {xs ys : List₁ X} → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)
+        ⟦⟧-over-++ {[ x ]}  = ≡.refl
+        ⟦⟧-over-++ {x ∷ xs} = ≡.cong (Op S (f x)) ⟦⟧-over-++ ⟨≡≡⟩ assoc S
+\end{code}
 
 mapNE : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → NEList A → NEList B
 mapNE f (x , l) = (f x) , map f l

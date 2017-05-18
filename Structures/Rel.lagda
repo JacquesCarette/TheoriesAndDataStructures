@@ -327,6 +327,33 @@ Left³ ℓ = record
   }
 \end{code}
 
+\begin{code}
+CoFree³³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+CoFree³³ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊤)
+  ; F₁             =   λ f → MkHom (one f) (two f) id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
+
+-- |(MkTwo X Y → Alg without Rel) ≅ (MkRel X Y ⊥ ⟶ Alg)|
+Right³ : (ℓ : Level) → Adjunction (Forget³ ℓ ℓ) (CoFree³³ ℓ)
+Right³ ℓ = record
+  { unit   = record
+    { η       = λ A → MkHom id id (λ _ → tt)
+    ; commute = λ F → ≐-refl , ≐-refl
+    }
+  ; counit = record
+    { η       = λ A → MkTwoHom id id
+    ; commute = λ F →  ≐-refl , ≐-refl
+    }
+  ; zig = ≐-refl , ≐-refl
+  ; zag = ≐-refl , ≐-refl
+  }
+\end{code}
+
+
 Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)
 Left² ℓ ℓ′ = record
   { unit   = record

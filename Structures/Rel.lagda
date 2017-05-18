@@ -47,7 +47,7 @@ open Hom
 
 %}}}
 
-%{{{ HRelCat ; Forget
+%{{{ HRelCat
 
 \begin{code}
 HRelCat : (ℓ ℓ′ : Level) → Category (lsuc (ℓ ⊍ ℓ′)) (ℓ ⊍ ℓ′) ℓ
@@ -68,14 +68,17 @@ HRelCat ℓ ℓ′ = record
   ; ∘-resp-≡ = λ{ (g≈₁k , g≈₂k) (f≈₁h , f≈₂h) → ∘-resp-≐ g≈₁k f≈₁h , ∘-resp-≐ g≈₂k f≈₂h }
   }
 \end{code}
+%}}}
+
+%{{{ Forget¹ ; Forget² ; Forget³
 
 We can forget about the first sort or the second to arrive at our starting
 category and so we have two forgetful functors. Moreover, we can simply
 forget about the relation to arrive at the two-sorted category :-)
 
 \begin{code}
-Forget : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
-Forget ℓ ℓ′ = record
+Forget¹ : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
+Forget¹ ℓ ℓ′ = record
   { F₀             =   HetroRel.One
   ; F₁             =   Hom.one
   ; identity       =   ≡.refl
@@ -104,15 +107,19 @@ Forget³ ℓ ℓ′ = record
 \end{code}
 %}}}
 
-%{{{ Free and CoFree
+%{{{ Free and CoFree : 1,2,3 and 3′
 
-Given a type, we can pair it with the empty type or the singelton type
-and so we have a free and a co-free constructions. 
+Given a (two)type, we can pair it with the empty type or the singleton type
+and so we have a free and a co-free constructions. Intuitively, the empty
+type denotes the empty relation which is the smallest relation and so a free
+construction; whereas, the singleton type denotes the ``always true'' relation
+which is the largest binary relation and so a cofree construction.
+
+   %{{{ adjoints to forgetting the FIRST component of a HetroRel
 
 \begin{code}
-
-Free² : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
-Free² ℓ ℓ′ = record
+Free¹ : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
+Free¹ ℓ ℓ′ = record
   { F₀             =   λ A → MkHRel A ⊥ (λ{ _ ()})
   ; F₁             =   λ f → MkHom f id (λ{ {y = ()} })
   ; identity       =   ≐-refl , ≐-refl
@@ -120,38 +127,9 @@ Free² ℓ ℓ′ = record
   ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl  
   }
 
-Cofree² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
-Cofree² ℓ = record
-  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → A)
-  ; F₁             =   λ f → MkHom f id f 
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
-  }
-\end{code}
-
-\begin{code}
-Cofree²′ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
-Cofree²′ ℓ = record
-  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → ⊤)
-  ; F₁             =   λ f → MkHom f id id
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
-  }
-\end{code}
-
-%}}}
-
-%{{{ Left and Right adjunctions
-
-Now for the actual proofs that the |Free| and |Cofree| functors
-are deserving of their names.
-
-\begin{code}
 -- | (MkRel X ⊥ ⊥ ⟶ Alg) ≅ (X ⟶ One Alg)|
-Left : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget ℓ ℓ′)
-Left ℓ ℓ′ = record
+Left¹ : (ℓ ℓ′ : Level) → Adjunction (Free¹ ℓ ℓ′) (Forget¹ ℓ ℓ′)
+Left¹ ℓ ℓ′ = record
   { unit   = record
     { η       = λ _ → id
     ; commute = λ _ → ≡.refl
@@ -164,9 +142,18 @@ Left ℓ ℓ′ = record
   ; zag = ≡.refl
   }
 
+CoFree¹ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree¹ ℓ = record
+  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → A)
+  ; F₁             =   λ f → MkHom f id f 
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  }
+
 -- | (One Alg ⟶ X) ≅ (Alg ⟶ MkRel X ⊤ (λ _ _ → X)|
-Right :  (ℓ : Level) → Adjunction (Forget ℓ ℓ) (Cofree² ℓ)
-Right ℓ  = record
+Right¹ :  (ℓ : Level) → Adjunction (Forget¹ ℓ ℓ) (CoFree¹ ℓ)
+Right¹ ℓ  = record
   { unit = record
     { η = λ _ → MkHom id (λ _ → tt) (λ {x} {y} _ → x)
     ; commute = λ _ → ≐-refl , (λ x → ≡.refl)
@@ -177,10 +164,19 @@ Right ℓ  = record
   }
 
 -- Another cofree functor:
---
+
+CoFree¹′ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree¹′ ℓ = record
+  { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → ⊤)
+  ; F₁             =   λ f → MkHom f id id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
+  }
+
 -- | (One Alg ⟶ X) ≅ (Alg ⟶ MkRel X ⊤ (λ _ _ → ⊤)|
-Right′ :  (ℓ : Level) → Adjunction (Forget ℓ ℓ) (Cofree²′ ℓ)
-Right′ ℓ  = record
+Right¹′ :  (ℓ : Level) → Adjunction (Forget¹ ℓ ℓ) (CoFree¹′ ℓ)
+Right¹′ ℓ  = record
   { unit = record
     { η = λ _ → MkHom id (λ _ → tt) (λ {x} {y} _ → tt)
     ; commute = λ _ → ≐-refl , (λ x → ≡.refl)
@@ -192,18 +188,19 @@ Right′ ℓ  = record
 \end{code}
 
 But wait, adjoints are necessarily unique, up to isomorphism, whence
-|Cofree² ≅ Cofree²′|.
+|CoFree¹ ≅ Cofree¹′|.
 Intuitively, the relation part is a ``subset'' of the given carriers
 and when one of the carriers is a singleton then the largest relation
 is the universal relation which can be seen as either the first non-singleton carrier
 or the ``always-true'' relation which happens to be formalized by ignoring its arguments
 and going to a singleton set.
 
-\begin{code}
--- Dually,
+%}}}
 
-Free²² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
-Free²² ℓ = record
+   %{{{ adjoints to forgetting the SECOND component of a HetroRel
+\begin{code}
+Free² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+Free² ℓ = record
   { F₀             =   λ A → MkHRel ⊥ A (λ ())
   ; F₁             =   λ f → MkHom id f (λ {})
   ; identity       =   ≐-refl , ≐-refl
@@ -212,7 +209,7 @@ Free²² ℓ = record
   }
 
 -- | (MkRel ⊥ X ⊥ ⟶ Alg) ≅ (X ⟶ Two Alg)|
-Left² : (ℓ : Level) → Adjunction (Free²² ℓ) (Forget² ℓ ℓ)
+Left² : (ℓ : Level) → Adjunction (Free² ℓ) (Forget² ℓ ℓ)
 Left² ℓ = record
   { unit   = record
     { η       = λ _ → id
@@ -226,8 +223,8 @@ Left² ℓ = record
   ; zag = ≡.refl
   }
 
-CoFree²² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
-CoFree²² ℓ = record
+CoFree² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree² ℓ = record
   { F₀             =   λ A → MkHRel ⊤ A (λ _ _ → ⊤)
   ; F₁             =   λ f → MkHom id f id
   ; identity       =   ≐-refl , ≐-refl
@@ -236,7 +233,7 @@ CoFree²² ℓ = record
   }
 
 -- |(Two Alg ⟶ X) ≅ (Alg ⟶ ⊤ X ⊤|
-Right² : (ℓ : Level) → Adjunction (Forget² ℓ ℓ) (CoFree²² ℓ)
+Right² : (ℓ : Level) → Adjunction (Forget² ℓ ℓ) (CoFree² ℓ)
 Right² ℓ = record
   { unit   = record
     { η       = λ _ → MkHom (λ _ → tt) id (λ _ → tt)
@@ -251,9 +248,12 @@ Right² ℓ = record
   }
 \end{code}
 
+%}}}
+
+   %{{{ adjoints to forgetting the THIRD component of a HetroRel
 \begin{code}
-Free³³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
-Free³³ ℓ = record
+Free³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Free³ ℓ = record
   { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊥)
   ; F₁             =   λ f → MkHom (one f) (two f) id
   ; identity       =   ≐-refl , ≐-refl
@@ -262,7 +262,7 @@ Free³³ ℓ = record
   } where open TwoSorted ; open TwoHom
 
 -- |(MkTwo X Y → Alg without Rel) ≅ (MkRel X Y ⊥ ⟶ Alg)|
-Left³ : (ℓ : Level) → Adjunction (Free³³ ℓ) (Forget³ ℓ ℓ)
+Left³ : (ℓ : Level) → Adjunction (Free³ ℓ) (Forget³ ℓ ℓ)
 Left³ ℓ = record
   { unit   = record
     { η       = λ A → MkTwoHom id id
@@ -278,8 +278,8 @@ Left³ ℓ = record
 \end{code}
 
 \begin{code}
-CoFree³³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
-CoFree³³ ℓ = record
+CoFree³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+CoFree³ ℓ = record
   { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊤)
   ; F₁             =   λ f → MkHom (one f) (two f) id
   ; identity       =   ≐-refl , ≐-refl
@@ -288,7 +288,7 @@ CoFree³³ ℓ = record
   } where open TwoSorted ; open TwoHom
 
 -- |(Alg without Rel ⟶ MkTwo X Y) ≅ (Alg ⟶ MkRel X Y ⊤)|
-Right³ : (ℓ : Level) → Adjunction (Forget³ ℓ ℓ) (CoFree³³ ℓ)
+Right³ : (ℓ : Level) → Adjunction (Forget³ ℓ ℓ) (CoFree³ ℓ)
 Right³ ℓ = record
   { unit   = record
     { η       = λ A → MkHom id id (λ _ → tt)
@@ -333,6 +333,8 @@ Intuitively, the relation part is a ``subset'' of the given carriers
 and so the largest relation is the universal relation which can be seen as the product of the carriers
 or the ``always-true'' relation which happens to be formalized by ignoring its arguments
 and going to a singleton set.
+%}}}
+
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction

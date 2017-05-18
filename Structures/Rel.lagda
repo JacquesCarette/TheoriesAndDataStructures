@@ -110,25 +110,6 @@ Given a type, we can pair it with the empty type or the singelton type
 and so we have a free and a co-free constructions. 
 
 \begin{code}
-Free : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
-Free ℓ ℓ′ = record
-  { F₀             =   λ A → MkHRel A A (λ _ _ → ⊥)
-  ; F₁             =   λ f → MkHom f f id
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , (λ x → f≈g {x})
-  }
-
-Cofree : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
-Cofree ℓ ℓ′ = record
-  { F₀             =   λ A → MkHRel A A (λ _ _ → ⊤)
-  ; F₁             =   λ f → MkHom f f id
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , (λ x → f≈g {x})
-  }
-
--- Dually,
 
 Free² : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
 Free² ℓ ℓ′ = record
@@ -149,9 +130,6 @@ Cofree² ℓ = record
   }
 \end{code}
 
-Note that we may form yet another free/cofree pair via
-|F₀ = λ A → MkHRel ⊥ A …| and |F₀ = λ A → MkHRel ⊤ A …|.
-
 \begin{code}
 Cofree²′ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
 Cofree²′ ℓ = record
@@ -161,25 +139,6 @@ Cofree²′ ℓ = record
   ; homomorphism   =   ≐-refl , ≐-refl
   ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
   }
-
-Free³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
-Free³ ℓ = record
-  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊥)
-  ; F₁             =   λ F → MkHom (one F) (two F) id
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   id
-  } where open TwoSorted ; open TwoHom
-
-
-Cofree³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
-Cofree³ ℓ = record
-  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊤)
-  ; F₁             =   λ F → MkHom (one F) (two F) id
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   id
-  } where open TwoSorted ; open TwoHom
 \end{code}
 
 %}}}
@@ -374,22 +333,6 @@ Intuitively, the relation part is a ``subset'' of the given carriers
 and so the largest relation is the universal relation which can be seen as the product of the carriers
 or the ``always-true'' relation which happens to be formalized by ignoring its arguments
 and going to a singleton set.
-
-
-
-Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)
-Left² ℓ ℓ′ = record
-  { unit   = record
-    { η       = λ ? → {!!}
-    ; commute = {!!}
-    }
-  ; counit = record
-    { η       = λ A → ?
-    ; commute = λ f →  {!!}
-    }
-  ; zig = {!!}
-  ; zag = {!!}
-  }
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction

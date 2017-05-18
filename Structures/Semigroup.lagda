@@ -11,7 +11,6 @@ open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
 open import Function              using (const ; id ; _∘_)
 open import Data.Product          using (_×_; _,_)
-open import Data.List             using (List; map; []; _∷_; _++_)
 
 open import Function2 using (_$ᵢ)
 open import EqualityCombinators
@@ -68,9 +67,48 @@ Forget ℓ = mkForgetful ℓ SGAlg
 \end{code}
 %}}}
 
+The non-empty lists constitute a free semigroup algebra.
+
+They can be presented as |X × List X| or via
+|Σ n ∶ ℕ • Σ xs : Vec n X • n ≢ 0|. A more direct presentation would be:
+
 \begin{code}
-NEList : {a : Level} → Set a → Set a
-NEList A = A × List A
+data List₁ {ℓ : Level} (X : Set ℓ) : Set ℓ where
+  [_]  : X → List₁ X
+  _∷_  : X → List₁ X → List₁ X
+\end{code}
+
+One would expect the second constructor to be an binary operator
+that we would somehow (setoids!) cox into being associative. However, were
+we to use an operator, then we would lose canonocity. ( Why is it important? )
+
+In some sense, by choosing this particular typing, we are insisting that
+the operation is right associative.
+
+This is indeed a semigroup,
+\begin{code}
+_++_ : {ℓ : Level} {X : Set ℓ} → List₁ X → List₁ X → List₁ X
+[ x ] ++ ys    = x ∷ ys
+(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+
+++-assoc : {ℓ : Level} {X : Set ℓ} {xs ys zs : List₁ X}
+         → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
+++-assoc {xs = [ x ]}   =  ≡.refl
+++-assoc {xs = x ∷ xs}  =  ≡.cong (x ∷_) ++-assoc         
+
+List₁SG : {ℓ : Level} (X : Set ℓ) → Semigroup {ℓ}
+List₁SG X = MkSG (List₁ X) _++_ ++-assoc
+\end{code}
+
+We can interpret the syntax of a |List₁| in any semigroup provided we have
+a function between the carriers. That is to say, a function of sets is freely
+lifted to a homomorphism of semigroups.
+
+
+list₁ : {a b : Level} {X : Set a} {S : Semigroup {b} }
+     →  (X → Carrier S)  →  Hom (List₁ X) S
+list₁ f = ?
+
 
 mapNE : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → NEList A → NEList B
 mapNE f (x , l) = (f x) , map f l

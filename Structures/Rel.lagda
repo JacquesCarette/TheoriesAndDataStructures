@@ -198,21 +198,21 @@ Cofree³′ ℓ = record
 Now for the actual proofs that the |Free| and |Cofree| functors
 are deserving of their names.
 
-\begin{spec}
-Left : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
-Left ℓ = record
+\begin{code}
+Left : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget ℓ ℓ′)
+Left ℓ ℓ′ = record
   { unit   = record
     { η       = λ _ → id
     ; commute = λ _ → ≡.refl
     }
   ; counit = record
-    { η       = λ _ → MkHom id (λ {()})
-    ; commute = λ f → ≐-refl , (λ {()})
+    { η       = λ A → MkHom (λ z → z) (λ{()}) (λ {x} {})
+    ; commute = λ f → ≐-refl , (λ ())
     }
-  ; zig = ≐-refl , (λ { () })
+  ; zig = ≐-refl , (λ ())
   ; zag = ≡.refl
   }
-
+\end{code}
 Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
 Right ℓ = record
   { unit = record

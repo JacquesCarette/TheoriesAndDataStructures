@@ -299,35 +299,47 @@ Right² ℓ = record
   ; zig = ≡.refl
   ; zag = (λ{ tt → ≡.refl}) , ≐-refl
   }
+\end{code}
 
+\begin{code}
+Free³³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Free³³ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊥)
+  ; F₁             =   λ f → MkHom (one f) (two f) id
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
 
+-- |(MkTwo X Y → Alg without Rel) ≅ (MkRel X Y ⊥ ⟶ Alg)|
+Left³ : (ℓ : Level) → Adjunction (Free³³ ℓ) (Forget³ ℓ ℓ)
+Left³ ℓ = record
+  { unit   = record
+    { η       = λ A → MkTwoHom id id
+    ; commute = λ F → ≐-refl , ≐-refl
+    }
+  ; counit = record
+    { η       = λ A → MkHom id id (λ ())
+    ; commute = λ F →  ≐-refl , ≐-refl
+    }
+  ; zig = ≐-refl , ≐-refl
+  ; zag = ≐-refl , ≐-refl
+  }
 \end{code}
 
 Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)
 Left² ℓ ℓ′ = record
   { unit   = record
-    { η       = λ _ → {!!}
+    { η       = λ ? → {!!}
     ; commute = {!!}
     }
   ; counit = record
-    { η       = λ _ → MkHom {!!} {!!} {!!}
-    ; commute = λ f →  {!!} , {!!}
+    { η       = λ A → ?
+    ; commute = λ f →  {!!}
     }
-  ; zig = {!!} , {!!}
+  ; zig = {!!}
   ; zag = {!!}
   }
-
-Right² :  (ℓ : Level) → Adjunction (Forget² ℓ) (Cofree² ℓ)
-Right² ℓ = record
-  { unit = record
-    { η = λ _ → MkHom (λ _ → tt) id
-    ; commute = λ _ → ≐-refl , ≐-refl
-    }
-  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
-  ; zig      =   ≡.refl
-  ; zag      =   (λ {tt → ≡.refl }) , ≐-refl
-  }
-\end{spec}
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction

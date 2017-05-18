@@ -224,22 +224,45 @@ Right ℓ  = record
   ; zag      =   ≐-refl , λ{ tt → ≡.refl}
   }
 
-\end{code}
-
 -- Dually,
 
-Left² : (ℓ : Level) → Adjunction (Free² ℓ) (Forget² ℓ)
+Free²² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+Free²² ℓ = record
+  { F₀             =   λ A → MkHRel ⊥ A (λ ())
+  ; F₁             =   λ f → MkHom id f (λ {})
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   λ F≈G → ≐-refl , (λ x → F≈G {x})
+  }
+
+Left² : (ℓ : Level) → Adjunction (Free²² ℓ) (Forget² ℓ ℓ)
 Left² ℓ = record
   { unit   = record
     { η       = λ _ → id
     ; commute = λ _ → ≡.refl
     }
   ; counit = record
-    { η       = λ _ → MkHom (λ {()}) id
-    ; commute = λ f →  (λ {()}) , ≐-refl
+    { η       = λ _ → MkHom (λ ()) id (λ {})
+    ; commute = λ f →  (λ ()) , ≐-refl
     }
-  ; zig = (λ { () }) , ≐-refl
+  ; zig = (λ ()) , ≐-refl
   ; zag = ≡.refl
+  }
+
+\end{code}
+
+Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)
+Left² ℓ ℓ′ = record
+  { unit   = record
+    { η       = λ _ → {!!}
+    ; commute = {!!}
+    }
+  ; counit = record
+    { η       = λ _ → MkHom {!!} {!!} {!!}
+    ; commute = λ f →  {!!} , {!!}
+    }
+  ; zig = {!!} , {!!}
+  ; zag = {!!}
   }
 
 Right² :  (ℓ : Level) → Adjunction (Forget² ℓ) (Cofree² ℓ)

@@ -36,6 +36,12 @@ module _ {a b : Level} {A : Set a} {B : Set b} where
   open IsEquivalence ≐-isEquivalence public
     renaming (refl to ≐-refl ; sym to ≐-sym ; trans to ≐-trans)
 
+  cong₂D : ∀ {a b c} {A : Set a} {B : A → Set b} {C : Set c}
+            (f : (x : A) → B x → C)
+            → {x₁ x₂ : A} {y₁ : B x₁} {y₂ : B x₂}
+            → (x₂≡x₁ : x₂ ≡ x₁) → ≡.subst B x₂≡x₁ y₂ ≡ y₁ → f x₁ y₁ ≡ f x₂ y₂
+  cong₂D f ≡.refl ≡.refl = ≡.refl
+
 open import Equiv public using (∘-resp-≐) -- To do: port this over here!
   renaming (cong∘l to ∘-≐-cong₂ ; cong∘r to ∘-≐-cong₁)
 

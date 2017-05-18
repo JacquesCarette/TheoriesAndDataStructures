@@ -180,15 +180,6 @@ Cofree³ ℓ = record
   ; homomorphism   =   ≐-refl , ≐-refl
   ; F-resp-≡      =   id
   } where open TwoSorted ; open TwoHom
-
-Cofree³′ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
-Cofree³′ ℓ = record
-  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → One S × Two S)
-  ; F₁             =   λ F → MkHom (one F) (two F) (one F ×₁ two F)
-  ; identity       =   ≐-refl , ≐-refl
-  ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   id
-  } where open TwoSorted ; open TwoHom
 \end{code}
 
 %}}}
@@ -337,7 +328,7 @@ CoFree³³ ℓ = record
   ; F-resp-≡      =   id
   } where open TwoSorted ; open TwoHom
 
--- |(MkTwo X Y → Alg without Rel) ≅ (MkRel X Y ⊥ ⟶ Alg)|
+-- |(Alg without Rel ⟶ MkTwo X Y) ≅ (Alg ⟶ MkRel X Y ⊤)|
 Right³ : (ℓ : Level) → Adjunction (Forget³ ℓ ℓ) (CoFree³³ ℓ)
 Right³ ℓ = record
   { unit   = record
@@ -351,7 +342,39 @@ Right³ ℓ = record
   ; zig = ≐-refl , ≐-refl
   ; zag = ≐-refl , ≐-refl
   }
+
+CoFree³′ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+CoFree³′ ℓ = record
+  { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → One S × Two S)
+  ; F₁             =   λ F → MkHom (one F) (two F) (one F ×₁ two F)
+  ; identity       =   ≐-refl , ≐-refl
+  ; homomorphism   =   ≐-refl , ≐-refl
+  ; F-resp-≡      =   id
+  } where open TwoSorted ; open TwoHom
+
+-- |(Alg without Rel ⟶ MkTwo X Y) ≅ (Alg ⟶ MkRel X Y X×Y)|
+Right³′ : (ℓ : Level) → Adjunction (Forget³ ℓ ℓ) (CoFree³′ ℓ)
+Right³′ ℓ = record
+  { unit   = record
+    { η       = λ A → MkHom id id (λ {x} {y} x~y → x , y)
+    ; commute = λ F → ≐-refl , ≐-refl
+    }
+  ; counit = record
+    { η       = λ A → MkTwoHom id id
+    ; commute = λ F →  ≐-refl , ≐-refl
+    }
+  ; zig = ≐-refl , ≐-refl
+  ; zag = ≐-refl , ≐-refl
+  }
 \end{code}
+
+But wait, adjoints are necessarily unique, up to isomorphism, whence
+|CoFree³ ≅ CoFree³′|.
+Intuitively, the relation part is a ``subset'' of the given carriers
+and so the largest relation is the universal relation which can be seen as the product of the carriers
+or the ``always-true'' relation which happens to be formalized by ignoring its arguments
+and going to a singleton set.
+
 
 
 Left² : (ℓ ℓ′ : Level) → Adjunction (Free² ℓ ℓ′) (Forget² ℓ ℓ′)

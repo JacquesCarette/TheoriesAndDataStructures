@@ -1,47 +1,60 @@
+
+%{{{ Imports
 \begin{code}
 module Structures.Semigroup where
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Categories.Category using (Category)
-open import Categories.Functor using (Functor)
+
+open import Categories.Category   using (Category)
+open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-open import Function using (const) renaming (id to idF; _∘_ to _◎_)
-open import Data.Product using (_×_; _,_)
-open import Data.List using (List; map; []; _∷_; _++_)
+open import Categories.Agda       using (Sets)
+open import Function              using (const ; id ; _∘_)
+open import Data.Product          using (_×_; _,_)
+open import Data.List             using (List; map; []; _∷_; _++_)
 
 open import Function2 using (_$ᵢ)
 open import EqualityCombinators
 open import Forget
+\end{code}
+%}}}
 
------------
--- A Free Semigroup is a Non-empty list
+%{{{ Semigroup ; _⟨_⟩_ ; Hom
 
+A Free Semigroup is a Non-empty list
+\begin{code}
 record Semigroup {a} : Set (lsuc a) where
-  constructor sg
+  constructor MkSG
+  infixr 5 _*_
   field
-    A : Set a
-    _*_ : A → A → A
-    assoc : ∀ a b c → a * (b * c) ≡ (a * b) * c
+    Carrier : Set a
+    _*_     : Carrier → Carrier → Carrier
+    assoc   : {x y z : Carrier} → x * (y * z) ≡ (x * y) * z
 
-record Hom {ℓ} (C D : Semigroup {ℓ}) : Set ℓ where
-  constructor hom
-  open Semigroup C renaming (_*_ to _*₁_)
-  open Semigroup D renaming (A to B; _*_ to _*₂_)
+open Semigroup renaming (_*_ to Op)
+bop = Semigroup._*_
+syntax bop A x y = x ⟨ A ⟩ y
+
+record Hom {ℓ} (Src Tgt : Semigroup {ℓ}) : Set ℓ where
+  constructor MkHom
   field
-    h : A → B
-    pres-* : ∀ x y → h (x *₁ y) ≡ h x *₂ h y
+    mor   :  Carrier Src → Carrier Tgt
+    pres  :  {x y : Carrier Src} → mor (x ⟨ Src ⟩ y)   ≡  (mor x) ⟨ Tgt ⟩ (mor y)
+\end{code}
 
+%}}}
+
+\begin{code}
 private
   Alg : ∀ {ℓ} → OneSortedAlg ℓ
   Alg = record
           { Alg = Semigroup
-          ; Carrier = A
+          ; Carrier = Semigroup.Carrier
           ; Hom = Hom
-          ; mor = h
-          ; comp = λ h₁ h₂ → hom (h h₁ ◎ h h₂) (λ x y → ≡.trans (≡.cong (h h₁) (pres-* h₂ x y)) (pres-* h₁ (h h₂ x) (h h₂ y)))
+          ; mor = Hom.mor
+          ; comp = λ h₁ h₂ → MkHom (mor h₁ ∘ mor h₂) (≡.trans (≡.cong (mor h₁) (pres h₂)) (pres h₁))
           ; comp-is-∘ = ≐-refl
-          ; Id = hom idF (λ _ _ → ≡.refl)
+          ; Id = MkHom id ≡.refl
           ; Id-is-id = ≐-refl
           }
       where open Semigroup
@@ -76,8 +89,8 @@ concat (x₀ , l₀) (x₁ , l₁) = (x₀ , l₀ ++ (x₁ ∷ l₁))
 
 Free : ∀ o → Functor (Sets o) (SemigroupCat o)
 Free o = record
-  { F₀ = λ A → sg (NEList A) concat {!!}
-  ; F₁ = λ f → hom (mapNE f) {!!}
+  { F₀ = λ A → MkSG (NEList A) concat {!!}
+  ; F₁ = λ f → MkHom (mapNE f) {!!}
   ; identity = {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = λ F≡G → {!!}
@@ -86,7 +99,7 @@ Free o = record
 TreeLeft : ∀ o → Adjunction (Free o) (Forget o)
 TreeLeft o = record
   { unit   = record { η = λ _ x → x , [] ; commute = λ _ → ≡.refl }
-  ; counit = record { η = λ {(sg A _*_ _) → hom {!!} {!!}} ; commute = {!!} }
+  ; counit = record { η = λ {(MkSG Carrier _*_ _) → MkHom {!!} {!!}} ; commute = {!!} }
   ; zig = {!!}
   ; zag = {!!} }
 

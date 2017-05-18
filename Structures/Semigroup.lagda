@@ -40,32 +40,35 @@ record Hom {ℓ} (Src Tgt : Semigroup {ℓ}) : Set ℓ where
   field
     mor   :  Carrier Src → Carrier Tgt
     pres  :  {x y : Carrier Src} → mor (x ⟨ Src ⟩ y)   ≡  (mor x) ⟨ Tgt ⟩ (mor y)
+
+open Hom
 \end{code}
 
 %}}}
 
+%{{{ SGAlg ; SemigroupCat ; Forget
 \begin{code}
-private
-  Alg : ∀ {ℓ} → OneSortedAlg ℓ
-  Alg = record
-          { Alg = Semigroup
-          ; Carrier = Semigroup.Carrier
-          ; Hom = Hom
-          ; mor = Hom.mor
-          ; comp = λ h₁ h₂ → MkHom (mor h₁ ∘ mor h₂) (≡.trans (≡.cong (mor h₁) (pres h₂)) (pres h₁))
-          ; comp-is-∘ = ≐-refl
-          ; Id = MkHom id ≡.refl
-          ; Id-is-id = ≐-refl
-          }
-      where open Semigroup
-            open Hom
-  
-SemigroupCat : ∀ o → Category _ o o
-SemigroupCat o = oneSortedCategory o Alg
+SGAlg : {ℓ : Level} → OneSortedAlg ℓ
+SGAlg = record
+   { Alg         =   Semigroup
+   ; Carrier     =   Semigroup.Carrier
+   ; Hom         =   Hom
+   ; mor         =   Hom.mor
+   ; comp        =   λ F G → MkHom (mor F ∘ mor G) (≡.cong (mor F) (pres G) ⟨≡≡⟩ pres F)
+   ; comp-is-∘   =   ≐-refl
+   ; Id          =   MkHom id ≡.refl
+   ; Id-is-id    =   ≐-refl
+   }
 
-Forget : ∀ o → Functor (SemigroupCat o) (Sets o)
-Forget o = mkForgetful o Alg
+SemigroupCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+SemigroupCat ℓ = oneSortedCategory ℓ SGAlg
 
+Forget : (ℓ : Level) → Functor (SemigroupCat ℓ) (Sets ℓ)
+Forget ℓ = mkForgetful ℓ SGAlg
+\end{code}
+%}}}
+
+\begin{code}
 NEList : {a : Level} → Set a → Set a
 NEList A = A × List A
 

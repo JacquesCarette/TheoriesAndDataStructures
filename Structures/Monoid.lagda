@@ -1,3 +1,4 @@
+\begin{code}
 module Structures.Monoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)
@@ -38,3 +39,18 @@ MonoidCat = {!!}
 
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = {!!}
+
+\end{code}
+
+% Quick Folding Instructions:
+% C-c C-s :: show/unfold region
+% C-c C-h :: hide/fold region
+% C-c C-w :: whole file fold
+% C-c C-o :: whole file unfold
+%
+% Local Variables:
+% folded-file: t
+% eval: (fold-set-marks "%{{{ " "%}}}")
+% eval: (fold-whole-buffer)
+% fold-internal-margins: 0
+% end:

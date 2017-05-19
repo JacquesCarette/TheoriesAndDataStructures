@@ -75,6 +75,15 @@ MonoidCat ℓ = oneSortedCategory ℓ MonoidAlg
 -- Forget all structure, and maintain only the underlying carrier
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ MonoidAlg
+
+-- ToDo ∷ forget to the underlying semigroup
+
+-- ToDo ∷ forget to the underlying pointed
+
+-- ToDo ∷ forget to the underlying magma
+
+-- ToDo ∷ forget to the underlying binary relation, with x ∼ y ∶≡ (∀ z → x * z ≡ y * z)
+          -- the monoid-indistuighability equivalence relation
 \end{code}
 %}}}
 

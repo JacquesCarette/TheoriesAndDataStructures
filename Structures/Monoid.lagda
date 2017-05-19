@@ -1,46 +1,64 @@
+
+%{{{ Imports
 \begin{code}
 module Structures.Monoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.List using (List; _∷_ ; []; _++_; foldr; map)
 
-open import Categories.Category using (Category)
-open import Categories.Functor using (Functor)
+open import Categories.Category   using (Category)
+open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-open import Function using (id ; _∘_ ; const)
-open import Function2 using (_$ᵢ)
+open import Categories.Agda       using (Sets)
+open import Function              using (id ; _∘_ ; const)
+open import Function2             using (_$ᵢ)
 
 open import Forget
 open import EqualityCombinators
 open import DataProperties
+\end{code}
+%}}}
 
-record Monoid {ℓ} : Set (lsuc ℓ) where
-  constructor mon
+%{{{ Monoid ; Hom
+
+\begin{code}
+record Monoid ℓ : Set (lsuc ℓ) where
   field 
-    m : Set ℓ
-    e : m
-    _*_ : m → m → m
-    left-unit : ∀ x → e * x ≡ x
-    right-unit : ∀ x → x * e ≡ x
-    assoc : ∀ x y z → (x * y) * z ≡ x * (y * z)
+    Carrier   :   Set ℓ
+    Id        :   Carrier
+    _*_       :   Carrier → Carrier → Carrier
+    leftId    :   {x : Carrier} → Id * x ≡ x
+    rightId   :   {x : Carrier} → x * Id ≡ x
+    assoc     :   {x y z : Carrier} → (x * y) * z ≡ x * (y * z)
 
-record Homomorphism {ℓ} (A B : Monoid {ℓ}) : Set ℓ where
-  constructor hom
-  open Monoid A renaming (m to m₁; e to e₁; _*_ to _*₁_)
-  open Monoid B renaming (m to m₂; e to e₂; _*_ to _*₂_) 
+open Monoid
+
+record Homomorphism {ℓ} (Src Tgt : Monoid ℓ) : Set ℓ where
+  constructor MkHom
+  open Monoid Src renaming (_*_ to _*₁_)
+  open Monoid Tgt renaming (_*_ to _*₂_) 
   field
-    f : m₁ → m₂
-    pres-e : f e₁ ≡ e₂ 
-    pres-* : (x y : m₁) → f (x *₁ y) ≡ (f x) *₂ (f y)
+    mor     :  Carrier Src → Carrier Tgt
+    pres-Id : mor (Id Src) ≡ Id Tgt 
+    pres-Op : {x y : Carrier Src} → mor (x *₁ y)  ≡  mor x *₂ mor y
+\end{code}
 
+%}}}
+
+%{{{ MonoidAlg ; MonoidCat
+\begin{code}
 MonoidCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
 MonoidCat = {!!}
+\end{code}
+%}}}
 
+%{{{ forgetful functorS
+\begin{code}
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = {!!}
-
 \end{code}
+%}}}
+
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

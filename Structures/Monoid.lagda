@@ -1,4 +1,3 @@
-
 %{{{ Imports
 \begin{code}
 module Structures.Monoid where
@@ -16,6 +15,22 @@ open import Function2             using (_$ᵢ)
 open import Forget
 open import EqualityCombinators
 open import DataProperties
+
+open import Data.List
+
+rcList : {X Y : Set} (g₁ : Y) (g₂ : Y → List X → X → Y) → List X → Y
+rcList g₁ g₂ [] = g₁
+rcList g₁ g₂ (x ∷ xs) = g₂ (rcList g₁ g₂ xs) xs x
+
+open import Data.Nat hiding (_*_)
+
+rcℕ : {ℓ : Level} {X : ℕ → Set ℓ} (g₁ : X zero) (g₂ : (n : ℕ) → X n → X (suc n)) → (n : ℕ) → X n
+rcℕ g₁ g₂ zero = g₁
+rcℕ g₁ g₂ (suc n) = g₂ n (rcℕ g₁ g₂ n)
+
+-- Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss → X (c ss)|, more or less :-)
+-- to obtain a “recursion theorem” like principle.
+
 \end{code}
 %}}}
 
@@ -86,6 +101,7 @@ Forget ℓ = mkForgetful ℓ MonoidAlg
           -- the monoid-indistuighability equivalence relation
 \end{code}
 %}}}
+
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

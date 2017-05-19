@@ -188,17 +188,12 @@ TreeLeft ℓ = record
   { unit   = record { η = λ _ → [_] ; commute = λ _ → ≡.refl }
   ; counit = record
     { η       = λ S → list₁ id
-    ; commute = λ {X} {Y} F  → indNE {P = λ xs → (mor (list₁ {S = Y} id) ∘ mor (list₁ {S = List₁SG (Carrier Y)} ([_] ∘ mor F))) xs ≡ (mor F ∘ mor (list₁ {S = X} id)) xs} ≡.refl (λ {x} {xs} refl ind → ≡.cong (Op Y (mor F x)) ind ⟨≡≡˘⟩ pres F)
-      } -- surely this could be done better‼
-  ; zig = {!λ X → indNE {P = λ xs → xs ≡ mor (list₁ {S = ?} id) (mor (list₁ {S = List₁SG (Carrier ?)} [_]) xs)} ? ?!}
-  ; zag = {!!}
+    ; commute = λ {X} {Y} F  → rec ≐-refl (λ x xs ind → ≡.cong (Op Y (mor F x)) ind ⟨≡≡˘⟩ pres F)
+    }
+  ; zig = rec ≐-refl (λ x xs ind → ≡.cong (x ∷_) ind)
+  ; zag = ≡.refl
   }
 \end{code}
-
-Goal :
-{x : Set ℓ} (x₁ : List₁ x) →
-      x₁ ≡ ⟦ (λ x₂ → x₂) , _++_ ⟧ (⟦ (λ x₂ → [ [ x₂ ] ]) , _++_ ⟧ x₁)
-
 
 Perhaps discuss streams and their realisation in Agda.
 

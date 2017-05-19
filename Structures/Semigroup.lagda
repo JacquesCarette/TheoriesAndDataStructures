@@ -172,7 +172,7 @@ map-cong {f = f} {g} f≐g = indNE (≡.cong [_] (f≐g _))
 
 %}}}
 
-%{{{ Free ; TreeLeft
+%{{{ Free ; TreeLeft   wrt  SETS
 \begin{code}
 Free : (ℓ : Level) → Functor (Sets ℓ) (SemigroupCat ℓ)
 Free ℓ = record
@@ -195,7 +195,50 @@ TreeLeft ℓ = record
   }
 \end{code}
 
-Perhaps discuss streams and their realisation in Agda.
+ToDo ∷ Discuss streams and their realisation in Agda.
+
+%}}}
+
+%{{{ Free ; TreeLeft   wrt  MAGMA
+\begin{code}
+open import Structures.Magma
+ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (MagmaCat ℓ)
+ForgetM ℓ = record
+  { F₀             =   λ S → MkMagma (Carrier S) (Op S)
+  ; F₁             =   λ F → MkHom (mor F) (pres F)
+  ; identity       =   ≐-refl 
+  ; homomorphism   =   ≐-refl
+  ; F-resp-≡      =   id
+  }
+\end{code}
+
+Even though there's essentialy no diffeerence between the homsets of MagmaCat and SemigroupCat,
+I ``feel'' that there ought to be no free funcgtor from the former to the latter.
+More precisely, I feel that there cannot be an associative “extension” of an arbitrary binary operator;
+see _⟪_ below.
+
+\begin{code}
+open import Relation.Nullary
+open import Categories.NaturalTransformation
+NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat ℓ) (SemigroupCat ℓ)) → ¬ (Adjunction (ForgetM ℓ) FreeM)
+NoLeft FreeM Adjunct = {!!}
+  where open Adjunction Adjunct
+        open NaturalTransformation
+        open import Data.Nat
+        
+        _⟪_ : ℕ → ℕ → ℕ
+        x ⟪ y = x * y + 1
+        -- (x ⟪ y) ⟪ z   ≡  x * y * z + z + 1
+        -- x ⟪ (y  ⟪ z)  ≡  x * y * z + x + 1
+        --
+        -- Taking z , x ≔ 1 , 0 yields 2 ≡ 1
+
+        ohno : ¬ (2 ≡.≡ 1)
+        ohno ()
+        
+        𝒩 : Magma
+        𝒩 = MkMagma ℕ _⟪_
+\end{code}
 
 %}}}
 

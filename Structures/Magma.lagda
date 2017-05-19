@@ -26,7 +26,7 @@ record Magma {a} : Set (lsuc a) where
   constructor MkMagma
   field
     Carrier : Set a
-    Op    : Carrier → Carrier → Carrier
+    Op      : Carrier → Carrier → Carrier
 
 open Magma
 bop = Magma.Op
@@ -77,19 +77,25 @@ data Tree {a : Level} (A : Set a) : Set a where
  Leaf   : A → Tree A
  Branch : Tree A → Tree A → Tree A
 
+rec : {ℓ ℓ′ : Level} {A : Set ℓ} {X : Tree A → Set ℓ′}
+    → (leaf : (a : A) → X (Leaf a))
+    → (branch : (l r : Tree A) → X l → X r → X (Branch l r))
+    → (t : Tree A) → X t
+rec lf br (Leaf x)     = lf x
+rec lf br (Branch l r) = br l r (rec lf br l) (rec lf br r)
+
 ⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝓁 : A → B) (𝒷 : B → B → B) → Tree A → B
-⟦ 𝓁 , 𝒷 ⟧ (Leaf x)     = 𝓁 x
-⟦ 𝓁 , 𝒷 ⟧ (Branch l r) = 𝒷 (⟦ 𝓁 , 𝒷 ⟧ l) (⟦ 𝓁 , 𝒷 ⟧ r)
+⟦ 𝓁 , 𝒷 ⟧ = rec 𝓁 (λ _ _ x y → 𝒷 x y)
 
 mapT : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Tree A → Tree B
 mapT f = ⟦ Leaf ∘ f , Branch ⟧  -- cf UnaryAlgebra's map for |Eventually|
 
+-- implicits variant of |rec|
 indT : ∀ {a c} {A : Set a} {P : Tree A → Set c}
   → (base : {x : A} → P (Leaf x))
   → (ind : {l r : Tree A} → P l → P r → P (Branch l r))
   → (t : Tree A) → P t
-indT         base ind (Leaf x    ) = base
-indT {P = P} base ind (Branch l r) = ind (indT {P = P} base ind l) (indT {P = P} base ind r)
+indT base ind = rec (λ a → base) (λ l r → ind)
 \end{code}
 
 %}}}

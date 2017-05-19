@@ -75,9 +75,16 @@ They can be presented as |X × List X| or via
 |Σ n ∶ ℕ • Σ xs : Vec n X • n ≢ 0|. A more direct presentation would be:
 
 \begin{code}
-data List₁ {ℓ : Level} (X : Set ℓ) : Set ℓ where
-  [_]  : X → List₁ X
-  _∷_  : X → List₁ X → List₁ X
+data List₁ {ℓ : Level} (A : Set ℓ) : Set ℓ where
+  [_]  : A → List₁ A
+  _∷_  : A → List₁ A → List₁ A
+
+rec : {ℓ ℓ′ : Level} {Y : Set ℓ} {X : List₁ Y → Set ℓ′}
+    → (wrap : (y : Y) → X [ y ])
+    → (cons : (y : Y) (ys : List₁ Y) → X ys → X (y ∷ ys))
+    → (ys : List₁ Y) → X ys
+rec w c [ x ]      =   w x
+rec w c (x ∷ xs)   =   c x xs (rec w c xs)
 \end{code}
 
 One would expect the second constructor to be an binary operator
@@ -90,13 +97,15 @@ the operation is right associative.
 This is indeed a semigroup,
 \begin{code}
 _++_ : {ℓ : Level} {X : Set ℓ} → List₁ X → List₁ X → List₁ X
-[ x ] ++ ys    = x ∷ ys
-(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+xs ++ ys = rec (_∷ ys) (λ x xs' res → x ∷ res) xs
+-- [ x ] ++ ys    = x ∷ ys
+-- (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
 ++-assoc : {ℓ : Level} {X : Set ℓ} {xs ys zs : List₁ X}
          → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
-++-assoc {xs = [ x ]}   =  ≡.refl
-++-assoc {xs = x ∷ xs}  =  ≡.cong (x ∷_) ++-assoc         
+++-assoc {xs = xs} {ys} {zs} = rec {X = λ xs → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs} ≐-refl (λ x xs' ind → ≡.cong (x ∷_) ind) xs         
+-- ++-assoc {xs = [ x ]}   =  ≡.refl
+-- ++-assoc {xs = x ∷ xs}  =  ≡.cong (x ∷_) ++-assoc         
 
 List₁SG : {ℓ : Level} (X : Set ℓ) → Semigroup {ℓ}
 List₁SG X = MkSG (List₁ X) _++_ ++-assoc
@@ -111,16 +120,19 @@ lifted to a homomorphism of semigroups.
     → (wrap : X → Y)
     → (op   : Y → Y → Y)
     → (List₁ X → Y)
-⟦ 𝔀 , _𝓸_ ⟧ [ x ]     =  𝔀 x
-⟦ 𝔀 , _𝓸_ ⟧ (x ∷ xs)  =  (𝔀 x)  𝓸  (⟦ 𝔀 , _𝓸_ ⟧ xs)
+⟦ w , o ⟧ = rec w (λ x xs res → o (w x) res)
+-- ⟦ 𝔀 , _𝓸_ ⟧ [ x ]     =  𝔀 x
+-- ⟦ 𝔀 , _𝓸_ ⟧ (x ∷ xs)  =  (𝔀 x)  𝓸  (⟦ 𝔀 , _𝓸_ ⟧ xs)
 
 list₁ : {ℓ : Level} {X : Set ℓ} {S : Semigroup {ℓ} }
      →  (X → Carrier S)  →  Hom (List₁SG X) S
 list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
   where 𝒽  = ⟦ f , Op S ⟧
         ⟦⟧-over-++ : {xs ys : List₁ X} → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)
-        ⟦⟧-over-++ {[ x ]}  = ≡.refl
-        ⟦⟧-over-++ {x ∷ xs} = ≡.cong (Op S (f x)) ⟦⟧-over-++ ⟨≡≡⟩ assoc S
+        ⟦⟧-over-++ {xs} {ys} = rec {X = λ xs → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)}
+                                   ≐-refl (λ x xs' ind → ≡.cong (Op S (f x)) ind ⟨≡≡⟩ assoc S) xs
+--        ⟦⟧-over-++ {[ x ]}  = ≡.refl
+--        ⟦⟧-over-++ {x ∷ xs} = ≡.cong (Op S (f x)) ⟦⟧-over-++ ⟨≡≡⟩ assoc S
 \end{code}
 
 In particular, the map operation over lists is:
@@ -137,25 +149,24 @@ indNE : {a b : Level} {A : Set a} {P : List₁ A → Set b}
       → (base : {x : A} → P [ x ])
       → (ind  : {x : A} {xs : List₁ A} → P [ x ] → P xs → P (x ∷ xs))
       → (xs : List₁ A) → P xs
-indNE {P = P} base ind [ x ] = base
-indNE {P = P} base ind (x ∷ xs) = ind {x} {xs} (base {x}) (indNE {P = P} base ind xs)
+indNE base ind = rec (λ y → base) (λ y ys → ind base)
+-- indNE {P = P} base ind [ x ] = base
+-- indNE {P = P} base ind (x ∷ xs) = ind {x} {xs} (base {x}) (indNE {P = P} base ind xs)
 \end{code}
 
 For example, map preserves identity:
 
 \begin{code}
 map-id : {a : Level} {A : Set a} → mapNE id ≐ id {A = List₁ A}
-map-id = indNE {P = λ xs → mapNE id xs ≡ xs} ≡.refl (λ {x} {xs} refl ind → ≡.cong (x ∷_) ind)
+map-id = indNE ≡.refl (λ {x} {xs} refl ind → ≡.cong (x ∷_) ind)
 
 map-∘ : {ℓ : Level} {A B C : Set ℓ} {f : A → B} {g : B → C}
         → mapNE (g ∘ f) ≐ mapNE g ∘ mapNE f
-map-∘ {f = f} {g} = indNE {P = λ xs → mapNE (g ∘ f) xs ≡ mapNE g (mapNE f xs)}
-                               ≡.refl (λ {x} {xs} refl ind → ≡.cong ((g (f x)) ∷_) ind)
+map-∘ {f = f} {g} = indNE ≡.refl (λ {x} {xs} refl ind → ≡.cong ((g (f x)) ∷_) ind)
 
 map-cong : {ℓ : Level} {A B : Set ℓ} {f g : A → B}
   → f ≐ g → mapNE f ≐ mapNE g
-map-cong {f = f} {g} f≐g = indNE {P = λ xs → mapNE f xs ≡ mapNE g xs}
-                                 (≡.cong [_] (f≐g _))
+map-cong {f = f} {g} f≐g = indNE (≡.cong [_] (f≐g _))
                                  (λ {x} {xs} refl ind → ≡.cong₂ _∷_ (f≐g x) ind)
 \end{code}
 

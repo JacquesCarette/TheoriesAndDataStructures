@@ -18,9 +18,9 @@ open import DataProperties
 
 open import Data.List
 
-rcList : {X Y : Set} (g₁ : Y) (g₂ : Y → List X → X → Y) → List X → Y
+rcList : {X : Set} {Y : List X → Set} (g₁ : Y []) (g₂ : (x : X) (xs : List X) → Y xs → Y (x ∷ xs)) → (xs : List X) → Y xs
 rcList g₁ g₂ [] = g₁
-rcList g₁ g₂ (x ∷ xs) = g₂ (rcList g₁ g₂ xs) xs x
+rcList g₁ g₂ (x ∷ xs) = g₂ x xs (rcList g₁ g₂ xs)
 
 open import Data.Nat hiding (_*_)
 
@@ -28,9 +28,13 @@ rcℕ : {ℓ : Level} {X : ℕ → Set ℓ} (g₁ : X zero) (g₂ : (n : ℕ) �
 rcℕ g₁ g₂ zero = g₁
 rcℕ g₁ g₂ (suc n) = g₂ n (rcℕ g₁ g₂ n)
 
--- Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss → X (c ss)|, more or less :-)
--- to obtain a “recursion theorem” like principle.
-
+--  Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss → X (c ss)|, more or less :-)
+--  to obtain a “recursion theorem” like principle. The second piece |X ss| may not be possible due to type considerations.
+--  Really, the induction principle is just the *dependent* version of folding/recursion!
+--
+-- Observe that if we instead use arguments of the form |{ss : Srcs} → X ss → X (c ss)| then, for one reason or another,
+-- the dependent type |X| needs to be supplies explicity ─yellow Agda! Hence, it behooves us to use explicits in this case.
+-- Sometimes, the yellow cannot be avoided. 
 \end{code}
 %}}}
 

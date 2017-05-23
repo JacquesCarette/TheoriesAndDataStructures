@@ -6,7 +6,7 @@ module Structures.Semigroup where
 open import Level renaming (suc to lsuc; zero to lzero)
 
 open import Categories.Category   using (Category)
-open import Categories.Functor    using (Functor)
+open import Categories.Functor    using (Functor ; Faithful)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
 open import Function              using (const ; id ; _∘_)
@@ -201,7 +201,7 @@ ToDo ∷ Discuss streams and their realisation in Agda.
 
 %{{{ Free ; TreeLeft   wrt  MAGMA
 \begin{code}
-open import Structures.Magma
+open import Structures.Magma renaming (Hom to MagmaHom)
 ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (MagmaCat ℓ)
 ForgetM ℓ = record
   { F₀             =   λ S → MkMagma (Carrier S) (Op S)
@@ -219,9 +219,9 @@ see _⟪_ below.
 
 \begin{code}
 open import Relation.Nullary
-open import Categories.NaturalTransformation
-NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat ℓ) (SemigroupCat ℓ)) → ¬ (Adjunction (ForgetM ℓ) FreeM)
-NoLeft FreeM Adjunct = {!!}
+open import Categories.NaturalTransformation hiding (id)
+NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
+NoLeft FreeM faithful Adjunct = ohno (inj-is-injective crash)
   where open Adjunction Adjunct
         open NaturalTransformation
         open import Data.Nat
@@ -238,6 +238,43 @@ NoLeft FreeM Adjunct = {!!}
         
         𝒩 : Magma
         𝒩 = MkMagma ℕ _⟪_
+
+        𝑵 : Semigroup
+        𝑵 = Functor.F₀ FreeM 𝒩
+        _⊕_ = Magma.Op (Functor.F₀ (ForgetM lzero) 𝑵 )
+
+        inj : MagmaHom 𝒩 (Functor.F₀ (ForgetM lzero) 𝑵)
+        inj = η unit 𝒩
+        
+        inj₀ = MagmaHom.mor inj
+
+        -- the components of the unit are monic precisely when the left adjoint is faithful
+        postulate inj-is-injective : {x y : ℕ} → inj₀ x ≡.≡ inj₀ y → x ≡.≡ y
+        --
+        -- ToDo! … perhaps this lives in the libraries someplace?
+          
+        bad : Hom (Functor.F₀ FreeM (Functor.F₀ (ForgetM _) 𝑵)) 𝑵
+        bad = η counit 𝑵
+
+        crash : inj₀ 2 ≡.≡ inj₀ 1
+        crash = let open ≡.≡-Reasoning {A = Carrier 𝑵} in begin
+          inj₀ 2
+            ≡⟨ ≡.refl ⟩
+          inj₀ ( (0 ⟪ 666) ⟪ 1 )
+            ≡⟨ MagmaHom.preservation inj ⟩
+          inj₀ (0 ⟪ 666) ⊕ inj₀ 1
+            ≡⟨ ≡.cong (_⊕ inj₀ 1) (MagmaHom.preservation inj) ⟩
+          (inj₀ 0 ⊕ inj₀ 666) ⊕ inj₀ 1
+            ≡⟨ ≡.sym (assoc 𝑵) ⟩
+          inj₀ 0 ⊕ (inj₀ 666 ⊕ inj₀ 1)
+            ≡⟨ ≡.cong (inj₀ 0 ⊕_) (≡.sym (MagmaHom.preservation inj)) ⟩
+          inj₀ 0 ⊕ inj₀ (666 ⟪ 1)
+            ≡⟨ ≡.sym (MagmaHom.preservation inj) ⟩
+          inj₀ (0 ⟪ (666 ⟪ 1) )
+            ≡⟨ ≡.refl ⟩
+          inj₀ 1
+            ∎
+
 \end{code}
 
 %}}}

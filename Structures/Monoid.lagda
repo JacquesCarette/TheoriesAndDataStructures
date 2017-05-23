@@ -15,7 +15,14 @@ open import Function2             using (_$ᵢ)
 open import Forget
 open import EqualityCombinators
 open import DataProperties
+\end{code}
+%}}}
 
+%{{{ Some remarks about recursion principles
+
+( To be relocated elsewhere )
+
+\begin{spec}
 open import Data.List
 
 rcList : {X : Set} {Y : List X → Set} (g₁ : Y []) (g₂ : (x : X) (xs : List X) → Y xs → Y (x ∷ xs)) → (xs : List X) → Y xs
@@ -35,7 +42,7 @@ rcℕ g₁ g₂ (suc n) = g₂ n (rcℕ g₁ g₂ n)
 -- Observe that if we instead use arguments of the form |{ss : Srcs} → X ss → X (c ss)| then, for one reason or another,
 -- the dependent type |X| needs to be supplies explicity ─yellow Agda! Hence, it behooves us to use explicits in this case.
 -- Sometimes, the yellow cannot be avoided. 
-\end{code}
+\end{spec}
 %}}}
 
 %{{{ Monoid ; Hom

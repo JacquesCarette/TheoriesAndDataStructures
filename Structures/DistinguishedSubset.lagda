@@ -11,6 +11,7 @@ open import Categories.Agda       using (Sets)
 open import Function              using (id ; _∘_ ; const)
 open import Function2             using (_$ᵢ)
 open import Data.Bool             using (Bool; true; false)
+open import Relation.Nullary      using (¬_)
 
 open import Forget
 open import EqualityCombinators
@@ -102,13 +103,10 @@ Given a type, we can pair it with the empty type or the singelton type
 and so we have a free and a co-free constructions. 
 
 \begin{code}
-postulate
-  F : {ℓ : Level} → Set ℓ → Set ℓ
-  
 Free : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
 Free ℓ = record
-  { F₀               =   λ A → MkDist (F A) {!!}
-  ; F₁               =   λ f → MkHom {!!} {!!}
+  { F₀               =   λ A → MkDist (A × (A → Bool)) (λ { (a , R) → R a } )
+  ; F₁               =   λ f → MkHom (λ { (a , R) → f a , (λ b → {!!})}) {!!}
   ; identity         =   {!!}
   ; homomorphism     =   {!!}
   ; F-resp-≡        =   λ F≈G → {!!}
@@ -116,7 +114,7 @@ Free ℓ = record
 
 Cofree : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
 Cofree ℓ = record
-  { F₀             =   λ A → MkDist (F A) (λ a → {!!})
+  { F₀             =   λ A → MkDist {!!} (λ a → {!!})
   ; F₁             =   λ f → MkHom {!!} {!!}
   ; identity       =   {!!} -- ≐-refl
   ; homomorphism   =   {!!} -- ≐-refl
@@ -139,7 +137,7 @@ Left ℓ = record
     ; commute = λ _ → ≡.refl
     }
   ; counit = record
-    { η       = λ { (MkDist A R) → MkHom {!!} {!!} }
+    { η       = λ { (MkDist A R) → MkHom (λ a → {!!}) {!!} }
     ; commute = λ f → {!!} -- ≐-refl
     }
   ; zig = {!!} -- ≐-refl
@@ -149,10 +147,10 @@ Left ℓ = record
 Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
 Right ℓ = record
   { unit = record
-    { η = λ _ → MkHom {!!} {!!}
+    { η = λ { (MkDist A R) → MkHom {!!} {!!}}
     ; commute = λ _ → {!!} -- ≐-refl
     }
-  ; counit   =   record { η = λ _ → {!!} ; commute = λ _ → {!!} }
+  ; counit   =   record { η = λ _ → {!!} ; commute = λ f → {!!} }
   ; zig      =   ≡.refl
   ; zag      =   {!!} -- ≐-refl
   }

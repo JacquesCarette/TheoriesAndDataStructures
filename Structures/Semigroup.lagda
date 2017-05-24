@@ -240,6 +240,8 @@ NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
         open NaturalTransformation
         open import Data.Nat
 
+        open Functor
+
         {- 
         We expect a free functor to be injective on morphisms, otherwise if
         it collides functions then it is enforcing equations and that's not
@@ -255,22 +257,31 @@ NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
                             → Carrier(Functor.F₀ FreeM (MkMagma (Carrier (Functor.F₀ FreeM M)) (Op (Functor.F₀ FreeM M))))
                 ι' {M} = mor (Functor.F₁ FreeM (η unit M))
 
+                .hay : ∀ {M} → ι'' ∘ ι'' ≐  ι' ∘ ι''
+                hay {M} = commute unit (η unit M)  -- ie: “commute unit ι”
+
                 ι : {Z : Semigroup} → Carrier Z → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z)))
                 ι {Z} = morₘ (η unit (MkMagma (Carrier Z) (Op Z)))
 
                 .i-rels : ∀ {Z} → ι'' ∘ ι {Z} ≐ ι' ∘ ι {Z}
-                i-rels {Z} = commute unit ((η unit (MkMagma (Carrier Z) (Op Z))))
+                i-rels {Z} = commute unit ((η unit (MkMagma (Carrier Z) (Op Z)))) -- ie: “commute unit ι''”
 
                 𝒆 : {Z : Semigroup} → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z))) → Carrier Z
                 𝒆 {Z} = mor (η counit Z)
+
+                𝒆² : ∀{Z} → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z))) → Carrier Z
+                𝒆² {Z} = morₘ (Functor.F₁ (ForgetM _) (η counit Z))
+
+                -- 𝒆ᵐ = {!!} 
+
+                .nay : ∀ {M} → ι'' ∘ 𝒆  ≐  mor (Functor.F₁ FreeM (MkHom 𝒆 (pres (η counit M))))  ∘ ι''
+                nay {M} = commute unit (Functor.F₁ (ForgetM _) (η counit M))
 
                 .id≈𝒆∘ι : ∀ {Z} → id ≐ 𝒆 {Z} ∘ ι {Z}
                 id≈𝒆∘ι = zag
 
                 .ι-injective : {Z : Semigroup} → ∀{x y} → ι {Z} x ≡ ι {Z} y → x ≡ y
                 ι-injective {Z} {x} {y} ιx≈ιy = id≈𝒆∘ι x ⟨≡≡⟩ (≡.cong 𝒆 ιx≈ιy ⟨≡≡˘⟩ id≈𝒆∘ι y)
-
-                open Functor
 
                 𝒆' : {M : Magma} → Carrier (F₀ FreeM (MkMagma (Carrier (F₀ FreeM M)) (Op (F₀ FreeM M))))
                            → Carrier (F₀ FreeM M)
@@ -308,11 +319,25 @@ NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
 
                 open import Relation.Binary.SetoidReasoning
 
+                𝒆'' : {Z : Magma}  → Carrier (F₀ FreeM Z) → Magma.Carrier Z
+                𝒆'' = {! cf 𝒆² above!}
+                -- observe that we have: 𝒆 ∘ 𝒆' ∘ i'' ∘ i  ≐  id  
+                id≈𝒆∘ι'' : ∀ {Z} → id ≐ 𝒆'' {Z} ∘ ι'' {Z}
+                id≈𝒆∘ι'' = {! …?…!}
+
+                .here : morₘ F ≐ morₘ G
+                here = begin⟨ ≐-setoid (Magma.Carrier X) (Magma.Carrier Y) ⟩
+                  morₘ F                     ≈⟨ ∘-≐-cong₁ (morₘ F) id≈𝒆∘ι''            ⟩
+                  (𝒆'' {Y} ∘ ι'') ∘ morₘ F   ≡⟨ ≡.refl                               ⟩
+                  𝒆'' {Y}  ∘ (ι'' ∘ morₘ F)  ≈⟨ ∘-≐-cong₂ 𝒆'' helper₂                  ⟩
+                  𝒆'' {Y}  ∘ (mor Fₘ ∘ ι'')  ≈⟨ ∘-≐-cong₂ 𝒆'' (∘-≐-cong₁ ι'' F≈G)      ⟩
+                  𝒆'' {Y}  ∘ (mor Gₘ ∘ ι'')  ≈⟨ ∘-≐-cong₂ 𝒆'' (≐-sym (commute unit G)) ⟩
+                  𝒆'' {Y}  ∘ (ι'' ∘ morₘ G)  ≡⟨ ≡.refl                               ⟩                                    
+                  (𝒆'' {Y}  ∘ ι'') ∘ morₘ G  ≈⟨ ∘-≐-cong₁ (morₘ G) (≐-sym id≈𝒆∘ι'')    ⟩                  
+                  morₘ G ∎
+
                 .goal : morₘ F ≐ morₘ G
-                goal = λ x → ι-injective {{!!}} {!!} -- ι-injective {Z = Functor.F₀ FreeM ?} {!morₘ F!}
-                -- ((begin⟨ ≐-setoid (Magma.Carrier X) (Magma.Carrier Y) ⟩
-                --  morₘ F ≈⟨ {!!} ⟩
-                --  morₘ G ∎) x)
+                goal = {!!}
                   -- {!!} -- λ x → ι-injective {!!}
                 {-
                   ι ∘ morₘ F

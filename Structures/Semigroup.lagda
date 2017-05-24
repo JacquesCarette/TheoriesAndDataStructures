@@ -64,6 +64,9 @@ SemigroupCat ℓ = oneSortedCategory ℓ SGAlg
 
 Forget : (ℓ : Level) → Functor (SemigroupCat ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ SGAlg
+
+Forget-isFaithful : {ℓ : Level} → Faithful (Forget ℓ)
+Forget-isFaithful F G F≈G = λ x → F≈G {x}
 \end{code}
 %}}}
 
@@ -85,6 +88,9 @@ rec : {ℓ ℓ′ : Level} {Y : Set ℓ} {X : List₁ Y → Set ℓ′}
     → (ys : List₁ Y) → X ys
 rec w c [ x ]      =   w x
 rec w c (x ∷ xs)   =   c x xs (rec w c xs)
+
+[]-injective : {ℓ : Level} {A : Set ℓ} {x y : A} → [ x ] ≡ [ y ] → x ≡ y
+[]-injective ≡.refl = ≡.refl
 \end{code}
 
 One would expect the second constructor to be an binary operator
@@ -183,6 +189,9 @@ Free ℓ = record
   ; F-resp-≡      =   λ F≈G → map-cong (λ x → F≈G {x})
   }
 
+Free-isFaithful : {ℓ : Level} → Faithful (Free ℓ)
+Free-isFaithful F G F≈G {x} = []-injective (F≈G [ x ])
+
 TreeLeft : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
 TreeLeft ℓ = record
   { unit   = record { η = λ _ → [_] ; commute = λ _ → ≡.refl }
@@ -202,14 +211,19 @@ ToDo ∷ Discuss streams and their realisation in Agda.
 %{{{ Free ; TreeLeft   wrt  MAGMA
 \begin{code}
 open import Structures.Magma renaming (Hom to MagmaHom)
+open MagmaHom using () renaming (mor to morₘ)
+
 ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (MagmaCat ℓ)
 ForgetM ℓ = record
   { F₀             =   λ S → MkMagma (Carrier S) (Op S)
   ; F₁             =   λ F → MkHom (mor F) (pres F)
-  ; identity       =   ≐-refl 
+  ; identity       =   ≐-refl
   ; homomorphism   =   ≐-refl
   ; F-resp-≡      =   id
   }
+
+ForgetM-isFaithful : {ℓ : Level} → Faithful (ForgetM ℓ)
+ForgetM-isFaithful F G F≈G = λ x → F≈G x
 \end{code}
 
 Even though there's essentialy no diffeerence between the homsets of MagmaCat and SemigroupCat,
@@ -219,19 +233,102 @@ see _⟪_ below.
 
 \begin{code}
 open import Relation.Nullary
-open import Categories.NaturalTransformation hiding (id)
+open import Categories.NaturalTransformation hiding (id ; _≡_)
 NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
-NoLeft FreeM faithful Adjunct = ohno (inj-is-injective crash)
+NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
   where open Adjunction Adjunct
         open NaturalTransformation
         open import Data.Nat
-        
+
+        {- 
+        We expect a free functor to be injective on morphisms, otherwise if
+        it collides functions then it is enforcing equations and that's not
+        what is expected of a “free construction”.
+        -}
+
+        freeM-isFaithful : Faithful FreeM
+        freeM-isFaithful {X} {Y} F G F≈G x = {!!} -- goal x
+          where ι'' : ∀ {Z} → Magma.Carrier Z → Carrier (Functor.F₀ FreeM Z)
+                ι'' {Z} = morₘ (η unit Z)
+
+                ι' : {M : Magma} → Carrier (Functor.F₀ FreeM M)
+                            → Carrier(Functor.F₀ FreeM (MkMagma (Carrier (Functor.F₀ FreeM M)) (Op (Functor.F₀ FreeM M))))
+                ι' {M} = mor (Functor.F₁ FreeM (η unit M))
+
+                ι : {Z : Semigroup} → Carrier Z → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z)))
+                ι {Z} = morₘ (η unit (MkMagma (Carrier Z) (Op Z)))
+
+                .i-rels : ∀ {Z} → ι'' ∘ ι {Z} ≐ ι' ∘ ι {Z}
+                i-rels {Z} = commute unit ((η unit (MkMagma (Carrier Z) (Op Z))))
+
+                𝒆 : {Z : Semigroup} → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z))) → Carrier Z
+                𝒆 {Z} = mor (η counit Z)
+
+                .id≈𝒆∘ι : ∀ {Z} → id ≐ 𝒆 {Z} ∘ ι {Z}
+                id≈𝒆∘ι = zag
+
+                .ι-injective : {Z : Semigroup} → ∀{x y} → ι {Z} x ≡ ι {Z} y → x ≡ y
+                ι-injective {Z} {x} {y} ιx≈ιy = id≈𝒆∘ι x ⟨≡≡⟩ (≡.cong 𝒆 ιx≈ιy ⟨≡≡˘⟩ id≈𝒆∘ι y)
+
+                open Functor
+
+                𝒆' : {M : Magma} → Carrier (F₀ FreeM (MkMagma (Carrier (F₀ FreeM M)) (Op (F₀ FreeM M))))
+                           → Carrier (F₀ FreeM M)
+                𝒆' {M} = mor (η counit (F₀ FreeM M))
+
+                .id≈𝒆∘ι' : ∀ {M} → id ≐ 𝒆' {M} ∘ ι' {M}
+                id≈𝒆∘ι' = zig
+
+                .ι-injective' : ∀{Z} → ∀{x y} → ι' {Z} x ≡ ι' {Z} y → x ≡ y
+                ι-injective' {Z} {x} {y} ιx≈ιy = id≈𝒆∘ι' x ⟨≡≡⟩ (≡.cong 𝒆 ιx≈ιy ⟨≡≡˘⟩ id≈𝒆∘ι' y)
+
+                Fₘ = Functor.F₁ FreeM F
+                Gₘ = Functor.F₁ FreeM G
+
+                -- swap subscript `m`
+                .helper₂ : ι'' ∘ morₘ F  ≐  mor Fₘ ∘ ι''
+                helper₂ = commute unit F
+                --
+                -- ι'' {Z} = morₘ (η unit Z)
+
+                then : mor Fₘ ≐ mor Gₘ
+                then = ForgetM-isFaithful Fₘ Gₘ F≈G
+
+                -- i = mor (Functor.F₁ FreeM (η unit M))
+                -- e = mor (η counit (Functor.F₀ FreeM M))
+                -- Fₘ = Functor.F₁ FreeM F
+
+                Fᵐ = Functor.F₁ FreeM (F₁ (ForgetM _) Fₘ) -- (MkHom (mor Fₘ) (pres Fₘ))
+
+                .yo : 𝒆' {Y} ∘ mor Fᵐ ≐ mor Fₘ ∘ 𝒆' {X}
+                yo = commute counit Fₘ
+                -- consequently
+                claim : mor Fₘ ≐ 𝒆' {Y} ∘ mor Fᵐ ∘ ι' {X}
+                claim = {!!}
+
+                open import Relation.Binary.SetoidReasoning
+
+                .goal : morₘ F ≐ morₘ G
+                goal = λ x → ι-injective {{!!}} {!!} -- ι-injective {Z = Functor.F₀ FreeM ?} {!morₘ F!}
+                -- ((begin⟨ ≐-setoid (Magma.Carrier X) (Magma.Carrier Y) ⟩
+                --  morₘ F ≈⟨ {!!} ⟩
+                --  morₘ G ∎) x)
+                  -- {!!} -- λ x → ι-injective {!!}
+                {-
+                  ι ∘ morₘ F
+                  mor Fₘ ∘ ι   , helper₂
+                  mor Gₘ ∘ ι   , F≈G
+                  ι ∘ morₘ G   , helper₂ for G
+                -}
+
         _⟪_ : ℕ → ℕ → ℕ
         x ⟪ y = x * y + 1
         -- (x ⟪ y) ⟪ z   ≡  x * y * z + z + 1
         -- x ⟪ (y  ⟪ z)  ≡  x * y * z + x + 1
         --
         -- Taking z , x ≔ 1 , 0 yields 2 ≡ 1
+        --
+        -- The following code realises this pseudo-argument correctly.
 
         ohno : ¬ (2 ≡.≡ 1)
         ohno ()

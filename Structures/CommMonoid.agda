@@ -1,142 +1,137 @@
 module Structures.CommMonoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)
-open import Data.Nat using (ℕ; zero; _≟_; _≤_; _+_; z≤n; s≤s; module ≤-Reasoning)
-open import Data.Vec using (Vec; lookup; []; _∷_; map; _∈_; here; there) renaming (sum to vsum)
-open import Data.Fin using (Fin; zero)
-open import Data.Nat.Properties
+open import Relation.Binary using (Setoid; IsEquivalence; Reflexive; Symmetric)
 
 open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
 open import Function using (id ; _∘_ ; const)
+open import Function.Equality using (_⟶_; _⟨$⟩_)
+  renaming (id to idF; _∘_ to _⊚_)
 open import Function2 using (_$ᵢ)
 
-open import Relation.Binary using (Decidable)
-open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Data.List using (List; []; _++_; _∷_; foldr)
+  renaming (map to mapL)
+open import Data.List.Any using (Any; module Membership-≡)
+open Membership-≡ using (_∈_)
 
 open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-open import Relation.Binary.PropositionalEquality using (inspect; [_])
+open import Equiv using (_≃_; id≃; sym≃; trans≃)
 
 record CommMonoid {ℓ} : Set (lsuc ℓ) where
   constructor cmon
+  field
+    s : Setoid ℓ ℓ
+
+  open Setoid s renaming (Carrier to m) public
+  
   field 
-    m : Set ℓ
     e : m
     _*_ : m → m → m
-    left-unit : ∀ x → e * x ≡ x
-    right-unit : ∀ x → x * e ≡ x
-    assoc : ∀ x y z → (x * y) * z ≡ x * (y * z)
-    comm : ∀ x y → x * y ≡ y * x
-
-open CommMonoid
+    left-unit : ∀ x → e * x ≈ x
+    right-unit : ∀ x → x * e ≈ x
+    assoc : ∀ x y z → (x * y) * z ≈ x * (y * z)
+    comm : ∀ x y → x * y ≈ y * x
 
 record Homomorphism {ℓ} (A B : CommMonoid {ℓ}) : Set ℓ where
   constructor hom
-  open CommMonoid A renaming (m to m₁; e to e₁; _*_ to _*₁_)
-  open CommMonoid B renaming (m to m₂; e to e₂; _*_ to _*₂_) 
+  open CommMonoid A renaming (s to s₁; m to m₁; e to e₁; _*_ to _*₁_; _≈_ to _≈₁_)
+  open CommMonoid B renaming (s to s₂; m to m₂; e to e₂; _*_ to _*₂_; _≈_ to _≈₂_) 
   field
-    f : m₁ → m₂
-    pres-e : f e₁ ≡ e₂ 
-    pres-* : (x y : m₁) → f (x *₁ y) ≡ (f x) *₂ (f y)
-
-MonoidAlg : ∀ {ℓ} → OneSortedAlg ℓ
-MonoidAlg = record
-  { Alg = CommMonoid
-  ; Carrier = m
-  ; Hom = Homomorphism
-  ; mor = Homomorphism.f
-  ; comp = λ F G → hom (f F ∘ f G)
-                       (≡.trans (≡.cong (f F) (pres-e G)) (pres-e F))
-                       (λ x y → ≡.trans (≡.cong (f F) (pres-* G x y)) (pres-* F (f G x) (f G y)))
-  ; comp-is-∘ = ≐-refl
-  ; Id = hom id ≡.refl (λ _ _ → ≡.refl)
-  ; Id-is-id = ≐-refl
-  }
-  where open Homomorphism
-
+    f : s₁ ⟶ s₂
+    pres-e : f ⟨$⟩ e₁ ≈₂ e₂ 
+    pres-* : (x y : m₁) → f ⟨$⟩ (x *₁ y) ≈₂ (f ⟨$⟩ x) *₂ (f ⟨$⟩ y)
+    
 MonoidCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-MonoidCat ℓ = oneSortedCategory ℓ MonoidAlg
+MonoidCat ℓ = record
+  { Obj = CommMonoid
+  ; _⇒_ = Homomorphism
+  ; _≡_ = λ {_} {B} F G → ∀ x → let open CommMonoid B in
+            Homomorphism.f F ⟨$⟩ x ≈ Homomorphism.f G ⟨$⟩ x
+  ; id = hom idF {!!} {!!}
+  ; _∘_ = λ {(hom f₁ pres-e₁ pres-*₁) (hom f₂ pres-e₂ pres-*₂) →
+              hom (f₁ ⊚ f₂) {!!} {!!}}
+  ; assoc = {!!}
+  ; identityˡ = {!!}
+  ; identityʳ = {!!}
+  ; equiv = record { refl = {!!} ; sym = {!!} ; trans = {!!} }
+  ; ∘-resp-≡ = {!!}
+  }
 
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget ℓ = mkForgetful ℓ MonoidAlg
+Forget ℓ = record
+  { F₀ = CommMonoid.m
+  ; F₁ = λ { (hom f _ _) → λ x → f ⟨$⟩ x}
+  ; identity = ≡.refl
+  ; homomorphism = {!!}
+  ; F-resp-≡ = {!!}
+  }
 
-record Multiset {ℓ : Level} (X : Set ℓ) : Set ℓ where
-  constructor MS
-  field
-    size : ℕ
-    Carrier : Vec (X × ℕ) size 
-    inj : ∀ (i j : Fin size) → proj₁ (lookup i Carrier) ≡ proj₁ (lookup j Carrier) → i ≡ j
+module _ {ℓ : Level} where
+  abstract
+    Multiset : Set ℓ → Set ℓ
+    Multiset X = List X
 
-zeroMS : {ℓ : Level} (X : Set ℓ) → Multiset X
-zeroMS X = MS 0 [] (λ {()})
+    _≈ₘ_ : {X : Set ℓ} → Multiset X → Multiset X → Set ℓ
+    m₁ ≈ₘ m₂ = ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
 
-open Multiset
+    0ₘ : {X : Set ℓ} → Multiset X
+    0ₘ = []
 
-weight : {ℓ : Level} {X : Set ℓ} → (m : Multiset X) → Vec ℕ (size m)
-weight m = map (λ x → ℕ.suc (proj₂ x)) (Carrier m)
+    refl≈ : {X : Set ℓ} → Reflexive (_≈ₘ_ {X})
+    refl≈ _ = id≃
 
-postulate
-  _+M_ : {ℓ : Level} {X : Set ℓ} → Multiset X → Multiset X → Multiset X
-  pres-pts-A : {ℓ : Level} {X : Set ℓ} (A B : Multiset X) (x : X) (n : ℕ) →
-    (x , n) ∈ Carrier A → Σ ℕ (λ m → ((x , m) ∈ Carrier (A +M B)) × (n ≤ m))
-  pres-pts-B : {ℓ : Level} {X : Set ℓ} (A B : Multiset X) (x : X) (n : ℕ) →
-    (x , n) ∈ Carrier B → Σ ℕ (λ m → ((x , m) ∈ Carrier (A +M B)) × (n ≤ m))
-  pres-weight : {ℓ : Level} {X : Set ℓ} (A B : Multiset X) →
-    vsum (weight A) + vsum (weight B) ≡ vsum (weight (uncurry _+M_ (A , B)))
-
-private
-  module _ {ℓ : Level} {X : Set ℓ} (x : X) where
-    sing-v : Vec (X × ℕ) 1
-    sing-v = (x , 0) ∷ []
+    sym≈ : {X : Set ℓ} → Symmetric (_≈ₘ_ {X})
+    sym≈ s = λ x → sym≃ (s x)
     
-    sing-uniq : (i j : Fin 1) → proj₁ (lookup i sing-v) ≡ proj₁ (lookup j sing-v) → i ≡ j
-    sing-uniq zero zero pf = ≡.refl
-    sing-uniq zero (Fin.suc ()) pf
-    sing-uniq (Fin.suc ()) j pf
+    map : {A B : Set ℓ} → (A → B) → Multiset A → Multiset B
+    map = mapL
+
+    singleton : {X : Set ℓ} → X → Multiset X
+    singleton x = x ∷ []
+
+    fold : {A B : Set ℓ} → (A → B → B) → B → Multiset A → B
+    fold = foldr
     
-singleton : {ℓ : Level} {X : Set ℓ} (x : X) → Multiset X
-singleton {ℓ} {X} x = MS 1 (sing-v x) (sing-uniq {ℓ} {X} x)
+    singleton-map : {X Y : Set ℓ} (f : X → Y) {x : X} →
+      singleton (f x) ≡ map f (singleton x)
+    singleton-map f = ≡.refl
 
-open ≤-Reasoning
-
-DecidableX : {ℓ : Level} → (X : Set ℓ) → Decidable (_≡_ {ℓ} {X})
-DecidableX X x y with singleton x | inspect singleton x | singleton y | inspect singleton y | uncurry _+M_ (singleton x , singleton y) | inspect (uncurry _+M_) (singleton x , singleton y)
-DecidableX X x y | .(MS 1 ((x , 0) ∷ []) _) | [ ≡.refl ] | .(MS 1 ((y , 0) ∷ []) _) | [ ≡.refl ] | (MS zero v inj₃) | [ eq ] = no (λ _ → ¬i+1+j≤i 0 (begin
-  2 ≡⟨ pres-weight (singleton x) (singleton y) ⟩
-  vsum (weight (singleton x +M singleton y)) ≡⟨ ≡.cong (λ z → vsum (weight z)) eq ⟩
-  0 ∎))
-DecidableX X x y | .(MS 1 ((x , 0) ∷ []) (sing-uniq x)) | [ ≡.refl ] | .(MS 1 ((y , 0) ∷ []) (sing-uniq y)) | [ ≡.refl ] | (MS (ℕ.suc zero) ((z , n) ∷ []) inj₃) | [ eq ] = yes (
-  let x-pf = pres-pts-A (singleton x) (singleton y) x 0 here in
-  {!!})
-DecidableX X x y | .(MS 1 ((x , 0) ∷ []) (sing-uniq x)) | [ ≡.refl ] | .(MS 1 ((y , 0) ∷ []) (sing-uniq y)) | [ ≡.refl ] | (MS (ℕ.suc (ℕ.suc zero)) v inj₃) | [ eq ] = no {!!}
-DecidableX X x y | .(MS 1 ((x , 0) ∷ []) (sing-uniq x)) | [ ≡.refl ] | .(MS 1 ((y , 0) ∷ []) (sing-uniq y)) | [ ≡.refl ] | (MS (ℕ.suc (ℕ.suc (ℕ.suc s))) v inj₃) | [ eq ] = no {!!}
+    _+ₘ_ : {X : Set ℓ} → Multiset X → Multiset X → Multiset X
+    m₁ +ₘ m₂ = m₁ ++ m₂
+    
+  MSetoid : Set ℓ → Setoid ℓ ℓ
+  MSetoid X = record { Carrier = Multiset X ; _≈_ = _≈ₘ_
+      ; isEquivalence = record
+        { refl = refl≈
+        ; sym = sym≈
+        ; trans = {!!} } }
 
 MSMonoid : {ℓ : Level} → Set ℓ → CommMonoid {ℓ}
-MSMonoid X = cmon (Multiset X) (zeroMS X) {!!} {!!} {!!} {!!} {!!}
+MSMonoid {ℓ} X = cmon (MSetoid X) 0ₘ _+ₘ_ {!!} {!!} {!!} {!!}
 
-{-
 MultisetF : (ℓ : Level) → Functor (Sets ℓ) (MonoidCat ℓ)
 MultisetF ℓ = record
   { F₀ = MSMonoid
-  ; F₁ = λ f → hom {!!} {!!} {!!}
-  ; identity = {!!}
+  ; F₁ = λ f → hom (record { _⟨$⟩_ = map f ; cong = {!!} }) {!!} {!!}
+  ; identity = λ _ → {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = {!!}
   }
 
 MultisetLeft : (ℓ : Level) → Adjunction (MultisetF ℓ) (Forget ℓ)
 MultisetLeft ℓ = record
-  { unit = record { η = λ X → {!!} ; commute = {!!} }
+  { unit = record { η = λ X → singleton ; commute = singleton-map }
   ; counit = record
-    { η = λ { X@(cmon A z _+_ _ _ _ _) → hom {!!} {!!} {!!} }
-    ; commute = {!!}
+    { η = λ { X@(cmon A z _+_ _ _ _ _) →
+          hom (record { _⟨$⟩_ = fold _+_ z ; cong = {!!} }) {!!} {!!} }
+    ; commute = λ {(hom f _ _) x → {!!}}
     }
   ; zig = {!!}
   ; zag = {!!}
   }
--}

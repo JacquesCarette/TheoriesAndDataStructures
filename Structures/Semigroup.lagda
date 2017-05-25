@@ -226,8 +226,8 @@ ForgetM-isFaithful : {ℓ : Level} → Faithful (ForgetM ℓ)
 ForgetM-isFaithful F G F≈G = λ x → F≈G x
 \end{code}
 
-Even though there's essentialy no diffeerence between the homsets of MagmaCat and SemigroupCat,
-I ``feel'' that there ought to be no free funcgtor from the former to the latter.
+Even though there's essentially no difference between the homsets of MagmaCat and SemigroupCat,
+I ``feel'' that there ought to be no free functor from the former to the latter.
 More precisely, I feel that there cannot be an associative “extension” of an arbitrary binary operator;
 see _⟪_ below.
 
@@ -235,7 +235,7 @@ see _⟪_ below.
 open import Relation.Nullary
 open import Categories.NaturalTransformation hiding (id ; _≡_)
 NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
-NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
+NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
   where open Adjunction Adjunct
         open NaturalTransformation
         open import Data.Nat
@@ -245,107 +245,13 @@ NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
         {- 
         We expect a free functor to be injective on morphisms, otherwise if
         it collides functions then it is enforcing equations and that's not
-        what is expected of a “free construction”.
+        what is expected of a “free construction”. That is, we want the 
+        unit of the adjunction to be monic, at least. 
+        Which is rather reasonable: We want the injection of our basis into
+        a a free construction to not collide things, else we obtain new unfree
+        equations.
         -}
-
-        freeM-isFaithful : Faithful FreeM
-        freeM-isFaithful {X} {Y} F G F≈G x = {!!} -- goal x
-          where ι'' : ∀ {Z} → Magma.Carrier Z → Carrier (Functor.F₀ FreeM Z)
-                ι'' {Z} = morₘ (η unit Z)
-
-                ι' : {M : Magma} → Carrier (Functor.F₀ FreeM M)
-                            → Carrier(Functor.F₀ FreeM (MkMagma (Carrier (Functor.F₀ FreeM M)) (Op (Functor.F₀ FreeM M))))
-                ι' {M} = mor (Functor.F₁ FreeM (η unit M))
-
-                .hay : ∀ {M} → ι'' ∘ ι'' ≐  ι' ∘ ι''
-                hay {M} = commute unit (η unit M)  -- ie: “commute unit ι”
-
-                ι : {Z : Semigroup} → Carrier Z → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z)))
-                ι {Z} = morₘ (η unit (MkMagma (Carrier Z) (Op Z)))
-
-                .i-rels : ∀ {Z} → ι'' ∘ ι {Z} ≐ ι' ∘ ι {Z}
-                i-rels {Z} = commute unit ((η unit (MkMagma (Carrier Z) (Op Z)))) -- ie: “commute unit ι''”
-
-                𝒆 : {Z : Semigroup} → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z))) → Carrier Z
-                𝒆 {Z} = mor (η counit Z)
-
-                𝒆² : ∀{Z} → Carrier (Functor.F₀ FreeM (MkMagma (Carrier Z) (Op Z))) → Carrier Z
-                𝒆² {Z} = morₘ (Functor.F₁ (ForgetM _) (η counit Z))
-
-                -- 𝒆ᵐ = {!!} 
-
-                .nay : ∀ {M} → ι'' ∘ 𝒆  ≐  mor (Functor.F₁ FreeM (MkHom 𝒆 (pres (η counit M))))  ∘ ι''
-                nay {M} = commute unit (Functor.F₁ (ForgetM _) (η counit M))
-
-                .id≈𝒆∘ι : ∀ {Z} → id ≐ 𝒆 {Z} ∘ ι {Z}
-                id≈𝒆∘ι = zag
-
-                .ι-injective : {Z : Semigroup} → ∀{x y} → ι {Z} x ≡ ι {Z} y → x ≡ y
-                ι-injective {Z} {x} {y} ιx≈ιy = id≈𝒆∘ι x ⟨≡≡⟩ (≡.cong 𝒆 ιx≈ιy ⟨≡≡˘⟩ id≈𝒆∘ι y)
-
-                𝒆' : {M : Magma} → Carrier (F₀ FreeM (MkMagma (Carrier (F₀ FreeM M)) (Op (F₀ FreeM M))))
-                           → Carrier (F₀ FreeM M)
-                𝒆' {M} = mor (η counit (F₀ FreeM M))
-
-                .id≈𝒆∘ι' : ∀ {M} → id ≐ 𝒆' {M} ∘ ι' {M}
-                id≈𝒆∘ι' = zig
-
-                .ι-injective' : ∀{Z} → ∀{x y} → ι' {Z} x ≡ ι' {Z} y → x ≡ y
-                ι-injective' {Z} {x} {y} ιx≈ιy = id≈𝒆∘ι' x ⟨≡≡⟩ (≡.cong 𝒆 ιx≈ιy ⟨≡≡˘⟩ id≈𝒆∘ι' y)
-
-                Fₘ = Functor.F₁ FreeM F
-                Gₘ = Functor.F₁ FreeM G
-
-                -- swap subscript `m`
-                .helper₂ : ι'' ∘ morₘ F  ≐  mor Fₘ ∘ ι''
-                helper₂ = commute unit F
-                --
-                -- ι'' {Z} = morₘ (η unit Z)
-
-                then : mor Fₘ ≐ mor Gₘ
-                then = ForgetM-isFaithful Fₘ Gₘ F≈G
-
-                -- i = mor (Functor.F₁ FreeM (η unit M))
-                -- e = mor (η counit (Functor.F₀ FreeM M))
-                -- Fₘ = Functor.F₁ FreeM F
-
-                Fᵐ = Functor.F₁ FreeM (F₁ (ForgetM _) Fₘ) -- (MkHom (mor Fₘ) (pres Fₘ))
-
-                .yo : 𝒆' {Y} ∘ mor Fᵐ ≐ mor Fₘ ∘ 𝒆' {X}
-                yo = commute counit Fₘ
-                -- consequently
-                claim : mor Fₘ ≐ 𝒆' {Y} ∘ mor Fᵐ ∘ ι' {X}
-                claim = {!!}
-
-                open import Relation.Binary.SetoidReasoning
-
-                𝒆'' : {Z : Magma}  → Carrier (F₀ FreeM Z) → Magma.Carrier Z
-                𝒆'' = {! cf 𝒆² above!}
-                -- observe that we have: 𝒆 ∘ 𝒆' ∘ i'' ∘ i  ≐  id  
-                id≈𝒆∘ι'' : ∀ {Z} → id ≐ 𝒆'' {Z} ∘ ι'' {Z}
-                id≈𝒆∘ι'' = {! …?…!}
-
-                .here : morₘ F ≐ morₘ G
-                here = begin⟨ ≐-setoid (Magma.Carrier X) (Magma.Carrier Y) ⟩
-                  morₘ F                     ≈⟨ ∘-≐-cong₁ (morₘ F) id≈𝒆∘ι''            ⟩
-                  (𝒆'' {Y} ∘ ι'') ∘ morₘ F   ≡⟨ ≡.refl                               ⟩
-                  𝒆'' {Y}  ∘ (ι'' ∘ morₘ F)  ≈⟨ ∘-≐-cong₂ 𝒆'' helper₂                  ⟩
-                  𝒆'' {Y}  ∘ (mor Fₘ ∘ ι'')  ≈⟨ ∘-≐-cong₂ 𝒆'' (∘-≐-cong₁ ι'' F≈G)      ⟩
-                  𝒆'' {Y}  ∘ (mor Gₘ ∘ ι'')  ≈⟨ ∘-≐-cong₂ 𝒆'' (≐-sym (commute unit G)) ⟩
-                  𝒆'' {Y}  ∘ (ι'' ∘ morₘ G)  ≡⟨ ≡.refl                               ⟩                                    
-                  (𝒆'' {Y}  ∘ ι'') ∘ morₘ G  ≈⟨ ∘-≐-cong₁ (morₘ G) (≐-sym id≈𝒆∘ι'')    ⟩                  
-                  morₘ G ∎
-
-                .goal : morₘ F ≐ morₘ G
-                goal = {!!}
-                  -- {!!} -- λ x → ι-injective {!!}
-                {-
-                  ι ∘ morₘ F
-                  mor Fₘ ∘ ι   , helper₂
-                  mor Gₘ ∘ ι   , F≈G
-                  ι ∘ morₘ G   , helper₂ for G
-                -}
-
+        
         _⟪_ : ℕ → ℕ → ℕ
         x ⟪ y = x * y + 1
         -- (x ⟪ y) ⟪ z   ≡  x * y * z + z + 1
@@ -371,14 +277,42 @@ NoLeft FreeM faithfully-ignoreMe Adjunct = ohno (inj-is-injective crash)
         inj₀ = MagmaHom.mor inj
 
         -- the components of the unit are monic precisely when the left adjoint is faithful
-        postulate inj-is-injective : {x y : ℕ} → inj₀ x ≡.≡ inj₀ y → x ≡.≡ y
+        .work : {X Y : Magma} {F G : MagmaHom X Y}
+             → morₘ (η unit Y) ∘ morₘ F ≐ morₘ (η unit Y) ∘ morₘ G
+             → morₘ F ≐ morₘ G
+        work {X} {Y} {F} {G} ηF≈ηG =
+          let 𝑴₀   = Functor.F₀ FreeM
+              𝑴    = Functor.F₁ FreeM
+              _∘ₘ_  = Category._∘_ (MagmaCat lzero)
+              εY    = mor (η counit (𝑴₀ Y))
+              ηY    = η unit Y
+          in faithfull F G (begin⟨ ≐-setoid (Carrier (𝑴₀ X)) (Carrier (𝑴₀ Y)) ⟩
+          mor (𝑴 F)                     ≈⟨ ∘-≐-cong₁ (mor (𝑴 F)) zig ⟩
+          (εY ∘ mor (𝑴 ηY)) ∘ mor (𝑴 F)   ≡⟨ ≡.refl ⟩
+          εY ∘ (mor (𝑴 ηY)  ∘ mor (𝑴 F))   ≈⟨ ∘-≐-cong₂ εY (≐-sym (homomorphism FreeM)) ⟩
+          εY ∘  mor (𝑴 (ηY ∘ₘ F))           ≈⟨ ∘-≐-cong₂ εY (F-resp-≡ FreeM ηF≈ηG) ⟩
+          εY ∘ mor (𝑴 (ηY ∘ₘ G))            ≈⟨ ∘-≐-cong₂ εY (homomorphism FreeM) ⟩
+          εY ∘ (mor (𝑴 ηY)   ∘ mor (𝑴 G))  ≡⟨ ≡.refl ⟩
+          (εY ∘ mor (𝑴 ηY)) ∘ mor (𝑴 G)    ≈⟨ ∘-≐-cong₁ (mor (𝑴 G)) (≐-sym zig) ⟩                 
+          mor (𝑴 G) ∎)
+          where open import Relation.Binary.SetoidReasoning
+
+        postulate inj-is-injective : {x y : ℕ} → inj₀ x ≡ inj₀ y → x ≡ y
+
+        open import Data.Unit
+        𝒯 : Magma
+        𝒯 = MkMagma ⊤ (λ _ _ → tt)
+        --
+        -- ★ It may be that monics do not correspond to the underlying/mor function being injective for MagmaCat.
+        -- ‼ .cminj-is-injective : {x y : ℕ} → {!!} -- inj₀ x ≡ inj₀ y → x ≡ y
+        -- ‼ cminj-is-injective {x} {y} = work {𝒯} {𝒩} {F = MkHom (λ x → 0) (λ{ {tt} {tt} → {!!}})} {G = {!!}} {!!} 
         --
         -- ToDo! … perhaps this lives in the libraries someplace?
           
         bad : Hom (Functor.F₀ FreeM (Functor.F₀ (ForgetM _) 𝑵)) 𝑵
         bad = η counit 𝑵
 
-        crash : inj₀ 2 ≡.≡ inj₀ 1
+        crash : inj₀ 2 ≡ inj₀ 1
         crash = let open ≡.≡-Reasoning {A = Carrier 𝑵} in begin
           inj₀ 2
             ≡⟨ ≡.refl ⟩

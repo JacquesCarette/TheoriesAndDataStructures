@@ -126,30 +126,29 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
 abstract
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
-    { commMonoid = -- MkCommMon LM [] _++_ (Setoid.refl LM) {!!} {!!} {!!}
-    record
-    { setoid     =  LM
-    ; e          =  []
-    ; _*_        =  _++_
-    ; left-unit  =  Setoid.refl LM
-    ; right-unit = rightId
-    ; assoc      =  {!!}
-    ; comm       =  {!!}
-
-    }
+    { commMonoid = record
+        { setoid     =  LM
+        ; e          =  []
+        ; _*_        =  _++_
+        ; left-unit  =  Setoid.refl LM
+        ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
+        ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
+        ; comm       =  {!!}
+        }
     ; singleton = λ x → x ∷ []
     }
     where
       open Membership X
 
-      -- recursor for |Any P| types.
-      recc : {a p q : Level} {A : Set a} {P : A → Set  p} (Q : {xs : List A} → Any P xs → Set q)
-          → (here  : {x : A} {xs : List A}  (px : P x) → Q (Any.here {xs = xs} px))
-          → (there : {x : A} {xs : List A} {pxs : Any P xs} → Q pxs → Q (Any.there {x = x} pxs))
-          → {xs : List A} → (pf : Any P xs) → Q pf
-      recc Q her ther {[]} ()
-      recc Q her ther {x ∷ xs} (Any.here px)  = her px
-      recc Q her ther {x ∷ xs} (Any.there pf) = ther (recc Q her ther pf)
+      open import Algebra using (Monoid)
+      open import Data.List using (monoid)
+      module ++  =  Monoid (monoid (Setoid.Carrier X))
+
+      id₀ : {a : Level} {A : Set a} → A → A
+      id₀ = λ x → x
+
+      ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
+      ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
 
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
@@ -161,25 +160,6 @@ abstract
           ; trans =  λ xs≈ys ys≈zs → trans≃ xs≈ys ys≈zs
           }
         }
-
-      F : ∀ {xs e} → Any (X Setoid.≈ e) (xs ++ []) → Any (X Setoid.≈ e) xs
-      F {[]} ()
-      F {x ∷ xs} (Any.here px) = Any.here px
-      F {x ∷ xs} (Any.there ar) = Any.there (F ar)
-
-      F˘ : ∀ {xs e} → Any (X Setoid.≈ e) xs → Any (X Setoid.≈ e) (xs ++ [])
-      F˘ {e = e} = recc (λ {xs} _ → Any (X Setoid.≈ e) (xs ++ [])) (λ e≈x → Any.here e≈x) (Any.there)
-
-      FF˘≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) xs) → F (F˘ pf) ≡ pf
-      FF˘≈Id = recc (λ pf → F (F˘ pf) ≡ pf) ≐-refl (λ indHyp → ≡.cong Any.there indHyp)
-
-      F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ (F pf) ≡ pf
-      F˘F≈Id {[]} ()
-      F˘F≈Id {x ∷ xs} (Any.here px) = ≡.refl
-      F˘F≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (F˘F≈Id pf)
-
-      rightId : ∀ {xs x} → Any (Setoid._≈_ X x) (xs ++ []) ≃ Any (Setoid._≈_ X x) xs
-      rightId {xs} {x} = F , Equiv.qinv F˘ FF˘≈Id F˘F≈Id
 
 {-
 module _ {ℓ o : Level} where

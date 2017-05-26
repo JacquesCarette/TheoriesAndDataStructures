@@ -101,6 +101,32 @@ Forget ℓ o = record
   }
   -- equivalent functions aren't necessarily extensionally-identical functions
 
+record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) where
+  field
+    cm : CommMonoid {ℓ} {ℓ ⊔ o}
+  open CommMonoid cm public
+  field
+    singleton : Setoid.Carrier X → CommMonoid.Carrier cm
+
+abstract
+  ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
+  ListMS {ℓ} {o} X = record
+    { cm = MkCommMon LM [] _++_ (Setoid.refl LM) {!!} {!!} {!!}
+    ; singleton = λ x → x ∷ [] }
+    where
+      private
+        Z = List (Setoid.Carrier X)
+        open Membership X
+
+      LM : Setoid ℓ (ℓ ⊔ o)
+      LM = record
+        { Carrier = Z
+        ; _≈_ = λ m₁ m₂ → ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
+        ; isEquivalence = record
+          { refl = λ _ → id≃
+          ; sym = λ s x → sym≃ (s x)
+          ; trans = λ s t x → trans≃ (s x) (t x) } }
+{-
 module _ {ℓ o : Level} where
   infixl 8 _+ₘ_
   infix  4 _≈ₘ_
@@ -108,24 +134,6 @@ module _ {ℓ o : Level} where
   open Setoid
   
   abstract
-
-    Multiset : Setoid ℓ o → Setoid ℓ (ℓ ⊔ o)
-    Multiset X = record
-      { Carrier = List (Carrier X)
-      ; _≈_ = λ m₁ m₂ → ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
-      ; isEquivalence = record
-        { refl = λ _ → id≃
-        ; sym = λ s x → sym≃ (s x)
-        ; trans = λ s t x → trans≃ (s x) (t x) } }
-      where
-        open Membership X
-
-    _≈ₘ_ : {X : Setoid ℓ o} → (A B : Carrier (Multiset X)) → Set (ℓ ⊔ o)
-    _≈ₘ_ {X} = _≈_ (Multiset X)
-    
-    0ₘ : {X : Setoid ℓ o} → Carrier (Multiset X)
-    0ₘ = []
-
     map : {A B : Setoid ℓ o} → (Carrier A → Carrier B) → Carrier (Multiset A) → Carrier (Multiset B)
     map = mapL
 
@@ -153,31 +161,34 @@ module _ {ℓ o : Level} where
 
 MSMonoid : {ℓ o : Level} → Setoid ℓ o → CommMonoid {ℓ} {o ⊔ ℓ}
 MSMonoid X = MkCommMon (Multiset X) 0ₘ _+ₘ_ left0 right0 {!!} {!!}
+-}
 
-MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (o ⊔ ℓ))
+MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
-  { F₀ = λ S → MSMonoid S
-  ; F₁ = λ f → MkHom (record { _⟨$⟩_ = map (_⟨$⟩_ f)
+  { F₀ = λ S → cm (ListMS S)
+  ; F₁ = λ f → MkHom (record { _⟨$⟩_ = {!!} -- map (_⟨$⟩_ f)
                              ; cong = λ i≈j → {!!} })
                {!!} {!!}
   ; identity = {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = λ F≈G → {!!}
   }
+  where open Multiset
 
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
 MultisetLeft ℓ o = record
-  { unit = record { η = λ X → record { _⟨$⟩_ = singleton
+  { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
                                      ; cong = {!!} }
-                  ; commute = singleton-map }
+                  ; commute = {!!} } -- singleton-map }
   ; counit = record
     { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
-          MkHom (record { _⟨$⟩_ = fold _+_ z ; cong = {!!} }) {!!} {!!} }
+          MkHom (record { _⟨$⟩_ = {! fold _+_ z !} ; cong = {!!} }) {!!} {!!} }
     ; commute = {!!}
     }
   ; zig = {!!}
   ; zag = {!!}
   }
+  where open Multiset
 
 \end{code}
 

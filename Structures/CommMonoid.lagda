@@ -144,6 +144,45 @@ abstract
       open import Data.List using (monoid)
       module ++  =  Monoid (monoid (Setoid.Carrier X))
 
+     --- general attempt for symmetry proof -------------------------------------------------------------
+     ----------------------------------------------------------------------------------------------------
+
+      open import Data.List.Any.Properties using () renaming (++ʳ  to post-++ ; ++ˡ to pre-++)
+
+      -- [contravariant] list automorphisms lift to |Any P|
+      autos→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} 
+                   → (F : List A ≃ List A)   -- F is a bijection
+                   → proj₁ F [] ≡ []              -- and a homomorphism                   
+                   → ({xs ys : List A} → proj₁ F (xs ++ ys) ≡ proj₁ F ys ++ proj₁ F xs)
+                   → ({x : A} → P x → Any P (proj₁ F (x ∷ []))) -- which is property preserving
+                   → {xs : List A} → Any P xs ≃ Any P (proj₁ F xs)
+      autos→≃-Any {A = A} {P} (F , Equiv.qinv F˘ FF˘≈Id F˘F≈Id) over[] over++ PF {xs} = 𝔉 , Equiv.qinv 𝔉˘ {!!} {!!}               
+        where 𝔉 : {xs : List A} → Any P xs → Any P (F xs)
+              𝔉 {x ∷ xs} (Any.here px) rewrite (over++ {x ∷ []} {xs}) = post-++ (F xs) (PF px)
+              𝔉 {x ∷ xs} (Any.there pf) rewrite (over++ {x ∷ []} {xs}) = pre-++ (𝔉 pf)
+
+              𝔉˘ : {xs : List A} → Any P (F xs) → Any P xs
+              𝔉˘ {xs} pf with F xs | pf
+              ...| y ∷ ys | Any.here py = {!!}
+              ...| y ∷ ys | Any.there pp = {!!}
+
+
+     --- direct attempt for symmetry proof -------------------------------------------------------------
+     ----------------------------------------------------------------------------------------------------
+
+      F : ∀ {xs ys e} → Any (X Setoid.≈ e) (xs ++ ys) → Any (X Setoid.≈ e) (ys ++ xs)
+      F {[]} {.(_ ∷ _)} {e₁} (Any.here px) = Any.here px
+      F {[]} {x ∷ xs} {e₁} (Any.there pf) rewrite (proj₂ ++.identity xs) = Any.there pf
+      F {x ∷ xs} {ys} {e₁} (Any.here px) = post-++ ys (Any.here px)
+      F {x ∷ xs} {ys} {e₁} (Any.there pf) = {!Any.there ?!}
+
+      symmm : ∀ {xs ys e} → Any (Setoid._≈_ X e) (xs ++ ys)  ≃  Any (Setoid._≈_ X e) (ys ++ xs)
+      symmm {xs} {ys} {e} = F , Equiv.qinv {!!} {!!} {!!}
+
+     
+     ----------------------------------------------------------------------------------------------------
+     ----------------------------------------------------------------------------------------------------
+
       id₀ : {a : Level} {A : Set a} → A → A
       id₀ = λ x → x
 

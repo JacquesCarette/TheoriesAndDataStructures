@@ -57,7 +57,7 @@ record Hom {ℓ} {o} (A B : CommMonoid {ℓ} {o}) : Set (ℓ ⊔ o) where
   private mor₀ = Π._⟨$⟩_ mor
   field
     pres-e : mor₀ e₁ ≈₂ e₂
-    pres-* : {x y : Carrier A} → mor₀ (x *₁ y) ≈₂ mor₀ x  *₂  mor₀ y
+    pres-* : {x y : Carrier A} → mor₀ (x *₁ y)  ≈₂  mor₀ x *₂ mor₀ y
 
   open Π mor public
 
@@ -69,7 +69,7 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 
 %}}}
 
-%{{{ MonoidCat
+%{{{ MonoidCat ; Forget
 \begin{code}
 MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊔ lsuc o) (o ⊔ ℓ) (ℓ ⊔ o)
 MonoidCat ℓ o = record
@@ -93,44 +93,89 @@ MonoidCat ℓ o = record
   ; ∘-resp-≡ = λ {A} {B} {C} {F} {F'} {G} {G'} F≈F' G≈G' {x} → ≈.trans C (cong F G≈G') F≈F'
   }
 \end{code}
-%}}}
 
 \begin{code}
 Forget : (ℓ o : Level) → Functor (MonoidCat ℓ (o ⊔ ℓ)) (Setoids ℓ (o ⊔ ℓ))
 Forget ℓ o = record
-  { F₀ = λ C → record { CommMonoid C }
-  ; F₁ = λ F → record { Hom F }
-  ; identity = λ {A} → Setoid.refl (setoid A)
-  ; homomorphism = λ {_} {_} {C} → Setoid.refl (setoid C)
-  ; F-resp-≡ = λ F≈G {x} → F≈G {x}
+  { F₀             =   λ C → record { CommMonoid C }
+  ; F₁             =   λ F → record { Hom F }
+  ; identity       =   λ {A} → ≈.refl A
+  ; homomorphism   =   λ {A} {B} {C} → ≈.refl C
+  ; F-resp-≡      =   λ F≈G {x} → F≈G {x}
   }
-  -- equivalent functions aren't necessarily extensionally-identical functions
+\end{code}
+%}}}
 
+%{{{ Multiset
+
+A “multiset on type X” is a commutative monoid with a to it from |X|.
+For now, we make no constraints on the map, however it may be that
+future proof obligations will require it to be an injection ---which is reasonable.
+
+\begin{code}
 record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) where
   field
-    cm : CommMonoid {ℓ} {ℓ ⊔ o}
-  open CommMonoid cm public
-  field
-    singleton : Setoid.Carrier X → CommMonoid.Carrier cm
+    commMonoid : CommMonoid {ℓ} {ℓ ⊔ o}
+    singleton : Setoid.Carrier X → CommMonoid.Carrier commMonoid
+  open CommMonoid commMonoid public
+\end{code}
 
+%}}}
+
+\begin{code}
 abstract
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
-    { cm = MkCommMon LM [] _++_ (Setoid.refl LM) {!!} {!!} {!!}
-    ; singleton = λ x → x ∷ [] }
+    { commMonoid = -- MkCommMon LM [] _++_ (Setoid.refl LM) {!!} {!!} {!!}
+    record
+    { setoid     =  LM
+    ; e          =  []
+    ; _*_        =  _++_
+    ; left-unit  =  Setoid.refl LM
+    ; right-unit = rightId
+    ; assoc      =  {!!}
+    ; comm       =  {!!}
+
+    }
+    ; singleton = λ x → x ∷ []
+    }
     where
-      private
-        Z = List (Setoid.Carrier X)
-        open Membership X
+      open Membership X
 
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
-        { Carrier = Z
-        ; _≈_ = λ m₁ m₂ → ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
+        { Carrier = List (Setoid.Carrier X)
+        ; _≈_ = λ xs ys → {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
         ; isEquivalence = record
-          { refl = λ _ → id≃
-          ; sym = λ s x → sym≃ (s x)
-          ; trans = λ s t x → trans≃ (s x) (t x) } }
+          { refl  =  id≃
+          ; sym   =  λ xs≈ys → sym≃ xs≈ys
+          ; trans =  λ xs≈ys ys≈zs → trans≃ xs≈ys ys≈zs
+          }
+        }
+
+      F : ∀ {xs e} → Any (X Setoid.≈ e) (xs ++ []) → Any (X Setoid.≈ e) xs
+      F {[]} ()
+      F {x ∷ xs} (Any.here px) = Any.here px
+      F {x ∷ xs} (Any.there ar) = Any.there (F ar)
+
+      F˘ : ∀ {xs e} → Any (X Setoid.≈ e) xs → Any (X Setoid.≈ e) (xs ++ [])
+      F˘ {[]} ()
+      F˘ {x ∷ xs} (Any.here px) = Any.here px
+      F˘ {x ∷ xs} (Any.there eq) = Any.there (F˘ eq)
+
+      FF˘≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) xs) → F (F˘ pf) ≡ pf
+      FF˘≈Id {[]} ()
+      FF˘≈Id {x ∷ xs} (Any.here px) = ≡.refl
+      FF˘≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (FF˘≈Id pf)
+
+      F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ (F pf) ≡ pf
+      F˘F≈Id {[]} ()
+      F˘F≈Id {x ∷ xs} (Any.here px) = ≡.refl
+      F˘F≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (F˘F≈Id pf)
+
+      rightId : ∀ {xs x} → Any (Setoid._≈_ X x) (xs ++ []) ≃ Any (Setoid._≈_ X x) xs
+      rightId {xs} {x} = F , Equiv.qinv F˘ FF˘≈Id F˘F≈Id
+
 {-
 module _ {ℓ o : Level} where
   infixl 8 _+ₘ_
@@ -170,7 +215,7 @@ MSMonoid X = MkCommMon (Multiset X) 0ₘ _+ₘ_ left0 right0 {!!} {!!}
 
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
-  { F₀ = λ S → cm (ListMS S)
+  { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ f → MkHom (record { _⟨$⟩_ = {!!} -- map (_⟨$⟩_ f)
                              ; cong = λ i≈j → {!!} })
                {!!} {!!}
@@ -182,7 +227,7 @@ MultisetF ℓ o = record
 
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
 MultisetLeft ℓ o = record
-  { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
+  { unit = record { η = λ X → record { _⟨$⟩_ = {!!} -- singleton (ListMS X)
                                      ; cong = {!!} }
                   ; commute = {!!} } -- singleton-map }
   ; counit = record

@@ -3,33 +3,34 @@
 module Structures.CommMonoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)
-open import Relation.Binary using (Setoid; IsEquivalence; Reflexive; Symmetric)
+open import Relation.Binary using (Setoid; IsEquivalence;
+  Reflexive; Symmetric; Transitive)
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
+open import Categories.Agda       using (Setoids)
 
 open import Function.Equality using (_⟶_; _⟨$⟩_ ; cong ; id ; _∘_)
 open import Function2         using (_$ᵢ)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
-open import Data.List.Any using (Any; module Membership-≡)
-open Membership-≡         using (_∈_)
+open import Data.List.Any using (Any; module Membership)
 
 open import Forget
 open import EqualityCombinators
 open import DataProperties
 
 open import Equiv using (_≃_; id≃; sym≃; trans≃)
+
 \end{code}
 %}}}
 
 %{{{ CommMonoid ; Hom
 \begin{code}
-record CommMonoid {ℓ} : Set (lsuc ℓ) where  
+record CommMonoid {ℓ} {o} : Set (lsuc ℓ ⊔ lsuc o) where  
   constructor MkCommMon
-  field setoid : Setoid ℓ ℓ
+  field setoid : Setoid ℓ o
   open Setoid setoid public
 
   field 
@@ -47,7 +48,7 @@ infix -666 eq-in
 eq-in = CommMonoid._≈_
 syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
-record Hom {ℓ} (A B : CommMonoid {ℓ}) : Set ℓ where
+record Hom {ℓ} {o} (A B : CommMonoid {ℓ} {o}) : Set (ℓ ⊔ o) where
   constructor MkHom
   open CommMonoid A using () renaming (e to e₁; _*_ to _*₁_; _≈_ to _≈₁_)
   open CommMonoid B using () renaming (e to e₂; _*_ to _*₂_; _≈_ to _≈₂_) 
@@ -62,9 +63,9 @@ open Hom
 
 %{{{ MonoidCat
 \begin{code}
-MonoidCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-MonoidCat ℓ = record
-  { Obj = CommMonoid
+MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊔ lsuc o) (o ⊔ ℓ) (ℓ ⊔ o)
+MonoidCat ℓ o = record
+  { Obj = CommMonoid {ℓ} {o}
   ; _⇒_ = Hom
   ; _≡_ = λ {A} {B} F G → {x : Carrier A} → mor F ⟨$⟩ x ≈ mor G ⟨$⟩ x ∶ B
   ; id  = λ {A} → MkHom id (≈.refl A) (≈.refl A)
@@ -87,79 +88,97 @@ MonoidCat ℓ = record
 %}}}
 
 \begin{code}
-Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget ℓ = record
-  { F₀ = CommMonoid.Carrier
-  ; F₁ = λ F → λ x → mor F ⟨$⟩ x
-  ; identity = ≡.refl
-  ; homomorphism = λ {A} {B} {C} {F} {G} {x} → ≡.refl
-  ; F-resp-≡ = λ {A} {B} {F} {G} F≈G {x} → {!F≈G ?!}
+Forget : (ℓ o : Level) → Functor (MonoidCat ℓ (o ⊔ ℓ)) (Setoids ℓ (o ⊔ ℓ))
+Forget ℓ o = record
+  { F₀ = λ C → record
+    { Carrier = Carrier C
+    ; _≈_ = eq-in C
+    ; isEquivalence = isEquivalence C }
+  ; F₁ = λ F → record { _⟨$⟩_ = _⟨$⟩_ (mor F) ; cong = cong (mor F) }
+  ; identity = λ {A} → Setoid.refl (setoid A)
+  ; homomorphism = λ {_} {_} {C} → Setoid.refl (setoid C)
+  ; F-resp-≡ = λ F≈G {x} → F≈G {x}
   }
   -- equivalent functions aren't necessarily extensionally-identical functions
 
-module _ {ℓ : Level} where
+module _ {ℓ o : Level} where
+  infixl 8 _+ₘ_
+  infix  4 _≈ₘ_
+
+  open Setoid
+  
   abstract
-    Multiset : Set ℓ → Set ℓ
-    Multiset X = List X
 
-    _≈ₘ_ : {X : Set ℓ} → Multiset X → Multiset X → Set ℓ
-    m₁ ≈ₘ m₂ = ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
+    Multiset : Setoid ℓ o → Setoid ℓ (ℓ ⊔ o)
+    Multiset X = record
+      { Carrier = List (Carrier X)
+      ; _≈_ = λ m₁ m₂ → ∀ x → (x ∈ m₁) ≃ (x ∈ m₂)
+      ; isEquivalence = record
+        { refl = λ _ → id≃
+        ; sym = λ s x → sym≃ (s x)
+        ; trans = λ s t x → trans≃ (s x) (t x) } }
+      where
+        open Membership X
 
-    0ₘ : {X : Set ℓ} → Multiset X
+    _≈ₘ_ : {X : Setoid ℓ o} → (A B : Carrier (Multiset X)) → Set (ℓ ⊔ o)
+    _≈ₘ_ {X} = _≈_ (Multiset X)
+    
+    0ₘ : {X : Setoid ℓ o} → Carrier (Multiset X)
     0ₘ = []
 
-    refl≈ : {X : Set ℓ} → Reflexive (_≈ₘ_ {X})
-    refl≈ _ = id≃
-
-    sym≈ : {X : Set ℓ} → Symmetric (_≈ₘ_ {X})
-    sym≈ s = λ x → sym≃ (s x)
-    
-    map : {A B : Set ℓ} → (A → B) → Multiset A → Multiset B
+    map : {A B : Setoid ℓ o} → (Carrier A → Carrier B) → Carrier (Multiset A) → Carrier (Multiset B)
     map = mapL
 
-    singleton : {X : Set ℓ} → X → Multiset X
+    singleton : {X : Setoid ℓ o} → Carrier X → Carrier (Multiset X)
     singleton x = x ∷ []
 
-    fold : {A B : Set ℓ} → (A → B → B) → B → Multiset A → B
+    fold : {X : Setoid ℓ o} {B : Set ℓ} →
+      let A = Carrier X in
+      (A → B → B) → B → Carrier (Multiset X) → B
     fold = foldr
     
-    singleton-map : {X Y : Set ℓ} (f : X → Y) {x : X} →
-      singleton (f x) ≡ map f (singleton x)
-    singleton-map f = ≡.refl
+    singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
+      _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
+    singleton-map {_} {B} f = Setoid.refl (Multiset B)
 
-    _+ₘ_ : {X : Set ℓ} → Multiset X → Multiset X → Multiset X
+    _+ₘ_ : {X : Setoid ℓ o} → Carrier (Multiset X) → Carrier (Multiset X) → Carrier (Multiset X)
     m₁ +ₘ m₂ = m₁ ++ m₂
-    
-  MSetoid : Set ℓ → Setoid ℓ ℓ
-  MSetoid X = record { Carrier = Multiset X ; _≈_ = _≈ₘ_
-      ; isEquivalence = record
-        { refl = refl≈
-        ; sym = sym≈
-        ; trans = {!!} } }
 
-MSMonoid : {ℓ : Level} → Set ℓ → CommMonoid {ℓ}
-MSMonoid {ℓ} X = MkCommMon (MSetoid X) 0ₘ _+ₘ_ {!!} {!!} {!!} {!!}
+    left0 : {X : Setoid ℓ o} {m : Carrier (Multiset X)} → _≈_ (Multiset X) (0ₘ +ₘ m) m
+    left0 {X} = Setoid.refl (Multiset X)
 
-MultisetF : (ℓ : Level) → Functor (Sets ℓ) (MonoidCat ℓ)
-MultisetF ℓ = record
-  { F₀ = MSMonoid
-  ; F₁ = λ f → MkHom (record { _⟨$⟩_ = map f ; cong = {!!} }) {!!} {!!}
-  ; identity = {!!} -- λ _ → {!!}
+    right0 : {X : Setoid ℓ o} {m : Carrier (Multiset X)} → _≈_ (Multiset X) (m +ₘ 0ₘ) m
+    right0 {X} = {!!}
+      where open Membership (Multiset X)
+
+MSMonoid : {ℓ o : Level} → Setoid ℓ o → CommMonoid {ℓ} {o ⊔ ℓ}
+MSMonoid X = MkCommMon (Multiset X) 0ₘ _+ₘ_ left0 right0 {!!} {!!}
+
+MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (o ⊔ ℓ))
+MultisetF ℓ o = record
+  { F₀ = λ S → MSMonoid S
+  ; F₁ = λ f → MkHom (record { _⟨$⟩_ = map (_⟨$⟩_ f)
+                             ; cong = λ i≈j → {!!} })
+               {!!} {!!}
+  ; identity = {!!}
   ; homomorphism = {!!}
-  ; F-resp-≡ = {!!}
+  ; F-resp-≡ = λ F≈G → {!!}
   }
 
-MultisetLeft : (ℓ : Level) → Adjunction (MultisetF ℓ) (Forget ℓ)
-MultisetLeft ℓ = record
-  { unit = record { η = λ X → singleton ; commute = singleton-map }
+MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
+MultisetLeft ℓ o = record
+  { unit = record { η = λ X → record { _⟨$⟩_ = singleton
+                                     ; cong = {!!} }
+                  ; commute = singleton-map }
   ; counit = record
     { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
           MkHom (record { _⟨$⟩_ = fold _+_ z ; cong = {!!} }) {!!} {!!} }
-    ; commute = {!!} -- λ {(MkHom f _ _) x → {!!}}
+    ; commute = {!!}
     }
   ; zig = {!!}
   ; zag = {!!}
   }
+
 \end{code}
 
 % Quick Folding Instructions:

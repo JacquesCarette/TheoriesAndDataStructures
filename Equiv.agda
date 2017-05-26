@@ -11,7 +11,7 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; trans; cong; cong₂; module ≡-Reasoning)
 
 infix 4 _≐_
-infix 4 _≃_
+infix 3 _≃_
 infixr 5 _●_
 
 infix 8 _⊎≃_

@@ -142,6 +142,15 @@ abstract
     where
       open Membership X
 
+      -- recursor for |Any P| types.
+      recc : {a p q : Level} {A : Set a} {P : A → Set  p} (Q : {xs : List A} → Any P xs → Set q)
+          → (here  : {x : A} {xs : List A}  (px : P x) → Q (Any.here {xs = xs} px))
+          → (there : {x : A} {xs : List A} {pxs : Any P xs} → Q pxs → Q (Any.there {x = x} pxs))
+          → {xs : List A} → (pf : Any P xs) → Q pf
+      recc Q her ther {[]} ()
+      recc Q her ther {x ∷ xs} (Any.here px)  = her px
+      recc Q her ther {x ∷ xs} (Any.there pf) = ther (recc Q her ther pf)
+
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
@@ -159,14 +168,10 @@ abstract
       F {x ∷ xs} (Any.there ar) = Any.there (F ar)
 
       F˘ : ∀ {xs e} → Any (X Setoid.≈ e) xs → Any (X Setoid.≈ e) (xs ++ [])
-      F˘ {[]} ()
-      F˘ {x ∷ xs} (Any.here px) = Any.here px
-      F˘ {x ∷ xs} (Any.there eq) = Any.there (F˘ eq)
+      F˘ {e = e} = recc (λ {xs} _ → Any (X Setoid.≈ e) (xs ++ [])) (λ e≈x → Any.here e≈x) (Any.there)
 
       FF˘≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) xs) → F (F˘ pf) ≡ pf
-      FF˘≈Id {[]} ()
-      FF˘≈Id {x ∷ xs} (Any.here px) = ≡.refl
-      FF˘≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (FF˘≈Id pf)
+      FF˘≈Id = recc (λ pf → F (F˘ pf) ≡ pf) ≐-refl (λ indHyp → ≡.cong Any.there indHyp)
 
       F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ (F pf) ≡ pf
       F˘F≈Id {[]} ()

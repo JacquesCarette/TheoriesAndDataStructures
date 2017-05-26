@@ -98,11 +98,8 @@ MonoidCat ℓ o = record
 \begin{code}
 Forget : (ℓ o : Level) → Functor (MonoidCat ℓ (o ⊔ ℓ)) (Setoids ℓ (o ⊔ ℓ))
 Forget ℓ o = record
-  { F₀ = λ C → record
-    { Carrier = Carrier C
-    ; _≈_ = eq-in C
-    ; isEquivalence = isEquivalence C }
-  ; F₁ = λ F → record { _⟨$⟩_ = _⟨$⟩_ F ; cong = cong F }
+  { F₀ = λ C → record { CommMonoid C }
+  ; F₁ = λ F → record { Hom F }
   ; identity = λ {A} → Setoid.refl (setoid A)
   ; homomorphism = λ {_} {_} {C} → Setoid.refl (setoid C)
   ; F-resp-≡ = λ F≈G {x} → F≈G {x}

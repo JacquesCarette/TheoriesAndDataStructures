@@ -11,7 +11,7 @@ open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Setoids)
 
-open import Function.Equality using (_⟶_; _⟨$⟩_ ; cong ; id ; _∘_)
+open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Function2         using (_$ᵢ)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
@@ -51,14 +51,22 @@ syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 record Hom {ℓ} {o} (A B : CommMonoid {ℓ} {o}) : Set (ℓ ⊔ o) where
   constructor MkHom
   open CommMonoid A using () renaming (e to e₁; _*_ to _*₁_; _≈_ to _≈₁_)
-  open CommMonoid B using () renaming (e to e₂; _*_ to _*₂_; _≈_ to _≈₂_) 
+  open CommMonoid B using () renaming (e to e₂; _*_ to _*₂_; _≈_ to _≈₂_)
+
+  field mor    : setoid A ⟶ setoid B
+  private mor₀ = Π._⟨$⟩_ mor
   field
-    mor    : setoid A ⟶ setoid B
-    pres-e : mor ⟨$⟩ e₁ ≈₂ e₂
-    pres-* : {x y : Carrier A} → mor ⟨$⟩ (x *₁ y) ≈₂ (mor ⟨$⟩ x) *₂ (mor ⟨$⟩ y)
+    pres-e : mor₀ e₁ ≈₂ e₂
+    pres-* : {x y : Carrier A} → mor₀ (x *₁ y) ≈₂ mor₀ x  *₂  mor₀ y
+
+  open Π mor public
 
 open Hom
 \end{code}
+
+Notice that the last line in the record, |open Π mor public|, lifts the setoid-homomorphism
+operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
+
 %}}}
 
 %{{{ MonoidCat
@@ -67,12 +75,12 @@ MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊔ lsuc o) (o ⊔ ℓ) (ℓ 
 MonoidCat ℓ o = record
   { Obj = CommMonoid {ℓ} {o}
   ; _⇒_ = Hom
-  ; _≡_ = λ {A} {B} F G → {x : Carrier A} → mor F ⟨$⟩ x ≈ mor G ⟨$⟩ x ∶ B
+  ; _≡_ = λ {A} {B} F G → {x : Carrier A} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B
   ; id  = λ {A} → MkHom id (≈.refl A) (≈.refl A)
   ; _∘_ = λ {A} {B} {C} F G → record
     { mor      =  mor F ∘ mor G
-    ; pres-e   =  ≈.trans C (cong (mor F) (pres-e G)) (pres-e F)
-    ; pres-*   =  ≈.trans C (cong (mor F) (pres-* G)) (pres-* F)
+    ; pres-e   =  ≈.trans C (cong F (pres-e G)) (pres-e F)
+    ; pres-*   =  ≈.trans C (cong F (pres-* G)) (pres-* F)
     }
   ; assoc     = λ {A} {B} {C} {D} {F} {G} {H} {x} → ≈.refl D
   ; identityˡ = λ {A} {B} {F} {x} → ≈.refl B
@@ -82,7 +90,7 @@ MonoidCat ℓ o = record
     ; sym   = λ {F} {G} F≈G {x} → ≈.sym B F≈G
     ; trans = λ {F} {G} {H} F≈G G≈H {x} → ≈.trans B F≈G G≈H
     }
-  ; ∘-resp-≡ = λ {A} {B} {C} {F} {F'} {G} {G'} F≈F' G≈G' {x} → ≈.trans C (cong (mor F) G≈G') F≈F'
+  ; ∘-resp-≡ = λ {A} {B} {C} {F} {F'} {G} {G'} F≈F' G≈G' {x} → ≈.trans C (cong F G≈G') F≈F'
   }
 \end{code}
 %}}}
@@ -94,7 +102,7 @@ Forget ℓ o = record
     { Carrier = Carrier C
     ; _≈_ = eq-in C
     ; isEquivalence = isEquivalence C }
-  ; F₁ = λ F → record { _⟨$⟩_ = _⟨$⟩_ (mor F) ; cong = cong (mor F) }
+  ; F₁ = λ F → record { _⟨$⟩_ = _⟨$⟩_ F ; cong = cong F }
   ; identity = λ {A} → Setoid.refl (setoid A)
   ; homomorphism = λ {_} {_} {C} → Setoid.refl (setoid C)
   ; F-resp-≡ = λ F≈G {x} → F≈G {x}

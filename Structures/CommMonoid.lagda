@@ -118,6 +118,15 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
     commMonoid : CommMonoid {ℓ} {ℓ ⊔ o}
     singleton : Setoid.Carrier X → CommMonoid.Carrier commMonoid
   open CommMonoid commMonoid public
+
+record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset Y) : Set (ℓ ⊔ o) where
+  constructor MsHom
+  open Multiset A using () renaming (commMonoid to cm₁)
+  open Multiset B using () renaming (commMonoid to cm₂)
+
+  field
+    cmor : Hom cm₁ cm₂
+    map : (X ⟶ Y) → (CommMonoid.setoid cm₁ ⟶ CommMonoid.setoid cm₂)
 \end{code}
 
 %}}}
@@ -126,7 +135,7 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
 abstract
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
-    { commMonoid = -- MkCommMon LM [] _++_ (Setoid.refl LM) {!!} {!!} {!!}
+    { commMonoid =
     record
     { setoid     =  LM
     ; e          =  []
@@ -148,7 +157,7 @@ abstract
         ; _≈_ = λ xs ys → {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
         ; isEquivalence = record
           { refl  =  id≃
-          ; sym   =  λ xs≈ys → sym≃ xs≈ys
+          ; sym   =  λ xs≃ys → sym≃ xs≃ys
           ; trans =  λ xs≈ys ys≈zs → trans≃ xs≈ys ys≈zs
           }
         }
@@ -168,28 +177,19 @@ abstract
       FF˘≈Id {x ∷ xs} (Any.here px) = ≡.refl
       FF˘≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (FF˘≈Id pf)
 
-      F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ (F pf) ≡ pf
+      F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ {xs} {e} (F pf) ≡ pf
       F˘F≈Id {[]} ()
       F˘F≈Id {x ∷ xs} (Any.here px) = ≡.refl
-      F˘F≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (F˘F≈Id pf)
+      F˘F≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (F˘F≈Id {xs} pf)
 
       rightId : ∀ {xs x} → Any (Setoid._≈_ X x) (xs ++ []) ≃ Any (Setoid._≈_ X x) xs
       rightId {xs} {x} = F , Equiv.qinv F˘ FF˘≈Id F˘F≈Id
 
+  ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
+  ListCMHom X Y = MsHom {!!}
+         (λ f → record { _⟨$⟩_ = mapL (Π._⟨$⟩_ f)
+                       ; cong = λ i≈j → {!!} })
 {-
-module _ {ℓ o : Level} where
-  infixl 8 _+ₘ_
-  infix  4 _≈ₘ_
-
-  open Setoid
-  
-  abstract
-    map : {A B : Setoid ℓ o} → (Carrier A → Carrier B) → Carrier (Multiset A) → Carrier (Multiset B)
-    map = mapL
-
-    singleton : {X : Setoid ℓ o} → Carrier X → Carrier (Multiset X)
-    singleton x = x ∷ []
-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in
       (A → B → B) → B → Carrier (Multiset X) → B
@@ -198,26 +198,12 @@ module _ {ℓ o : Level} where
     singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
       _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
     singleton-map {_} {B} f = Setoid.refl (Multiset B)
-
-    _+ₘ_ : {X : Setoid ℓ o} → Carrier (Multiset X) → Carrier (Multiset X) → Carrier (Multiset X)
-    m₁ +ₘ m₂ = m₁ ++ m₂
-
-    left0 : {X : Setoid ℓ o} {m : Carrier (Multiset X)} → _≈_ (Multiset X) (0ₘ +ₘ m) m
-    left0 {X} = Setoid.refl (Multiset X)
-
-    right0 : {X : Setoid ℓ o} {m : Carrier (Multiset X)} → _≈_ (Multiset X) (m +ₘ 0ₘ) m
-    right0 {X} = {!!}
-      where open Membership (Multiset X)
-
-MSMonoid : {ℓ o : Level} → Setoid ℓ o → CommMonoid {ℓ} {o ⊔ ℓ}
-MSMonoid X = MkCommMon (Multiset X) 0ₘ _+ₘ_ left0 right0 {!!} {!!}
 -}
 
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
-  ; F₁ = λ f → MkHom (record { _⟨$⟩_ = {!!} -- map (_⟨$⟩_ f)
-                             ; cong = λ i≈j → {!!} })
+  ; F₁ = λ {X} {Y} f → MkHom (MultisetHom.map (ListCMHom X Y) f)
                {!!} {!!}
   ; identity = {!!}
   ; homomorphism = {!!}

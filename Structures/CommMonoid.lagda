@@ -135,21 +135,29 @@ record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset
 abstract
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
-    { commMonoid =
-    record
-    { setoid     =  LM
-    ; e          =  []
-    ; _*_        =  _++_
-    ; left-unit  =  Setoid.refl LM
-    ; right-unit = rightId
-    ; assoc      =  {!!}
-    ; comm       =  {!!}
-
-    }
+    { commMonoid = record
+        { setoid     =  LM
+        ; e          =  []
+        ; _*_        =  _++_
+        ; left-unit  =  Setoid.refl LM
+        ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
+        ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
+        ; comm       =  {!!}
+        }
     ; singleton = λ x → x ∷ []
     }
     where
       open Membership X
+
+      open import Algebra using (Monoid)
+      open import Data.List using (monoid)
+      module ++  =  Monoid (monoid (Setoid.Carrier X))
+
+      id₀ : {a : Level} {A : Set a} → A → A
+      id₀ = λ x → x
+
+      ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
+      ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
 
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
@@ -161,29 +169,6 @@ abstract
           ; trans =  λ xs≈ys ys≈zs → trans≃ xs≈ys ys≈zs
           }
         }
-
-      F : ∀ {xs e} → Any (X Setoid.≈ e) (xs ++ []) → Any (X Setoid.≈ e) xs
-      F {[]} ()
-      F {x ∷ xs} (Any.here px) = Any.here px
-      F {x ∷ xs} (Any.there ar) = Any.there (F ar)
-
-      F˘ : ∀ {xs e} → Any (X Setoid.≈ e) xs → Any (X Setoid.≈ e) (xs ++ [])
-      F˘ {[]} ()
-      F˘ {x ∷ xs} (Any.here px) = Any.here px
-      F˘ {x ∷ xs} (Any.there eq) = Any.there (F˘ eq)
-
-      FF˘≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) xs) → F (F˘ pf) ≡ pf
-      FF˘≈Id {[]} ()
-      FF˘≈Id {x ∷ xs} (Any.here px) = ≡.refl
-      FF˘≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (FF˘≈Id pf)
-
-      F˘F≈Id : ∀ {xs e} (pf : Any (X Setoid.≈ e) (xs ++ [])) → F˘ {xs} {e} (F pf) ≡ pf
-      F˘F≈Id {[]} ()
-      F˘F≈Id {x ∷ xs} (Any.here px) = ≡.refl
-      F˘F≈Id {x ∷ xs} (Any.there pf) = ≡.cong Any.there (F˘F≈Id {xs} pf)
-
-      rightId : ∀ {xs x} → Any (Setoid._≈_ X x) (xs ++ []) ≃ Any (Setoid._≈_ X x) xs
-      rightId {xs} {x} = F , Equiv.qinv F˘ FF˘≈Id F˘F≈Id
 
   ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom X Y = MsHom {!!}

@@ -22,7 +22,7 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_)
+open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_ ; _⟨≃≃⟩_ )
 open import TypeEquiv
 
 \end{code}
@@ -140,9 +140,6 @@ open MultisetHom
 
 Lots of lemmas about |Any|
 \begin{code}
-infixr 5 _⟨≃≃⟩_
-_⟨≃≃⟩_  = trans≃
-  
 ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
 ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
 

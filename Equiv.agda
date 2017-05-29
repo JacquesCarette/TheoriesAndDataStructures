@@ -95,6 +95,10 @@ abstract
     isqinv.g (proj₂ (f ● g)) ≐ (isqinv.g (proj₂ g) ∘ (isqinv.g (proj₂ f)))
   β₂  x = refl
 
+-- convenient infix version
+infixr 5 _⟨≃≃⟩_
+_⟨≃≃⟩_  = trans≃
+
 ≃IsEquiv : {ℓ : Level.Level} → IsEquivalence {Level.suc ℓ} {ℓ} {Set ℓ} _≃_
 ≃IsEquiv = record { refl = id≃ ; sym = sym≃ ; trans = trans≃ }
 

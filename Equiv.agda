@@ -102,6 +102,10 @@ _⟨≃≃⟩_  = trans≃
 ≃IsEquiv : {ℓ : Level.Level} → IsEquivalence {Level.suc ℓ} {ℓ} {Set ℓ} _≃_
 ≃IsEquiv = record { refl = id≃ ; sym = sym≃ ; trans = trans≃ }
 
+open import Relation.Binary using (Setoid)
+≅-setoid : {ℓ : Level.Level} → Setoid (Level.suc ℓ) ℓ
+≅-setoid {ℓ} = record { Carrier = Set ℓ ; _≈_ = _≃_ ; isEquivalence = ≃IsEquiv }
+
 -- useful throughout below as an abbreviation
 gg : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → (A ≃ B) → (B → A)
 gg z = isqinv.g (proj₂ z)

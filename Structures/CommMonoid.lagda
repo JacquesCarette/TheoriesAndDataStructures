@@ -22,7 +22,7 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_ ; _⟨≃≃⟩_ )
+open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_ ; _⟨≃≃⟩_ ; ≅-setoid)
 open import TypeEquiv
 
 \end{code}
@@ -138,6 +138,8 @@ open MultisetHom
 
 %}}}
 
+%{{{ ≡→≃-Any ; Any-∷ ; Any-⊥ ; Any-++ ; Any-map
+
 Lots of lemmas about |Any|
 \begin{code}
 ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
@@ -179,8 +181,13 @@ Any-map P f [] = Any-⊥ ⟨≃≃⟩ (sym≃ Any-⊥)
 Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃≃⟩ sym≃ Any-∷
 \end{code}
 
+%}}}
+
 \begin{code}
 abstract
+
+  open import Relation.Binary.SetoidReasoning
+
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
     { commMonoid = record
@@ -190,10 +197,11 @@ abstract
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
-        ; comm       =  λ {x} {y} {z} →
-          Any-++ (Setoid._≈_ X z) x y ⟨≃≃⟩
-          swap₊equiv ⟨≃≃⟩
-          sym≃ (Any-++ (Setoid._≈_ X z) y x)
+        ; comm       =  λ {xs} {ys} {z} → begin⟨ ≅-setoid ⟩
+          (z ∈ xs ++ ys    ) ≈⟨ Any-++ _ _ _ ⟩
+          (z ∈ xs ⊎ z ∈ ys) ≈⟨ swap₊equiv ⟩
+          (z ∈ ys ⊎ z ∈ xs) ≈⟨ sym≃ (Any-++ _ _ _) ⟩
+          (z ∈ ys ++ xs    ) ∎
         }
     ; singleton = λ x → x ∷ []
     }

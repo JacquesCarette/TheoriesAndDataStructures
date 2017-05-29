@@ -12,14 +12,11 @@ open import Function hiding (_$_)
 
 open import Data.List
 
-open import Equiv
 open import Forget
 open import Function2
-open import Structures.Pointed using (PointedCat; Pointed; _●_) renaming (Hom to PHom ; MkHom to MkPHom)
+open import Structures.Pointed using (PointedCat; Pointed) renaming (Hom to PHom ; MkHom to MkPHom)
 
-import Relation.Binary.PropositionalEquality
-module ≡ = Relation.Binary.PropositionalEquality
-open ≡ using (_≡_)
+open import EqualityCombinators
 
 open import Data.Product using (_×_; _,_)
 \end{code}

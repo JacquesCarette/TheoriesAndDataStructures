@@ -22,8 +22,8 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_ ; _⟨≃≃⟩_ ; ≅-setoid)
-open import TypeEquiv
+open import Equiv using (_≃_; id≃ ; sym≃ ; trans≃ ; _⊎≃_ ; _⟨≃≃⟩_ ; ≃-setoid ; ≃IsEquiv)
+open import TypeEquiv renaming (swap₊equiv to ⊎-comm)
 
 \end{code}
 %}}}
@@ -197,11 +197,11 @@ abstract
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} {z} → begin⟨ ≅-setoid ⟩
-          z ∈ xs ++ ys     ≈⟨ Any-++ _ _ _ ⟩
-          z ∈ xs ⊎ z ∈ ys ≈⟨ swap₊equiv ⟩
-          z ∈ ys ⊎ z ∈ xs ≈⟨ sym≃ (Any-++ _ _ _) ⟩
-          z ∈ ys ++ xs     ∎
+        ; comm       =  λ {xs} {ys} {z} → begin⟨ ≃-setoid ⟩
+          z ∈ xs ++ ys      ≈⟨ Any-++ _ _ _  ⟩
+          z ∈ xs ⊎ z ∈ ys  ≈⟨ ⊎-comm        ⟩ 
+          z ∈ ys ⊎ z ∈ xs  ≈˘⟨ Any-++ _ _ _ ⟩
+          z ∈ ys ++ xs      ∎
         }
     ; singleton = λ x → x ∷ []
     }

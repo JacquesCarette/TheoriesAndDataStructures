@@ -226,6 +226,7 @@ abstract
          (λ f → record { _⟨$⟩_ = mapL (Π._⟨$⟩_ f)
                        ; cong = λ {i} {j} i≈j {e} → {!!} })
          (λ f → id≃)
+         -- the proof below could probably use ≡→≃-Any instead?
          (λ f {x} {y} {e} → let g = Π._⟨$⟩_ f in 
            Any-map (Setoid._≈_ Y e) g (x ++ y) ●
            Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ● 

@@ -6,7 +6,7 @@ In the former view, the we have an adjunction involving dependent products.
 
 %{{{ Imports
 \begin{code}
-module Structures.Dependent2 where
+module Structures.Experiments.Dependent2 where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 

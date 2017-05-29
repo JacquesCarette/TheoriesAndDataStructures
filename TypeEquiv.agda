@@ -26,17 +26,17 @@ open import Equiv
 
 -- swap₊
 
-swap₊ : {A B : Set} → A ⊎ B → B ⊎ A
+swap₊ : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → A ⊎ B → B ⊎ A
 swap₊ (inj₁ a) = inj₂ a
 swap₊ (inj₂ b) = inj₁ b
 
 abstract
 
-  swapswap₊ : {A B : Set} → swap₊ ○ swap₊ {A} {B} ≐ id
+  swapswap₊ : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → swap₊ ○ swap₊ {A = A} {B} ≐ id
   swapswap₊ (inj₁ a) = refl
   swapswap₊ (inj₂ b) = refl
 
-swap₊equiv : {A B : Set} → (A ⊎ B) ≃ (B ⊎ A)
+swap₊equiv : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → (A ⊎ B) ≃ (B ⊎ A)
 swap₊equiv = (swap₊ , qinv swap₊ swapswap₊ swapswap₊)
 
 -- unite₊ and uniti₊
@@ -144,33 +144,39 @@ swap⋆equiv = swap⋆ , qinv swap⋆ swapswap⋆ swapswap⋆
 
 -- assocl₊ and assocr₊
 
-assocl₊ : {A B C : Set} → (A ⊎ (B ⊎ C)) → ((A ⊎ B) ⊎ C)
+assocl₊ : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+  (A ⊎ (B ⊎ C)) → ((A ⊎ B) ⊎ C)
 assocl₊ (inj₁ a) = inj₁ (inj₁ a)
 assocl₊ (inj₂ (inj₁ b)) = inj₁ (inj₂ b)
 assocl₊ (inj₂ (inj₂ c)) = inj₂ c
 
-assocr₊ : {A B C : Set} → ((A ⊎ B) ⊎ C) → (A ⊎ (B ⊎ C))
+assocr₊ : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+  ((A ⊎ B) ⊎ C) → (A ⊎ (B ⊎ C))
 assocr₊ (inj₁ (inj₁ a)) = inj₁ a
 assocr₊ (inj₁ (inj₂ b)) = inj₂ (inj₁ b)
 assocr₊ (inj₂ c) = inj₂ (inj₂ c)
 
 abstract
 
-  assocl₊∘assocr₊ : {A B C : Set} → assocl₊ ○ assocr₊ ≐ id {A = ((A ⊎ B) ⊎ C)}
+  assocl₊∘assocr₊ : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+    assocl₊ ○ assocr₊ ≐ id {A = ((A ⊎ B) ⊎ C)}
   assocl₊∘assocr₊ (inj₁ (inj₁ a)) = refl
   assocl₊∘assocr₊ (inj₁ (inj₂ b)) = refl
   assocl₊∘assocr₊ (inj₂ c) = refl
 
-  assocr₊∘assocl₊ : {A B C : Set} → assocr₊ ○ assocl₊ ≐ id {A = (A ⊎ (B ⊎ C))}
+  assocr₊∘assocl₊ : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+    assocr₊ ○ assocl₊ ≐ id {A = (A ⊎ (B ⊎ C))}
   assocr₊∘assocl₊ (inj₁ a) = refl
   assocr₊∘assocl₊ (inj₂ (inj₁ b)) = refl
   assocr₊∘assocl₊ (inj₂ (inj₂ c)) = refl
 
-assocr₊equiv : {A B C : Set} → ((A ⊎ B) ⊎ C) ≃ (A ⊎ (B ⊎ C))
+assocr₊equiv : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+  ((A ⊎ B) ⊎ C) ≃ (A ⊎ (B ⊎ C))
 assocr₊equiv =
   assocr₊ , qinv assocl₊ assocr₊∘assocl₊ assocl₊∘assocr₊
 
-assocl₊equiv : {A B C : Set} → (A ⊎ (B ⊎ C)) ≃ ((A ⊎ B) ⊎ C)
+assocl₊equiv : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
+  (A ⊎ (B ⊎ C)) ≃ ((A ⊎ B) ⊎ C)
 assocl₊equiv = sym≃ assocr₊equiv
 
 
@@ -301,7 +307,7 @@ factorlequiv = sym≃ distlequiv
 typesPlusIsSG : IsSemigroup {Level.suc Level.zero} {Level.zero} {Set} _≃_ _⊎_
 typesPlusIsSG = record {
   isEquivalence = ≃IsEquiv ;
-  assoc = λ t₁ t₂ t₃ → assocr₊equiv {t₁} {t₂} {t₃} ;
+  assoc = λ t₁ t₂ t₃ → assocr₊equiv {_} {_} {_} {t₁} {t₂} {t₃} ;
   ∙-cong = _⊎≃_
   }
 
@@ -316,7 +322,7 @@ typesPlusIsCM : IsCommutativeMonoid _≃_ _⊎_ ⊥
 typesPlusIsCM = record {
   isSemigroup = typesPlusIsSG ;
   identityˡ = λ t → unite₊equiv {_} {_} {t} ;
-  comm = λ t₁ t₂ → swap₊equiv {t₁} {t₂}
+  comm = λ t₁ t₂ → swap₊equiv {_} {_} {t₁} {t₂}
   }
 
 typesTimesIsCM : IsCommutativeMonoid _≃_ _×_ ⊤

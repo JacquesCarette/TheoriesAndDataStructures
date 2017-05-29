@@ -2,9 +2,8 @@
 
 module TypeEquiv where
 
-import Level using (zero; suc)
-open import Data.Empty using (⊥)
-open import Data.Unit using (⊤; tt)
+open import Level using (Level; zero; suc)
+open import DataProperties
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; proj₁; proj₂; _,_)
 
@@ -42,92 +41,92 @@ swap₊equiv = (swap₊ , qinv swap₊ swapswap₊ swapswap₊)
 
 -- unite₊ and uniti₊
 
-unite₊ : {A : Set} → ⊥ ⊎ A → A
+unite₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊥ {ℓ′} ⊎ A → A
 unite₊ (inj₁ ())
 unite₊ (inj₂ y) = y
 
-uniti₊ : {A : Set} → A → ⊥ ⊎ A
+uniti₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → A → ⊥ {ℓ′} ⊎ A 
 uniti₊ a = inj₂ a
 
 abstract
 
-  uniti₊∘unite₊ : {A : Set} → uniti₊ ○ unite₊ ≐ id {A = ⊥ ⊎ A}
+  uniti₊∘unite₊ : {ℓ ℓ′ : Level} {A : Set ℓ} → uniti₊ ○ unite₊ ≐ id {A = ⊥ {ℓ′} ⊎ A}
   uniti₊∘unite₊ (inj₁ ())
   uniti₊∘unite₊ (inj₂ y) = refl
 
   -- this is so easy, Agda can figure it out by itself (see below)
 
-  unite₊∘uniti₊ : {A : Set} → unite₊ ○ uniti₊ ≐ id {A = A}
+  unite₊∘uniti₊ : {ℓ ℓ′ : Level} {A : Set ℓ} → unite₊ {ℓ′} ○ uniti₊ ≐ id {A = A}
   unite₊∘uniti₊ _ = refl
 
-unite₊equiv : {A : Set} → (⊥ ⊎ A) ≃ A
-unite₊equiv = (unite₊ , qinv uniti₊ unite₊∘uniti₊ uniti₊∘unite₊)
+unite₊equiv : {ℓ ℓ′ : Level} {A : Set ℓ} → (⊥ {ℓ′} ⊎ A) ≃ A
+unite₊equiv {ℓ} {ℓ′} = (unite₊ , qinv uniti₊ (unite₊∘uniti₊ {ℓ} {ℓ′}) uniti₊∘unite₊)
 
-uniti₊equiv : {A : Set} → A ≃ (⊥ ⊎ A)
+uniti₊equiv : {ℓ ℓ′ : Level} {A : Set ℓ} → A ≃ (⊥ {ℓ′} ⊎ A)
 uniti₊equiv = sym≃ unite₊equiv
 
 -- unite₊′ and uniti₊′
 
-unite₊′ : {A : Set} → A ⊎ ⊥ → A
+unite₊′ : {ℓ′ ℓ : Level} {A : Set ℓ} → A ⊎ ⊥ {ℓ′} → A
 unite₊′ (inj₁ x) = x
 unite₊′ (inj₂ ())
 
-uniti₊′ : {A : Set} → A → A ⊎ ⊥
+uniti₊′ : {ℓ′ ℓ : Level} {A : Set ℓ} → A → A ⊎ ⊥ {ℓ′}
 uniti₊′ a = inj₁ a
 
 abstract
 
-  uniti₊′∘unite₊′ : {A : Set} → uniti₊′ ○ unite₊′ ≐ id {A = A ⊎ ⊥}
+  uniti₊′∘unite₊′ : ∀ {ℓ ℓ′} {A : Set ℓ} → uniti₊′ ○ unite₊′ ≐ id {A = A ⊎ ⊥ {ℓ′}}
   uniti₊′∘unite₊′ (inj₁ _) = refl
   uniti₊′∘unite₊′ (inj₂ ())
 
   -- this is so easy, Agda can figure it out by itself (see below)
 
-  unite₊′∘uniti₊′ : {A : Set} → unite₊′ ○ uniti₊′ ≐ id {A = A}
+  unite₊′∘uniti₊′ : ∀ {ℓ ℓ′} {A : Set ℓ} → unite₊′ {ℓ′} ○ uniti₊′ ≐ id {A = A}
   unite₊′∘uniti₊′ _ = refl
 
-unite₊′equiv : {A : Set} → (A ⊎ ⊥) ≃ A
+unite₊′equiv : ∀ {ℓ′ ℓ} {A : Set ℓ} → (A ⊎ ⊥ {ℓ′}) ≃ A
 unite₊′equiv = (unite₊′ , qinv uniti₊′ ≐-refl uniti₊′∘unite₊′)
 
-uniti₊′equiv : {A : Set} → A ≃ (A ⊎ ⊥)
+uniti₊′equiv : ∀ {ℓ′ ℓ} {A : Set ℓ} → A ≃ (A ⊎ ⊥ {ℓ′})
 uniti₊′equiv = sym≃ unite₊′equiv
 
 -- unite⋆ and uniti⋆
 
-unite⋆ : {A : Set} → ⊤ × A → A
+unite⋆ : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊤ {ℓ′} × A → A
 unite⋆ (tt , x) = x
 
-uniti⋆ : {A : Set} → A → ⊤ × A
+uniti⋆ : {ℓ′ ℓ : Level} {A : Set ℓ} → A → ⊤ {ℓ′} × A
 uniti⋆ x = tt , x
 
 abstract
 
-  uniti⋆∘unite⋆ : {A : Set} → uniti⋆ ○ unite⋆ ≐ id {A = ⊤ × A}
+  uniti⋆∘unite⋆ : ∀ {ℓ ℓ′} {A : Set ℓ} → uniti⋆ ○ unite⋆ ≐ id {A = ⊤ {ℓ′} × A}
   uniti⋆∘unite⋆ (tt , x) = refl
 
-unite⋆equiv : {A : Set} → (⊤ × A) ≃ A
+unite⋆equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → (⊤ {ℓ′} × A) ≃ A
 unite⋆equiv = unite⋆ , qinv uniti⋆ ≐-refl uniti⋆∘unite⋆
 
-uniti⋆equiv : {A : Set} → A ≃ (⊤ × A)
+uniti⋆equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → A ≃ (⊤ {ℓ′} × A)
 uniti⋆equiv = sym≃ unite⋆equiv
 
 -- unite⋆′ and uniti⋆′
 
-unite⋆′ : {A : Set} → A × ⊤ → A
+unite⋆′ : ∀ {ℓ ℓ′} {A : Set ℓ} → A × ⊤ {ℓ′} → A
 unite⋆′ (x , tt) = x
 
-uniti⋆′ : {A : Set} → A → A × ⊤
+uniti⋆′ : ∀ {ℓ ℓ′} {A : Set ℓ} → A → A × ⊤ {ℓ′}
 uniti⋆′ x = x , tt
 
 abstract
 
-  uniti⋆′∘unite⋆′ : {A : Set} → uniti⋆′ ○ unite⋆′ ≐ id {A = A × ⊤}
+  uniti⋆′∘unite⋆′ : ∀ {ℓ ℓ′} {A : Set ℓ} → uniti⋆′ ○ unite⋆′ ≐ id {A = A × ⊤ {ℓ′}}
   uniti⋆′∘unite⋆′ (x , tt) = refl
 
-unite⋆′equiv : {A : Set} → (A × ⊤) ≃ A
+unite⋆′equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → (A × ⊤ {ℓ′}) ≃ A
 unite⋆′equiv = unite⋆′ , qinv uniti⋆′ ≐-refl uniti⋆′∘unite⋆′
 
-uniti⋆′equiv : {A : Set} → A ≃ (A × ⊤)
+uniti⋆′equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → A ≃ (A × ⊤ {ℓ′})
 uniti⋆′equiv = sym≃ unite⋆′equiv
 
 -- swap⋆
@@ -200,48 +199,48 @@ assocr⋆equiv = sym≃ assocl⋆equiv
 
 -- distz and factorz, on left
 
-distz : { A : Set} → (⊥ × A) → ⊥
+distz : ∀ {ℓ ℓ′} {A : Set ℓ} → (⊥ × A) → ⊥ {ℓ′}
 distz = proj₁
 
-factorz : {A : Set} → ⊥ → (⊥ × A)
+factorz : ∀ {ℓ ℓ′} {A : Set ℓ} → ⊥ {ℓ′} → (⊥ {ℓ′} × A)
 factorz ()
 
 abstract
 
-  distz∘factorz : {A : Set} → distz ○ factorz {A} ≐ id
+  distz∘factorz : ∀ {ℓ ℓ′} {A : Set ℓ} → distz ○ factorz {ℓ} {ℓ′} {A} ≐ id
   distz∘factorz ()
 
-  factorz∘distz : {A : Set} → factorz {A} ○ distz ≐ id
+  factorz∘distz : ∀ {ℓ ℓ′} {A : Set ℓ} → factorz {ℓ} {ℓ′} {A} ○ distz ≐ id
   factorz∘distz (() , proj₂)
 
-distzequiv : {A : Set} → (⊥ × A) ≃ ⊥
-distzequiv {A} = 
-  distz , qinv factorz (distz∘factorz {A}) factorz∘distz
+distzequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → (⊥ × A) ≃ ⊥ {ℓ′}
+distzequiv {A = A} = 
+  distz , qinv factorz (distz∘factorz {_} {_} {A}) factorz∘distz
 
-factorzequiv : {A : Set} → ⊥ ≃ (⊥ × A)
-factorzequiv {A} = sym≃ distzequiv
+factorzequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → ⊥ {ℓ′} ≃ (⊥ × A)
+factorzequiv {A = A} = sym≃ distzequiv
 
 -- distz and factorz, on right
 
-distzr : { A : Set} → (A × ⊥) → ⊥
+distzr : {ℓ′ ℓ : Level} {A : Set ℓ} → (A × ⊥) → ⊥ {ℓ′}
 distzr = proj₂
 
-factorzr : {A : Set} → ⊥ → (A × ⊥)
+factorzr : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊥ {ℓ′} → (A × ⊥ {ℓ′})
 factorzr ()
 
 abstract
 
-  distzr∘factorzr : {A : Set} → distzr ○ factorzr {A} ≐ id
+  distzr∘factorzr : {ℓ ℓ′ : Level} {A : Set ℓ} → distzr ○ factorzr {ℓ′} {ℓ} {A} ≐ id
   distzr∘factorzr ()
 
-  factorzr∘distzr : {A : Set} → factorzr {A} ○ distzr ≐ id
+  factorzr∘distzr : {ℓ ℓ′ : Level} {A : Set ℓ} → factorzr {ℓ′} {ℓ} {A} ○ distzr ≐ id
   factorzr∘distzr (_ , ())
 
-distzrequiv : {A : Set} → (A × ⊥) ≃ ⊥
-distzrequiv {A} = 
-  distzr , qinv factorzr (distzr∘factorzr {A}) factorzr∘distzr
+distzrequiv : {ℓ ℓ′ : Level} {A : Set ℓ} → (A × ⊥) ≃ ⊥ {ℓ′}
+distzrequiv {_} {_} {A} = 
+  distzr , qinv factorzr (distzr∘factorzr {_} {_} {A}) factorzr∘distzr
 
-factorzrequiv : {A : Set} → ⊥ ≃ (A × ⊥)
+factorzrequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → ⊥ {ℓ′} ≃ (A × ⊥)
 factorzrequiv {A} = sym≃ distzrequiv
 
 -- dist and factor, on right
@@ -316,14 +315,14 @@ typesTimesIsSG = record {
 typesPlusIsCM : IsCommutativeMonoid _≃_ _⊎_ ⊥
 typesPlusIsCM = record {
   isSemigroup = typesPlusIsSG ;
-  identityˡ = λ t → unite₊equiv {t} ;
+  identityˡ = λ t → unite₊equiv {_} {_} {t} ;
   comm = λ t₁ t₂ → swap₊equiv {t₁} {t₂}
   }
 
 typesTimesIsCM : IsCommutativeMonoid _≃_ _×_ ⊤
 typesTimesIsCM = record {
   isSemigroup = typesTimesIsSG ;
-  identityˡ = λ t → unite⋆equiv {t} ;
+  identityˡ = λ t → unite⋆equiv {_} {_} {t} ;
   comm = λ t₁ t₂ → swap⋆equiv {t₁} {t₂}
   }
 
@@ -332,7 +331,7 @@ typesIsCSR = record {
   +-isCommutativeMonoid = typesPlusIsCM ;
   *-isCommutativeMonoid = typesTimesIsCM ;
   distribʳ = λ t₁ t₂ t₃ → distequiv {t₂} {t₃} {t₁} ; 
-  zeroˡ = λ t → distzequiv {t}
+  zeroˡ = λ t → distzequiv {_} {_} {t}
   }
 
 typesCSR : CommutativeSemiring (Level.suc Level.zero) Level.zero

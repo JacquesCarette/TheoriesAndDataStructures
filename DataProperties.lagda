@@ -4,16 +4,6 @@ I could not locate these in the standard library.
 
 Moreover, this module also re-exports (some of) the contents of |Data.Product| and |Data.Sum|.
 
-Generalised Empty and Unit, to avoid a flurry of |lift|'s.
-\begin{code}
-open import Level
-
-data ⊥ {ℓ : Level} : Set ℓ where
-
-record ⊤ {ℓ : Level} : Set ℓ where
-  constructor tt
-\end{code}
-
 %{{{ Imports
 \begin{code}
 module DataProperties where
@@ -23,9 +13,31 @@ open import Function using (id ; _∘_ ; const)
 open import EqualityCombinators
 
 open import Data.Product public using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
-open import Data.Sum     public using (_⊎_; inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
+open import Data.Sum     public using (inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
 \end{code}
+
+The standard library assigns precedence level of 1 for the infix operator |_⊎_|,
+which is rather odd since infix operators ought to have higher precedence that equality
+combinators, yet the standard library assigns |_≈⟨_⟩_| a precedence level of 2.
+The usage of these two ---e.g. in |CommMonoid.lagda|--- causes an annoying number of
+parens and so we reassign the level of the infix operator to avoid such a situation.
+
+\begin{code}
+infixr 3 _⊎_
+_⊎_ = Data.Sum._⊎_
+\end{code}
+
 %}}}
+
+Generalised Empty and Unit, to avoid a flurry of |lift|'s.
+\begin{code}
+open import Level
+
+data ⊥ {ℓ : Level} : Set ℓ where
+
+record ⊤ {ℓ : Level} : Set ℓ where
+  constructor tt
+\end{code}
 
 \begin{code}
 -- The diagonal natural transformation

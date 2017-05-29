@@ -4,8 +4,6 @@ module TypeEquiv where
 
 open import Level using (Level; zero; suc)
 open import DataProperties
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Product using (_×_; proj₁; proj₂; _,_)
 
 open import Algebra using (CommutativeSemiring)
 open import Algebra.Structures

@@ -198,10 +198,10 @@ abstract
         ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} → begin⟨ ≅-setoid ⟩
-          (z ∈ xs ++ ys    ) ≈⟨ Any-++ _ _ _ ⟩
-          (z ∈ xs ⊎ z ∈ ys) ≈⟨ swap₊equiv ⟩
-          (z ∈ ys ⊎ z ∈ xs) ≈⟨ sym≃ (Any-++ _ _ _) ⟩
-          (z ∈ ys ++ xs    ) ∎
+          z ∈ xs ++ ys     ≈⟨ Any-++ _ _ _ ⟩
+          z ∈ xs ⊎ z ∈ ys ≈⟨ swap₊equiv ⟩
+          z ∈ ys ⊎ z ∈ xs ≈⟨ sym≃ (Any-++ _ _ _) ⟩
+          z ∈ ys ++ xs     ∎
         }
     ; singleton = λ x → x ∷ []
     }

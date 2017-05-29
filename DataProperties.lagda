@@ -35,6 +35,9 @@ open import Level
 
 data ⊥ {ℓ : Level} : Set ℓ where
 
+⊥-elim : {a ℓ : Level} {A : Set a} → ⊥ {ℓ} → A
+⊥-elim ()
+
 record ⊤ {ℓ : Level} : Set ℓ where
   constructor tt
 \end{code}

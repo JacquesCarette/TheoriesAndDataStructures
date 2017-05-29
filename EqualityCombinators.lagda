@@ -51,11 +51,9 @@ _⟨≐≐⟩_ = ≐-trans
 \end{code}
 %}}}
 
-%{{{ _≈˘⟨_⟩_ ; ‼ does not work as intended ‼
+%{{{ _≈˘⟨_⟩_
 
-Want to use this combinator in module |Forget|'s proof of associativity for |oneSortedCategory|
-
-Sadly, it currently does not work as intended.
+Among other places, I want to use this combinator in module |Forget|'s proof of associativity for |oneSortedCategory|
 
 \begin{code}
 module _ {c l : Level} {S : Setoid c l} where
@@ -64,6 +62,7 @@ module _ {c l : Level} {S : Setoid c l} where
   open import Relation.Binary.EqReasoning     using (_IsRelatedTo_)
   open Setoid S
 
+  infixr 2 _≈˘⟨_⟩_
   _≈˘⟨_⟩_ : ∀ (x {y z} : Carrier) → y ≈ x → _IsRelatedTo_ S y z → _IsRelatedTo_ S x z
   x ≈˘⟨ y≈x ⟩ y≈z = x ≈⟨ sym y≈x ⟩ y≈z
 

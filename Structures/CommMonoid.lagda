@@ -13,6 +13,7 @@ open import Categories.Agda       using (Setoids)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Function2         using (_$ᵢ)
+open import Function          using () renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 open import Data.List.Any using (Any; module Membership)
@@ -21,7 +22,8 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-open import Equiv using (_≃_; id≃; sym≃; trans≃)
+open import Equiv using (_≃_; id≃; sym≃; trans≃; _⊎≃_)
+open import TypeEquiv
 
 \end{code}
 %}}}
@@ -77,12 +79,12 @@ MonoidCat ℓ o = record
   ; _⇒_ = Hom
   ; _≡_ = λ {A} {B} F G → {x : Carrier A} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B
   ; id  = λ {A} → MkHom id (≈.refl A) (≈.refl A)
-  ; _∘_ = λ {A} {B} {C} F G → record
+  ; _∘_ = λ {_} {_} {C} F G → record
     { mor      =  mor F ∘ mor G
     ; pres-e   =  ≈.trans C (cong F (pres-e G)) (pres-e F)
     ; pres-*   =  ≈.trans C (cong F (pres-* G)) (pres-* F)
     }
-  ; assoc     = λ {A} {B} {C} {D} {F} {G} {H} {x} → ≈.refl D
+  ; assoc     = λ { {D = D} → ≈.refl D}
   ; identityˡ = λ {A} {B} {F} {x} → ≈.refl B
   ; identityʳ = λ {A} {B} {F} {x} → ≈.refl B
   ; equiv     = λ {A} {B} → record
@@ -122,14 +124,61 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
 record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset Y) : Set (ℓ ⊔ o) where
   constructor MsHom
   open Multiset A using () renaming (commMonoid to cm₁)
+  open CommMonoid cm₁ using (setoid) renaming (e to e₁)
   open Multiset B using () renaming (commMonoid to cm₂)
-
+  open CommMonoid cm₂ using (setoid; _≈_) renaming (e to e₂)
+  
   field
-    cmor : Hom cm₁ cm₂
-    map : (X ⟶ Y) → (CommMonoid.setoid cm₁ ⟶ CommMonoid.setoid cm₂)
+    map : (X ⟶ Y) → (setoid cm₁ ⟶ setoid cm₂)
+    map-e : (f : X ⟶ Y) →  Π._⟨$⟩_ (map f) e₁ ≈ e₂ 
 \end{code}
 
 %}}}
+
+Lots of lemmas about |Any|
+\begin{code}
+infixr 5 _●_
+private
+  _●_ = trans≃
+  
+≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
+≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
+
+-- this means reasoning with Any simpler
+Any-∷ : {a p : Level} {A : Set a} {P : A → Set p} {x : A} {xs : List A} →
+  Any P (x ∷ xs) ≃ (P x ⊎ Any P xs)
+Any-∷ {a} {p} {A} {P} {x} {xs} = fwd , Equiv.qinv bwd f∘b b∘f
+  where
+    fwd : Any P (x ∷ xs) → P x ⊎ Any P xs
+    fwd (Any.here px) = inj₁ px
+    fwd (Any.there z) = inj₂ z
+
+    bwd : P x ⊎ Any P xs → Any P (x ∷ xs)
+    bwd (inj₁ x₁) = Any.here x₁
+    bwd (inj₂ y) = Any.there y
+
+    f∘b : fwd ⊚ bwd ≐ id₀
+    f∘b (inj₁ x₁) = ≡.refl
+    f∘b (inj₂ y) = ≡.refl
+
+    b∘f : bwd ⊚ fwd ≐ id₀
+    b∘f (Any.here px) = ≡.refl
+    b∘f (Any.there x₁) = ≡.refl
+
+Any-⊥ : {a p : Level} {A : Set a} {P : A → Set p} → _≃_ {a ⊔ p} {p} (Any P []) ⊥
+Any-⊥ = (λ {()}) , Equiv.qinv (λ {()}) (λ {()}) (λ {()})
+
+Any-++ : {a p : Level} {A : Set a} (P : A → Set p) (xs ys : List A) →
+  Any P (xs ++ ys) ≃ (Any P xs ⊎ Any P ys)
+Any-++ P [] ys = (uniti₊equiv {A = Any P ys}) ● (sym≃ Any-⊥ ⊎≃ id≃)
+Any-++ P (x ∷ xs) ys = Any-∷ ● (id≃ ⊎≃ Any-++ P xs ys) ●
+  assocl₊equiv ● (sym≃ Any-∷ ⊎≃ id≃)
+
+Any-map : {a b p : Level} {A : Set a} {B : Set b} (P : B → Set p)
+  (f : A → B) (xs : List A) → Any P (mapL f xs) ≃ Any (P ⊚ f) xs
+Any-map P f [] = Any-⊥ ● (sym≃ Any-⊥)
+Any-map P f (x ∷ xs) = Any-∷ ● id≃ ⊎≃ Any-map P f xs ● sym≃ Any-∷
+\end{code}
 
 \begin{code}
 abstract
@@ -142,7 +191,10 @@ abstract
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
-        ; comm       =  {!!}
+        ; comm       =  λ {x} {y} {z} →
+          Any-++ (Setoid._≈_ X z) x y ●
+          swap₊equiv ●
+          sym≃ (Any-++ (Setoid._≈_ X z) y x)
         }
     ; singleton = λ x → x ∷ []
     }
@@ -151,29 +203,29 @@ abstract
 
       open import Algebra using (Monoid)
       open import Data.List using (monoid)
-      module ++  =  Monoid (monoid (Setoid.Carrier X))
+      module ++ = Monoid (monoid (Setoid.Carrier X))
 
-      id₀ : {a : Level} {A : Set a} → A → A
-      id₀ = λ x → x
-
-      ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
-      ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
-
+      _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set (ℓ ⊔ o)
+      xs ≈ₘ ys = {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
+      
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
-        ; _≈_ = λ xs ys → {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
+        ; _≈_ = _≈ₘ_
         ; isEquivalence = record
           { refl  =  id≃
           ; sym   =  λ xs≃ys → sym≃ xs≃ys
-          ; trans =  λ xs≈ys ys≈zs → trans≃ xs≈ys ys≈zs
+          ; trans =  λ xs≈ys ys≈zs → xs≈ys ● ys≈zs
           }
         }
 
   ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
-  ListCMHom X Y = MsHom {!!}
+  ListCMHom X Y = MsHom 
          (λ f → record { _⟨$⟩_ = mapL (Π._⟨$⟩_ f)
-                       ; cong = λ i≈j → {!!} })
+                       ; cong = λ {i} {j} i≈j {e} → {!!} })
+         (λ f → id≃)
+    where
+      open Multiset (ListMS Y)
 {-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in
@@ -188,19 +240,20 @@ abstract
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
-  ; F₁ = λ {X} {Y} f → MkHom (MultisetHom.map (ListCMHom X Y) f)
-               {!!} {!!}
+  ; F₁ = λ {X} {Y} f → let H = ListCMHom X Y in
+      MkHom (map H f) (map-e H f) {!!}
   ; identity = {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = λ F≈G → {!!}
   }
-  where open Multiset
-
+  where
+    open Multiset; open MultisetHom
+    
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
 MultisetLeft ℓ o = record
-  { unit = record { η = λ X → record { _⟨$⟩_ = {!!} -- singleton (ListMS X)
+  { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
                                      ; cong = {!!} }
-                  ; commute = {!!} } -- singleton-map }
+                  ; commute = {!!} }
   ; counit = record
     { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
           MkHom (record { _⟨$⟩_ = {! fold _+_ z !} ; cong = {!!} }) {!!} {!!} }
@@ -209,8 +262,10 @@ MultisetLeft ℓ o = record
   ; zig = {!!}
   ; zag = {!!}
   }
-  where open Multiset
-
+  where
+    open Multiset
+    open CommMonoid
+    
 \end{code}
 
 % Quick Folding Instructions:

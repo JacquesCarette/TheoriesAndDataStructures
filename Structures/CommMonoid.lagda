@@ -124,13 +124,15 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
 record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset Y) : Set (ℓ ⊔ o) where
   constructor MsHom
   open Multiset A using () renaming (commMonoid to cm₁)
-  open CommMonoid cm₁ using (setoid) renaming (e to e₁)
+  open CommMonoid cm₁ using (setoid) renaming (e to e₁; _*_ to _*₁_)
   open Multiset B using () renaming (commMonoid to cm₂)
-  open CommMonoid cm₂ using (setoid; _≈_) renaming (e to e₂)
+  open CommMonoid cm₂ using (setoid; _≈_) renaming (e to e₂; _*_ to _*₂_)
   
   field
     map : (X ⟶ Y) → (setoid cm₁ ⟶ setoid cm₂)
-    map-e : (f : X ⟶ Y) →  Π._⟨$⟩_ (map f) e₁ ≈ e₂ 
+    map-e : (f : X ⟶ Y) →  Π._⟨$⟩_ (map f) e₁ ≈ e₂
+    map-* : (f : X ⟶ Y) → let g = Π._⟨$⟩_ (map f) in
+      ∀ {x y} → g (x *₁ y) ≈ g x *₂ g y
 \end{code}
 
 %}}}
@@ -224,8 +226,15 @@ abstract
          (λ f → record { _⟨$⟩_ = mapL (Π._⟨$⟩_ f)
                        ; cong = λ {i} {j} i≈j {e} → {!!} })
          (λ f → id≃)
+         (λ f {x} {y} {e} → let g = Π._⟨$⟩_ f in 
+           Any-map (Setoid._≈_ Y e) g (x ++ y) ●
+           Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ● 
+           (sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃
+           (sym≃ (Any-map (Setoid._≈_ Y e) g y)) ●
+           sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y)))
     where
       open Multiset (ListMS Y)
+      open CommMonoid (Multiset.commMonoid (ListMS X))
 {-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in
@@ -241,7 +250,7 @@ MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ 
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ {X} {Y} f → let H = ListCMHom X Y in
-      MkHom (map H f) (map-e H f) {!!}
+      MkHom (map H f) (map-e H f) (map-* H f)
   ; identity = {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = λ F≈G → {!!}

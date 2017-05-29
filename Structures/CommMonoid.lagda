@@ -186,43 +186,42 @@ Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃
 \begin{code}
 
 open import Function using (flip)
-open import Function.Inverse using () renaming (_↔_ to _≅_)
-open import Function.Related using (_∼[_]_)
-open import Data.List.Any.Properties using (Any-cong) renaming (++↔ to Any-additive)
-open import Function.Related.TypeIsomorphisms using (⊎-CommutativeMonoid)
+open import Function.Inverse using () renaming
+  (_↔_ to _≅_
+  ; id to ≅-refl
+  ; sym to ≅-sym
+  )
+≅-trans : {a b c : Level} {A : Set a} {B : Set b} {C : Set c}
+        → A ≅ B → B ≅ C → A ≅ C  
+≅-trans = flip Function.Inverse._∘_
+≅-reflexive : {ℓ : Level} {A B : Set ℓ} → A ≡ B → A ≅ B
+≅-reflexive ≡.refl = ≅-refl
 
+open import Function.Related using (_∼[_]_)
+open import Data.List.Any.Properties using (Any-cong) renaming (++↔ to Any-additive ; map↔ to Any-list ; map-with-∈↔ to map-with-∈-≅)
+open import Function.Related.TypeIsomorphisms using (⊎-CommutativeMonoid)
+open Function.Related.EquationalReasoning renaming (_↔⟨_⟩_ to _≅⟨_⟩_)
 open import Algebra using (CommutativeMonoid)
 module _ {k ℓ} where  module ⊎ = CommutativeMonoid (⊎-CommutativeMonoid k ℓ)
 
-≅-setoid : {ℓ : Level} → Setoid (lsuc ℓ) ℓ
-≅-setoid {ℓ} = record
-  { Carrier         =   Set ℓ
-  ; _≈_             =   _≅_
-  ; isEquivalence   =   record
-    { refl    =   Function.Inverse.id
-    ; sym     =   Function.Inverse.sym
-    ; trans   =   flip Function.Inverse._∘_
-    }
-  }
-
-≡→≅ : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
-≡→≅ ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
+≡→≅ : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≅ Any P ys 
+≡→≅ ≡.refl = record { to = id ; from = id ; inverse-of = record { left-inverse-of = ≐-refl ; right-inverse-of = ≐-refl } }
 
 abstract
 
   -- open import Relation.Binary.SetoidReasoning
 
-  ListMS : {ℓ o : Level} (X : Setoid ℓ ℓ) → Multiset X
+  ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
     { commMonoid = record
         { setoid     =  LM
         ; e          =  []
         ; _*_        =  _++_
         ; left-unit  =  Setoid.refl LM
-        ; right-unit = λ {x} → Any-cong (λ _ → Function.Inverse.id) (Setoid.reflexive ≅-setoid (≡.cong (Any (_ ≡_)) (proj₂ ++.identity x)))
-        ; assoc      =  λ {xs} {ys} {zs} → Any-cong (λ _ → Setoid.refl ≅-setoid) (Setoid.reflexive ≅-setoid (≡.cong (Any (_ ≡_)) (++.assoc xs ys zs)))
+        ; right-unit = λ {xs} → ≡→≅ (proj₂ ++.identity xs)
+        ; assoc      =  λ {xs} {ys} {zs} → ≡→≅ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} →
-          z ∈ xs ++ ys      ≅⟨ Setoid.sym ≅-setoid Any-additive ⟩
+          z ∈ xs ++ ys      ≅⟨ ≅-sym Any-additive ⟩
           z ∈ xs ⊎ z ∈ ys  ≅⟨ ⊎.comm _ _                       ⟩
           z ∈ ys ⊎ z ∈ xs  ≅⟨ Any-additive                     ⟩
           z ∈ ys ++ xs      ∎
@@ -230,7 +229,6 @@ abstract
     ; singleton = λ x → x ∷ []
     }
     where
-      open Function.Related.EquationalReasoning renaming (_↔⟨_⟩_ to _≅⟨_⟩_)
       open Membership X
 
       open import Algebra using (Monoid)
@@ -240,66 +238,53 @@ abstract
       _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set _ -- (ℓ ⊔ o)
       xs ≈ₘ ys = {e : Setoid.Carrier X} → e ∈ xs  ≅  e ∈ ys
 
-{-
-      helper : {p : Level} {P : Setoid.Carrier X → Set p} {xs ys : List (Setoid.Carrier X)}
-             → (eq : xs ≈ₘ ys)
-             → (coherency : {e x : Setoid.Carrier X} {xs : List (Setoid.Carrier X)} → Any → P)
-             → Any P xs  ≃  Any P ys
-      helper {P = P} {[]} {[]} xs≈ys = ≡→≃-Any ≡.refl
-      helper {P = P} {[]} {x ∷ ys} xs≈ys = ⊥-elim (proj₁ Any-⊥ xx)
-        where xx = (proj₁ (sym≃ (xs≈ys {x})) (Any.here (Setoid.refl X)))
-      helper {P = P} {x ∷ xs} {[]} xs≈ys = ⊥-elim (proj₁ Any-⊥ xx)
-        where xx = (proj₁ (xs≈ys {x}) (Any.here (Setoid.refl X)))
-      helper {P = P} {x ∷ xs} {y ∷ ys} xs≈ys = {!!}
-        where
-          F : Any P (x ∷ xs) → Any P (y ∷ ys)
-          F (Any.here px) = Any.here {!proj₁ xs≈ys !}
-          F (Any.there pf) = {!!}
--}
-
-      LM : Setoid _ _ -- ℓ (ℓ ⊔ o)
+      LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _≈ₘ_
         ; isEquivalence = record
-          { refl  =  Setoid.refl ≅-setoid
-          ; sym   =  λ xs≅ys → Setoid.sym ≅-setoid xs≅ys
-          ; trans =  λ xs≈ys ys≈zs → Setoid.trans ≅-setoid xs≈ys ys≈zs
+          { refl  =  ≅-refl
+          ; sym   =  λ xs≅ys → ≅-sym xs≅ys
+          ; trans =  λ xs≈ys ys≈zs → ≅-trans xs≈ys ys≈zs
           }
         }
 
-\end{code}
+  open import Data.Product using (∃₂)
 
-  ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
+  ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom X Y = MKMSHom (λ F → record
     { mor = record
-      { _⟨$⟩_ = mapL (Π._⟨$⟩_ F)
-      ; cong = λ {xs} {ys} xs≈ys {e} → let 𝔣 = mapL (Π._⟨$⟩_ F) ; f = Π._⟨$⟩_ F in begin⟨ ≃-setoid ⟩
-        e ∈₂ (𝔣 xs)                ≡⟨ ≡.refl ⟩
-        Any (Setoid._≈_ Y e) (𝔣 xs) ≈⟨ Any-map _ _ _ ⟩
-        Any (λ x → Setoid._≈_ Y e (f x)) xs ≈⟨ {!xs≈ys!} ⟩
-        Any (λ x → Setoid._≈_ Y e (f x)) ys ≈˘⟨ Any-map _ _ _ ⟩
+      { _⟨$⟩_ = λ xs → map-with-∈₁ xs (λ {x} _ → Π._⟨$⟩_ F x) -- map-with-∈₁ {!map-with-∈₁ ?!} -- mapL (Π._⟨$⟩_ F)
+      ; cong = λ {xs} {ys} xs≈ys {e} → let 𝔣 = λ {x} _ → Π._⟨$⟩_ F x ; f = Π._⟨$⟩_ F in -- begin⟨ ≃-setoid ⟩
+      Any (Setoid._≈_ Y e) (map-with-∈₁ xs 𝔣) ≅⟨ ≅-sym {!map-with-∈-≅!} ⟩
+      ∃₂ (λ x x∈xs → Setoid._≈_ Y e (f x))   ≅⟨ {!!} ⟩
+      Any _ (map-with-∈₁ ys 𝔣) ≅⟨ {!!} ⟩
+      {!!} ∎ 
+        {- e ∈₂ (𝔣 xs)                ≡⟨ ≡.refl ⟩
+        Any (Setoid._≈_ Y e) (𝔣 xs) ≅⟨ Setoid.sym ≅-setoid Any-list ⟩
+        Any (λ x → Setoid._≈_ Y e (f x)) xs ≅⟨ {!xs≈ys!} ⟩
+        Any (λ x → Setoid._≈_ Y e (f x)) ys ≅⟨ Any-list ⟩
         e ∈₂ (𝔣 ys) ∎ 
-      } {-
-Any-map : {a b p : Level} {A : Set a} {B : Set b} (P : B → Set p)
-  (f : A → B) (xs : List A) → Any P (mapL f xs) ≃ Any (P ⊚ f) xs
-Any-map P f [] = Any-⊥ ⟨≃≃⟩ (sym≃ Any-⊥)
-Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃≃⟩ sym≃ Any-∷
-
--}
-    ; pres-e = id≃
-    ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in 
+       -}
+      }
+    ; pres-e = ≅-refl
+    ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
+     {-
            Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩
            Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩ 
            (sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃
            (sym≃ (Any-map (Setoid._≈_ Y e) g y)) ⟨≃≃⟩
            sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y))
+     -}
     })
     where
       open Multiset (ListMS Y)
       open CommMonoid (Multiset.commMonoid (ListMS X))
-      open Membership X renaming (_∈_ to _∈₁_)
-      open Membership Y renaming (_∈_ to _∈₂_)
+      open Membership X renaming (_∈_ to _∈₁_ ; map-with-∈ to map-with-∈₁)
+      open Membership Y renaming (_∈_ to _∈₂_ ; map-with-∈ to map-with-∈₂)
+\end{code}
+
+
 {-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in

@@ -2,7 +2,7 @@
 \begin{code}
 module Structures.CommMonoid where
 
-open import Level renaming (zero to lzero; suc to lsuc)
+open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid; IsEquivalence;
   Reflexive; Symmetric; Transitive)
 
@@ -121,18 +121,19 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊔ lsuc o) w
     singleton : Setoid.Carrier X → CommMonoid.Carrier commMonoid
   open CommMonoid commMonoid public
 
+open Multiset
+\end{code}
+
+A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers
+to be homomorphisms on the underlying commutative monoid structure.
+
+\begin{code}
 record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset Y) : Set (ℓ ⊔ o) where
-  constructor MsHom
-  open Multiset A using () renaming (commMonoid to cm₁)
-  open CommMonoid cm₁ using (setoid) renaming (e to e₁; _*_ to _*₁_)
-  open Multiset B using () renaming (commMonoid to cm₂)
-  open CommMonoid cm₂ using (setoid; _≈_) renaming (e to e₂; _*_ to _*₂_)
-  
+  constructor MKMSHom
   field
-    map : (X ⟶ Y) → (setoid cm₁ ⟶ setoid cm₂)
-    map-e : (f : X ⟶ Y) →  Π._⟨$⟩_ (map f) e₁ ≈ e₂
-    map-* : (f : X ⟶ Y) → let g = Π._⟨$⟩_ (map f) in
-      ∀ {x y} → g (x *₁ y) ≈ g x *₂ g y
+    lift : (X ⟶ Y) → Hom (commMonoid A) (commMonoid B)
+
+open MultisetHom
 \end{code}
 
 %}}}
@@ -222,17 +223,19 @@ abstract
         }
 
   ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
-  ListCMHom X Y = MsHom 
-         (λ f → record { _⟨$⟩_ = mapL (Π._⟨$⟩_ f)
-                       ; cong = λ {i} {j} i≈j {e} → {!!} })
-         (λ f → id≃)
-         -- the proof below could probably use ≡→≃-Any instead?
-         (λ f {x} {y} {e} → let g = Π._⟨$⟩_ f in 
+  ListCMHom X Y = MKMSHom (λ F → record
+    { mor = record
+      { _⟨$⟩_ = mapL (Π._⟨$⟩_ F)
+      ; cong = λ {xs} {ys} xs≈ys {e} → {!!}
+      }
+    ; pres-e = id≃
+    ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in 
            Any-map (Setoid._≈_ Y e) g (x ++ y) ●
            Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ● 
            (sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃
            (sym≃ (Any-map (Setoid._≈_ Y e) g y)) ●
-           sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y)))
+           sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y))
+    })
     where
       open Multiset (ListMS Y)
       open CommMonoid (Multiset.commMonoid (ListMS X))
@@ -250,8 +253,7 @@ abstract
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
-  ; F₁ = λ {X} {Y} f → let H = ListCMHom X Y in
-      MkHom (map H f) (map-e H f) (map-* H f)
+  ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
   ; identity = {!!}
   ; homomorphism = {!!}
   ; F-resp-≡ = λ F≈G → {!!}

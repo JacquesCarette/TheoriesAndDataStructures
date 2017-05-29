@@ -141,7 +141,7 @@ open MultisetHom
 %{{{ ≡→≃-Any ; Any-∷ ; Any-⊥ ; Any-++ ; Any-map
 
 Lots of lemmas about |Any|
-\begin{code}
+\begin{spec}
 ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
 ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
 
@@ -179,42 +179,68 @@ Any-map : {a b p : Level} {A : Set a} {B : Set b} (P : B → Set p)
   (f : A → B) (xs : List A) → Any P (mapL f xs) ≃ Any (P ⊚ f) xs
 Any-map P f [] = Any-⊥ ⟨≃≃⟩ (sym≃ Any-⊥)
 Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃≃⟩ sym≃ Any-∷
-\end{code}
+\end{spec}
 
 %}}}
 
 \begin{code}
+
+open import Function using (flip)
+open import Function.Inverse using () renaming (_↔_ to _≅_)
+open import Function.Related using (_∼[_]_)
+open import Data.List.Any.Properties using (Any-cong) renaming (++↔ to Any-additive)
+open import Function.Related.TypeIsomorphisms using (⊎-CommutativeMonoid)
+
+open import Algebra using (CommutativeMonoid)
+module _ {k ℓ} where  module ⊎ = CommutativeMonoid (⊎-CommutativeMonoid k ℓ)
+
+≅-setoid : {ℓ : Level} → Setoid (lsuc ℓ) ℓ
+≅-setoid {ℓ} = record
+  { Carrier         =   Set ℓ
+  ; _≈_             =   _≅_
+  ; isEquivalence   =   record
+    { refl    =   Function.Inverse.id
+    ; sym     =   Function.Inverse.sym
+    ; trans   =   flip Function.Inverse._∘_
+    }
+  }
+
+≡→≅ : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
+≡→≅ ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
+
 abstract
 
-  open import Relation.Binary.SetoidReasoning
+  -- open import Relation.Binary.SetoidReasoning
 
-  ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
+  ListMS : {ℓ o : Level} (X : Setoid ℓ ℓ) → Multiset X
   ListMS {ℓ} {o} X = record
     { commMonoid = record
         { setoid     =  LM
         ; e          =  []
         ; _*_        =  _++_
         ; left-unit  =  Setoid.refl LM
-        ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
-        ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} {z} → begin⟨ ≃-setoid ⟩
-          z ∈ xs ++ ys      ≈⟨ Any-++ _ _ _  ⟩
-          z ∈ xs ⊎ z ∈ ys  ≈⟨ ⊎-comm        ⟩ 
-          z ∈ ys ⊎ z ∈ xs  ≈˘⟨ Any-++ _ _ _ ⟩
+        ; right-unit = λ {x} → Any-cong (λ _ → Function.Inverse.id) (Setoid.reflexive ≅-setoid (≡.cong (Any (_ ≡_)) (proj₂ ++.identity x)))
+        ; assoc      =  λ {xs} {ys} {zs} → Any-cong (λ _ → Setoid.refl ≅-setoid) (Setoid.reflexive ≅-setoid (≡.cong (Any (_ ≡_)) (++.assoc xs ys zs)))
+        ; comm       =  λ {xs} {ys} {z} →
+          z ∈ xs ++ ys      ≅⟨ Setoid.sym ≅-setoid Any-additive ⟩
+          z ∈ xs ⊎ z ∈ ys  ≅⟨ ⊎.comm _ _                       ⟩
+          z ∈ ys ⊎ z ∈ xs  ≅⟨ Any-additive                     ⟩
           z ∈ ys ++ xs      ∎
         }
     ; singleton = λ x → x ∷ []
     }
     where
+      open Function.Related.EquationalReasoning renaming (_↔⟨_⟩_ to _≅⟨_⟩_)
       open Membership X
 
       open import Algebra using (Monoid)
       open import Data.List using (monoid)
       module ++ = Monoid (monoid (Setoid.Carrier X))
 
-      _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set (ℓ ⊔ o)
-      xs ≈ₘ ys = {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
+      _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set _ -- (ℓ ⊔ o)
+      xs ≈ₘ ys = {e : Setoid.Carrier X} → e ∈ xs  ≅  e ∈ ys
 
+{-
       helper : {p : Level} {P : Setoid.Carrier X → Set p} {xs ys : List (Setoid.Carrier X)}
              → (eq : xs ≈ₘ ys)
              → (coherency : {e x : Setoid.Carrier X} {xs : List (Setoid.Carrier X)} → Any → P)
@@ -229,17 +255,20 @@ abstract
           F : Any P (x ∷ xs) → Any P (y ∷ ys)
           F (Any.here px) = Any.here {!proj₁ xs≈ys !}
           F (Any.there pf) = {!!}
+-}
 
-      LM : Setoid ℓ (ℓ ⊔ o)
+      LM : Setoid _ _ -- ℓ (ℓ ⊔ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _≈ₘ_
         ; isEquivalence = record
-          { refl  =  id≃
-          ; sym   =  λ xs≃ys → sym≃ xs≃ys
-          ; trans =  λ xs≈ys ys≈zs → xs≈ys ⟨≃≃⟩ ys≈zs
+          { refl  =  Setoid.refl ≅-setoid
+          ; sym   =  λ xs≅ys → Setoid.sym ≅-setoid xs≅ys
+          ; trans =  λ xs≈ys ys≈zs → Setoid.trans ≅-setoid xs≈ys ys≈zs
           }
         }
+
+\end{code}
 
   ListCMHom : ∀ {ℓ} {o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom X Y = MKMSHom (λ F → record
@@ -310,7 +339,7 @@ MultisetLeft ℓ o = record
     open Multiset
     open CommMonoid
     
-\end{code}
+
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

@@ -140,9 +140,8 @@ open MultisetHom
 
 Lots of lemmas about |Any|
 \begin{code}
-infixr 5 _●_
-private
-  _●_ = trans≃
+infixr 5 _⟨≃≃⟩_
+_⟨≃≃⟩_  = trans≃
   
 ≡→≃-Any : {a p : Level} {A : Set a} {P : A → Set p} {xs ys : List A} → xs ≡ ys → Any P xs ≃ Any P ys 
 ≡→≃-Any ≡.refl = id₀ , Equiv.qinv id₀ ≐-refl ≐-refl
@@ -173,14 +172,14 @@ Any-⊥ = (λ {()}) , Equiv.qinv (λ {()}) (λ {()}) (λ {()})
 
 Any-++ : {a p : Level} {A : Set a} (P : A → Set p) (xs ys : List A) →
   Any P (xs ++ ys) ≃ (Any P xs ⊎ Any P ys)
-Any-++ P [] ys = (uniti₊equiv {A = Any P ys}) ● (sym≃ Any-⊥ ⊎≃ id≃)
-Any-++ P (x ∷ xs) ys = Any-∷ ● (id≃ ⊎≃ Any-++ P xs ys) ●
-  assocl₊equiv ● (sym≃ Any-∷ ⊎≃ id≃)
+Any-++ P [] ys = (uniti₊equiv {A = Any P ys}) ⟨≃≃⟩ (sym≃ Any-⊥ ⊎≃ id≃)
+Any-++ P (x ∷ xs) ys = Any-∷ ⟨≃≃⟩ (id≃ ⊎≃ Any-++ P xs ys) ⟨≃≃⟩
+  assocl₊equiv ⟨≃≃⟩ (sym≃ Any-∷ ⊎≃ id≃)
 
 Any-map : {a b p : Level} {A : Set a} {B : Set b} (P : B → Set p)
   (f : A → B) (xs : List A) → Any P (mapL f xs) ≃ Any (P ⊚ f) xs
-Any-map P f [] = Any-⊥ ● (sym≃ Any-⊥)
-Any-map P f (x ∷ xs) = Any-∷ ● id≃ ⊎≃ Any-map P f xs ● sym≃ Any-∷
+Any-map P f [] = Any-⊥ ⟨≃≃⟩ (sym≃ Any-⊥)
+Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃≃⟩ sym≃ Any-∷
 \end{code}
 
 \begin{code}
@@ -195,8 +194,8 @@ abstract
         ; right-unit = λ {x} → ≡→≃-Any (proj₂ ++.identity x)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≃-Any (++.assoc xs ys zs)
         ; comm       =  λ {x} {y} {z} →
-          Any-++ (Setoid._≈_ X z) x y ●
-          swap₊equiv ●
+          Any-++ (Setoid._≈_ X z) x y ⟨≃≃⟩
+          swap₊equiv ⟨≃≃⟩
           sym≃ (Any-++ (Setoid._≈_ X z) y x)
         }
     ; singleton = λ x → x ∷ []
@@ -218,7 +217,7 @@ abstract
         ; isEquivalence = record
           { refl  =  id≃
           ; sym   =  λ xs≃ys → sym≃ xs≃ys
-          ; trans =  λ xs≈ys ys≈zs → xs≈ys ● ys≈zs
+          ; trans =  λ xs≈ys ys≈zs → xs≈ys ⟨≃≃⟩ ys≈zs
           }
         }
 
@@ -230,10 +229,10 @@ abstract
       }
     ; pres-e = id≃
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in 
-           Any-map (Setoid._≈_ Y e) g (x ++ y) ●
-           Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ● 
+           Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩
+           Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩ 
            (sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃
-           (sym≃ (Any-map (Setoid._≈_ Y e) g y)) ●
+           (sym≃ (Any-map (Setoid._≈_ Y e) g y)) ⟨≃≃⟩
            sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y))
     })
     where

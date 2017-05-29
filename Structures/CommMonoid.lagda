@@ -214,7 +214,22 @@ abstract
 
       _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set (ℓ ⊔ o)
       xs ≈ₘ ys = {e : Setoid.Carrier X} → e ∈ xs  ≃  e ∈ ys
-      
+
+      helper : {p : Level} {P : Setoid.Carrier X → Set p} {xs ys : List (Setoid.Carrier X)}
+             → (eq : xs ≈ₘ ys)
+             → (coherency : {e x : Setoid.Carrier X} {xs : List (Setoid.Carrier X)} → Any → P)
+             → Any P xs  ≃  Any P ys
+      helper {P = P} {[]} {[]} xs≈ys = ≡→≃-Any ≡.refl
+      helper {P = P} {[]} {x ∷ ys} xs≈ys = ⊥-elim (proj₁ Any-⊥ xx)
+        where xx = (proj₁ (sym≃ (xs≈ys {x})) (Any.here (Setoid.refl X)))
+      helper {P = P} {x ∷ xs} {[]} xs≈ys = ⊥-elim (proj₁ Any-⊥ xx)
+        where xx = (proj₁ (xs≈ys {x}) (Any.here (Setoid.refl X)))
+      helper {P = P} {x ∷ xs} {y ∷ ys} xs≈ys = {!!}
+        where
+          F : Any P (x ∷ xs) → Any P (y ∷ ys)
+          F (Any.here px) = Any.here {!proj₁ xs≈ys !}
+          F (Any.there pf) = {!!}
+
       LM : Setoid ℓ (ℓ ⊔ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
@@ -230,8 +245,19 @@ abstract
   ListCMHom X Y = MKMSHom (λ F → record
     { mor = record
       { _⟨$⟩_ = mapL (Π._⟨$⟩_ F)
-      ; cong = λ {xs} {ys} xs≈ys {e} → {!!}
-      }
+      ; cong = λ {xs} {ys} xs≈ys {e} → let 𝔣 = mapL (Π._⟨$⟩_ F) ; f = Π._⟨$⟩_ F in begin⟨ ≃-setoid ⟩
+        e ∈₂ (𝔣 xs)                ≡⟨ ≡.refl ⟩
+        Any (Setoid._≈_ Y e) (𝔣 xs) ≈⟨ Any-map _ _ _ ⟩
+        Any (λ x → Setoid._≈_ Y e (f x)) xs ≈⟨ {!xs≈ys!} ⟩
+        Any (λ x → Setoid._≈_ Y e (f x)) ys ≈˘⟨ Any-map _ _ _ ⟩
+        e ∈₂ (𝔣 ys) ∎ 
+      } {-
+Any-map : {a b p : Level} {A : Set a} {B : Set b} (P : B → Set p)
+  (f : A → B) (xs : List A) → Any P (mapL f xs) ≃ Any (P ⊚ f) xs
+Any-map P f [] = Any-⊥ ⟨≃≃⟩ (sym≃ Any-⊥)
+Any-map P f (x ∷ xs) = Any-∷ ⟨≃≃⟩ id≃ ⊎≃ Any-map P f xs ⟨≃≃⟩ sym≃ Any-∷
+
+-}
     ; pres-e = id≃
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in 
            Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩
@@ -243,6 +269,8 @@ abstract
     where
       open Multiset (ListMS Y)
       open CommMonoid (Multiset.commMonoid (ListMS X))
+      open Membership X renaming (_∈_ to _∈₁_)
+      open Membership Y renaming (_∈_ to _∈₂_)
 {-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in

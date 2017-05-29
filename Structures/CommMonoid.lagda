@@ -209,8 +209,6 @@ module _ {k ℓ} where  module ⊎ = CommutativeMonoid (⊎-CommutativeMonoid k 
 
 abstract
 
-  -- open import Relation.Binary.SetoidReasoning
-
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
     { commMonoid = record
@@ -255,17 +253,19 @@ abstract
   ListCMHom X Y = MKMSHom (λ F → record
     { mor = record
       { _⟨$⟩_ = λ xs → map-with-∈₁ xs (λ {x} _ → Π._⟨$⟩_ F x) -- map-with-∈₁ {!map-with-∈₁ ?!} -- mapL (Π._⟨$⟩_ F)
-      ; cong = λ {xs} {ys} xs≈ys {e} → let 𝔣 = λ {x} _ → Π._⟨$⟩_ F x ; f = Π._⟨$⟩_ F in -- begin⟨ ≃-setoid ⟩
-      Any (Setoid._≈_ Y e) (map-with-∈₁ xs 𝔣) ≅⟨ ≅-sym {!map-with-∈-≅!} ⟩
-      ∃₂ (λ x x∈xs → Setoid._≈_ Y e (f x))   ≅⟨ {!!} ⟩
-      Any _ (map-with-∈₁ ys 𝔣) ≅⟨ {!!} ⟩
-      {!!} ∎ 
-        {- e ∈₂ (𝔣 xs)                ≡⟨ ≡.refl ⟩
-        Any (Setoid._≈_ Y e) (𝔣 xs) ≅⟨ Setoid.sym ≅-setoid Any-list ⟩
-        Any (λ x → Setoid._≈_ Y e (f x)) xs ≅⟨ {!xs≈ys!} ⟩
-        Any (λ x → Setoid._≈_ Y e (f x)) ys ≅⟨ Any-list ⟩
-        e ∈₂ (𝔣 ys) ∎ 
-       -}
+      ; cong = λ {xs} {ys} xs≈ys {e} →
+        let 𝔣 : {x : Setoid.Carrier X} → x ∈₁ xs → Setoid.Carrier Y
+            𝔣 = λ {x} _ → Π._⟨$⟩_ F x
+
+            𝔣′ : {x : Setoid.Carrier X} → x ∈₁ ys → Setoid.Carrier Y
+            𝔣′ = λ {x} _ → Π._⟨$⟩_ F x
+
+            f = Π._⟨$⟩_ F
+        in 
+      e ∈₂ (map-with-∈₁ xs 𝔣) ≅⟨ ≅-sym {!map-with-∈-≅!} ⟩
+      ∃₂ {A = Setoid.Carrier X} {B = λ x → x ∈₁ xs} (λ x x∈xs → Setoid._≈_ Y e (f x))   ≅⟨ {! crux !} ⟩
+      ∃₂ {A = Setoid.Carrier X} {B = λ x → x ∈₁ ys} (λ x x∈ys → Setoid._≈_ Y e (f x))   ≅⟨ {!!} ⟩      
+      e ∈₂ (map-with-∈₁ ys 𝔣′) ∎
       }
     ; pres-e = ≅-refl
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}

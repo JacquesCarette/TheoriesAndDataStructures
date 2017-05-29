@@ -10,10 +10,10 @@ open import Categories.Agda       using (Sets)
 open import Function              using (const ; id ; _∘_ ; _$_)
 open import Function2             using (_$ᵢ)
 open import Relation.Unary        using (Pred; _∈_; _∪_; _∩_)
-open import Data.Empty
 
 open import EqualityCombinators
-open import DataProperties
+open import DataProperties hiding (⊥ ; ⊥-elim)
+open import Data.Empty
 
 open import Algebra hiding (Monoid)
 open import Algebra.Structures
@@ -83,8 +83,8 @@ record Hom {o ℓ} (X Y : AbelianGroup o ℓ) : Set (o ⊔ ℓ) where
 
   inv-char : {x y : Carrier Y} → x +₂ y ≈₂ 0₂ → y ≈₂ -₂ x 
   inv-char {x} {y} x+y≈0 = begin⟨ (record {AbelianGroup Y }) ⟩
-    y                 ≈⟨ sym (proj₁ identity y)              ⟩
-    0₂ +₂ y           ≈⟨ ∙-cong (sym (proj₁ inverse x)) refl ⟩
+    y                 ≈˘⟨ proj₁ identity y                   ⟩
+    0₂ +₂ y           ≈˘⟨ ∙-cong (proj₁ inverse x) refl      ⟩
     (-₂ x +₂ x) +₂ y  ≈⟨ assoc _ _ _                         ⟩
      -₂ x +₂ (x +₂ y) ≈⟨ ∙-cong refl x+y≈0                   ⟩
      -₂ x +₂ 0₂       ≈⟨ proj₂ identity _                    ⟩

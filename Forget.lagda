@@ -43,7 +43,7 @@ record OneSortedAlg (ℓ : Level) : Set (suc (suc ℓ)) where
 \end{code}
 %}}}
 
-%{{{ oneSorted
+%{{{ oneSortedCategory
 
 The aforementioned claim that algebras and their structure preserving morphisms
 form a category can be realised due to the coherency conditions we requested viz
@@ -64,9 +64,9 @@ oneSortedCategory ℓ A = record
           mor (comp H G) ∘ mor F
             ≈⟨ ∘-≐-cong₁ _ comp-is-∘ ⟩ 
           mor H ∘ mor G ∘ mor F
-            ≈⟨ ≐-sym (∘-≐-cong₂ (mor H) comp-is-∘) ⟩
+            ≈˘⟨ ∘-≐-cong₂ (mor H) comp-is-∘ ⟩
           mor H ∘ mor (comp G F)  
-            ≈⟨ ≐-sym comp-is-∘ ⟩
+            ≈˘⟨ comp-is-∘ ⟩
           mor (comp H (comp G F))
             ∎
   ; identityˡ   =   λ{ {f = f} → comp-is-∘ ⟨≐≐⟩ Id-is-id ∘ mor f } 

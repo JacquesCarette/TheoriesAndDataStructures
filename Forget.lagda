@@ -1,4 +1,4 @@
-Forgetful functor builder for single-sorted algebras to Sets
+Forgetful functor builder for single-sorted algebras to Sets.
 
 %{{{ Imports
 \begin{code}
@@ -41,6 +41,9 @@ record OneSortedAlg (ℓ : Level) : Set (suc (suc ℓ)) where
     Id           :   {A : Alg} → Hom A A
     .Id-is-id    :   {A : Alg} → mor (Id {A}) ≐ id
 \end{code}
+
+WK: This is really just a presheaf, and we may want to mention that viz realising as a forgetful functor to |Sets|:
+See |mkForgetful|.
 %}}}
 
 %{{{ oneSortedCategory

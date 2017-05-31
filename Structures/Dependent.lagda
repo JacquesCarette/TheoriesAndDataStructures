@@ -32,23 +32,28 @@ Alternatively, the named fields of a class-object are the indices for that class
 record Dependent a b : Set (lsuc (a ⊍ b)) where
   constructor MkDep
   field
-    Index : Set a
-    Field : Index → Set b
+    Sort : Set a
+    Carrier : Sort → Set b
 
 open Dependent
 \end{code}
 
 Alternatively, these can be construed as some universe |Index| furnished with a
 constructive predicated |Field| :-)
-
 That is to say, these may also be known as ``unary relational algebras''.
+
+Moreover, we can construe |Index| as sort symbols, that is ``uninterpreted types''
+of some universe, and |Field| is then the interpretation of those symbols as a
+reification in the ambient type system.
+
+Again, we may name these “many sorted”.
 
 \begin{code}
 record Hom {a b} (Src Tgt : Dependent a b) : Set (a ⊍ b) where
   constructor MkHom
   field
-    mor   : Index Src → Index Tgt
-    shift : {i : Index Src} → Field Src i → Field Tgt (mor i)
+    mor   : Sort Src → Sort Tgt
+    shift : {i : Sort Src} → Carrier Src i → Carrier Tgt (mor i)
 
 open Hom
 \end{code}
@@ -87,7 +92,7 @@ category and so we have two forgetful functors.
 \begin{code}
 Forget : (ℓ : Level) → Functor (DependentCat ℓ) (Sets ℓ)
 Forget ℓ = record
-  { F₀             =   Dependent.Index
+  { F₀             =   Dependent.Sort
   ; F₁             =   Hom.mor
   ; identity       =   ≡.refl
   ; homomorphism   =   ≡.refl
@@ -165,14 +170,28 @@ The category of sets contains products and so |Dependent| algebras can be repres
 and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
 
 \begin{code}
+≡-cong-Σ  :  {a b : Level} {A : Set a} {B : A → Set b}
+          →  {x₁ x₂ : A} {y₁ : B x₁} {y₂ : B x₂}
+          →  (x₁≡x₂ : x₁ ≡ x₂) → y₁ ≡ ≡.subst B (≡.sym x₁≡x₂) y₂ → (x₁ , y₁) ≡ (x₂ , y₂)
+≡-cong-Σ ≡.refl ≡.refl = ≡.refl
+
 DepProd : (ℓ : Level) → Functor (DependentCat ℓ) (Sets ℓ)
 DepProd ℓ = record
-  { F₀             =   λ S → Σ (Index S) (Field S)
+  { F₀             =   λ S → Σ (Sort S) (Carrier S)
   ; F₁             =   λ F → mor F ×₁ shift F
   ; identity       =   ≡.refl
   ; homomorphism   =   ≡.refl
-  ; F-resp-≡      =   λ F≈G → λ{ {x = (i , f)} → {! seems like I need ``shift F ≈ shift G'' …!}}
+  ; F-resp-≡      =   λ F≈G → λ{ {x = (i , f)} → ≡-cong-Σ (F≈G i) {!!}  } -- {! seems like I need ``shift F ≈ shift G'' …!}}
   }
+  where helper : {a b : Level} {S T : Dependent a b} {F G : Hom S T}
+               → (F≈G : mor F ≐ mor G)
+               → {i : Sort S} {f : Carrier S i} 
+               → shift F f ≡  ≡.subst (Carrier T) (≡.sym (F≈G i)) (shift G f)
+        helper {S = S} {T} {F} {G} F≈G {i} {f} with ≡.cong (Carrier T) (F≈G i)
+        ...| r = {!see RATH's propeq utils, maybe something there helps!} 
+
+
+-- ‼ consider using Relation.Binary.HeterogenousEquality …!
 
 -- Every set gives rise to an identity family on itself
 ID : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
@@ -183,6 +202,13 @@ ID ℓ = record
   ; homomorphism   =   ≐-refl
   ; F-resp-≡      =   λ F≈G → λ x → F≈G {x}
   }
+
+
+-- look into having a free functor from TwoCat, then _×_ pops up!
+-- maybe not, what is the forgetful functor...!
+f : {!!}
+f = {!!}
+
 \end{code}
 
 Then the proof that these two form the desired adjunction

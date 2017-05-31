@@ -162,6 +162,16 @@ result may be phrased more concisely.
 
 %}}}
 
+WK: A signature with no constant symbols results in there being no closed terms
+and so the term algebra is just the empty set of no closed terms quotiented by
+the given equations and the resulting algebra has an empty carrier.
+
+Free : build over generators  -- cf Multiset construction in CommMonoid.lagda
+Initial : does not require generators
+
+ToDo ∷ mimic the multiset construction here for generators S “over” IndexedUnaryAlgebras.
+WK claims it may have carrier S × List I; then the non-indexed case is simply List ⊤ ≅ ℕ.
+
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

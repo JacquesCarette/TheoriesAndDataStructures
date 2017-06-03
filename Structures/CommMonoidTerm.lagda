@@ -39,6 +39,7 @@ record CommMonoid {ℓ} {o} : Set (lsuc ℓ ⊍ lsuc o) where
     right-unit : {x : Carrier} → x * e ≈ x
     assoc      : {x y z : Carrier} → (x * y) * z ≈ x * (y * z)
     comm       : {x y : Carrier} → x * y ≈ y * x
+    _⟨*⟩_       : {x y z w : Carrier} → x ≈ y → z ≈ w → x * z ≈ y * w
 
   module ≈ = Setoid setoid
 
@@ -70,7 +71,7 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 
 %{{{ MonoidCat ; Forget
 \begin{code}
-MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (ℓ ⊍ o)
+MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
 MonoidCat ℓ o = record
   { Obj = CommMonoid {ℓ} {o}
   ; _⇒_ = Hom
@@ -94,7 +95,7 @@ MonoidCat ℓ o = record
 \end{code}
 
 \begin{code}
-Forget : (ℓ o : Level) → Functor (MonoidCat ℓ (o ⊍ ℓ)) (Setoids ℓ (o ⊍ ℓ))
+Forget : (ℓ o : Level) → Functor (MonoidCat ℓ o) (Setoids ℓ o)
 Forget ℓ o = record
   { F₀             =   λ C → record { CommMonoid C }
   ; F₁             =   λ F → record { Hom F }
@@ -171,7 +172,7 @@ module _ {ℓ o : Level} (X : Setoid ℓ o) where
       --
       -- This may bite us in the butt; not necessarily though...
 
-  LM : Setoid _ _
+  LM : Setoid ℓ (o ⊍ ℓ)
   LM = record
           { Carrier = Term
           ; _≈_ = _≈ₜ_
@@ -192,6 +193,7 @@ module _ {ℓ o : Level} (X : Setoid ℓ o) where
           ; right-unit = ∙-rightId
           ; assoc      =  ∙-assoc
           ; comm       =  ∙-comm
+          ; _⟨*⟩_       = ∙-cong
           }
       ; singleton = inj
       }
@@ -271,16 +273,35 @@ fold-resp-≈ : ∀ {ℓ o}
 fold-resp-≈ cm ≈ₜ-refl = CommMonoid.refl cm
 fold-resp-≈ cm (≈ₜ-sym pf) = CommMonoid.sym cm (fold-resp-≈ cm pf) 
 fold-resp-≈ cm (≈ₜ-trans pf pf₁) = CommMonoid.trans cm (fold-resp-≈ cm pf) (fold-resp-≈ cm pf₁)
-fold-resp-≈ cm (∙-cong pf pf₁) = {!!} -- and this is where it all falls apart!!
+fold-resp-≈ cm (∙-cong pf pf₁) = CommMonoid._⟨*⟩_ cm (fold-resp-≈ cm pf) (fold-resp-≈ cm pf₁)
 fold-resp-≈ cm ∙-assoc = CommMonoid.assoc cm
 fold-resp-≈ cm ∙-comm = CommMonoid.comm cm
 fold-resp-≈ cm ∙-leftId = CommMonoid.left-unit cm
 fold-resp-≈ cm ∙-rightId = CommMonoid.right-unit cm
 fold-resp-≈ cm (embed x₁) = x₁
+
+\end{code}
+
+It is really important to note that the induction above is on the proof witness.
+
+\begin{code}
+fold-resp-lift : ∀ {ℓ o} {X Y : CommMonoid {ℓ} {o}} (f : Hom X Y) {i : Term (setoid X)} →
+  CommMonoid._≈_ Y (fold id₀ (e Y) (_*_ Y) (term-lift (mor f) i)) (mor f Π.⟨$⟩ (fold id₀ (e X) (_*_ X) i))
+fold-resp-lift {Y = Y} f {inj x} = CommMonoid.refl Y
+fold-resp-lift {Y = Y} f {ε} = CommMonoid.sym Y (pres-e f)
+fold-resp-lift {Y = Y} f {i ∙ j} = CommMonoid.trans Y
+     (CommMonoid._⟨*⟩_ Y (fold-resp-lift f {i}) (fold-resp-lift f {j}))
+     (CommMonoid.sym Y (pres-* f)) 
+
+fold-singleton : ∀ {ℓ o} {X : Setoid ℓ (o ⊍ ℓ)} {x : Term X} →
+  x ≈ (fold {X = LM X} id₀ ε _∙_ (term-lift (record { _⟨$⟩_ = inj ; cong = embed }) x) ) ∶ commMonoid (ListMS X)
+fold-singleton {X = X} {x = inj x} = embed (Setoid.refl X)
+fold-singleton {x = ε} = ≈ₜ-refl
+fold-singleton {ℓ} {o} {X = X} {x = x ∙ x₁} = ∙-cong (fold-singleton {ℓ} {o} {x = x}) (fold-singleton {ℓ} {o} {x = x₁})
 \end{code}
 
 \begin{code}
-MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊍ o))
+MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (o ⊍ ℓ))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
@@ -292,17 +313,17 @@ MultisetF ℓ o = record
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊍ ℓ)) (Forget ℓ (o ⊍ ℓ))
 MultisetLeft ℓ o = record
   { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
-                                     ; cong = embed }
+                                     ; cong = λ {i} {j} i≈j → embed {x = i} {j} i≈j }
                   ; commute = λ f → ≈ₜ-refl }
   ; counit = record
-    { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
+    { η = λ { X@(MkCommMon A z _+_ _ _ _ _ _) →
           MkHom (record { _⟨$⟩_ = fold id₀ z _+_
                         ; cong = fold-resp-≈ X })
                 (Setoid.refl A)
-                ( λ {a} {b} → {!!} ) }
-    ; commute = λ f → {!!}
+                (Setoid.refl A ) }
+    ; commute = fold-resp-lift
     }
-  ; zig = {!!}
+  ; zig = fold-singleton {ℓ} {o}
   ; zag = λ {CM} → CommMonoid.refl CM
   }
   where

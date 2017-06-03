@@ -198,23 +198,40 @@ module _ {ℓ o : Level} (X : Setoid ℓ o) where
       where
 
 -- Term is functorial
-term : {ℓ o : Level} {X Y : Setoid ℓ o} (F : X ⟶ Y) → (LM X) ⟶ (LM Y)
-term {X = X} {Y} F = record { _⟨$⟩_ = helper ; cong = proof }
-  where helper : Term X → Term Y
-        helper (inj x) = inj (Π._⟨$⟩_ F x)
-        helper ε = ε
-        helper (s ∙ t) = helper s ∙ helper t
+module _ {ℓ o : Level} {X Y : Setoid ℓ o} where
+  term-lift : (X ⟶ Y) → Term X → Term Y
+  term-lift F (inj x) = inj (Π._⟨$⟩_ F x)
+  term-lift F ε = ε
+  term-lift F (s ∙ t) = term-lift F s ∙ term-lift F t
 
-        proof : {s t : Term X} → _≈ₜ_ X s t → _≈ₜ_ Y (helper s) (helper t)
-        proof ≈ₜ-refl = ≈ₜ-refl
-        proof (≈ₜ-sym eq) = ≈ₜ-sym (proof eq)
-        proof (≈ₜ-trans eq eq₁) = ≈ₜ-trans (proof eq) (proof eq₁)
-        proof (∙-cong eq eq₁) = ∙-cong (proof eq) (proof eq₁)
-        proof ∙-assoc = ∙-assoc
-        proof ∙-comm = ∙-comm
-        proof ∙-leftId = ∙-leftId
-        proof ∙-rightId = ∙-rightId
-        proof (embed x≈y) = embed (Π.cong F x≈y)
+  term-cong : (F : X ⟶ Y) → {s t : Term X} → _≈ₜ_ X s t → _≈ₜ_ Y (term-lift F s) (term-lift F t)
+  term-cong F ≈ₜ-refl = ≈ₜ-refl
+  term-cong F (≈ₜ-sym eq) = ≈ₜ-sym (term-cong F eq)
+  term-cong F (≈ₜ-trans eq eq₁) = ≈ₜ-trans (term-cong F eq) (term-cong F eq₁)
+  term-cong F (∙-cong eq eq₁) = ∙-cong (term-cong F eq) (term-cong F eq₁)
+  term-cong F ∙-assoc = ∙-assoc
+  term-cong F ∙-comm = ∙-comm
+  term-cong F ∙-leftId = ∙-leftId
+  term-cong F ∙-rightId = ∙-rightId
+  term-cong F (embed x≈y) = embed (Π.cong F x≈y)
+
+  -- Setoid morphism
+  term : (F : X ⟶ Y) → (LM X) ⟶ (LM Y)
+  term F = record { _⟨$⟩_ = term-lift F ; cong = term-cong F }
+
+-- proofs that it is functorial; must pattern-match and expand.  This is the 'cost' of
+-- going with a term language. Can't put them in the above module either, because
+-- the implicit premises are different.
+term-id : ∀ {ℓ o} {X : Setoid ℓ o} {x : Term X} → term-lift id x ≈ x ∶ commMonoid (ListMS X)
+term-id {x = inj x} = ≈ₜ-refl
+term-id {x = ε} = ≈ₜ-refl
+term-id {x = x ∙ x₁} = ∙-cong (term-id {x = x}) (term-id {x = x₁})
+
+term-Hom : ∀ {ℓ o} {X Y Z : Setoid ℓ o} {f : X ⟶ Y} {g : Y ⟶ Z} {x : Term X} →
+  _≈ₜ_ Z (term-lift (g ∘ f) x) (term-lift g (term-lift f x))
+term-Hom {x = inj x} = ≈ₜ-refl
+term-Hom {x = ε} = ≈ₜ-refl
+term-Hom {x = x ∙ x₁} = ∙-cong term-Hom term-Hom
 
 ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
 ListCMHom X Y = MKMSHom (λ F → record
@@ -222,48 +239,47 @@ ListCMHom X Y = MKMSHom (λ F → record
       ; pres-e   =   ≈ₜ-refl
       ; pres-*   =   ≈ₜ-refl
       })
-\end{code}
 
-{-
-    fold : {X : Setoid ℓ o} {B : Set ℓ} →
-      let A = Carrier X in
-      (A → B → B) → B → Carrier (Multiset X) → B
-    fold = foldr
-    
+fold : ∀ {ℓ o} {X : Setoid ℓ o} {B : Set ℓ} →
+  let A = Setoid.Carrier X in
+  (A → B → B) → B → Term X → B
+fold f b (inj x) = f x b
+fold f b ε = b
+fold f b (m ∙ m₁) = fold f (fold f b m) m₁
+\end{code}
+{-    
     singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
       _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
     singleton-map {_} {B} f = Setoid.refl (Multiset B)
 -}
 
-MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
+\begin{code}
+MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊍ o))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
-  ; identity = {!!}
-  ; homomorphism = {!!}
+  ; identity = term-id
+  ; homomorphism = term-Hom
   ; F-resp-≡ = λ F≈G → {!!}
   }
-  where
-    open Multiset; open MultisetHom
-    
-MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
+
+MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊍ ℓ)) (Forget ℓ (o ⊍ ℓ))
 MultisetLeft ℓ o = record
   { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
-                                     ; cong = {!!} }
-                  ; commute = {!!} }
+                                     ; cong = embed }
+                  ; commute = λ f → ≈ₜ-refl }
   ; counit = record
     { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
-          MkHom (record { _⟨$⟩_ = {! fold _+_ z !} ; cong = {!!} }) {!!} {!!} }
+          MkHom (record { _⟨$⟩_ = fold _+_ z; cong = {!!} }) (Setoid.refl A) {!!} }
     ; commute = {!!}
     }
   ; zig = {!!}
-  ; zag = {!!}
+  ; zag = λ { {MkCommMon setoid₁ _ _ _ right-unit₁ _ _} → Setoid.sym setoid₁ right-unit₁ }
   }
   where
     open Multiset
     open CommMonoid
-    
-
+\end{code}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

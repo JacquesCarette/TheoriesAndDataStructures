@@ -228,10 +228,16 @@ term-id {x = ε} = ≈ₜ-refl
 term-id {x = x ∙ x₁} = ∙-cong (term-id {x = x}) (term-id {x = x₁})
 
 term-Hom : ∀ {ℓ o} {X Y Z : Setoid ℓ o} {f : X ⟶ Y} {g : Y ⟶ Z} {x : Term X} →
-  _≈ₜ_ Z (term-lift (g ∘ f) x) (term-lift g (term-lift f x))
+  (term-lift (g ∘ f) x) ≈ (term-lift g (term-lift f x)) ∶ commMonoid (ListMS Z)
 term-Hom {x = inj x} = ≈ₜ-refl
 term-Hom {x = ε} = ≈ₜ-refl
 term-Hom {x = x ∙ x₁} = ∙-cong term-Hom term-Hom
+
+term-resp-F : ∀ {ℓ o} {X Y : Setoid ℓ o} {f g : X ⟶ Y} {x : Term X} →
+  ({z : Setoid.Carrier X} → Setoid._≈_ Y (f Π.⟨$⟩ z) (g Π.⟨$⟩ z)) → term-lift f x ≈ term-lift g x ∶ commMonoid (ListMS Y)
+term-resp-F {x = inj x} F = embed F
+term-resp-F {x = ε} F = ≈ₜ-refl
+term-resp-F {x = x ∙ x₁} F = ∙-cong (term-resp-F F) (term-resp-F F)
 
 ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
 ListCMHom X Y = MKMSHom (λ F → record
@@ -240,18 +246,38 @@ ListCMHom X Y = MKMSHom (λ F → record
       ; pres-*   =   ≈ₜ-refl
       })
 
+-- We have a fold over the syntax
 fold : ∀ {ℓ o} {X : Setoid ℓ o} {B : Set ℓ} →
   let A = Setoid.Carrier X in
-  (A → B → B) → B → Term X → B
-fold f b (inj x) = f x b
-fold f b ε = b
-fold f b (m ∙ m₁) = fold f (fold f b m) m₁
+  (A → B) → B → (B → B → B) → Term X → B
+fold f b g (inj x) = f x
+fold f b g ε = b
+fold f b g (m ∙ m₁) = g (fold f b g m) (fold f b g m₁)
+
+-- and an induction principle
+ind : ∀ {ℓ o p} → {X : Setoid ℓ o} (P : Term X → Set p) →
+  ((x : Setoid.Carrier X) → P (inj x)) → P ε →
+  ({t₁ t₂ : Term X} → P t₁ → P t₂ → P (t₁ ∙ t₂)) →
+  (t : Term X) → P t
+ind P base e₁ bin (inj x) = base x
+ind P base e₁ bin ε = e₁
+ind P base e₁ bin (t ∙ t₁) = bin (ind P base e₁ bin t) (ind P base e₁ bin t₁)
+
+-- but the above can be really hard to use in some cases, such as:
+
+fold-resp-≈ : ∀ {ℓ o}
+  (CM : CommMonoid {ℓ} {o}) → let X = CommMonoid.setoid CM in {i j : Term X} →
+  (i ≈ j ∶ commMonoid (ListMS X)) → (fold id₀ (e CM) (_*_ CM) i) ≈ (fold id₀ (e CM) (_*_ CM) j) ∶ CM
+fold-resp-≈ cm ≈ₜ-refl = CommMonoid.refl cm
+fold-resp-≈ cm (≈ₜ-sym pf) = CommMonoid.sym cm (fold-resp-≈ cm pf) 
+fold-resp-≈ cm (≈ₜ-trans pf pf₁) = CommMonoid.trans cm (fold-resp-≈ cm pf) (fold-resp-≈ cm pf₁)
+fold-resp-≈ cm (∙-cong pf pf₁) = {!!} -- and this is where it all falls apart!!
+fold-resp-≈ cm ∙-assoc = CommMonoid.assoc cm
+fold-resp-≈ cm ∙-comm = CommMonoid.comm cm
+fold-resp-≈ cm ∙-leftId = CommMonoid.left-unit cm
+fold-resp-≈ cm ∙-rightId = CommMonoid.right-unit cm
+fold-resp-≈ cm (embed x₁) = x₁
 \end{code}
-{-    
-    singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
-      _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
-    singleton-map {_} {B} f = Setoid.refl (Multiset B)
--}
 
 \begin{code}
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊍ o))
@@ -260,7 +286,7 @@ MultisetF ℓ o = record
   ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
   ; identity = term-id
   ; homomorphism = term-Hom
-  ; F-resp-≡ = λ F≈G → {!!}
+  ; F-resp-≡ = λ F≈G → term-resp-F F≈G
   }
 
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊍ ℓ)) (Forget ℓ (o ⊍ ℓ))
@@ -270,11 +296,14 @@ MultisetLeft ℓ o = record
                   ; commute = λ f → ≈ₜ-refl }
   ; counit = record
     { η = λ { X@(MkCommMon A z _+_ _ _ _ _) →
-          MkHom (record { _⟨$⟩_ = fold _+_ z; cong = {!!} }) (Setoid.refl A) {!!} }
-    ; commute = {!!}
+          MkHom (record { _⟨$⟩_ = fold id₀ z _+_
+                        ; cong = fold-resp-≈ X })
+                (Setoid.refl A)
+                ( λ {a} {b} → {!!} ) }
+    ; commute = λ f → {!!}
     }
   ; zig = {!!}
-  ; zag = λ { {MkCommMon setoid₁ _ _ _ right-unit₁ _ _} → Setoid.sym setoid₁ right-unit₁ }
+  ; zag = λ {CM} → CommMonoid.refl CM
   }
   where
     open Multiset

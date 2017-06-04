@@ -17,7 +17,8 @@ open ≡ using (_≡_) public
 _⟨≡≡⟩_ = ≡.trans
 
 _⟨≡≡˘⟩_ : {a : Level} {A : Set a} {x y z : A} → x ≡ y → z ≡ y → x ≡ z
-x≈y ⟨≡≡˘⟩ z≈y = x≈y ⟨≡≡⟩ ≡.sym z≈y 
+x≈y ⟨≡≡˘⟩ z≈y = x≈y ⟨≡≡⟩ ≡.sym z≈y
+
 \end{code}
 %}}}
 
@@ -42,8 +43,18 @@ module _ {a b : Level} {A : Set a} {B : Set b} where
             → (x₂≡x₁ : x₂ ≡ x₁) → ≡.subst B x₂≡x₁ y₂ ≡ y₁ → f x₁ y₁ ≡ f x₂ y₂
   cong₂D f ≡.refl ≡.refl = ≡.refl
 
-open import Equiv public using (∘-resp-≐) -- To do: port this over here!
+open import Equiv public using (_≃_; id≃; sym≃; trans≃; qinv; ∘-resp-≐) -- To do: port this over here!
   renaming (cong∘l to ∘-≐-cong₂ ; cong∘r to ∘-≐-cong₁)
+
+infix  3 _◻
+infixr 2 _≃⟨_⟩_
+
+_≃⟨_⟩_ : {x y z : Level} (X : Set x) {Y : Set y} {Z : Set z} 
+      →  X ≃ Y → Y ≃ Z → X ≃ Z
+X ≃⟨ X≃Y ⟩ Y≃Z = trans≃ X≃Y Y≃Z
+
+_◻ : {x : Level} (X : Set x) → X ≃ X
+X ◻ = id≃
 
 -- Note that the precedence is lower than that of function composition to avoid superfluous parenthesis.
 infixr 5 _⟨≐≐⟩_

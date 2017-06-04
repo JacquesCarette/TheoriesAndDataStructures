@@ -224,6 +224,8 @@ Some {a} {ℓa} {A} P xs = record
   let open Setoid A renaming (refl to refl≈) in
   record { to = id ; from = id ; inverse-of = record { left-inverse-of = λ _ → refl≈ ; right-inverse-of = λ _ → refl≈ } }
 
+open import RATH using (_⊎⊎_) -- setoid sum
+
 {-
 abstract
   -- RATH-Agda library import

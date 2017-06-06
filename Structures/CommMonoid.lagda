@@ -136,7 +136,7 @@ open MultisetHom
 
 %}}}
 
-%{{{ Setoid isos: _≅_, ≅-refl, ≅-trans, ≅-sym, _≅⟨_⟩_, _∎
+%{{{ Setoid isos: _≅_, ≅-refl, ≅-trans, ≅-sym, _≅⟨_⟩_, _∎ , ≡→≅
 \begin{code}
 open import Function using (flip)
 open import Function.Inverse using () renaming
@@ -159,12 +159,9 @@ X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
 _∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
 X ∎ = ≅-refl
 
+-- |≅-reflexive|
 ≡→≅ : {a ℓa : Level} {A B : Setoid a ℓa} → A ≡ B → A ≅ B
-≡→≅ {A = A} {B} ≡.refl = record
-  { to = id ; from = id
-  ; inverse-of = record { left-inverse-of = λ _ → Setoid.refl A
-                        ; right-inverse-of = λ _ → Setoid.refl B } }
-
+≡→≅ ≡.refl = ≅-refl
 \end{code}
 %}}}
 
@@ -215,29 +212,43 @@ SSetoid {ℓ} {o} = record
 \end{code}
 %}}}
 
+%{{{ Some₀
+Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
+really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
+We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier → Set p,
+as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
+
 \begin{code}
--- Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
--- really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
--- We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier → Set p,
--- as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
-data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
-  here  : ∀ {x xs} (px  : Setoid.Carrier (P Π.⟨$⟩ x)) → Some₀ P (x ∷ xs)
-  there : ∀ {x xs} (pxs : Some₀ P xs) → Some₀ P (x ∷ xs)
+module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa})
+   -- i.e., subst, transport
+   {lift : {x y : Setoid.Carrier A} → Setoid._≈_ A x y → Setoid.Carrier (Π._⟨$⟩_ P x) → Setoid.Carrier (Π._⟨$⟩_ P y)} where
 
--- open import RATH using (ΣΣ)
--- data SomeDay {a ℓa} {A : Setoid a ℓa} (P : {!ΣΣ ? ?!} ) : List (Setoid.Carrier A) → Set {!!} where
+   open Setoid A renaming (Carrier to A₀ ; _≈_ to _≈ₐ_)
+   P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
 
+   data Some₀  : List A₀ → Set (a ⊍ ℓa) where
+     here  : ∀ {x xs} (px  : P₀ x) → Some₀ (x ∷ xs)
+     there : ∀ {x xs} (pxs : Some₀ xs) → Some₀ (x ∷ xs)
+
+   _≈E_ : (x y : A₀) → Setoid ℓa ℓa
+   _≈E_ x y = 
+     record { Carrier = x ≈ₐ y ; _≈_ = λ  eq eq' → {!lift eq  and  lift eq' are the same function, upto isomorphism (In the categorial sense)!}
+         ; isEquivalence = {!!} }
+\end{code}
+%}}}
+
+%{{{ Membership module : setoid≈ ; _∈ₛ_
+\begin{code}
 module Membership {a ℓ} (S : Setoid a ℓ) where
   private
-    open module  S = Setoid S renaming (Carrier to A; _≈_ to _≈ₛ_; trans to _⟨≈ₛ⟩_)
-
-  -- List membership.
-
+    open module  S = Setoid S renaming
+      (Carrier to A; _≈_ to _≈ₛ_; trans to _⟨≈ₛ⟩_ ; reflexive to ≡→≈)
+    
   infix 4 _∈ₛ_
 
   setoid≈ : A → S ⟶ SSetoid {ℓ} {ℓ}
   setoid≈ x = record
-    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y
+    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y   -- This is an ``evil'' which will be amended in time.
     ; cong = λ i≈j → record
       { to   = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈ₛ⟩ i≈j         ; cong = λ _ → tt }
       ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈ₛ⟩ (S.sym i≈j) ; cong = λ _ → tt }
@@ -247,10 +258,10 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   _∈ₛ_ : A → List A → Set (ℓ ⊍ a)
   x ∈ₛ xs = Some₀ (setoid≈ x) xs
+\end{code}
+%}}}
 
-  ≡→≈ : {a b : A} → a ≡ b → a ≈ₛ b
-  ≡→≈ ≡.refl = S.refl
-  
+\begin{code}
 Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ SSetoid) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) (a ⊍ ℓa)
 Some {a} {ℓa} {A} P xs = record
   { Carrier = Some₀ P xs
@@ -264,8 +275,6 @@ Some {a} {ℓa} {A} P xs = record
   let open Setoid A renaming (refl to refl≈) in
   record { to = id ; from = id ; inverse-of = record { left-inverse-of = λ _ → ≡.refl ; right-inverse-of = λ _ → ≡.refl } }
 \end{code}
-
-open import RATH using (_⊎⊎_) -- setoid sum
 
 %{{{ ignoring for now
 \begin{code}

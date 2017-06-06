@@ -161,7 +161,7 @@ X ∎ = ≅-refl
 \end{code}
 %}}}
 
-%{{{ Isos between Isos: _≋_ , id≋, trans≋, sym≋, and setoid of setoids: _≅S_ 
+%{{{ Isos between Isos: _≋_ , id≋, trans≋, sym≋, and setoid of such things: _≅S_
 \begin{code}
 record _≋_ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} (eq₁ eq₂ : A ≅ B) : Set (a ⊍ b ⊍ ℓa ⊍ ℓb) where
   constructor eq
@@ -189,29 +189,24 @@ _≅S_ A B = record
   ; _≈_ = _≋_
   ; isEquivalence = record { refl = id≋ ; sym = sym≋ ; trans = trans≋ } }
 
+\end{code}
+%}}}
 
-open import Function.Inverse using (Inverse) renaming (_↔_  to _≅₀_)
-record _∽_ {a ℓa} {A : Setoid a ℓa} {x y : Setoid.Carrier A} (eq eq' : Setoid._≈_ A x y) : Set ℓa where
-  field
-    auto   :  Setoid._≈_ A x y  ≅₀  Setoid._≈_ A x y
-    proof  :  Π._⟨$⟩_ (Inverse.to auto) eq ≡ eq'
-
-  -- This is terrrible :/
-
-  -- What does it “mean” for two equivalence proofs to be considered “equal”?
-
+%{{{ Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs
+\begin{code}
 _≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
 _≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
-  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = _∽_ {A = A} ; isEquivalence = {!!} }
-
-\end{code}
+  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = {!!} ; isEquivalence = {!!} }
 
 SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
 SSetoid {ℓ} {o} = record
   { Carrier = Setoid ℓ o
   ; _≈_ = _≅_
   ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans } }
-  
+\end{code}
+%}}}
+
+\begin{code}
 -- Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
 -- really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
 -- We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier → Set p,
@@ -219,6 +214,10 @@ SSetoid {ℓ} {o} = record
 data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {a} {ℓa}) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
   here  : ∀ {x xs} (px  : Setoid.Carrier (P Π.⟨$⟩ x)) → Some₀ P (x ∷ xs)
   there : ∀ {x xs} (pxs : Some₀ P xs) → Some₀ P (x ∷ xs)
+
+open import RATH using (ΣΣ)
+data SomeDay {a ℓa} {A : Setoid a ℓa} (P : {!ΣΣ ? ?!} ) : List (Setoid.Carrier A) → Set {!!} where
+\end{code}
 
 module Membership {a ℓ} (S : Setoid a ℓ) where
   private
@@ -229,10 +228,11 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
   infix 4 _∈_
 
   setoid≈ : A → S ⟶ SSetoid {{!!}} {{!!}}
-  setoid≈ a = record { _⟨$⟩_ = λ b → {!a ≈ₛ b!} ; cong = {!!} }
+  setoid≈ x = record { _⟨$⟩_ = λ y → _≈S_ {A = S} x y ; cong = {!!} }
   
-  _∈_ : A → List A → Set _
-  x ∈ xs = Some₀ {! setoid≈ x !} xs
+  _∈_ : A → List A → Set {!!}
+  x ∈ xs = {!!} -- Some₀ ( setoid≈ x ) xs
+\end{code}
 
 Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ SSetoid) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) ℓa
 Some {a} {ℓa} {A} P xs = record

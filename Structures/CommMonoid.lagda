@@ -159,13 +159,6 @@ X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
 _∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
 X ∎ = ≅-refl
 
--- ≃ implies ≅ over ≡.setoid
-≃→≅ : ∀ {a b} {A : Set a} {B : Set b} → A ≃ B → ≡.setoid A ≅ ≡.setoid B
-≃→≅ (f , qinv g α β) = record
-  { to = P.→-to-⟶ f
-  ; from = P.→-to-⟶ g
-  ; inverse-of = record { left-inverse-of = β ; right-inverse-of = α } }
-
 record _≋_ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} (eq₁ eq₂ : A ≅ B) : Set (a ⊍ b ⊍ ℓa ⊍ ℓb) where
   constructor eq
   open _≅_
@@ -182,19 +175,32 @@ module _ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} where
 
   sym≋ : {i j : A ≅ B} → i ≋ j → j ≋ i
   sym≋ (eq to≈ from≈) = eq (λ x → Setoid.sym B (to≈ x)) (λ x → Setoid.sym A (from≈ x))
+
+  trans≋ : {i j k : A ≅ B} → i ≋ j → j ≋ k → i ≋ k
+  trans≋ (eq to≈₀ from≈₀) (eq to≈₁ from≈₁) = eq (λ x → Setoid.trans B (to≈₀ x) (to≈₁ x)) (λ x → Setoid.trans A (from≈₀ x) (from≈₁ x))
   
-_≅S_ : ∀ {a b ℓa ℓb} (A : Setoid a ℓa) (B : Setoid b ℓb) → Setoid _ _
+_≅S_ : ∀ {a b ℓa ℓb} (A : Setoid a ℓa) (B : Setoid b ℓb) → Setoid (ℓb ⊍ (ℓa ⊍ (b ⊍ a))) (ℓb ⊍ (ℓa ⊍ (b ⊍ a)))
 _≅S_ A B = record
   { Carrier = A ≅ B
   ; _≈_ = _≋_
-  ; isEquivalence = record { refl = id≋ ; sym = sym≋ ; trans = {!!} } }
+  ; isEquivalence = record { refl = id≋ ; sym = sym≋ ; trans = trans≋ } }
 
+_≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa {!!}
+_≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
+  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ eq₁ eq₂ → {!eq₁ ≅ eq₂!} ; isEquivalence = {!!} }
+
+SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
+SSetoid {ℓ} {o} = record
+  { Carrier = Setoid ℓ o
+  ; _≈_ = _≅_
+  ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans } }
+  
 -- Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
 -- really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
 -- We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier → Set p,
 -- as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
-data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ ≡.setoid (Set ℓa)) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
-  here  : ∀ {x xs} (px  : P Π.⟨$⟩ x) → Some₀ P (x ∷ xs)
+data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {a} {ℓa}) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
+  here  : ∀ {x xs} (px  : Setoid.Carrier (P Π.⟨$⟩ x)) → Some₀ P (x ∷ xs)
   there : ∀ {x xs} (pxs : Some₀ P xs) → Some₀ P (x ∷ xs)
 
 module Membership {a ℓ} (S : Setoid a ℓ) where
@@ -205,20 +211,20 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   infix 4 _∈_
 
-  setoid≈ : A → S ⟶ ≡.setoid (Set ℓ)
-  setoid≈ a = record { _⟨$⟩_ = λ b → a ≈ₛ b ; cong = {!!} }
+  setoid≈ : A → S ⟶ SSetoid {{!!}} {{!!}}
+  setoid≈ a = record { _⟨$⟩_ = λ b → {!a ≈ₛ b!} ; cong = {!!} }
   
   _∈_ : A → List A → Set _
-  x ∈ xs = Some₀ (setoid≈ x) xs
+  x ∈ xs = Some₀ {! setoid≈ x !} xs
 
-Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ ≡.setoid (Set ℓa)) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) ℓa
+Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ SSetoid) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) ℓa
 Some {a} {ℓa} {A} P xs = record
   { Carrier = Some₀ P xs
   ; _≈_ = {!!}
   ; isEquivalence = {!!}
   }
 
-≡→≅ : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ ≡.setoid (Set ℓa)} {xs ys : List (Setoid.Carrier A)} →
+≡→≅ : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} {xs ys : List (Setoid.Carrier A)} →
   xs ≡ ys → Some P xs ≅ Some P ys 
 ≡→≅ {A = A} ≡.refl =
   let open Setoid A renaming (refl to refl≈) in

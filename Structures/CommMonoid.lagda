@@ -158,6 +158,13 @@ X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
 
 _∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
 X ∎ = ≅-refl
+
+≡→≅ : {a ℓa : Level} {A B : Setoid a ℓa} → A ≡ B → A ≅ B
+≡→≅ {A = A} {B} ≡.refl = record
+  { to = id ; from = id
+  ; inverse-of = record { left-inverse-of = λ _ → Setoid.refl A
+                        ; right-inverse-of = λ _ → Setoid.refl B } }
+
 \end{code}
 %}}}
 
@@ -192,11 +199,13 @@ _≅S_ A B = record
 \end{code}
 %}}}
 
-%{{{ Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs
+%{{{ Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
+This is an hSet (by fiat), so it is contractible, in that all proofs are the same.
 \begin{code}
 _≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
 _≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
-  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = {!!} ; isEquivalence = {!!} }
+  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ _ _ → ⊤
+         ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
 
 SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
 SSetoid {ℓ} {o} = record
@@ -211,46 +220,55 @@ SSetoid {ℓ} {o} = record
 -- really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
 -- We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier → Set p,
 -- as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
-data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {a} {ℓa}) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
+data Some₀ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) : List (Setoid.Carrier A) → Set (a ⊍ ℓa) where
   here  : ∀ {x xs} (px  : Setoid.Carrier (P Π.⟨$⟩ x)) → Some₀ P (x ∷ xs)
   there : ∀ {x xs} (pxs : Some₀ P xs) → Some₀ P (x ∷ xs)
 
-open import RATH using (ΣΣ)
-data SomeDay {a ℓa} {A : Setoid a ℓa} (P : {!ΣΣ ? ?!} ) : List (Setoid.Carrier A) → Set {!!} where
-\end{code}
+-- open import RATH using (ΣΣ)
+-- data SomeDay {a ℓa} {A : Setoid a ℓa} (P : {!ΣΣ ? ?!} ) : List (Setoid.Carrier A) → Set {!!} where
 
 module Membership {a ℓ} (S : Setoid a ℓ) where
   private
-    open module  S = Setoid S renaming (Carrier to A; _≈_ to _≈ₛ_)
+    open module  S = Setoid S renaming (Carrier to A; _≈_ to _≈ₛ_; trans to _⟨≈ₛ⟩_)
 
   -- List membership.
 
-  infix 4 _∈_
+  infix 4 _∈ₛ_
 
-  setoid≈ : A → S ⟶ SSetoid {{!!}} {{!!}}
-  setoid≈ x = record { _⟨$⟩_ = λ y → _≈S_ {A = S} x y ; cong = {!!} }
+  setoid≈ : A → S ⟶ SSetoid {ℓ} {ℓ}
+  setoid≈ x = record
+    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y
+    ; cong = λ i≈j → record
+      { to   = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈ₛ⟩ i≈j         ; cong = λ _ → tt }
+      ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈ₛ⟩ (S.sym i≈j) ; cong = λ _ → tt }
+      ; inverse-of = record
+        { left-inverse-of = λ _ → tt
+        ; right-inverse-of = λ _ → tt } } }
+
+  _∈ₛ_ : A → List A → Set (ℓ ⊍ a)
+  x ∈ₛ xs = Some₀ (setoid≈ x) xs
+
+  ≡→≈ : {a b : A} → a ≡ b → a ≈ₛ b
+  ≡→≈ ≡.refl = S.refl
   
-  _∈_ : A → List A → Set {!!}
-  x ∈ xs = {!!} -- Some₀ ( setoid≈ x ) xs
-\end{code}
-
-Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ SSetoid) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) ℓa
+Some : {a ℓa : Level} {A : Setoid a ℓa} (P : A ⟶ SSetoid) → List (Setoid.Carrier A) → Setoid (a ⊍ ℓa) (a ⊍ ℓa)
 Some {a} {ℓa} {A} P xs = record
   { Carrier = Some₀ P xs
-  ; _≈_ = {!!}
-  ; isEquivalence = {!!}
+  ; _≈_ = _≡_ -- TODO, this is what needs changed next to fill 
+  ; isEquivalence = ≡.isEquivalence
   }
 
-≡→≅ : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} {xs ys : List (Setoid.Carrier A)} →
+≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} {xs ys : List (Setoid.Carrier A)} →
   xs ≡ ys → Some P xs ≅ Some P ys 
-≡→≅ {A = A} ≡.refl =
+≡→Some {A = A} ≡.refl =
   let open Setoid A renaming (refl to refl≈) in
-  record { to = id ; from = id ; inverse-of = record { left-inverse-of = λ _ → refl≈ ; right-inverse-of = λ _ → refl≈ } }
+  record { to = id ; from = id ; inverse-of = record { left-inverse-of = λ _ → ≡.refl ; right-inverse-of = λ _ → ≡.refl } }
+\end{code}
 
 open import RATH using (_⊎⊎_) -- setoid sum
 
 %{{{ ignoring for now
-
+\begin{code}
 abstract
   -- RATH-Agda library import
   -- open import Relation.Binary.Setoid.Sum -- previously lived in RATH's Data.Sum.Setoid
@@ -262,13 +280,13 @@ abstract
         ; e          =  []
         ; _*_        =  _++_
         ; left-unit  =  Setoid.refl LM
-        ; right-unit = λ {xs} → {!!} -- ≡→≅ (proj₂ ++.identity xs)
+        ; right-unit = λ {xs} → ≡→≈ₘ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → {!!} -- ≡→≅ (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} {z} →
+        ; comm       =  λ {xs} {ys} {z} → {!!} {-
           z ∈ xs ++ ys       ≃⟨ sym≃ {!!} ⟩ -- ≅-sym Any-additive ⟩
           (z ∈ xs ⊎ z ∈ ys)  ≃⟨ {!⊎.comm _ _!} ⟩ -- ⊎.comm _ _                       ⟩
           (z ∈ ys ⊎ z ∈ xs)  ≃⟨ {!!} ⟩ -- Any-additive                     ⟩
-          z ∈ ys ++ xs  ◻
+          z ∈ ys ++ xs  ◻ -}
         ; _⟨*⟩_ = λ x≈y z≈w → {!!} 
         }
     ; singleton = λ x → x ∷ []
@@ -276,47 +294,41 @@ abstract
     where
       open import Algebra using (Monoid)
       open import Data.List using (monoid)
-      module ++ = Monoid (monoid (Setoid.Carrier X))      
+      module ++ = Monoid (monoid (Setoid.Carrier X))
+      open Membership X
 
       X₀ = Setoid.Carrier X
 
-      _≈ₘ_ : (xs ys : List (Setoid.Carrier X)) → Set (o ⊍ ℓ)
-      xs ≈ₘ ys = {e : Setoid.Carrier X} → (e ∈ xs) ≃ (e ∈ ys)
+      infix 4 _∈_
+
+      _∈_ : X₀ → List X₀ → Setoid (o ⊍ ℓ) (o ⊍ ℓ)
+      x ∈ xs = Some (setoid≈ x) xs
+
+      _≈ₘ_ : (xs ys : List X₀) → Set (o ⊍ ℓ)
+      xs ≈ₘ ys = {e : X₀} → (e ∈ xs) ≅ (e ∈ ys)
+
+      ≡→≈ₘ : {a b : List X₀} → a ≡ b → a ≈ₘ b
+      ≡→≈ₘ ≡.refl = record
+        { to = record { _⟨$⟩_ = {!!} ; cong = {!!} }
+        ; from = record { _⟨$⟩_ = {!!} ; cong = {!!} }
+        ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} } }
 
       LM : Setoid ℓ (ℓ ⊍ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _≈ₘ_
-        ; isEquivalence = record
-          { refl  =  id≃
-          ; sym   =  λ x≃y → sym≃ x≃y
-          ; trans =  λ xs≃ys ys≃zs → trans≃ xs≃ys ys≃zs
-          }
+        ; isEquivalence = {!!}
         }
 
   -- open import Data.Product using (∃₂)
 
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
-  ListCMHom X Y = MKMSHom (λ F → record
+  ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
-      { _⟨$⟩_ = λ xs → {!!} -- map-with-∈₁ xs (λ {x} _ → Π._⟨$⟩_ F x) -- map-with-∈₁ {!map-with-∈₁ ?!} -- mapL (Π._⟨$⟩_ F)
-      ; cong = λ {xs} {ys} xs≈ys {e} →
-        let 𝔣 : {x : Setoid.Carrier X} → {!!} -- x ∈₁ xs → Setoid.Carrier Y
-            𝔣 = λ {x} _ → Π._⟨$⟩_ F x
-
-            𝔣′ : {x : Setoid.Carrier X} → {!!} -- x ∈₁ ys → Setoid.Carrier Y
-            𝔣′ = λ {x} _ → Π._⟨$⟩_ F x
-
-            f = Π._⟨$⟩_ F
-        in {!!}
-      {-
-      e ∈₂ (map-with-∈₁ xs 𝔣) ≅⟨ ≅-sym {!map-with-∈-≅!} ⟩
-      ∃₂ {A = Setoid.Carrier X} {B = λ x → x ∈₁ xs} (λ x x∈xs → Setoid._≈_ Y e (f x))   ≅⟨ {! crux !} ⟩
-      ∃₂ {A = Setoid.Carrier X} {B = λ x → x ∈₁ ys} (λ x x∈ys → Setoid._≈_ Y e (f x))   ≅⟨ {!!} ⟩      
-      e ∈₂ (map-with-∈₁ ys 𝔣′) ∎
-      -}
+      { _⟨$⟩_ = mapL g
+      ; cong = λ {xs} {ys} xs≈ys {e} → {!!}
       }
-    ; pres-e = ≅-refl
+    ; pres-e = {!!}
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
      {-
            Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩
@@ -331,6 +343,7 @@ abstract
       open CommMonoid (Multiset.commMonoid (ListMS X))
       -- open Membership X renaming (_∈_ to _∈₁_ ; map-with-∈ to map-with-∈₁)
       -- open Membership Y renaming (_∈_ to _∈₂_ ; map-with-∈ to map-with-∈₂)
+\end{code}
 
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in

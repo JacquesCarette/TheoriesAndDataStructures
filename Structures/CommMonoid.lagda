@@ -136,13 +136,13 @@ open MultisetHom
 
 %}}}
 
+%{{{ Setoid isos: _≅_, ≅-refl, ≅-trans, ≅-sym, _≅⟨_⟩_, _∎
 \begin{code}
-
 open import Function using (flip)
 open import Function.Inverse using () renaming
   (Inverse to _≅_
-  ; id to ≅-refl
-  ; sym to ≅-sym
+  ; id     to ≅-refl
+  ; sym    to ≅-sym
   )
 
 ≅-trans : {a b c ℓa ℓb ℓc : Level} {A : Setoid a ℓa} {B : Setoid b ℓb} {C : Setoid c ℓc}
@@ -158,7 +158,11 @@ X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
 
 _∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
 X ∎ = ≅-refl
+\end{code}
+%}}}
 
+%{{{ Isos between Isos: _≋_ , id≋, trans≋, sym≋, and setoid of setoids: _≅S_ 
+\begin{code}
 record _≋_ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} (eq₁ eq₂ : A ≅ B) : Set (a ⊍ b ⊍ ℓa ⊍ ℓb) where
   constructor eq
   open _≅_
@@ -166,7 +170,7 @@ record _≋_ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} (eq₁ eq�
   open Setoid B using () renaming (_≈_ to _≈₂_)
   open Π
   field
-    to≈ :   ∀ x → to eq₁   ⟨$⟩ x ≈₂ to eq₂   ⟨$⟩ x
+    to≈ :   ∀ x → to   eq₁ ⟨$⟩ x ≈₂ to   eq₂ ⟨$⟩ x
     from≈ : ∀ x → from eq₁ ⟨$⟩ x ≈₁ from eq₂ ⟨$⟩ x
 
 module _ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} where
@@ -185,9 +189,22 @@ _≅S_ A B = record
   ; _≈_ = _≋_
   ; isEquivalence = record { refl = id≋ ; sym = sym≋ ; trans = trans≋ } }
 
-_≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa {!!}
+
+open import Function.Inverse using (Inverse) renaming (_↔_  to _≅₀_)
+record _∽_ {a ℓa} {A : Setoid a ℓa} {x y : Setoid.Carrier A} (eq eq' : Setoid._≈_ A x y) : Set ℓa where
+  field
+    auto   :  Setoid._≈_ A x y  ≅₀  Setoid._≈_ A x y
+    proof  :  Π._⟨$⟩_ (Inverse.to auto) eq ≡ eq'
+
+  -- This is terrrible :/
+
+  -- What does it “mean” for two equivalence proofs to be considered “equal”?
+
+_≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
 _≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
-  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ eq₁ eq₂ → {!eq₁ ≅ eq₂!} ; isEquivalence = {!!} }
+  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = _∽_ {A = A} ; isEquivalence = {!!} }
+
+\end{code}
 
 SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
 SSetoid {ℓ} {o} = record
@@ -232,7 +249,8 @@ Some {a} {ℓa} {A} P xs = record
 
 open import RATH using (_⊎⊎_) -- setoid sum
 
-{-
+%{{{ ignoring for now
+
 abstract
   -- RATH-Agda library import
   -- open import Relation.Binary.Setoid.Sum -- previously lived in RATH's Data.Sum.Setoid
@@ -313,10 +331,7 @@ abstract
       open CommMonoid (Multiset.commMonoid (ListMS X))
       -- open Membership X renaming (_∈_ to _∈₁_ ; map-with-∈ to map-with-∈₁)
       -- open Membership Y renaming (_∈_ to _∈₂_ ; map-with-∈ to map-with-∈₂)
--}
-\end{code}
 
-{-
     fold : {X : Setoid ℓ o} {B : Set ℓ} →
       let A = Carrier X in
       (A → B → B) → B → Carrier (Multiset X) → B
@@ -325,7 +340,6 @@ abstract
     singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
       _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
     singleton-map {_} {B} f = Setoid.refl (Multiset B)
--}
 
 MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
 MultisetF ℓ o = record
@@ -355,7 +369,7 @@ MultisetLeft ℓ o = record
     open Multiset
     open CommMonoid
     
-
+%}}}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

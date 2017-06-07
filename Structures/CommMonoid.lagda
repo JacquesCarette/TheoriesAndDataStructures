@@ -219,9 +219,9 @@ We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier �
 as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
 
 \begin{code}
-module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa})
+module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) where
    -- i.e., subst, transport
-   {lift : {x y : Setoid.Carrier A} → Setoid._≈_ A x y → Setoid.Carrier (Π._⟨$⟩_ P x) → Setoid.Carrier (Π._⟨$⟩_ P y)} where
+   -- {lift : {x y : Setoid.Carrier A} → Setoid._≈_ A x y → Setoid.Carrier (Π._⟨$⟩_ P x) → Setoid.Carrier (Π._⟨$⟩_ P y)} where
 
    open Setoid A renaming (Carrier to A₀ ; _≈_ to _≈ₐ_)
    P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
@@ -232,8 +232,8 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa})
 
    _≈E_ : (x y : A₀) → Setoid ℓa ℓa
    _≈E_ x y = 
-     record { Carrier = x ≈ₐ y ; _≈_ = λ  eq eq' → {!lift eq  and  lift eq' are the same function, upto isomorphism (In the categorial sense)!}
-         ; isEquivalence = {!!} }
+     record { Carrier = x ≈ₐ y ; _≈_ = λ _ _ → ⊤
+         ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
 \end{code}
 %}}}
 
@@ -276,10 +276,22 @@ Some {a} {ℓa} {A} P xs = record
   record { to = id ; from = id ; inverse-of = record { left-inverse-of = λ _ → ≡.refl ; right-inverse-of = λ _ → ≡.refl } }
 \end{code}
 
-%{{{ ignoring for now
+Some useful stuff about union of setoids commuting
+\begin{code}
+open import RATH
+open import Data.Sum using ([_,_]; inj₁; inj₂)
+
+⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B) ≅ (B ⊎⊎ A)
+⊎-comm = record
+  { to = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
+  ; from = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
+  ; inverse-of = record { left-inverse-of = λ x → {!!} ; right-inverse-of = {!!} } }
+\end{code}
+
+%{{{ 
 \begin{code}
 abstract
-  -- RATH-Agda library import
+-- RATH-Agda library import
   -- open import Relation.Binary.Setoid.Sum -- previously lived in RATH's Data.Sum.Setoid
 
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
@@ -290,12 +302,12 @@ abstract
         ; _*_        =  _++_
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {xs} → ≡→≈ₘ (proj₂ ++.identity xs)
-        ; assoc      =  λ {xs} {ys} {zs} → {!!} -- ≡→≅ (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} {z} → {!!} {-
-          z ∈ xs ++ ys       ≃⟨ sym≃ {!!} ⟩ -- ≅-sym Any-additive ⟩
-          (z ∈ xs ⊎ z ∈ ys)  ≃⟨ {!⊎.comm _ _!} ⟩ -- ⊎.comm _ _                       ⟩
-          (z ∈ ys ⊎ z ∈ xs)  ≃⟨ {!!} ⟩ -- Any-additive                     ⟩
-          z ∈ ys ++ xs  ◻ -}
+        ; assoc      =  λ {xs} {ys} {zs} → ≡→≈ₘ (++.assoc xs ys zs)
+        ; comm       =  λ {xs} {ys} {z} → 
+          z ∈ xs ++ ys        ≅⟨ ≅-sym {!!} ⟩ -- ≅-sym Any-additive ⟩
+          (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎-comm ⟩
+          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- Any-additive                     ⟩
+          z ∈ ys ++ xs  ∎
         ; _⟨*⟩_ = λ x≈y z≈w → {!!} 
         }
     ; singleton = λ x → x ∷ []
@@ -318,15 +330,15 @@ abstract
 
       ≡→≈ₘ : {a b : List X₀} → a ≡ b → a ≈ₘ b
       ≡→≈ₘ ≡.refl = record
-        { to = record { _⟨$⟩_ = {!!} ; cong = {!!} }
-        ; from = record { _⟨$⟩_ = {!!} ; cong = {!!} }
-        ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} } }
+        { to = record { _⟨$⟩_ = λ x → x ; cong = λ z → z }
+        ; from = record { _⟨$⟩_ = λ x → x ; cong = λ z → z }
+        ; inverse-of = record { left-inverse-of = λ _ → ≡.refl ; right-inverse-of = λ _ → ≡.refl } }
 
       LM : Setoid ℓ (ℓ ⊍ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _≈ₘ_
-        ; isEquivalence = {!!}
+        ; isEquivalence = record { refl = ≅-refl ; sym = λ x → ≅-sym x ; trans = λ x y → ≅-trans x y }
         }
 
   -- open import Data.Product using (∃₂)
@@ -335,9 +347,12 @@ abstract
   ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys {e} → {!!}
+      ; cong = λ {xs} {ys} xs≈ys {y} → record { to = record { _⟨$⟩_ = λ x → {!!} ; cong = {!!} }
+                                              ; from = {!!} ; inverse-of = {!!} }
       }
-    ; pres-e = {!!}
+    ; pres-e = record { to = record { _⟨$⟩_ = λ {()} ; cong = λ { P.refl → P.refl } }
+                      ; from = record { _⟨$⟩_ = λ {()} ; cong = {!!} }
+                      ; inverse-of = {!!} }
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
      {-
            Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩

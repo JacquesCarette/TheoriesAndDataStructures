@@ -292,7 +292,7 @@ open import Data.Sum using ([_,_]; inj₁; inj₂)
 \begin{code}
 abstract
 -- RATH-Agda library import
-  -- |open import Relation.Binary.Setoid.Sum| -- previously lived in RATH's |Data.Sum.Setoid|
+  -- |open import Relation.Binary.Setoid.Sum| -- previously lived in RATH's Data.Sum.Setoid
 
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
@@ -356,7 +356,7 @@ abstract
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
      {-
            |Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩|
-           |Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩ |
+           |Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩|
            |(sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃|
            |(sym≃ (Any-map (Setoid._≈_ Y e) g y)) ⟨≃≃⟩|
            |sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y))|

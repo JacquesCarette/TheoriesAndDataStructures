@@ -1,0 +1,40 @@
+% theref.sty
+%
+% expects something like ???
+
+\def\mkcommand#1{\expandafter\def\csname #1\endcsname}
+
+\makeatletter
+\def\getREFS#1{\@ifundefined{REFS:#1}{}{\leavevmode\raise.3ex\hbox{\tiny{[\kern-.2ex$\leftarrow$\kern-.3ex \@nameuse{REFS:#1}\kern-1.0ex] }}\hskip 0pt plus 2.0em\relax}}
+%\def\getREFS#1{}
+\makeatother
+
+\def\TheRefWithPageRef#1{#1}
+
+\def\newref#1#2{%
+\mkcommand{#1label}##1{\label{#1:##1}{\getREFS{#1:##1}}\LABELS{\textsl{[##1]}}%
+\gdef\LastTheoremLabel{#2~\ref{#1:##1}}%
+\gdef\LastTheoremRawLabel{\ref{#1:##1}}%
+}%
+%  \mkcommand{#1label}##1{\label{#1:##1}}%
+%  \mkcommand{#1label}##1{}%
+  \mkcommand{#1ref}##1{#2\null{} \ref{#1:##1}\TheRefWithPageRef{${}_{\mbox{\tiny{\pageref{#1:##1}}}}$}\index{#1:##1}\LABELS{\textsl{[##1]}}}%
+  \mkcommand{#1pref}##1{\pageref{#1:##1}}%
+  \mkcommand{#1rawref}##1{\ref{#1:##1}\index{#1:##1}\LABELS{\textsl{[##1]}}}%
+ }
+
+
+\def\newdef#1#2{\newtheorem{#1}[Def]{#2}%
+                \newref{#1}{#2}%
+               }
+
+\def\itLab#1{\label{Item:#1}%
+%\expandafter\xdef\csname ItemLabel:#1\endcsname{\LastTheoremLabel}%
+\global\expandafter\let\csname ItemLabel:#1\endcsname=\LastTheoremLabel%
+\global\expandafter\let\csname ItemRawLabel:#1\endcsname=\LastTheoremRawLabel%
+\LABELS{\textsl{[#1]}}%
+}
+\def\itref#1{(\ref{Item:#1})}
+\def\itRef#1{\csname ItemLabel:#1\endcsname.(\ref{Item:#1})}
+\def\itRawRef#1{\csname ItemRawLabel:#1\endcsname.(\ref{Item:#1})}
+%\def\itRef#1#2#3{\csname #1ref\endcsname{#2}.\ref{Item:#3})}

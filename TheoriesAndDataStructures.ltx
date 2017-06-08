@@ -1,0 +1,308 @@
+% %\documentclass[twoside,runningheads,envcountsame,envcountsect,oribibl]{llncs}
+% %\documentclass[12pt,twoside]{report}
+% %
+% \documentclass[twoside,fontsize=9pt,paper=letter]{scrreprt}
+% \usepackage[landscape,hmargin=2mm,includehead,top=0mm,bottom=4mm]{geometry}
+% \usepackage{multicol}
+
+% Following AContext-2
+
+\documentclass[11pt,twoside]{report}
+\usepackage[letterpaper,hmargin=15mm,includehead,includefoot,top=8mm,bottom=8mm]{geometry}
+
+%%% NAME=TheoriesAndDataStructures
+%%% export TEXINPUTS=.:ltx:
+%%% ln -s $NAME.ltx $NAME.lagda
+%%% bibtex $NAME && lhs2TeX --agda $NAME.lagda > $NAME.tex && time pdflatex $NAME.tex
+
+
+%%% 2015-07-22, adapted from RATHAgda-2.1
+%% pdftops $NAME.pdf;  pstops -pletter '2:0@0.73L(21.2cm,-1.0cm)+1@0.73L(21.2cm,13.0cm)' $NAME.ps > $NAME''_2up_letter.ps; ps2pdf $NAME''_2up_letter.ps
+
+%% mupdf -r155 $NAME''_2up_letter.pdf &
+
+
+\usepackage{etex}
+\usepackage{graphicx}
+\usepackage{textgreek}
+
+%\usepackage[cjkbg5]{ucs}
+
+%include agda.fmt
+%format {          = "\{\mskip0.5mu "
+%format }          = "\mskip0.5mu\}"
+
+
+%% %include RathAgdaChars.sty
+%% \def\fcmp{\fatsemi}
+
+\renewcommand{\hscodestyle}{\small}
+
+% %\spnewtheorem{Def}{Definition}[section]{\bfseries}{\rmfamily}
+% \newtheorem{Def}{Definition}[section]
+% 
+% \usepackage{theref}
+% \def\TheRefWithPageRef#1{}
+% \newref{Def}{Def.\null{}}
+
+\def\Version{TheoriesAndDataStructures-0.0%
+%\input{TheoriesAndDataStructures_Version.txt}%
+}
+
+
+\makeatletter
+\def\mkcommand#1{\expandafter\gdef\csname #1\endcsname}
+%\@input{RathAgda1.ups}
+\makeatother
+
+%{{{ Title
+\title{Theories and Data Structures}
+
+
+%\titlerunning{}
+%\toctitle{}
+
+\author{Jacques Carette, Musa Al-hassy, Wolfram Kahl}
+
+%%% \institute{McMaster University,
+%%% %1280 Main St. West,
+%%% Hamilton, Ontario, Canada,
+%%% % L8S 4K1
+%%% \email{kahl@@cas.mcmaster.ca}
+%%% }
+
+\date{\today}
+%}}}
+
+%{{{ \usepackage{hyperref}
+\usepackage[pdfauthor={Jacques Carette, Musa Al-hassy, Wolfram Kahl},
+  pdftitle={Theories and Data Structures},
+%  pdfsubject={},
+%  pdfkeywords={},
+%   a4paper=true,
+%   colorlinks,
+   bookmarksnumbered
+ ]{hyperref}
+%}}}
+
+%{{{ packages, macros, and settings
+\usepackage[round]{natbib} % replaces {harvard}
+
+%       \usepackage{tree-dvips}
+       \usepackage{latexsym,amssymb}
+%       \usepackage{graphicx}
+
+\usepackage{comment}
+
+\def\sectionname{Sect.\null{}}
+\usepackage{sectref}
+
+\def\modref#1{{\hbox{\small $\Conid{#1}$} (\sectref{#1})}}
+
+\long\def\ignore#1{}
+
+\renewcommand{\arraystretch}{1.1}
+
+\input diagram-2.2
+\usepackage{color}
+\definecolor{grey}{gray}{0.6}
+
+\def\etal{\textsl{et al.\null{}}}
+
+\usepackage{edcomms}
+
+%{{{ % docstyle overriding
+% currently not available
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+
+%\usepackage{mathptmx}
+%\usepackage{euler}
+
+\makeatletter
+%% Orig:
+%% \def\@listI{\leftmargin\leftmargini
+%%             \parsep 0\p@ \@plus1\p@ \@minus\p@
+%%             \topsep 8\p@ \@plus2\p@ \@minus4\p@
+%%             \itemsep0\p@}
+%% WK:
+\setlength\leftmargini  {0.93em}
+\def\@@listI{\leftmargin\leftmargini
+            \labelsep 0.3em
+            \labelwidth\leftmargini
+            \advance\labelwidth-\labelsep
+            \parsep 0\p@@ \@@plus1\p@@ \@@minus\p@@
+            \topsep 2\p@@ \@@plus1\p@@ \@@minus1\p@@
+            \itemsep1\p@@}
+\let\@@listi\@@listI
+\@@listi
+\makeatother
+%}}}
+
+\def\bbbone{{\mathchoice {\rm 1\mskip-4mu l} {\rm 1\mskip-4mu l}
+{\rm 1\mskip-4.5mu l} {\rm 1\mskip-5mu l}}}
+%
+%\def\triv{\mathbf{1}}
+\def\triv{\bbbone}
+
+\makeindex
+%}}}
+
+%{{{ .lagda conventions
+\def\module#1{\message{#1}\section{#1}\sectlabel{#1}}
+
+\newenvironment{ModuleHead}{\par\begingroup\tiny}{\endgroup\par\medskip}
+
+%\usepackage{comment}
+%\specialcomment{ModuleHead}{\par\begingroup\tiny}{\endgroup}
+%\excludecomment{ModuleHead}
+%}}}
+
+\pagestyle{headings}
+\parskip4pt
+\parindent0pt
+\mathindent0pt
+\begin{document}
+\maketitle
+
+\ignore{
+%{{{ Title
+\begin{center}
+\huge\bf Theories and Data Structures
+\\[2ex]
+\Version%
+%\thanks{This research is supported by NSERC (National Science and
+% Engineering Research Council of Canada).}
+\end{center}
+
+\kern6ex
+\begin{center}
+%{{{ \author{}
+\def\affaddr#1{{\normalsize #1}}
+\def\email#1{{\normalsize \textsf{#1}}}
+
+{\Large\sc Wolfram Kahl%
+%\footnote{This research has been supported by the National Science and
+%  Engineering Research Council (NSERC), Canada}
+}
+\\[2ex]
+\email{kahl@@cas.mcmaster.ca}
+%}}}
+
+\kern3ex
+\affaddr{Department of Computing and Software, McMaster University}
+\\
+\affaddr{Hamilton, Ontario, Canada L8S 4K1}
+\\[6ex]
+16 January 2017
+\end{center}
+%}}}
+}%ignore
+
+\pagestyle{headings}
+%\pagestyle{empty}
+\thispagestyle{empty}
+
+\kern6ex
+%{{{ abstract
+\centerline{\bf Abstract}
+
+\kern0.6ex
+\noindent
+\unfinished
+%\end{abstract}
+%}}}
+
+\ignore{%
+%{{{ Keywords:
+\begin{keywords}
+\unfinished
+\end{keywords}
+%}}}
+}%ignore
+
+\kern1.4ex
+\hrule height0.2pt width70mm depth0pt
+
+\noindent
+{\footnotesize This research is supported by the National Science and
+  Engineering Research Council (NSERC), Canada}
+
+%{{{ remaining frontmatter
+\vfill
+\pagebreak
+{%\small
+\parskip2.9pt
+%\setcounter{tocdepth}{2}
+%\baselineskip14pt
+\tableofcontents
+}
+\vfill
+\pagebreak
+%}}}
+
+%{{{ \chapter{Introduction}
+\chapter{Introduction}
+
+\unfinished
+
+%{{{ \section{Overview}
+\section{Overview}
+
+\unfinished
+%}}}
+
+\bigskip
+%{{{ The Agda source code for this development is available on-line
+The Agda source code for this development is available on-line
+at the following URL:
+
+\kern1ex
+\centerline{\scalebox{0.95}[0.99]{\url{https://github.com/JacquesCarette/TheoriesAndDataStructures}}}
+%}}}
+%}}}
+
+%include Forget.lagda
+%include EqualityCombinators.lagda
+%include DataProperties.lagda
+%include RATH.lagda
+%include Structures/Rel.lagda
+%include Structures/Pointed.lagda
+%include Structures/UnaryAlgebra.lagda
+%include Structures/Magma.lagda
+%include Structures/Semigroup.lagda
+%include Structures/Monoid.lagda
+%include Structures/CommMonoid.lagda
+%include Structures/CommMonoidTerm.lagda
+%include Structures/InvolutiveAlgebra.lagda
+%include Structures/AbelianGroup.lagda
+
+%include Structures/DistinguishedSubset.lagda
+%include Structures/IndexedUnaryAlgebra.lagda
+%include Structures/Dependent.lagda
+%include Structures/Experiments/Dependent2.lagda
+%include Structures/Experiments/Dependent3.lagda
+%include Structures/TwoSorted.lagda
+
+%{{{ \chapter{Conclusion and Outlook}\chaptlabel{Conclusion}
+\chapter{Conclusion and Outlook}\chaptlabel{Conclusion}
+ 
+\unfinished
+%}}}
+
+%%\bibliographystyle{relmics-alpha}
+%%\bibliographystyle{kluwer}
+\bibliographystyle{plainnat} % (natbib)
+\bibliography{strings,ref,crossrefs}
+
+\end{document}
+
+\begin{spec}
+
+\end{spec}
+
+
+%% Local variables:
+%% folded-file: t
+%% fold-internal-margins: 0
+%% end:

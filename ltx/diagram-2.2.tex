@@ -1,0 +1,2632 @@
+% DIAGRAM MACROS (version 2.2)
+
+% If a document has been previously realized using version 1.0 or 1.1
+% of the DIAGRAM macros and if you have to recompile it using now
+% version 2.2, it is compulsory to modify in this document each
+% occurence of \Diag, \Diagv, \diaG, \diagsV and \move
+% according to the new rules.
+
+% Typeset the document DIAGRAM.READ.ME to get user's information
+% about the following macros.
+
+
+% MACROS FOR DRAWING IN-TEXT PICTURES
+
+% \tlowername{P}{f} puts the name f under the picture P
+\newcommand{\tlowername}[2]%
+{$\stackrel{\makebox[1pt]{#1}}%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,6)[t]{\makebox[1pt]{$#2$}}}%
+\end{picture}}$}%
+
+% \tcase{P} draws the picture P with length 20pt
+\newcommand{\tcase}[1]{\makebox[23pt]%
+{\raisebox{2.5pt}{#1{20}}}}%
+
+% \Tcase{P}{f} draws the picture P with upper name f
+% and length 20pt.
+\newcommand{\Tcase}[2]{\makebox[23pt]%
+{\raisebox{2.5pt}{$\stackrel{#2}{#1{20}}$}}}%
+
+% \tbicase{P} draws the bi-picture P with length 20pt
+\newcommand{\tbicase}[1]{\makebox[23pt]%
+{\raisebox{1pt}{#1{20}}}}%
+
+% \Tbicase{P}{f}{g} draws the bi-picture P with names f, g
+% and length 20pt.
+\newcommand{\Tbicase}[3]{\makebox[23pt]{\raisebox{-7pt}%
+{$\stackrel{#2}{\mbox{\tlowername{#1{20}}{\scriptstyle{#3}}}}$}}}%
+
+
+
+
+% IN-TEXT ARROWS
+
+% \AR{n} draws an arrow of length n units
+\newcommand{\AR}[1]%
+{\begin{picture}(#1,0)%
+\put(0,0){\vector(1,0){#1}}%
+\end{picture}}%
+
+% \DOTAR{n} draws a dotted  arrow of length n units
+\newcommand{\DOTAR}[1]%
+{\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by 3%
+\begin{picture}(#1,0)%
+\multiput(0,0)(3,0){\NUMBEROFDOTS}{\circle*{1}}%
+\put(#1,0){\vector(1,0){0}}%
+\end{picture}}%
+
+
+% \MONO{n} draws a monomorphism of length n units
+\newcommand{\MONO}[1]%
+{\begin{picture}(#1,0)%
+\put(0,0){\vector(1,0){#1}}%
+\put(2,-2){\line(0,1){4}}%
+\end{picture}}%
+
+% \EPI{n} draws an epimorphism of length n units
+\newcommand{\EPI}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(-#1,0){\vector(1,0){#1}}%
+\put(-6,-2){\line(0,1){4}}%
+\end{picture}}%
+
+% \BIMO{n} draws a bimorphism of length n units
+\newcommand{\BIMO}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(-#1,0){\vector(1,0){#1}}%
+\put(-6,-2){\line(0,1){4}}%
+\put(-#1,-2){\hspace{2pt}\line(0,1){4}}%
+\end{picture}}%
+
+% \BIAR{n} draws a pair of arrows of length n units
+\newcommand{\BIAR}[1]%
+{\begin{picture}(#1,4)%
+\put(0,0){\vector(1,0){#1}}%
+\put(0,4){\vector(1,0){#1}}%
+\end{picture}}%
+
+% \EQL{n} draws an equality of length n units
+\newcommand{\EQL}[1]%
+{\begin{picture}(#1,0)%
+\put(0,1){\line(1,0){#1}}%
+\put(0,-1){\line(1,0){#1}}%
+\end{picture}}%
+
+% \ADJAR{n} draws a pair of adjoint arrows of length n units
+\newcommand{\ADJAR}[1]%
+{\begin{picture}(#1,4)%
+\put(0,0){\vector(1,0){#1}}%
+\put(#1,4){\vector(-1,0){#1}}%
+\end{picture}}%
+
+
+% All the following cammands produce arrows with length 20pt
+% between 1.5pt spaces.
+
+% arrow
+\newcommand{\ar}{\tcase{\AR}}%
+
+% arrow with upper name [1]
+\newcommand{\Ar}[1]{\Tcase{\AR}{#1}}%
+
+% dotted arrow
+\newcommand{\dotar}{\tcase{\DOTAR}}%
+
+% dotted arrow with upper name [1]
+\newcommand{\Dotar}[1]{\Tcase{\DOTAR}{#1}}%
+
+
+% monomorphism
+\def\mono{\tcase{\MONO}}%
+
+% monomorphism with upper name [1]
+\newcommand{\Mono}[1]{\Tcase{\MONO}{#1}}%
+
+% epimorphism
+\newcommand{\epi}{\tcase{\EPI}}%
+
+% epimorphism with upper name [1]
+\newcommand{\Epi}[1]{\Tcase{\EPI}{#1}}%
+
+% bimorphism
+\newcommand{\bimo}{\tcase{\BIMO}}%
+
+% bimorphism with upper name [1]
+\newcommand{\Bimo}[1]{\Tcase{\BIMO}{#1}}%
+
+% isomorphism
+\newcommand{\iso}{\Tcase{\AR}{\cong}}%
+
+% isomorphism with upper name [1]
+\newcommand{\Iso}[1]{\Tcase{\AR}{\cong{#1}}}%
+
+% pair of arrows
+\newcommand{\biar}{\tbicase{\BIAR}}%
+
+% pair of arrows with names [1],[2]
+\newcommand{\Biar}[2]{\Tbicase{\BIAR}{#1}{#2}}%
+
+% equality
+\newcommand{\eql}{\tcase{\EQL}}%
+
+% pair of adjoint arrows
+\newcommand{\adjar}{\tbicase{\ADJAR}}%
+
+% pair of adjoint arrows with names [1],[2]
+\newcommand{\Adjar}[2]{\Tbicase{\ADJAR}{#1}{#2}}%
+
+
+
+
+% IN-TEXT BACK ARROWS
+
+% \BKAR{n} draws a pointing back arrow of length n units
+\newcommand{\BKAR}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\end{picture}}%
+
+% \BKDOTAR{n} draws a backward dotted  arrow
+% of length n units
+\newcommand{\BKDOTAR}[1]%
+{\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by 3%
+\begin{picture}(#1,0)%
+\multiput(#1,0)(-3,0){\NUMBEROFDOTS}{\circle*{1}}%
+\put(0,0){\vector(-1,0){0}}%
+\end{picture}}%
+
+
+% \BKMONO{n} draws a pointing back monomorphism of length n units
+\newcommand{\BKMONO}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(0,0){\vector(-1,0){#1}}%
+\put(-2,-2){\line(0,1){4}}%
+\end{picture}}%
+
+% \BKEPI{n} draws a pointing back epimorphism of length n units
+\newcommand{\BKEPI}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\put(6,-2){\line(0,1){4}}%
+\end{picture}}%
+
+% \BKBIMO{n} draws a pointing back bimorphism of length n units
+\newcommand{\BKBIMO}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\put(6,-2){\line(0,1){4}}%
+\put(#1,-2){\hspace{-2pt}\line(0,1){4}}%
+\end{picture}}%
+
+% \BKBIAR{n} draws a pair of pointing back arrows of length n units
+\newcommand{\BKBIAR}[1]%
+{\begin{picture}(#1,4)%
+\put(#1,0){\vector(-1,0){#1}}%
+\put(#1,4){\vector(-1,0){#1}}%
+\end{picture}}%
+
+% \BKADJAR{n} draws a pair of adjoint arrows of length n units
+\newcommand{\BKADJAR}[1]%
+{\begin{picture}(#1,4)%
+\put(0,4){\vector(1,0){#1}}%
+\put(#1,0){\vector(-1,0){#1}}%
+\end{picture}}%
+
+
+
+% All the following commands produce back arrows with length 20pt
+% between 1.5pt spaces.
+
+% back arrow
+\newcommand{\bkar}{\tcase{\BKAR}}%
+
+% back arrow with upper name [1]
+\newcommand{\Bkar}[1]{\Tcase{\BKAR}{#1}}%
+
+% backward dotted arrow
+\newcommand{\bkdotar}{\tcase{\BKDOTAR}}%
+
+% backward dotted arrow with upper name [1]
+\newcommand{\Bkdotar}[1]{\Tcase{\BKDOTAR}{#1}}%
+
+% back monomorphism
+\newcommand{\bkmono}{\tcase{\BKMONO}}%
+
+% back monomorphism with upper name [1]
+\newcommand{\Bkmono}[1]{\Tcase{\BKMONO}{#1}}%
+
+% back epimorphism
+\newcommand{\bkepi}{\tcase{\BKEPI}}%
+
+% back epimorphism with upper name [1]
+\newcommand{\Bkepi}[1]{\Tcase{\BKEPI}{#1}}%
+
+% back bimorphism
+\newcommand{\bkbimo}{\tcase{\BKBIMO}}%
+
+% back bimorphism with upper name [1]
+\newcommand{\Bkbimo}[1]{\Tcase{\BKBIMO}{\hspace{9pt}#1}}%
+
+% back isomorphism
+\newcommand{\bkiso}{\Tcase{\BKAR}{\cong}}%
+
+% back isomorphism with upper name [1]
+\newcommand{\Bkiso}[1]{\Tcase{\BKAR}{\cong{#1}}}%
+
+% pair of back arrows
+\newcommand{\bkbiar}{\tbicase{\BKBIAR}}%
+
+% pair of back arrows with names [1],[2]
+\newcommand{\Bkbiar}[2]{\Tbicase{\BKBIAR}{#1}{#2}}%
+
+% back equality
+\newcommand{\bkeql}{\tcase{\EQL}}%
+
+% back pair of adjoint arrows
+\newcommand{\bkadjar}{\tbicase{\BKADJAR}}%
+
+% back pair of adjoint arrows with names [1],[2]
+\newcommand{\Bkadjar}[2]{\Tbicase{\BKADJAR}{#1}{#2}}%
+
+
+
+
+% MACROS FOR DRAWING HORIZONTAL PICTURES
+
+% \lowername{P}{f} puts the name f under the picture P
+\newcommand{\lowername}[2]%
+{$\stackrel{\makebox[1pt]{#1}}%
+{\begin{picture}(0,0)%
+\truex{600}%
+%\put(0,0){\makebox(0,\value{x})[t]{\makebox[1pt]{$#2$}}}% Changed by W. Kahl
+\put(0,-600){\makebox(0,\value{x})[t]{\makebox[1pt]{$#2$}}}%
+\end{picture}}$}%
+
+% \hcase{P}{n} draws the picture P with length n units
+\newcommand{\hcase}[2]%
+{\makebox[0pt]%
+{\raisebox{-1pt}[0pt][0pt]{#1{#2}}}}%
+
+% \Hcase{P}{f}{n} draws the picture P with upper name f
+% and length n units.
+\newcommand{\Hcase}[3]%
+{\makebox[0pt]
+{\raisebox{-1pt}[0pt][0pt]%
+{$\stackrel{\makebox[0pt]{$\textstyle{#2}$}}{#1{#3}}$}}}%
+
+% \hcasE{P}{f}{n} draws the picture P with lower name f
+% and length n units.
+\newcommand{\hcasE}[3]%
+{\makebox[0pt]%
+%{\raisebox{-9pt}[0pt][0pt]% changed by W. Kahl
+{\raisebox{-2pt}[0pt][0pt]%
+{\lowername{#1{#3}}{#2}}}}%
+
+% \hbicase{P}{n} draws the bi-picture P with length n units.
+\newcommand{\hbicase}[2]%
+{\makebox[0pt]%
+{\raisebox{-2.5pt}[0pt][0pt]{#1{#2}}}}%
+
+% \Hbicase{P}{f}{g}{n} draws the bi-picture P with names f, g
+% and length n units.
+\newcommand{\Hbicase}[4]%
+{\makebox[0pt]
+{\raisebox{-10.5pt}[0pt][0pt]%
+{$\stackrel{\makebox[0pt]{$\textstyle{#2}$}}%
+{\mbox{\lowername{#1{#4}}{#3}}}$}}}%
+
+
+
+
+% EAST ARROWS
+
+% \EAR{n} draws an east arrow of length n units
+\newcommand{\EAR}[1]%
+{\begin{picture}(#1,0)%
+\put(0,0){\vector(1,0){#1}}%
+\end{picture}}%
+
+% \EDOTAR draws a dotted arrow of length n units
+\newcommand{\EDOTAR}[1]%
+{\truex{100}\truey{300}%
+\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(#1,0)%
+\multiput(0,0)(\value{y},0){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(#1,0){\vector(1,0){0}}%
+\end{picture}}%
+
+
+% \EMONO{n} draws an east monomorphism of length n units
+\newcommand{\EMONO}[1]%
+{\begin{picture}(#1,0)%
+\put(0,0){\vector(1,0){#1}}%
+\truex{300}\truey{600}%
+\put(\value{x},-\value{x}){\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \EEPI{n} draws an east epimorphism of length n units
+\newcommand{\EEPI}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(-#1,0){\vector(1,0){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(-\value{z},-\value{x}){\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \EBIMO{n} draws an east bimorphism of length n units
+\newcommand{\EBIMO}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(-#1,0){\vector(1,0){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(-\value{z},-\value{x}){\line(0,1){\value{y}}}%
+\put(-#1,-\value{x}){\hspace{3pt}\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \EBIAR{n} draws an east pair of arrows of length n units
+\newcommand{\EBIAR}[1]%
+{\truex{400}%
+\begin{picture}(#1,\value{x})%
+\put(0,0){\vector(1,0){#1}}%
+\put(0,\value{x}){\vector(1,0){#1}}%
+\end{picture}}%
+
+% \EEQL{n} draws an east equality of length n units
+\newcommand{\EEQL}[1]%
+{\begin{picture}(#1,0)%
+\truex{200}%
+\put(0,\value{x}){\line(1,0){#1}}%
+\put(0,0){\line(1,0){#1}}%
+\end{picture}}%
+
+% \EADJAR{n} draws an east pair of adjoint arrows of length n
+% units
+\newcommand{\EADJAR}[1]%
+{\truex{400}%
+\begin{picture}(#1,\value{x})%
+\put(0,0){\vector(1,0){#1}}%
+\put(#1,\value{x}){\vector(-1,0){#1}}%
+\end{picture}}%
+
+
+% All the following commands produce east arrows
+% raised at the adequate position and of formal dimensions (0,0)
+
+% east arrow of length [1]x100 units
+\newcommand{\earv}[1]{\hcase{\EAR}{#100}}%
+
+% east arrow of adjusted length
+\newcommand{\ear}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\EAR}{\ARROWLENGTH}}%
+
+% east arrow with upper name [1] and length [2]x100 units
+\newcommand{\Earv}[2]{\Hcase{\EAR}{#1}{#200}}%
+
+% east arrow with upper name [1] and adjusted length
+\newcommand{\Ear}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EAR}{#1}{\ARROWLENGTH}}%
+
+% east arrow with lower name [1] and length [2]x100 units
+\newcommand{\eaRv}[2]{\hcasE{\EAR}{#1}{#200}}%
+
+% east arrow with lower name [1] and adjusted length
+\newcommand{\eaR}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EAR}{#1}{\ARROWLENGTH}}%
+
+% east dotted arrow of length [1]x100 units
+\newcommand{\edotarv}[1]{\hcase{\EDOTAR}{#100}}%
+
+% east dotted arrow of adjusted length
+\newcommand{\edotar}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\EDOTAR}{\ARROWLENGTH}}%
+
+% east dotted arrow with upper name [1] and length [2]x100 units
+\newcommand{\Edotarv}[2]{\Hcase{\EDOTAR}{#1}{#200}}%
+
+% east dotted arrow with upper name [1] andadjusted length
+\newcommand{\Edotar}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EDOTAR}{#1}{\ARROWLENGTH}}%
+
+% east dotted arrow with lower name [1] and length [2]x100 units
+\newcommand{\edotaRv}[2]{\hcasE{\EDOTAR}{#1}{#200}}%
+
+% east dotted arrow with lower name [1] and adjusted length
+\newcommand{\edotaR}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EDOTAR}{#1}{\ARROWLENGTH}}%
+
+% east monomorphism with length [1]x100 units
+\newcommand{\emonov}[1]{\hcase{\EMONO}{#100}}%
+
+% east monomorphism with adjusted length
+\newcommand{\emono}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\EMONO}{\ARROWLENGTH}}%
+
+% east monomorphism with upper name [1] and length [2]x100 units
+\newcommand{\Emonov}[2]{\Hcase{\EMONO}{#1}{#200}}%
+
+% east monomorphism with upper name [1] and adjusted length
+\newcommand{\Emono}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EMONO}{#1}{\ARROWLENGTH}}%
+
+% east monomorphism with lower name [1] and length [2]x100 units
+\newcommand{\emonOv}[2]{\hcasE{\EMONO}{#1}{#200}}%
+
+% east monomorphism with lower name [1] and adjusted length
+\newcommand{\emonO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EMONO}{#1}{\ARROWLENGTH}}%
+
+% east epimorphism with length [1]x100 units
+\newcommand{\eepiv}[1]{\hcase{\EEPI}{#100}}%
+
+% east epimorphism with adjusted length
+\newcommand{\eepi}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\EEPI}{\ARROWLENGTH}}%
+
+% east epimorphism with upper name [1] and length [2]x100 units
+\newcommand{\Eepiv}[2]{\Hcase{\EEPI}{#1}{#200}}%
+
+% east epimorphism with upper name [1] and adjusted length
+\newcommand{\Eepi}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EEPI}{#1}{\ARROWLENGTH}}%
+
+% east epimorphism with lower name [1] and length [2]x100 units
+\newcommand{\eepIv}[2]{\hcasE{\EEPI}{#1}{#200}}%
+
+% east epimorphism with lower name [1] and adjusted length
+\newcommand{\eepI}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EEPI}{#1}{\ARROWLENGTH}}%
+
+% east bimorphism with length [1]x100 units
+\newcommand{\ebimov}[1]{\hcase{\EBIMO}{#100}}%
+
+% east bimorphism with adjusted length
+\newcommand{\ebimo}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\EBIMO}{\ARROWLENGTH}}%
+
+% east bimorphism with upper name [1] and length [2]x100 units
+\newcommand{\Ebimov}[2]{\Hcase{\EBIMO}{#1}{#200}}%
+
+% east bimorphism with upper name [1] and adjusted length
+\newcommand{\Ebimo}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EBIMO}{#1}{\ARROWLENGTH}}%
+
+% east bimorphism with lower name [1] and length [2]x100 units
+\newcommand{\ebimOv}[2]{\hcasE{\EBIMO}{#1}{#200}}%
+
+% east bimorphism with lower name [1] and adjusted length
+\newcommand{\ebimO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EBIMO}{#1}{\ARROWLENGTH}}%
+
+% east isomorphism with length [1]x100 units
+\newcommand{\eisov}[1]{\Hcase{\EAR}{\cong}{#100}}%
+
+% east isomorphism with adjusted length
+\newcommand{\eiso}%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EAR}{\cong}{\ARROWLENGTH}}%
+
+% east isomorphism with upper name [1] and length [2]x100 units
+\newcommand{\Eisov}[2]{\Hcase{\EAR}{\cong#1}{#200}}%
+
+% east isomorphism with upper name [1] and adjusted length
+\newcommand{\Eiso}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\EAR}{\cong#1}{\ARROWLENGTH}}%
+
+% east isomorphism with lower name [1] and length [2]x100 units
+\newcommand{\eisOv}[2]{\hcasE{\EAR}{\cong#1}{#200}}%
+
+% east isomorphism with lower name [1] and adjusted length
+\newcommand{\eisO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\EAR}{\cong#1}{\ARROWLENGTH}}%
+
+% pair of east arrows of length [1]x100 units
+\newcommand{\ebiarv}[1]{\hbicase{\EBIAR}{#100}}%
+
+% pair of east arrows of adjusted length
+\newcommand{\ebiar}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\EBIAR}{\ARROWLENGTH}}%
+
+% pair of east arrows with names [1] [2] and length [3]x100 units
+\newcommand{\Ebiarv}[3]{\Hbicase{\EBIAR}{#1}{#2}{#300}}%
+
+% pair of east arrows with names [1] [2] and adjusted length
+\newcommand{\Ebiar}[2]%
+{\hspace{\SOURCE\unitlength}%
+\Hbicase{\EBIAR}{#1}{#2}{\ARROWLENGTH}}%
+
+% east equality of length [1]x100 units
+\newcommand{\eeqlv}[1]{\hcase{\EEQL}{#100}}%
+
+% east equality of adjusted length
+\newcommand{\eeql}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\EEQL}{\ARROWLENGTH}}%
+
+% east pair of adjoint arrows of length [1]x100 units
+\newcommand{\eadjarv}[1]{\hbicase{\EADJAR}{#100}}%
+
+% east pair of adjoint arrows of adjusted length
+\newcommand{\eadjar}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\EADJAR}{\ARROWLENGTH}}%
+
+% east pair of adjoint arrows with names [1][2] and length [3]x100units
+\newcommand{\Eadjarv}[3]{\Hbicase{\EADJAR}{#1}{#2}{#300}}%
+
+% east pair of adjoint arrows with names [1]J[2] and adjusted length
+\newcommand{\Eadjar}[2]%
+{\hspace{\SOURCE\unitlength}%
+\Hbicase{\EADJAR}{#1}{#2}{\ARROWLENGTH}}%
+
+
+
+
+% WEST ARROWS
+
+% \WAR{n} draws a pointing back arrow of length n units
+\newcommand{\WAR}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\end{picture}}%
+
+% \WDOTAR draws a dotted arrow of length n units
+\newcommand{\WDOTAR}[1]%
+{\truex{100}\truey{300}%
+\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(#1,0)%
+\multiput(#1,0)(-\value{y},0){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(0,0){\vector(-1,0){0}}%
+\end{picture}}%
+
+% \WMONO{n} draws a pointing back monomorphism of length n units
+\newcommand{\WMONO}[1]%
+{\begin{picture}(#1,0)(-#1,0)%
+\put(0,0){\vector(-1,0){#1}}%
+\truex{300}\truey{600}%
+\put(-\value{x},-\value{x}){\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \WEPI{n} draws a pointing back epimorphism of length n units
+\newcommand{\WEPI}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(\value{z},-\value{x}){\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \WBIMO{n} draws a pointing back bimorphism of length n units
+\newcommand{\WBIMO}[1]%
+{\begin{picture}(#1,0)%
+\put(#1,0){\vector(-1,0){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(\value{z},-\value{x}){\line(0,1){\value{y}}}%
+\put(#1,-\value{x}){\hspace{-3pt}\line(0,1){\value{y}}}%
+\end{picture}}%
+
+% \WBIAR{n} draws a pair of pointing back arrows of length n units
+\newcommand{\WBIAR}[1]%
+{\truex{400}%
+\begin{picture}(#1,\value{x})%
+\put(#1,0){\vector(-1,0){#1}}%
+\put(#1,\value{x}){\vector(-1,0){#1}}%
+\end{picture}}%
+
+% \WADJAR{n} draws a pair of adjoint arrows of length n units
+\newcommand{\WADJAR}[1]%
+{\truex{400}%
+\begin{picture}(#1,\value{x})%
+\put(0,\value{x}){\vector(1,0){#1}}%
+\put(#1,0){\vector(-1,0){#1}}%
+\end{picture}}%
+
+
+% All the following commands produce west arrows
+% raised at the adequate position and of formal dimensions (0,0)
+
+%  west arrow of length [1]x100 units
+\newcommand{\warv}[1]{\hcase{\WAR}{#100}}%
+
+%  west arrow of adjusted length
+\newcommand{\war}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\WAR}{\ARROWLENGTH}}%
+
+% west arrow with upper name [1] and length [2]x100 units
+\newcommand{\Warv}[2]{\Hcase{\WAR}{#1}{#200}}%
+
+% west arrow with upper name [1] and adjusted length
+\newcommand{\War}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WAR}{#1}{\ARROWLENGTH}}%
+
+% west arrow with lower name [1] and length [2]x100 units
+\newcommand{\waRv}[2]{\hcasE{\WAR}{#1}{#200}}%
+
+% west arrow with lower name [1] and adjusted length
+\newcommand{\waR}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WAR}{#1}{\ARROWLENGTH}}%
+
+% west dotted arrow of length [1]x100 units
+\newcommand{\wdotarv}[1]{\hcase{\WDOTAR}{#100}}%
+
+% west dotted arrow of adjusted length
+\newcommand{\wdotar}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\WDOTAR}{\ARROWLENGTH}}%
+
+% west dotted arrow with upper name [1] and length [2]x100 units
+\newcommand{\Wdotarv}[2]{\Hcase{\WDOTAR}{#1}{#200}}%
+
+% west dotted arrow with upper name [1] andadjusted length
+\newcommand{\Wdotar}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WDOTAR}{#1}{\ARROWLENGTH}}%
+
+% west dotted arrow with lower name [1] and length [2]x100 units
+\newcommand{\wdotaRv}[2]{\hcasE{\WDOTAR}{#1}{#200}}%
+
+% west dotted arrow with lower name [1] and adjusted length
+\newcommand{\wdotaR}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WDOTAR}{#1}{\ARROWLENGTH}}%
+
+% west monomorphism with length [1]x100 units
+\newcommand{\wmonov}[1]{\hcase{\WMONO}{#100}}%
+
+% west monomorphism with adjusted length
+\newcommand{\wmono}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\WMONO}{\ARROWLENGTH}}%
+
+% west monomorphism with upper name [1] and length [2]x100 units
+\newcommand{\Wmonov}[2]{\Hcase{\WMONO}{#1}{#200}}%
+
+% west monomorphism with upper name [1] and adjusted length
+\newcommand{\Wmono}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WMONO}{#1}{\ARROWLENGTH}}%
+
+% west monomorphism with lower name [1] and length [2]x100 units
+\newcommand{\wmonOv}[2]{\hcasE{\WMONO}{#1}{#200}}%
+
+% west monomorphism with lower name [1] and adjusted length
+\newcommand{\wmonO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WMONO}{#1}{\ARROWLENGTH}}%
+
+% west epimorphism with length [1]x100 units
+\newcommand{\wepiv}[1]{\hcase{\WEPI}{#100}}%
+
+% west epimorphism with adjusted length
+\newcommand{\wepi}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\WEPI}{\ARROWLENGTH}}%
+
+% west epimorphism with upper name [1] and length [2]x100 units
+\newcommand{\Wepiv}[2]{\Hcase{\WEPI}{#1}{#200}}%
+
+% west epimorphism with upper name [1] and adjusted length
+\newcommand{\Wepi}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WEPI}{#1}{\ARROWLENGTH}}%
+
+% west epimorphism with lower name [1] and length [2]x100 units
+\newcommand{\wepIv}[2]{\hcasE{\WEPI}{#1}{#200}}%
+
+% west epimorphism with lower name [1] and adjusted length
+\newcommand{\wepI}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WEPI}{#1}{\ARROWLENGTH}}%
+
+% west bimorphism with length [1]x100 units
+\newcommand{\wbimov}[1]{\hcase{\WBIMO}{#100}}%
+
+% west bimorphism with adjusted length
+\newcommand{\wbimo}%
+{\hspace{\SOURCE\unitlength}%
+\hcase{\WBIMO}{\ARROWLENGTH}}%
+
+% west bimorphism with upper name [1] and length [2]x100 units
+\newcommand{\Wbimov}[2]{\Hcase{\WBIMO}{#1}{#200}}%
+
+% west bimorphism with upper name [1] and adjusted length
+\newcommand{\Wbimo}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WBIMO}{#1}{\ARROWLENGTH}}%
+
+% west bimorphism with lower name [1] and length [2]x100 units
+\newcommand{\wbimOv}[2]{\hcasE{\WBIMO}{#1}{#200}}%
+
+% west bimorphism with lower name [1] and adjusted length
+\newcommand{\wbimO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WBIMO}{#1}{\ARROWLENGTH}}%
+
+% west isomorphism with length [1]x100 units
+\newcommand{\wisov}[1]{\Hcase{\WAR}{\cong}{#100}}%
+
+% west isomorphism with adjusted length
+\newcommand{\wiso}%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WAR}{\cong}{\ARROWLENGTH}}%
+
+% west isomorphism with upper name [1] and length [2]x100 units
+\newcommand{\Wisov}[2]{\Hcase{\WAR}{\cong#1}{#200}}%
+
+% west isomorphism with upper name [1] and adjusted length
+\newcommand{\Wiso}[1]%
+{\hspace{\SOURCE\unitlength}%
+\Hcase{\WAR}{#1}{\ARROWLENGTH}}%
+
+% west isomorphism with lower name [1] and length [2]x100 units
+\newcommand{\wisOv}[2]{\hcasE{\WAR}{\cong#1}{#200}}%
+
+% west isomorphism with lower name [1] and adjusted length
+\newcommand{\wisO}[1]%
+{\hspace{\SOURCE\unitlength}%
+\hcasE{\WAR}{#1}{\ARROWLENGTH}}%
+
+% pair of west arrows of length [1]x100 units
+\newcommand{\wbiarv}[1]{\hbicase{\WBIAR}{#100}}%
+
+% pair of west arrows of adjusted length
+\newcommand{\wbiar}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\WBIAR}{\ARROWLENGTH}}%
+
+% pair of west arrows with names [1] [2] and length [3]x100 units
+\newcommand{\Wbiarv}[3]{\Hbicase{\WBIAR}{#1}{#2}{#300}}%
+
+% pair of west arrows with names [1] [2] and adjusted length
+\newcommand{\Wbiar}[2]%
+{\hspace{\SOURCE\unitlength}%
+\Hbicase{\WBIAR}{#1}{#2}{\ARROWLENGTH}}%
+
+% west equality of length [1]x100 units
+\newcommand{\weqlv}[1]{\hbicase{\EEQL}{#100}}%
+
+% west equality of adjusted length
+\newcommand{\weql}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\EEQL}{\ARROWLENGTH}}%
+
+% west pair of adjoint arrows of length [1]x100 units
+\newcommand{\wadjarv}[1]{\hbicase{\WADJAR}{#100}}%
+
+% west pair of adjoint arrows of adjusted length
+\newcommand{\wadjar}%
+{\hspace{\SOURCE\unitlength}%
+\hbicase{\WADJAR}{\ARROWLENGTH}}%
+
+% west pair of adjoint arrows with names [1][2] and length [3]x100units
+\newcommand{\Wadjarv}[3]{\Hbicase{\WADJAR}{#1}{#2}{#300}}%
+
+% west pair of adjoint arrows with names [1]J[2] and adjusted length
+\newcommand{\Wadjar}[2]%
+{\hspace{\SOURCE\unitlength}%
+\Hbicase{\WADJAR}{#1}{#2}{\ARROWLENGTH}}%
+
+
+
+
+
+% MACROS FOR DRAWING VERTICAL PICTURES
+
+% \vcase{P}{n} draws the vertical picture P with length n units.
+\newcommand{\vcase}[2]{#1{#2}}%
+
+% \Vcase{P}{f}{n} draws the vertical picture P
+% with left name f and length n units.
+\newcommand{\Vcase}[3]{\makebox[0pt]%
+{\makebox[0pt][r]{\raisebox{0pt}[0pt][0pt]{${#2}\hspace{2pt}$}}}#1{#3}}%
+
+% \vcasE{P}{f}{n} draws the vertical picture P
+% with right name f and length n units.
+\newcommand{\vcasE}[3]{\makebox[0pt]%
+{#1{#3}\makebox[0pt][l]{\raisebox{0pt}[0pt][0pt]{\hspace{2pt}$#2$}}}}%
+
+% \vbicase{P}{n} draws the vertical bi-picture P with length n units.
+\newcommand{\vbicase}[2]{\makebox[0pt]{{#1{#2}}}}%
+
+% \Vbicase{P}{f}{g}{n} draws the vertical bi-picture P
+% with names f, g and length n units.
+\newcommand{\Vbicase}[4]{\makebox[0pt]%
+{\makebox[0pt][r]{\raisebox{0pt}[0pt][0pt]{$#2$\hspace{4pt}}}#1{#4}%
+\makebox[0pt][l]{\raisebox{0pt}[0pt][0pt]{\hspace{5pt}$#3$}}}}%
+
+
+
+
+
+% SOUTH ARROWS
+
+% \SAR{n} draws a south arrow of length n units
+% and centers it in a box of width  0pt and height 0pt
+\newcommand{\SAR}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,#1){\vector(0,-1){#1}}%
+\end{picture}}}\end{picture}}%
+
+% \SDOTAR{n} draws a south dotted arrow of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SDOTAR}[1]%
+{\truex{100}\truey{300}%
+\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\multiput(0,#1)(0,-\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(0,0){\vector(0,-1){0}}%
+\end{picture}}}\end{picture}}%
+
+% \SMONO{n} draws a south monomorphism of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SMONO}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,#1){\vector(0,-1){#1}}%
+\truex{300}\truey{600}%
+\put(0,#1){\begin{picture}(0,0)%
+\put(-\value{x},-\value{x}){\line(1,0){\value{y}}}\end{picture}}%
+\end{picture}}}\end{picture}}%
+
+
+% \SEPI{n} draws a south epimorphism of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SEPI}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,#1){\vector(0,-1){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(-\value{x},\value{z}){\line(1,0){\value{y}}}%
+\end{picture}}}\end{picture}}%
+
+% \SBIMO{n} draws a south bimorphism of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SBIMO}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,#1){\vector(0,-1){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(0,#1){\begin{picture}(0,0)%
+\put(-\value{x},-\value{x}){\line(1,0){\value{y}}}\end{picture}}%
+\put(-\value{x},\value{z}){\line(1,0){\value{y}}}%
+\end{picture}}}\end{picture}}%
+
+% \SBIAR{n} draws a pair of south arrows of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SBIAR}[1]%
+{\begin{picture}(0,0)%
+\truex{200}%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(-\value{x},#1){\vector(0,-1){#1}}%
+\put(\value{x},#1){\vector(0,-1){#1}}%
+\end{picture}}}\end{picture}}%
+
+% \SEQL{n} draws a vertical equality of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SEQL}[1]%
+{\begin{picture}(0,0)%
+\truex{100}%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(-\value{x},#1){\line(0,-1){#1}}%
+\put(\value{x},#1){\line(0,-1){#1}}%
+\end{picture}}}\end{picture}}%
+
+% \SADJAR{n} draws a pair of vertical adjoint arrows of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\SADJAR}[1]{\begin{picture}(0,0)%
+\truex{200}%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(-\value{x},#1){\vector(0,-1){#1}}%
+\put(\value{x},0){\vector(0,1){#1}}%
+\end{picture}}}\end{picture}}%
+
+
+% All the following commands produce south arrows
+% centered in a box of width O pt and height 0pt
+
+% south arrow of length [1]x100 units
+\newcommand{\sarv}[1]{\vcase{\SAR}{#100}}%
+
+% south arrow of length 5000 units
+\newcommand{\sar}{\sarv{50}}%
+
+% south arrow with left name [1] and length [2]x100 units
+\newcommand{\Sarv}[2]{\Vcase{\SAR}{#1}{#200}}%
+
+% south arrow with left name [1] and length 5000 units
+\newcommand{\Sar}[1]{\Sarv{#1}{50}}%
+
+% south arrow with right name [1] and length [2]x100 units
+\newcommand{\saRv}[2]{\vcasE{\SAR}{#1}{#200}}%
+
+% south arrow with right name [1] and length 5000 units
+\newcommand{\saR}[1]{\saRv{#1}{50}}%
+
+% south dotted arrow of length [1]x100 units
+\newcommand{\sdotarv}[1]{\vcase{\SDOTAR}{#100}}%
+
+% south dotted arrow of length 5000 units
+\newcommand{\sdotar}{\sdotarv{50}}%
+
+% south dotted arrow with left name [1] and length [2]x100 units
+\newcommand{\Sdotarv}[2]{\Vcase{\SDOTAR}{#1}{#200}}%
+
+% south dotted arrow with left name [1] and length 5000 units
+\newcommand{\Sdotar}[1]{\Sdotarv{#1}{50}}%
+
+% south dotted arrow with right name [1] and length [2]x100 units
+\newcommand{\sdotaRv}[2]{\vcasE{\SDOTAR}{#1}{#200}}%
+
+% south dotted arrow with right name [1] and length 5000 units
+\newcommand{\sdotaR}[1]{\sdotaRv{#1}{50}}%
+
+% south monomorphism of length [1]x100 units
+\newcommand{\smonov}[1]{\vcase{\SMONO}{#100}}%
+
+% south monomorphism of length 5000 units
+\newcommand{\smono}{\smonov{50}}%
+
+% south monomorphism with left name [1] and length [2]x100 units
+\newcommand{\Smonov}[2]{\Vcase{\SMONO}{#1}{#200}}%
+
+% south monomorphism with left name [1] and length 5000 units
+\newcommand{\Smono}[1]{\Smonov{#1}{50}}%
+
+% south monomorphism with right name [1] and length [2]x100 units
+\newcommand{\smonOv}[2]{\vcasE{\SMONO}{#1}{#200}}%
+
+% south monomorphism with right name [1] and length 5000 units
+\newcommand{\smonO}[1]{\smonOv{#1}{50}}%
+
+% south epimorphism of length [1]x100 units
+\newcommand{\sepiv}[1]{\vcase{\SEPI}{#100}}%
+
+% south epimorphism of length 5000 units
+\newcommand{\sepi}{\sepiv{50}}%
+
+% south epimorphism with left name [1] and length [2]x100 units
+\newcommand{\Sepiv}[2]{\Vcase{\SEPI}{#1}{#200}}%
+
+% south epimorphism with left name [1] and length 5000 units
+\newcommand{\Sepi}[1]{\Sepiv{#1}{50}}%
+
+% south epimorphism with right name [1] and length [2]x100 units
+\newcommand{\sepIv}[2]{\vcasE{\SEPI}{#1}{#200}}%
+
+% south epimorphism with right name [1] and length 5000 units
+\newcommand{\sepI}[1]{\sepIv{#1}{50}}%
+
+% south bimorphism of length [1]x100 units
+\newcommand{\sbimov}[1]{\vcase{\SBIMO}{#100}}%
+
+% south bimorphism of length 5000 units
+\newcommand{\sbimo}{\sbimov{50}}%
+
+% south bimorphism with left name [1] and length [2]x100 units
+\newcommand{\Sbimov}[2]{\Vcase{\SBIMO}{#1}{#200}}%
+
+% south bimorphism with left name [1] and length 5000 units
+\newcommand{\Sbimo}[1]{\Sbimov{#1}{50}}%
+
+% south bimorphism with right name [1] and length [2]x100 units
+\newcommand{\sbimOv}[2]{\vcasE{\SBIMO}{#1}{#200}}%
+
+% south bimorphism with right name [1] and length 5000 units
+\newcommand{\sbimO}[1]{\sbimOv{#1}{50}}%
+
+% south isomorphism of length [1]x100 units
+\newcommand{\sisov}[1]{\vcasE{\SAR}{\cong}{#100}}%
+
+% south isomorphism of length 5000 units
+\newcommand{\siso}{\sisov{50}}%
+
+% south isomorphism with left name [1] and length [2]x100 units
+\newcommand{\Sisov}[2]%
+{\Vbicase{\SAR}{#1\hspace{-2pt}}{\hspace{-2pt}\cong}{#200}}%
+
+% south isomorphism with left name [1] and length 5000 units
+\newcommand{\Siso}[1]{\Sisov{#1}{50}}%
+
+% pair of south arrows of length [1]x100 units
+\newcommand{\sbiarv}[1]{\vbicase{\SBIAR}{#100}}%
+
+% pair of south arrows of length 5000 units
+\newcommand{\sbiar}{\sbiarv{50}}%
+
+% pair of south arrows with names [1],[2] and length [3]x100 units
+\newcommand{\Sbiarv}[3]{\Vbicase{\SBIAR}{#1}{#2}{#300}}%
+
+% pair of south arrows with names [1],[2] and length 5000 units
+\newcommand{\Sbiar}[2]{\Sbiarv{#1}{#2}{50}}%
+
+% south equality of length [1]x100 units
+\newcommand{\seqlv}[1]{\vbicase{\SEQL}{#100}}%
+
+% south equality of length 50 pt
+\newcommand{\seql}{\seqlv{50}}%
+
+% south pair of adjoint arrows of length [1]x100 units
+\newcommand{\sadjarv}[1]{\vbicase{\SADJAR}{#100}}%
+
+% south pair of adjoint arrows of length 5000 units
+\newcommand{\sadjar}{\sadjarv{50}}%
+
+% south pair of adjoint arrows with names [1],[2] and length [3]x100 units
+\newcommand{\Sadjarv}[3]{\Vbicase{\SADJAR}{#1}{#2}{#300}}%
+
+% south pair of adjoint arrows with names [1],[2] and length 5000 units
+\newcommand{\Sadjar}[2]{\Sadjarv{#1}{#2}{50}}%
+
+
+
+
+% NORTH ARROWS
+
+% \NAR{n} draws a north arrow of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NAR}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(0,0){\vector(0,1){#1}}%
+\end{picture}}}\end{picture}}%
+
+% \NDOTAR{n} draws a north dotted arrow of length n units
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NDOTAR}[1]%
+{\truex{100}\truey{300}%
+\NUMBEROFDOTS=#1%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\multiput(0,0)(0,\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(0,#1){\vector(0,1){0}}%
+\end{picture}}}\end{picture}}%
+
+
+% \NMONO{n} draws a north monomorphism of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NMONO}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,0){\vector(0,1){#1}}%
+\truex{300}\truey{600}%
+\put(-\value{x},\value{x}){\line(1,0){\value{y}}}%
+\end{picture}}}%
+\end{picture}}%
+
+% \NEPI{n} draws a north epimorphism of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NEPI}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,0){\vector(0,1){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(0,#1){\begin{picture}(0,0)%
+\put(-\value{x},-\value{z}){\line(1,0){\value{y}}}\end{picture}}%
+\end{picture}}}\end{picture}}%
+
+% \NBIMO{n} draws a north bimorphism of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NBIMO}[1]%
+{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)%
+\put(0,0){\vector(0,1){#1}}%
+\truex{300}\truey{600}\truez{800}%
+\put(-\value{x},\value{x}){\line(1,0){\value{y}}}%
+\put(0,#1){\begin{picture}(0,0)%
+\put(-\value{x},-\value{z}){\line(1,0){\value{y}}}\end{picture}}%
+\end{picture}}}\end{picture}}%
+
+% \NBIAR{n} draws a pair of north arrows of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NBIAR}[1]%
+{\begin{picture}(0,0)%
+\truex{200}%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(-\value{x},0){\vector(0,1){#1}}%
+\put(\value{x},0){\vector(0,1){#1}}%
+\end{picture}}}\end{picture}}%
+
+% \NADJAR{n} draws a pair of vertical adjoint arrows of length n pt
+% and centers it in a box of width 0pt and height 0pt
+\newcommand{\NADJAR}[1]{\begin{picture}(0,0)%
+\truex{200}%
+\put(0,0){\makebox(0,0)%
+{\begin{picture}(0,#1)\put(\value{x},#1){\vector(0,-1){#1}}%
+\put(-\value{x},0){\vector(0,1){#1}}%
+\end{picture}}}\end{picture}}%
+
+
+% All the following commands produce north arrows
+% centered in a box of width O pt and height 0 pt
+
+% north arrow of length [1]x100 units
+\newcommand{\narv}[1]{\vcase{\NAR}{#100}}%
+
+% north arrow of length 5000 units
+\newcommand{\nar}{\narv{50}}%
+
+% north arrow with left name [1] and length [2]x100 units
+\newcommand{\Narv}[2]{\Vcase{\NAR}{#1}{#200}}%
+
+% north arrow with left name [1] and length 5000 units
+\newcommand{\Nar}[1]{\Narv{#1}{50}}%
+
+% north arrow with right name [1] and length [2]x100 units
+\newcommand{\naRv}[2]{\vcasE{\NAR}{#1}{#200}}%
+
+% north arrow with right name [1] and length 5000 units
+\newcommand{\naR}[1]{\naRv{#1}{50}}%
+
+% north dotted arrow of length [1]x100 units
+\newcommand{\ndotarv}[1]{\vcase{\NDOTAR}{#100}}%
+
+% north dotted arrow of length 5000 units
+\newcommand{\ndotar}{\ndotarv{50}}%
+
+% north dotted arrow with left name [1] and length [2]x100 units
+\newcommand{\Ndotarv}[2]{\Vcase{\NDOTAR}{#1}{#200}}%
+
+% north dotted arrow with left name [1] and length 5000 units
+\newcommand{\Ndotar}[1]{\Ndotarv{#1}{50}}%
+
+% north dotted arrow with right name [1] and length [2]x100 units
+\newcommand{\ndotaRv}[2]{\vcasE{\NDOTAR}{#1}{#200}}%
+
+% north dotted arrow with right name [1] and length 5000 units
+\newcommand{\ndotaR}[1]{\ndotaRv{#1}{50}}%
+
+% north monomorphism of length [1]x100 units
+\newcommand{\nmonov}[1]{\vcase{\NMONO}{#100}}%
+
+% north monomorphism of length 5000 units
+\newcommand{\nmono}{\nmonov{50}}%
+
+% north monomorphism with left name [1] and length [2]x100 units
+\newcommand{\Nmonov}[2]{\Vcase{\NMONO}{#1}{#200}}%
+
+% north monomorphism with left name [1] and length 5000 units
+\newcommand{\Nmono}[1]{\Nmonov{#1}{50}}%
+
+% north monomorphism with right name [1] and length [2]x100 units
+\newcommand{\nmonOv}[2]{\vcasE{\NMONO}{#1}{#200}}%
+
+% north monomorphism with right name [1] and length 5000 units
+\newcommand{\nmonO}[1]{\nmonOv{#1}{50}}%
+
+% north epimorphism of length [1]x100 units
+\newcommand{\nepiv}[1]{\vcase{\NEPI}{#100}}%
+
+% north epimorphism of length 5000 units
+\newcommand{\nepi}{\nepiv{50}}%
+
+% north epimorphism with left name [1] and length [2]x100 units
+\newcommand{\Nepiv}[2]{\Vcase{\NEPI}{#1}{#200}}%
+
+% north epimorphism with left name [1] and length 5000 units
+\newcommand{\Nepi}[1]{\Nepiv{#1}{50}}%
+
+% north epimorphism with right name [1] and length [2]x100 units
+\newcommand{\nepIv}[2]{\vcasE{\NEPI}{#1}{#200}}%
+
+% north epimorphism with right name [1] and length 5000 units
+\newcommand{\nepI}[1]{\nepIv{#1}{50}}%
+
+% north bimorphism of length [1]x100 units
+\newcommand{\nbimov}[1]{\vcase{\NBIMO}{#100}}%
+
+% north bimorphism of length 5000 units
+\newcommand{\nbimo}{\nbimov{50}}%
+
+% north bimorphism with left name [1] and length [2]x100 units
+\newcommand{\Nbimov}[2]{\Vcase{\NBIMO}{#1}{#200}}%
+
+% north bimorphism with left name [1] and length 5000 units
+\newcommand{\Nbimo}[1]{\Nbimov{#1}{50}}%
+
+% north bimorphism with right name [1] and length [2]x100 units
+\newcommand{\nbimOv}[2]{\vcasE{\NBIMO}{#1}{#200}}%
+
+% north bimorphism with right name [1] and length 5000 units
+\newcommand{\nbimO}[1]{\nbimOv{#1}{50}}%
+
+% north isomorphism of length [1]x100 units
+\newcommand{\nisov}[1]{\vcasE{\NAR}{\cong}{#100}}%
+
+% north isomorphism of length 5000 units
+\newcommand{\niso}{\nisov{50}}%
+
+% north isomorphism with left name [1] and length [2]x100 units
+\newcommand{\Nisov}[2]%
+{\Vbicase{\NAR}{#1\hspace{-2pt}}{\hspace{-2pt}\cong}{#200}}%
+
+% north isomorphism with left name [1] and length 5000 units
+\newcommand{\Niso}[1]{\Nisov{#1}{50}}%
+
+% pair of north arrows of length [1]x100 units
+\newcommand{\nbiarv}[1]{\vbicase{\NBIAR}{#100}}%
+
+% pair of north arrows of length 5000 units
+\newcommand{\nbiar}{\nbiarv{50}}%
+
+% pair of north arrows with names [1],[2] and length [3]x100 units
+\newcommand{\Nbiarv}[3]{\Vbicase{\NBIAR}{#1}{#2}{#300}}%
+
+% pair of north arrows with names [1],[2] and length 5000 units
+\newcommand{\Nbiar}[2]{\Nbiarv{#1}{#2}{50}}%
+
+% north equality of length [1]x100 units
+\newcommand{\neqlv}[1]{\vbicase{\SEQL}{#100}}%
+
+% north equality of length 50 pt
+\newcommand{\neql}{\neqlv{50}}%
+
+% north pair of adjoint arrows of length [1]x100 units
+\newcommand{\nadjarv}[1]{\vbicase{\NADJAR}{#100}}%
+
+% north pair of adjoint arrows of length 5000 units
+\newcommand{\nadjar}{\nadjarv{50}}%
+
+% north pair of adjoint arrows with names [1],[2] and length [3]x100 units
+\newcommand{\Nadjarv}[3]{\Vbicase{\NADJAR}{#1}{#2}{#300}}%
+
+% north pair of adjoint arrows with names [1],[2] and length 5000 units
+\newcommand{\Nadjar}[2]{\Nadjarv{#1}{#2}{50}}%
+
+
+
+% MACROS FOR  FIRST DIAGONAL PICTURES
+
+% \fdcase{P}{f}{g} draws the picture P with names f, g
+\newcommand{\fdcase}[3]{\begin{picture}(0,0)%
+\put(0,-150){#1}%
+\truex{200}\truey{600}\truez{600}%
+\put(-\value{x},-\value{x}){\makebox(0,\value{z})[r]{${#2}$}}%
+\put(\value{x},-\value{y}){\makebox(0,\value{z})[l]{${#3}$}}%
+\end{picture}}%
+
+% \fdbicase{P}{f}{g} draws the bipicture P with names f, g
+\newcommand{\fdbicase}[3]{\begin{picture}(0,0)%
+\put(0,-150){#1}%
+\truex{800}\truey{50}%
+\put(-\value{x},\value{y}){${#2}$}%
+\truex{200}\truey{950}%
+\put(\value{x},-\value{y}){${#3}$}%
+\end{picture}}%
+
+
+
+
+
+% NORTH-EAST ARROWS
+
+% \NEAR draws a north-east arrow
+\newcommand{\NEAR}{\begin{picture}(0,0)%
+\put(-2900,-2900){\vector(1,1){5800}}%
+\end{picture}}%
+
+% \NEDOTAR draws a north-east dotted arrow
+\newcommand{\NEDOTAR}%
+{\truex{100}\truey{212}%
+\NUMBEROFDOTS=5800%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\multiput(-2900,-2900)(\value{y},\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(2900,2900){\vector(1,1){0}}%
+\end{picture}}%
+
+% \NEMONO draws a north-east monomorphism
+\newcommand{\NEMONO}{\begin{picture}(0,0)%
+\put(-2900,-2900){\vector(1,1){5800}}%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NEEPI draws a north-east epimorphism
+\newcommand{\NEEPI}{\begin{picture}(0,0)%
+\put(-2900,-2900){\vector(1,1){5800}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{545}%
+\put(-\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NEBIMO draws a north-east bimorphism
+\newcommand{\NEBIMO}{\begin{picture}(0,0)%
+\put(-2900,-2900){\vector(1,1){5800}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{545}%
+\put(-\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NEBIAR draws a pair of north-east arrows
+\newcommand{\NEBIAR}{\begin{picture}(0,0)%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},\value{x}){\vector(1,1){5800}}%
+\put(\value{x},-\value{x}){\vector(1,1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \NEEQL draws a north-east equality
+\newcommand{\NEEQL}{\begin{picture}(0,0)%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{70}%
+\put(-\value{x},\value{x}){\line(1,1){5800}}%
+\put(\value{x},-\value{x}){\line(1,1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \NEADJAR draws a north-east pair of adjoint arrows
+\newcommand{\NEADJAR}{\begin{picture}(0,0)%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},-\value{x}){\vector(1,1){5800}}%
+\end{picture}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},\value{x}){\vector(-1,-1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \NEARV{n} draws a north-east arrow of length nx100 units
+\newcommand{\NEARV}[1]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(#1,#1)%
+\put(0,0){\vector(1,1){#1}}\end{picture}}}%
+\end{picture}}%
+
+
+% All the following commands draw north-east arrows of horizontal
+% extent 5800 units and of formal dimensions (0,0).
+
+% north-east arrow
+\newcommand{\near}{\fdcase{\NEAR}{}{}}%
+
+% north-east arrow with upper name [1]
+\newcommand{\Near}[1]{\fdcase{\NEAR}{#1}{}}%
+
+% north-east arrow with lower name [1]
+\newcommand{\neaR}[1]{\fdcase{\NEAR}{}{#1}}%
+
+% north-east dotted arrow
+\newcommand{\nedotar}{\fdcase{\NEDOTAR}{}{}}%
+
+% north-east dotted arrow with upper name [1]
+\newcommand{\Nedotar}[1]{\fdcase{\NEDOTAR}{#1}{}}%
+
+% north-east dotted arrow with lower name [1]
+\newcommand{\nedotaR}[1]{\fdcase{\NEDOTAR}{}{#1}}%
+
+% north-east monomorphism
+\newcommand{\nemono}{\fdcase{\NEMONO}{}{}}%
+
+% north-est monomorphism with upper name [1]
+\newcommand{\Nemono}[1]{\fdcase{\NEMONO}{#1}{}}%
+
+% north-east monomorphism with lower name [1]
+\newcommand{\nemonO}[1]{\fdcase{\NEMONO}{}{#1}}%
+
+% north-east epimorphism
+\newcommand{\neepi}{\fdcase{\NEEPI}{}{}}%
+
+% north-east epimorphism with upper name [1]
+\newcommand{\Neepi}[1]{\fdcase{\NEEPI}{#1}{}}%
+
+% north-east epimorphism with lower name [1]
+\newcommand{\neepI}[1]{\fdcase{\NEEPI}{}{#1}}%
+
+% north-east bimorphism
+\newcommand{\nebimo}{\fdcase{\NEBIMO}{}{}}%
+
+% north-east bimorphism with upper name [1]
+\newcommand{\Nebimo}[1]{\fdcase{\NEBIMO}{#1}{}}%
+
+% north-east bimorphism with lower name [1]
+\newcommand{\nebimO}[1]{\fdcase{\NEBIMO}{}{#1}}%
+
+% north-east isomorphism
+\newcommand{\neiso}{\fdcase{\NEAR}{\hspace{-2pt}\cong}{}}%
+
+% north-east isomorphism with name [1]
+\newcommand{\Neiso}[1]{\fdcase{\NEAR}{\hspace{-2pt}\cong}{#1}}%
+
+% pair of north-east arrows
+\newcommand{\nebiar}{\fdbicase{\NEBIAR}{}{}}%
+
+% pair of north-east arrows with names [1], [2]
+\newcommand{\Nebiar}[2]{\fdbicase{\NEBIAR}{#1}{#2}}%
+
+% north-east equality
+\newcommand{\neeql}{\fdbicase{\NEEQL}{}{}}%
+
+% north-east pair of adjoint arrows
+\newcommand{\neadjar}{\fdbicase{\NEADJAR}{}{}}%
+
+% north-east pair of adjoint arrows with names [1], [2]
+\newcommand{\Neadjar}[2]{\fdbicase{\NEADJAR}{#1}{#2}}%
+
+
+% the following commands produce a north-east arrow of variable length
+% and of formal dimensions (0,0).
+
+% north-east arrow of horizontal length [1]x100 units
+\newcommand{\nearv}[1]{\fdcase{\NEARV{#100}}{}{}}%
+
+% north-east arrow with upper name [1] and horizontal length [2]x100 units
+\newcommand{\Nearv}[2]{\fdcase{\NEARV{#200}}{#1}{}}%
+
+% north-east arrow with lower name [1] and horizontal length [2]x100 units
+\newcommand{\neaRv}[2]{\fdcase{\NEARV{#200}}{}{#1}}%
+
+
+
+
+
+% SOUTH-WEST ARROWS
+
+% \SWAR draws a south-west arrow
+\newcommand{\SWAR}{\begin{picture}(0,0)%
+\put(2900,2900){\vector(-1,-1){5800}}%
+\end{picture}}%
+
+% \SWDOTAR draws a south-west dotted arrow
+\newcommand{\SWDOTAR}%
+{\truex{100}\truey{212}%
+\NUMBEROFDOTS=5800%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\multiput(2900,2900)(-\value{y},-\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(-2900,-2900){\vector(-1,-1){0}}%
+\end{picture}}%
+
+% \SWMONO draws a south-west monomorphism
+\newcommand{\SWMONO}{\begin{picture}(0,0)%
+\put(2900,2900){\vector(-1,-1){5800}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SWEPI draws a south-west epimorphism
+\newcommand{\SWEPI}{\begin{picture}(0,0)%
+\put(2900,2900){\vector(-1,-1){5800}}%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SWBIMO draws a south-west bimorphism
+\newcommand{\SWBIMO}{\begin{picture}(0,0)%
+\put(2900,2900){\vector(-1,-1){5800}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SWBIAR draws a pair of south-west arrows
+\newcommand{\SWBIAR}{\begin{picture}(0,0)%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},-\value{x}){\vector(-1,-1){5800}}%
+\put(-\value{x},\value{x}){\vector(-1,-1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \SWADJAR draws a south-west pair of adjoint arrows
+\newcommand{\SWADJAR}{\begin{picture}(0,0)%
+\put(-2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},\value{x}){\vector(1,1){5800}}%
+\end{picture}}%
+\put(2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},-\value{x}){\vector(-1,-1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \SWARV{n} draws a south-west arrow of length nx100 units
+\newcommand{\SWARV}[1]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(#1,#1)%
+\put(#1,#1){\vector(-1,-1){#1}}\end{picture}}}%
+\end{picture}}%
+
+
+% All the following commands draw south-west arrows of horizontal
+% extent 5800 units and formal dimensions (0,0).
+
+% south-west arrow
+\newcommand{\swar}{\fdcase{\SWAR}{}{}}%
+
+% south-west arrow with upper name [1]
+\newcommand{\Swar}[1]{\fdcase{\SWAR}{#1}{}}%
+
+% south-west arrow with lower name [1]
+\newcommand{\swaR}[1]{\fdcase{\SWAR}{}{#1}}%
+
+% south-west dotted arrow
+\newcommand{\swdotar}{\fdcase{\SWDOTAR}{}{}}%
+
+% south-west dotted arrow with upper name [1]
+\newcommand{\Swdotar}[1]{\fdcase{\SWDOTAR}{#1}{}}%
+
+% south-west dotted arrow with lower name [1]
+\newcommand{\swdotaR}[1]{\fdcase{\SWDOTAR}{}{#1}}%
+
+% south-west monomorphism
+\newcommand{\swmono}{\fdcase{\SWMONO}{}{}}%
+
+% north-est monomorphism with upper name [1]
+\newcommand{\Swmono}[1]{\fdcase{\SWMONO}{#1}{}}%
+
+% south-west monomorphism with lower name [1]
+\newcommand{\swmonO}[1]{\fdcase{\SWMONO}{}{#1}}%
+
+% south-west epimorphism
+\newcommand{\swepi}{\fdcase{\SWEPI}{}{}}%
+
+% south-west epimorphism with upper name [1]
+\newcommand{\Swepi}[1]{\fdcase{\SWEPI}{#1}{}}%
+
+% south-west epimorphism with lower name [1]
+\newcommand{\swepI}[1]{\fdcase{\SWEPI}{}{#1}}%
+
+% south-west bimorphism
+\newcommand{\swbimo}{\fdcase{\SWBIMO}{}{}}%
+
+% south-west bimorphism with upper name [1]
+\newcommand{\Swbimo}[1]{\fdcase{\SWBIMO}{#1}{}}%
+
+% south-west bimorphism with lower name [1]
+\newcommand{\swbimO}[1]{\fdcase{\SWBIMO}{}{#1}}%
+
+% south-west isomorphism
+\newcommand{\swiso}{\fdcase{\SWAR}{\hspace{-2pt}\cong}{}}%
+
+% south-west isomorphism with name [1]
+\newcommand{\Swiso}[1]{\fdcase{\SWAR}{\hspace{-2pt}\cong}{#1}}%
+
+% pair of south-west arrows
+\newcommand{\swbiar}{\fdbicase{\SWBIAR}{}{}}%
+
+% pair of south-west arrows with names [1], [2]
+\newcommand{\Swbiar}[2]{\fdbicase{\SWBIAR}{#1}{#2}}%
+
+% south-west equality
+\newcommand{\sweql}{\fdbicase{\NEEQL}{}{}}%
+
+% south-west pair of adjoint arrows
+\newcommand{\swadjar}{\fdbicase{\SWADJAR}{}{}}%
+
+% south-west pair of adjoint arrows with names [1], [2]
+\newcommand{\Swadjar}[2]{\fdbicase{\SWADJAR}{#1}{#2}}%
+
+
+% the following commands produce a south-west arrow of variable length
+% and formal dimensions (0,0).
+
+% south-west arrow of horizontal length [1]x100 units
+\newcommand{\swarv}[1]{\fdcase{\SWARV{#100}}{}{}}%
+
+% south-west arrow with upper name [1] and horizontal length [2]x100 units
+\newcommand{\Swarv}[2]{\fdcase{\SWARV{#200}}{#1}{}}%
+
+% south-west arrow with lower name [1] and horizontal length [2]x100 units
+\newcommand{\swaRv}[2]{\fdcase{\SWARV{#200}}{}{#1}}%
+
+
+
+
+
+% MACROS FOR  SECOND DIAGONAL PICTURES
+
+% \sdcase{P}{f}{g} draws the picture P with names f, g
+\newcommand{\sdcase}[3]{\begin{picture}(0,0)%
+\put(0,-150){#1}%
+\truex{100}\truez{600}%
+\put(\value{x},\value{x}){\makebox(0,\value{z})[l]{${#2}$}}%
+\truex{300}\truey{800}%
+\put(-\value{x},-\value{y}){\makebox(0,\value{z})[r]{${#3}$}}%
+\end{picture}}%
+
+% \sdbicase{P}{f}{g} draws the bipicture P with names f, g
+\newcommand{\sdbicase}[3]{\begin{picture}(0,0)%
+\put(0,-150){#1}%
+\truex{250}\truey{600}\truez{850}%
+\put(\value{x},\value{x}){\makebox(0,\value{y})[l]{${#2}$}}%
+\put(-\value{x},-\value{z}){\makebox(0,\value{y})[r]{${#3}$}}%
+\end{picture}}%
+
+
+
+
+
+% SOUT-EAST ARROWS
+
+% \SEAR draws a south-east arrow
+\newcommand{\SEAR}{\begin{picture}(0,0)%
+\put(-2900,2900){\vector(1,-1){5800}}%
+\end{picture}}%
+
+% \SEDOTAR draws a south-east dotted arrow
+\newcommand{\SEDOTAR}%
+{\truex{100}\truey{212}%
+\NUMBEROFDOTS=5800%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\multiput(-2900,2900)(\value{y},-\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(2900,-2900){\vector(1,-1){0}}%
+\end{picture}}%
+
+% \SEMONO draws a south-east monomorphism
+\newcommand{\SEMONO}{\begin{picture}(0,0)%
+\put(-2900,2900){\vector(1,-1){5800}}%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SEEPI draws a south-east epimorphism
+\newcommand{\SEEPI}{\begin{picture}(0,0)%
+\put(-2900,2900){\vector(1,-1){5800}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(-\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SEBIMO draws a south-east bimorphism
+\newcommand{\SEBIMO}{\begin{picture}(0,0)%
+\put(-2900,2900){\vector(1,-1){5800}}%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(-\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \SEBIAR draws a pair of south-east arrows
+\newcommand{\SEBIAR}{\begin{picture}(0,0)%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{141}
+\put(-\value{x},-\value{x}){\vector(1,-1){5800}}%
+\put(\value{x},\value{x}){\vector(1,-1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \SEEQL draws a south-east equality
+\newcommand{\SEEQL}{\begin{picture}(0,0)%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{70}%
+\put(-\value{x},-\value{x}){\line(1,-1){5800}}%
+\put(\value{x},\value{x}){\line(1,-1){5800}}%
+\end{picture}}\end{picture}}%
+
+
+% \SEADJAR draws a south-east pair of adjoint arrows
+\newcommand{\SEADJAR}{\begin{picture}(0,0)%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},-\value{x}){\vector(1,-1){5800}}%
+\end{picture}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},\value{x}){\vector(-1,1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \SEARV{n} draws a south-east arrow of length nx100 units
+\newcommand{\SEARV}[1]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(#1,#1)%
+\put(0,#1){\vector(1,-1){#1}}\end{picture}}}%
+\end{picture}}%
+
+
+% All the following commands draw south-east arrows of horizontal
+% extent 5800 units and of formal dimensions (0,0).
+
+% south-east arrow
+\newcommand{\sear}{\sdcase{\SEAR}{}{}}%
+
+% south-east arrow with upper name [1]
+\newcommand{\Sear}[1]{\sdcase{\SEAR}{#1}{}}%
+
+% south-east arrow with lower name [1]
+\newcommand{\seaR}[1]{\sdcase{\SEAR}{}{#1}}%
+
+% south-east dotted arrow
+\newcommand{\sedotar}{\sdcase{\SEDOTAR}{}{}}%
+
+% south-east dotted arrow with upper name [1]
+\newcommand{\Sedotar}[1]{\sdcase{\SEDOTAR}{#1}{}}%
+
+% south-east dotted arrow with lower name [1]
+\newcommand{\sedotaR}[1]{\sdcase{\SEDOTAR}{}{#1}}%
+
+% south-east monomorphism
+\newcommand{\semono}{\sdcase{\SEMONO}{}{}}%
+
+% south-east monomorphism with upper name [1]
+\newcommand{\Semono}[1]{\sdcase{\SEMONO}{#1}{}}%
+
+% south-east monomorphism with lower name [1]
+\newcommand{\semonO}[1]{\sdcase{\SEMONO}{}{#1}}%
+
+% south-east epimorphism
+\newcommand{\seepi}{\sdcase{\SEEPI}{}{}}%
+
+% south-east epimorphism with upper name [1]
+\newcommand{\Seepi}[1]{\sdcase{\SEEPI}{#1}{}}%
+
+% south-east epimorphism with lower name [1]
+\newcommand{\seepI}[1]{\sdcase{\SEEPI}{}{#1}}%
+
+% south-east bimorphism
+\newcommand{\sebimo}{\sdcase{\SEBIMO}{}{}}%
+
+% south-east bimorphism with upper name [1]
+\newcommand{\Sebimo}[1]{\sdcase{\SEBIMO}{#1}{}}%
+
+% south-east bimorphism with lower name [1]
+\newcommand{\sebimO}[1]{\sdcase{\SEBIMO}{}{#1}}%
+
+% south-east isomorphism
+\newcommand{\seiso}{\sdcase{\SEAR}{\hspace{-2pt}\cong}{}}%
+
+% south-east isomorphism with name [1]
+\newcommand{\Seiso}[1]{\sdcase{\SEAR}{\hspace{-2pt}\cong}{#1}}%
+
+% pair of south-east arrows
+\newcommand{\sebiar}{\sdbicase{\SEBIAR}{}{}}%
+
+% pair of south-east arrows with names [1], [2]
+\newcommand{\Sebiar}[2]{\sdbicase{\SEBIAR}{#1}{#2}}%
+
+% south-east equality
+\newcommand{\seeql}{\sdbicase{\SEEQL}{}{}}%
+
+% south-east pair of adjoint arrows
+\newcommand{\seadjar}{\sdbicase{\SEADJAR}{}{}}%
+
+% south-east pair of adjoint arrows with names [1], [2]
+\newcommand{\Seadjar}[2]{\sdbicase{\SEADJAR}{#1}{#2}}%
+
+
+% the following commands produce a south-east arrow of variable length
+% and of formal dimensions (0,0).
+
+
+% south-east arrow of horizontal length [1]x100 units
+\newcommand{\searv}[1]{\sdcase{\SEARV{#100}}{}{}}%
+
+% south-east arrow with upper name [1] and horizontal length [2]x100 units
+\newcommand{\Searv}[2]{\sdcase{\SEARV{#200}}{#1}{}}%
+
+% south-east arrow with lower name [1] and horizontal length [2]x100 units
+\newcommand{\seaRv}[2]{\sdcase{\SEARV{#200}}{}{#1}}%
+
+
+
+
+% NORTH-WEST ARROWS
+
+% \NWAR draws a north-west arrow
+\newcommand{\NWAR}{\begin{picture}(0,0)%
+\put(2900,-2900){\vector(-1,1){5800}}%
+\end{picture}}%
+
+% \NWDOTAR draws a north-west dotted arrow
+\newcommand{\NWDOTAR}%
+{\truex{100}\truey{212}%
+\NUMBEROFDOTS=5800%
+\divide\NUMBEROFDOTS by \value{y}%
+\begin{picture}(0,0)%
+\multiput(2900,-2900)(-\value{y},\value{y}){\NUMBEROFDOTS}%
+{\circle*{\value{x}}}%
+\put(-2900,2900){\vector(-1,1){0}}%
+\end{picture}}%
+
+% \NWMONO draws a north-west monomorphism
+\newcommand{\NWMONO}{\begin{picture}(0,0)%
+\put(2900,-2900){\vector(-1,1){5800}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NWEPI draws a north-west epimorphism
+\newcommand{\NWEPI}{\begin{picture}(0,0)%
+\put(2900,-2900){\vector(-1,1){5800}}%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NWBIMO draws a north-west bimorphism
+\newcommand{\NWBIMO}{\begin{picture}(0,0)%
+\put(2900,-2900){\vector(-1,1){5800}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{525}%
+\put(\value{x},-\value{x}){\makebox(0,0){$\times$}}%
+\end{picture}}\end{picture}}%
+
+% \NWBIAR draws a pair of north-west arrows
+\newcommand{\NWBIAR}{\begin{picture}(0,0)%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},\value{x}){\vector(-1,1){5800}}%
+\end{picture}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}
+\put(-\value{x},-\value{x}){\vector(-1,1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \NWADJAR draws a north-west pair of adjoint arrows
+\newcommand{\NWADJAR}{\begin{picture}(0,0)%
+\put(-2900,2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(\value{x},\value{x}){\vector(1,-1){5800}}%
+\end{picture}}%
+\put(2900,-2900){\begin{picture}(0,0)%
+\truex{141}%
+\put(-\value{x},-\value{x}){\vector(-1,1){5800}}%
+\end{picture}}\end{picture}}%
+
+% \NWARV{n} draws a north-west arrow of length nx100 units
+\newcommand{\NWARV}[1]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(#1,#1)%
+\put(#1,0){\vector(-1,1){#1}}\end{picture}}}%
+\end{picture}}%
+
+
+% All the following commands draw north-west arrows of horizontal
+% extent 5800 units and of formal dimensions (0,0).
+
+% north-west arrow
+\newcommand{\nwar}{\sdcase{\NWAR}{}{}}%
+
+% north-west arrow with upper name [1]
+\newcommand{\Nwar}[1]{\sdcase{\NWAR}{#1}{}}%
+
+% north-west arrow with lower name [1]
+\newcommand{\nwaR}[1]{\sdcase{\NWAR}{}{#1}}%
+
+% north-west dotted arrow
+\newcommand{\nwdotar}{\sdcase{\NWDOTAR}{}{}}%
+
+% north-west dotted arrow with upper name [1]
+\newcommand{\Nwdotar}[1]{\sdcase{\NWDOTAR}{#1}{}}%
+
+% north-west dotted arrow with lower name [1]
+\newcommand{\nwdotaR}[1]{\sdcase{\NWDOTAR}{}{#1}}%
+
+% north-west monomorphism
+\newcommand{\nwmono}{\sdcase{\NWMONO}{}{}}%
+
+% north-west monomorphism with upper name [1]
+\newcommand{\Nwmono}[1]{\sdcase{\NWMONO}{#1}{}}%
+
+% north-west monomorphism with lower name [1]
+\newcommand{\nwmonO}[1]{\sdcase{\NWMONO}{}{#1}}%
+
+% north-west epimorphism
+\newcommand{\nwepi}{\sdcase{\NWEPI}{}{}}%
+
+% north-west epimorphism with upper name [1]
+\newcommand{\Nwepi}[1]{\sdcase{\NWEPI}{#1}{}}%
+
+% north-west epimorphism with lower name [1]
+\newcommand{\nwepI}[1]{\sdcase{\NWEPI}{}{#1}}%
+
+% north-west bimorphism
+\newcommand{\nwbimo}{\sdcase{\NWBIMO}{}{}}%
+
+% north-west bimorphism with upper name [1]
+\newcommand{\Nwbimo}[1]{\sdcase{\NWBIMO}{#1}{}}%
+
+% north-west bimorphism with lower name [1]
+\newcommand{\nwbimO}[1]{\sdcase{\NWBIMO}{}{#1}}%
+
+% north-west isomorphism
+\newcommand{\nwiso}{\sdcase{\NWAR}{\hspace{-2pt}\cong}{}}%
+
+% north-west isomorphism with name [1]
+\newcommand{\Nwiso}[1]{\sdcase{\NWAR}{\hspace{-2pt}\cong}{#1}}%
+
+% pair of north-west arrows
+\newcommand{\nwbiar}{\sdbicase{\NWBIAR}{}{}}%
+
+% pair of north-west arrows with names [1], [2]
+\newcommand{\Nwbiar}[2]{\sdbicase{\NWBIAR}{#1}{#2}}%
+
+% north-west equality
+\newcommand{\nweql}{\sdbicase{\SEEQL}{}{}}%
+
+% north-west pair of adjoint arrows
+\newcommand{\nwadjar}{\sdbicase{\NWADJAR}{}{}}%
+
+% north-west pair of adjoint arrows with names [1], [2]
+\newcommand{\Nwadjar}[2]{\sdbicase{\NWADJAR}{#1}{#2}}%
+
+
+% the following commands produce a north-west arrow of variable length
+% and of formal dimensions (0,0).
+
+% north-west arrow of horizontal length [1]x100 units
+\newcommand{\nwarv}[1]{\sdcase{\NWARV{#100}}{}{}}%
+
+% north-west arrow with upper name [1] and horizontal length [2]x100 units
+\newcommand{\Nwarv}[2]{\sdcase{\NWARV{#200}}{#1}{}}%
+
+% north-west arrow with lower name [1] and horizontal length [2]x100 units
+\newcommand{\nwaRv}[2]{\sdcase{\NWARV{#200}}{}{#1}}%
+
+
+
+
+% HORIZONTAL RECTANGLE DIAGONAL ARROWS
+
+% All the following commands produce arrows of horizontal extent 13200
+% units, oriented in the directions of the diagonals of an horizontal
+% rectangle of sides 2, 1. The results are positioned in a box of width
+% 0pt and height 0pt.
+
+% \ENEAR{f}{g} draws a east-north-east arrow with names f, g
+\newcommand{\ENEAR}[2]%
+{\makebox[0pt]{\begin{picture}(0,0)%
+\put(0,-150){\makebox(0,0){\begin{picture}(0,0)%
+\put(-6600,-3300){\vector(2,1){13200}}%
+\truex{200}\truey{800}\truez{600}%
+\put(-\value{x},\value{x}){\makebox(0,\value{z})[r]{${#1}$}}%
+\put(\value{x},-\value{y}){\makebox(0,\value{z})[l]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% east-north-east arrow
+\newcommand{\enear}{\ENEAR{}{}}%
+
+% east-north-east arrow with upper name [1]
+\newcommand{\Enear}[1]{\ENEAR{#1}{}}%
+
+% east-north-east arrow with lower name [1]
+\newcommand{\eneaR}[1]{\ENEAR{}{#1}}%
+
+% \ESEAR{f}{g} draws an east-south-east arrow with names f, g
+\newcommand{\ESEAR}[2]%
+{\makebox[0pt]{\begin{picture}(0,0)%
+\put(0,-150){\makebox(0,0){\begin{picture}(0,0)%
+\put(-6600,3300){\vector(2,-1){13200}}%
+\truex{200}\truey{800}\truez{600}%
+\put(\value{x},\value{x}){\makebox(0,\value{z})[l]{${#1}$}}%
+\put(-\value{x},-\value{y}){\makebox(0,\value{z})[r]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% east-south-east arrow
+\newcommand{\esear}{\ESEAR{}{}}%
+
+% east-south-east arrow with upper name [1]
+\newcommand{\Esear}[1]{\ESEAR{#1}{}}%
+
+% east-south-east arrow with lower name [1]
+\newcommand{\eseaR}[1]{\ESEAR{}{#1}}%
+
+% \WNWAR{f}{g} draws a west-north-west arrow with names f, g
+\newcommand{\WNWAR}[2]%
+{\makebox[0pt]{\begin{picture}(0,0)%
+\put(0,-150){\makebox(0,0){\begin{picture}(0,0)%
+\put(6600,-3300){\vector(-2,1){13200}}%
+\truex{200}\truey{800}\truez{600}%
+\put(\value{x},\value{x}){\makebox(0,\value{z})[l]{${#1}$}}%
+\put(-\value{x},-\value{y}){\makebox(0,\value{z})[r]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% west-north-west arrow
+\newcommand{\wnwar}{\WNWAR{}{}}%
+
+% west-north-west arrow with upper name [1]
+\newcommand{\Wnwar}[1]{\WNWAR{#1}{}}%
+
+% west-north-west arrow with lower name [1]
+\newcommand{\wnwaR}[1]{\WNWAR{}{#1}}%
+
+% \WSWAR{f}{g} draws a west-south-west arrow with names f, g
+\newcommand{\WSWAR}[2]%
+{\makebox[0pt]{\begin{picture}(0,0)%
+\put(0,-150){\makebox(0,0){\begin{picture}(0,0)%
+\put(6600,3300){\vector(-2,-1){13200}}%
+\truex{200}\truey{800}\truez{600}%
+\put(-\value{x},\value{x}){\makebox(0,\value{z})[r]{${#1}$}}%
+\put(\value{x},-\value{y}){\makebox(0,\value{z})[l]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% west-south-west arrow
+\newcommand{\wswar}{\WSWAR{}{}}%
+
+% west-south-west arrow with upper name [1]
+\newcommand{\Wswar}[1]{\WSWAR{#1}{}}%
+
+% west-south-west arrow with lower name [1]
+\newcommand{\wswaR}[1]{\WSWAR{}{#1}}%
+
+
+
+
+% VERTICAL RECTANGLE DIAGONAL ARROWS
+
+% All the following commands produce arrows of horizontal extent 6600
+% units, oriented in the directions of the diagonals of a vertical
+% rectangle of sides 1, 2. The results are positioned in a box of width
+% 0pt and height 0pt.
+
+
+% \NNEAR{f}{g} draws a north-north-east arrow with names f, g
+\newcommand{\NNEAR}[2]%
+{\raisebox{-1pt}[0pt][0pt]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(0,0)%
+\put(-3300,-6600){\vector(1,2){6600}}%
+\truex{100}\truez{600}%
+\put(-\value{x},\value{x}){\makebox(0,\value{z})[r]{${#1}$}}%
+\put(\value{x},-\value{z}){\makebox(0,\value{z})[l]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% north-north-east arrow
+\newcommand{\nnear}{\NNEAR{}{}}%
+
+% north-north-east arrow with upper name [1]
+\newcommand{\Nnear}[1]{\NNEAR{#1}{}}%
+
+% north-north-east arrow with lower name [1]
+\newcommand{\nneaR}[1]{\NNEAR{}{#1}}%
+
+% \SSWAR{f}{g} draws a south-south-west arrow with names f, g
+\newcommand{\SSWAR}[2]%
+{\raisebox{-1pt}[0pt][0pt]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(0,0)%
+\put(3300,6600){\vector(-1,-2){6600}}%
+\truex{100}\truez{600}%
+\put(-\value{x},\value{x}){\makebox(0,\value{z})[r]{${#1}$}}%
+\put(\value{x},-\value{z}){\makebox(0,\value{z})[l]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% south-south-west arrow
+\newcommand{\sswar}{\SSWAR{}{}}%
+
+% south-south-west arrow with upper name [1]
+\newcommand{\Sswar}[1]{\SSWAR{#1}{}}%
+
+% south-south-west arrow with lower name [1]
+\newcommand{\sswaR}[1]{\SSWAR{}{#1}}%
+
+% \SSEAR{f}{g} draws a south-south-east arrow with names f, g
+\newcommand{\SSEAR}[2]%
+{\raisebox{-1pt}[0pt][0pt]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(0,0)%
+\put(-3300,6600){\vector(1,-2){6600}}%
+\truex{200}\truez{600}%
+\put(\value{x},\value{x}){\makebox(0,\value{z})[l]{${#1}$}}%
+\put(-\value{x},-\value{z}){\makebox(0,\value{z})[r]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% south-south-east arrow
+\newcommand{\ssear}{\SSEAR{}{}}%
+
+% south-south-east arrow with upper name [1]
+\newcommand{\Ssear}[1]{\SSEAR{#1}{}}%
+
+% south-south-east arrow with lower name [1]
+\newcommand{\sseaR}[1]{\SSEAR{}{#1}}%
+
+% \NNWAR{f}{g} draws a north-north-west arrow with names f, g
+\newcommand{\NNWAR}[2]%
+{\raisebox{-1pt}[0pt][0pt]{\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){\begin{picture}(0,0)%
+\put(3300,-6600){\vector(-1,2){6600}}%
+\truex{200}\truez{600}%
+\put(\value{x},\value{x}){\makebox(0,\value{z})[l]{${#1}$}}%
+\put(-\value{x},-\value{z}){\makebox(0,\value{z})[r]{${#2}$}}%
+\end{picture}}}\end{picture}}}%
+
+% north-north-west arrow
+\newcommand{\nnwar}{\NNWAR{}{}}%
+
+% north-north-west arrow with upper name [1]
+\newcommand{\Nnwar}[1]{\NNWAR{#1}{}}%
+
+% north-north-west arrow with lower name [1]
+\newcommand{\nnwaR}[1]{\NNWAR{}{#1}}%
+
+
+
+
+
+% HORIZONTAL CURVED ARROWS
+
+% The following commands produce horizontal curved arrows
+% positioned in a box of width 0pt and height 0pt.
+
+% North\East curved arrow with name [1] and length [2]x100 units
+\newcommand{\Necurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(0,\value{x}){\oval(#200,\value{y})[t]}%
+\put(0,\value{x}){\makebox(0,0){\begin{picture}(#200,0)%
+\put(#200,0){\vector(0,-1){\value{z}}}%
+\put(0,0){\line(0,-1){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(0,\value{x}){\makebox(0,0)[b]{${#1}$}}%
+\end{picture}}%
+
+% North\East curved arrow of length [1]x100 units
+\newcommand{\necurve}[1]{\Necurve{}{#1}}%
+
+% North\West curved arrow with name [1] and length [2]x100 units
+\newcommand{\Nwcurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(0,\value{x}){\oval(#200,\value{y})[t]}%
+\put(0,\value{x}){\makebox(0,0){\begin{picture}(#200,0)%
+\put(#200,0){\line(0,-1){\value{z}}}%
+\put(0,0){\vector(0,-1){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(0,\value{x}){\makebox(0,0)[b]{${#1}$}}%
+\end{picture}}%
+
+% North\West curved arrow of length [1]x100 units
+\newcommand{\nwcurve}[1]{\Nwcurve{}{#1}}%
+
+% South\East curved arrow with name [1] and length [2]x100 units
+\newcommand{\Securve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(0,-\value{x}){\oval(#200,\value{y})[b]}%
+\put(0,-\value{x}){\makebox(0,0){\begin{picture}(#200,0)%
+\put(#200,0){\vector(0,1){\value{z}}}%
+\put(0,0){\line(0,1){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(0,-\value{x}){\makebox(0,0)[t]{${#1}$}}%
+\end{picture}}%
+
+% South\East curved arrow of length [1]x100 units
+\newcommand{\securve}[1]{\Securve{}{#1}}%
+
+% South\West curved arrow with name [1] and length [2]x100 units
+\newcommand{\Swcurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(0,-\value{x}){\oval(#200,\value{y})[b]}%
+\put(0,-\value{x}){\makebox(0,0){\begin{picture}(#200,0)%
+\put(#200,0){\line(0,1){\value{z}}}%
+\put(0,0){\vector(0,1){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(0,-\value{x}){\makebox(0,0)[t]{${#1}$}}%
+\end{picture}}%
+
+% South\West curved arrow of length [1]x100 units
+\newcommand{\swcurve}[1]{\Swcurve{}{#1}}%
+
+
+
+
+
+
+% VERTICAL CURVED ARROWS
+
+% The following commands produce vertical curved arrows
+% positioned in a box of width 0pt and height 0pt
+
+% East\South curved arrow with name [1] and length [2]x100 units
+\newcommand{\Escurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1400}\truey{2000}\truez{200}%
+\put(\value{x},0){\oval(\value{y},#200)[r]}%
+\put(\value{x},0){\makebox(0,0){\begin{picture}(0,#200)%
+\put(0,0){\vector(-1,0){\value{z}}}%
+\put(0,#200){\line(-1,0){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(\value{x},0){\makebox(0,0)[l]{${#1}$}}%
+\end{picture}}%
+
+% East\South curved arrow of length [1]x100 units
+\newcommand{\escurve}[1]{\Escurve{}{#1}}%
+
+% East\North curved arrow with name [1] and length [2]x100 units
+\newcommand{\Encurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1400}\truey{2000}\truez{200}%
+\put(\value{x},0){\oval(\value{y},#200)[r]}%
+\put(\value{x},0){\makebox(0,0){\begin{picture}(0,#200)%
+\put(0,0){\line(-1,0){\value{z}}}%
+\put(0,#200){\vector(-1,0){\value{z}}}\end{picture}}}%
+\truex{2500}%
+\put(\value{x},0){\makebox(0,0)[l]{${#1}$}}%
+\end{picture}}%
+
+% East\North curved arrow of length [1]x100 units
+\newcommand{\encurve}[1]{\Encurve{}{#1}}%
+
+% West\South curved arrow with name [1] and length [2]x100 units
+\newcommand{\Wscurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(-\value{x},0){\oval(\value{y},#200)[l]}%
+\put(-\value{x},0){\makebox(0,0){\begin{picture}(0,#200)%
+\put(0,0){\vector(1,0){\value{z}}}%
+\put(0,#200){\line(1,0){\value{z}}}\end{picture}}}%
+\truex{2400}%
+\put(-\value{x},0){\makebox(0,0)[r]{${#1}$}}%
+\end{picture}}%
+
+% West\South curved arrow of length [1]x100 units
+\newcommand{\wscurve}[1]{\Wscurve{}{#1}}%
+
+% West\North curved arrow with name [1] and length [2]x100 units
+\newcommand{\Wncurve}[2]%
+{\begin{picture}(0,0)%
+\truex{1300}\truey{2000}\truez{200}%
+\put(-\value{x},0){\oval(\value{y},#200)[l]}%
+\put(-\value{x},0){\makebox(0,0){\begin{picture}(0,#200)%
+\put(0,0){\line(1,0){\value{z}}}%
+\put(0,#200){\vector(1,0){\value{z}}}\end{picture}}}%
+\truex{2400}%
+\put(-\value{x},0){\makebox(0,0)[r]{${#1}$}}%
+\end{picture}}%
+
+% West\North curved arrow of length [1]x100 units
+\newcommand{\wncurve}[1]{\Wncurve{}{#1}}%
+
+
+
+
+% FREE SLOPE ARROWS
+
+% The following arrows have formal dimensions (0,0)
+
+% arrow with name [1] at position [2,3],
+% origin [4,5], slope [6,7] and horizontal extent [8]x100 units,
+\newcommand{\Freear}[8]{\begin{picture}(0,0)%
+\put(#400,#500){\vector(#6,#7){#800}}%
+\truex{#200}\truey{#300}%
+\put(\value{x},\value{y}){$#1$}\end{picture}}%
+
+% arrow with origin [1,2], slope [3,4] and horizontal length [5]x100 units
+\newcommand{\freear}[5]{\Freear{}{0}{0}{#1}{#2}{#3}{#4}{#5}}%
+
+
+
+% INITIALIZATION
+
+\newcount\SCALE%
+
+\newcount\NUMBER%
+
+\newcount\LINE%
+
+\newcount\COLUMN%
+
+\newcount\WIDTH%
+
+\newcount\SOURCE%
+
+\newcount\ARROW%
+
+\newcount\TARGET%
+
+\newcount\ARROWLENGTH%
+
+\newcount\NUMBEROFDOTS%
+
+\newcounter{x}%
+
+\newcounter{y}%
+
+\newcounter{z}%
+
+\newcounter{horizontal}%
+
+\newcounter{vertical}%
+
+\newskip\itemlength%
+
+\newskip\firstitem%
+
+\newskip\seconditem%
+
+\newcommand{\printarrow}{}%
+
+
+
+
+
+% MACROS FOR DESIGNING DIAGRAMS
+
+
+% \truex{n} divides nx100 by the scaling factor and puts the result
+% in counter x
+\newcommand{\truex}[1]{%
+\NUMBER=#1%
+\multiply\NUMBER by 100%
+\divide\NUMBER by \SCALE%
+\setcounter{x}{\NUMBER}}%
+
+% \truey{n} divides nx100 by the scaling factor and puts the result
+% in counter y
+\newcommand{\truey}[1]{%
+\NUMBER=#1%
+\multiply\NUMBER by 100%
+\divide\NUMBER by \SCALE%
+\setcounter{y}{\NUMBER}}%
+
+% \truez{n} divides nx100 by the scaling factor and puts the result
+% in counter z
+\newcommand{\truez}[1]{%
+\NUMBER=#1%
+\multiply\NUMBER by 100%
+\divide\NUMBER by \SCALE%
+\setcounter{z}{\NUMBER}}%
+
+
+% \changecounters computes the values of the various parameters required
+% to design an arrow with adjusted length.
+\newcommand{\changecounters}[1]{%
+\SOURCE=\ARROW%
+\ARROW=\TARGET%
+\settowidth{\itemlength}{#1}%
+\ifdim \itemlength > 2800\unitlength%
+\addtolength{\itemlength}{-2800\unitlength}%
+\TARGET=\itemlength%
+\divide\TARGET by 1310%
+\multiply\TARGET by 100%
+\divide\TARGET by \SCALE%
+\else%
+\TARGET=0%
+\fi%
+\ARROWLENGTH=5000%
+\advance\ARROWLENGTH by -\SOURCE%
+\advance\ARROWLENGTH by -\TARGET%
+\advance\SOURCE by -\TARGET}%
+
+% \initialize initializes the counters required to produce the diagram
+% and defines the formal dimensions of the diagram to be (0,0).
+\newcommand{\initialize}[1]{%
+\LINE=0%
+\COLUMN=0%
+\WIDTH=0%
+\ARROW=0%
+\TARGET=0%
+\changecounters{#1}%
+\renewcommand{\printarrow}{#1}%
+\begin{center}%
+\vspace{10pt}%
+\begin{picture}(0,0)}%
+
+% \DIAG starts the construction of an unscaled diagram
+\newcommand{\DIAG}[1]{%
+\SCALE=100%
+\setlength{\unitlength}{655sp}%
+\initialize{\mbox{$#1$}}}%
+
+% \DIAGV{n} starts the construction of a diagram scaled by a factor
+% n percent, computes the scaled unit length and the unscaling factor.
+\newcommand{\DIAGV}[2]{%
+\SCALE=#1%
+\setlength{\unitlength}{655sp}%
+\multiply\unitlength by \SCALE%
+\divide\unitlength by 100%
+\initialize{\mbox{$#2$}}}%
+
+% \n introduces the next item of the diagram, computes its parameters
+% and prints the previous item.
+\newcommand{\n}[1]{%
+\changecounters{\mbox{$#1$}}%
+\put(\COLUMN,\LINE){\makebox(0,0){\printarrow}}%
+\thinlines%
+\renewcommand{\printarrow}{\mbox{$#1$}}%
+\advance\COLUMN by 4000}%
+
+% \nn prints the  last item of a line and starts a new line.
+\newcommand{\nn}[1]{%
+\put(\COLUMN,\LINE){\makebox(0,0){\printarrow}}%
+\thinlines%
+\ifnum \WIDTH < \COLUMN%
+\WIDTH=\COLUMN%
+\else%
+\fi%
+\advance\LINE by -4000%
+\COLUMN=0%
+\ARROW=0%
+\TARGET=0%
+\changecounters{\mbox{$#1$}}%
+\renewcommand{\printarrow}{\mbox{$#1$}}}%
+
+% \conclude prints the last item of the diagram and sets the
+% dimensions of the diagram;
+\newcommand{\conclude}{%
+\put(\COLUMN,\LINE){\makebox(0,0){\printarrow}}%
+\thinlines%
+\ifnum \WIDTH < \COLUMN%
+\WIDTH=\COLUMN%
+\else%
+\fi%
+\setcounter{horizontal}{\WIDTH}%
+\setcounter{vertical}{-\LINE}%
+\end{picture}}%
+
+% \diag prints the last item of the diagram and takes care of the spacing
+\newcommand{\diag}{%
+\conclude%
+\raisebox{0pt}[0pt][\value{vertical}\unitlength]{}%
+\hspace*{\value{horizontal}\unitlength}%
+\vspace{10pt}%
+\end{center}%
+\setlength{\unitlength}{1pt}}%
+
+% \diagv{t}{l}{b} prints the last item of the diagram and
+% adds a t points extra space at the top of the diagram
+% adds a l points extra space at the left of the diagram
+% adds a b points extra space at the bottom of the diagram
+\newcommand{\diagv}[3]{%
+\conclude%
+\NUMBER=#1%
+\rule{0pt}{\NUMBER pt}%
+\hspace*{-#2pt}%
+\raisebox{0pt}[0pt][\value{vertical}\unitlength]{}%
+\hspace*{\value{horizontal}\unitlength}%6
+\NUMBER=#3%
+\advance\NUMBER by 10%
+\vspace*{\NUMBER pt}%
+\end{center}%
+\setlength{\unitlength}{1pt}}%
+
+% \N normalizes the height of a vertex
+\newcommand{\N}[1]%
+{\raisebox{0pt}[7pt][0pt]{$#1$}}%
+
+% \movename{f}{n}{m} moves the name f of the arrow n points right
+% and m points up.
+\newcommand{\movename}[3]{%
+\hspace{#2pt}%
+\raisebox{#3pt}[5pt][2pt]{\raisebox{#3pt}{$#1$}}%
+\hspace{-#2pt}}%
+
+% \movearrow{\...}{n}{m} moves arrow \... n points right
+% and m points up.
+\newcommand{\movearrow}[3]{%
+\makebox[0pt]{%
+\hspace{#2pt}\hspace{#2pt}%
+\raisebox{#3pt}[0pt][0pt]{\raisebox{#3pt}{$#1$}}}}%
+
+% \movevertex{A}{n}{m} moves vertex A n points right and m points up
+\newcommand{\movevertex}[3]{%
+\mbox{\hspace{#2pt}%
+\raisebox{#3pt}{\raisebox{#3pt}{$#1$}}%
+\hspace{-#2pt}}}%
+
+% \crosslength{P}{Q} computes the formal dimensions of the
+% superposition of pictures P and Q
+\newcommand{\crosslength}[2]{%
+\settowidth{\firstitem}{#1}%
+\settowidth{\seconditem}{#2}%
+\ifdim\firstitem < \seconditem%
+\itemlength=\seconditem%
+\else%
+\itemlength=\firstitem%
+\fi%
+\divide\itemlength by 2%
+\hspace{\itemlength}}%
+
+% \cross{P}{Q} superposes pictures P and Q
+\def\cross#1#2{%
+\crosslength{\mbox{$#1$}}{\mbox{$#2$}}%
+\begin{picture}(0,0)%
+\put(0,0){\makebox(0,0){$#1$}}%
+\thinlines%
+\put(0,0){\makebox(0,0){$#2$}}%
+\thinlines%
+\end{picture}%
+\crosslength{\mbox{$#1$}}{\mbox{$#2$}}}%
+
+% \B prints the next arrow in bold-face type
+\newcommand{\B}{\thicklines}
+
+
+% SPECIAL SYMBOLS
+
+% adjoint symbol
+\newcommand{\adj}{\begin{picture}(9,6)%
+\put(1,3){\line(1,0){6}}\put(7,0){\line(0,1){6}}%
+\end{picture}}%
+
+% commutative diagram symbol
+\newcommand{\com}{\begin{picture}(12,8)%
+\put(6,4){\oval(8,8)[b]}\put(6,4){\oval(8,8)[r]}%
+\put(6,8){\vector(-1,0){2}}\end{picture}}%
+
+% natural transformation with names [1],[2],[3]
+\newcommand{\Nat}[3]{\raisebox{-2pt}%
+{\begin{picture}(34,15)%
+\put(2,10){\vector(1,0){30}}%
+\put(2,0){\vector(1,0){30}}%
+\put(13,2){$\Downarrow$}%
+\put(20,3){$\scriptstyle{#2}$}%
+\put(4,11){$\scriptstyle{#1}$}%
+\put(4,1){$\scriptstyle{#3}$}%
+\end{picture}}}%
+
+% natural transformation
+\def\nat{\raisebox{-2pt}%
+{\begin{picture}(34,10)%
+\put(2,10){\vector(1,0){30}}%
+\put(2,0){\vector(1,0){30}}%
+\put(13,2){$\Downarrow$}%
+\end{picture}}}%
+
+% pair of natural transformations with names [1],[2],[3],[4],[5]
+\newcommand{\Binat}[5]{\raisebox{-7.5pt}%
+{\begin{picture}(34,25)%
+\put(2,20){\vector(1,0){30}}%
+\put(2,10){\vector(1,0){30}}%
+\put(2,0){\vector(1,0){30}}%
+\put(13,12){$\Downarrow$}%
+\put(13,2){$\Downarrow$}%
+\put(20,13){$\scriptstyle{#2}$}%
+\put(20,3){$\scriptstyle{#4}$}%
+\put(4,21){$\scriptstyle{#1}$}%
+\put(4,11){$\scriptstyle{#3}$}%
+\put(4,1){$\scriptstyle{#5}$}%
+\end{picture}}}%
+
+% pair of natural transformations
+\newcommand{\binat}{\raisebox{-7.5pt}%
+{\begin{picture}(34,20)%
+\put(2,20){\vector(1,0){30}}%
+\put(2,10){\vector(1,0){30}}%
+\put(2,0){\vector(1,0){30}}%
+\put(13,12){$\Downarrow$}%
+\put(13,2){$\Downarrow$}%
+\end{picture}}}%
+

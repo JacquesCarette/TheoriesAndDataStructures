@@ -21,7 +21,8 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
-import Relation.Binary.PropositionalEquality as P
+-- import Relation.Binary.PropositionalEquality as P
+open import TypeEquiv using (swap₊; swapswap₊)
 \end{code}
 %}}}
 
@@ -279,19 +280,60 @@ Some {a} {ℓa} {A} P xs = record
 Some useful stuff about union of setoids commuting
 \begin{code}
 open import RATH
-open import Data.Sum using ([_,_]; inj₁; inj₂)
+open import Relation.Binary.Sum using (⊎ʳ; _⊎-Rel_; _⊎-inverse_)
 
 ⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B) ≅ (B ⊎⊎ A)
-⊎-comm = record
-  { to = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
-  ; from = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
-  ; inverse-of = record { left-inverse-of = λ x → {!!} ; right-inverse-of = {!!} } }
+⊎-comm {A = A} {B} = record
+  { to = record { _⟨$⟩_ = swap₊ ; cong = cong-i≈j }
+  ; from = record { _⟨$⟩_ = swap₊ ; cong = cong′-i≈j }
+  ; inverse-of = record { left-inverse-of = swapswap ; right-inverse-of = swapswap′ } }
+  where
+    A₀ = Setoid.Carrier A
+    B₀ = Setoid.Carrier B
+    _≈₁_ = Setoid._≈_ A
+    _≈₂_ = Setoid._≈_ B
+    cong-i≈j : {i j : A₀ ⊎ B₀} → (_⊎-Rel_ _≈₁_ _≈₂_ i j) → _⊎-Rel_ _≈₂_ _≈₁_ (swap₊ i) (swap₊ j)
+    cong-i≈j (⊎ʳ.₁∼₂ ())
+    cong-i≈j (⊎ʳ.₁∼₁ x∼₁y) = ⊎ʳ.₂∼₂ x∼₁y
+    cong-i≈j (⊎ʳ.₂∼₂ x∼₂y) = ⊎ʳ.₁∼₁ x∼₂y
+    -- cong′ could really be "the same" as cong-i≈j, but that can be done later
+    cong′-i≈j : {i j : B₀ ⊎ A₀} → (_⊎-Rel_ _≈₂_ _≈₁_ i j) → _⊎-Rel_ _≈₁_ _≈₂_ (swap₊ i) (swap₊ j)
+    cong′-i≈j (⊎ʳ.₁∼₂ ())
+    cong′-i≈j (⊎ʳ.₁∼₁ x∼₁y) = ⊎ʳ.₂∼₂ x∼₁y
+    cong′-i≈j (⊎ʳ.₂∼₂ x∼₂y) = ⊎ʳ.₁∼₁ x∼₂y
+    swapswap : (z : A₀ ⊎ B₀) → _⊎-Rel_ _≈₁_ _≈₂_ (swap₊ (swap₊ z)) z
+    swapswap (inj₁ x) = ⊎ʳ.₁∼₁ (Setoid.refl A)
+    swapswap (inj₂ y) = ⊎ʳ.₂∼₂ (Setoid.refl B)
+    swapswap′ : (z : B₀ ⊎ A₀) → _⊎-Rel_ _≈₂_ _≈₁_ (swap₊ (swap₊ z)) z
+    swapswap′ (inj₁ x) = ⊎ʳ.₁∼₁ (Setoid.refl B)
+    swapswap′ (inj₂ y) = ⊎ʳ.₂∼₂ (Setoid.refl A)
+
+-- Same names as in Data.List.Any.Properties
+-- (this file sorely needs to be split into pieces!)
+++≅ : ∀ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} {xs ys : List (Setoid.Carrier A) } →
+      (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
+++≅ {P = P} {xs} {ys} = record
+  { to = record { _⟨$⟩_ = ⊎→++ ; cong = {!!} }
+  ; from = record { _⟨$⟩_ = {!!} ; cong = {!!} }
+  ; inverse-of = record
+    { left-inverse-of = {!!}
+    ; right-inverse-of = {!!} } }
+  where
+    ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
+    ⊎→ˡ (here p) = here p
+    ⊎→ˡ (there p) = there (⊎→ˡ p)
+    ⊎→ʳ : ∀ xs {ys} → Some₀ P ys → Some₀ P (xs ++ ys)
+    ⊎→ʳ []        p = p
+    ⊎→ʳ (x ∷ xs₁) p = there (⊎→ʳ xs₁ p)
+    ⊎→++ : (Some₀ P xs ⊎ Some₀ P ys) → Some₀ P (xs ++ ys)
+    ⊎→++ (inj₁ x) = ⊎→ˡ x
+    ⊎→++ (inj₂ y) = ⊎→ʳ xs y
 \end{code}
 
 %{{{ 
 \begin{code}
 abstract
--- RATH-Agda library import
+  -- RATH-Agda library import
   -- open import Relation.Binary.Setoid.Sum -- previously lived in RATH's Data.Sum.Setoid
 
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
@@ -304,11 +346,15 @@ abstract
         ; right-unit = λ {xs} → ≡→≈ₘ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≈ₘ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} → 
-          z ∈ xs ++ ys        ≅⟨ ≅-sym {!!} ⟩ -- ≅-sym Any-additive ⟩
+          z ∈ xs ++ ys        ≅⟨ ≅-sym ++≅ ⟩
           (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎-comm ⟩
-          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- Any-additive                     ⟩
+          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ ⟩
           z ∈ ys ++ xs  ∎
-        ; _⟨*⟩_ = λ x≈y z≈w → {!!} 
+        ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w {t} → 
+          t ∈ x ++ z          ≅⟨ ≅-sym ++≅ ⟩
+          (t ∈ x ⊎⊎ t ∈ z)    ≅⟨ x≈y ⊎-inverse z≈w ⟩
+          (t ∈ y ⊎⊎ t ∈ w)    ≅⟨ ++≅ ⟩
+          t ∈ y ++ w ∎ 
         }
     ; singleton = λ x → x ∷ []
     }
@@ -350,7 +396,7 @@ abstract
       ; cong = λ {xs} {ys} xs≈ys {y} → record { to = record { _⟨$⟩_ = λ x → {!!} ; cong = {!!} }
                                               ; from = {!!} ; inverse-of = {!!} }
       }
-    ; pres-e = record { to = record { _⟨$⟩_ = λ {()} ; cong = λ { P.refl → P.refl } }
+    ; pres-e = record { to = record { _⟨$⟩_ = λ {()} ; cong = λ { ≡.refl → ≡.refl } }
                       ; from = record { _⟨$⟩_ = λ {()} ; cong = {!!} }
                       ; inverse-of = {!!} }
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}

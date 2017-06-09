@@ -7,7 +7,7 @@
 
 % Following AContext-2
 
-\documentclass[11pt,twoside]{report}
+\documentclass[11pt,twoside]{article} % {report}
 \usepackage[letterpaper,hmargin=15mm,includehead,includefoot,top=8mm,bottom=8mm]{geometry}
 
 %%% NAME=TheoriesAndDataStructures
@@ -26,14 +26,15 @@
 \usepackage{graphicx}
 \usepackage{textgreek}
 
+
 %\usepackage[cjkbg5]{ucs}
 
+%include polycode.fmt
 %include agda.fmt
 %format {          = "\{\mskip0.5mu "
 %format }          = "\mskip0.5mu\}"
+%include ltx/RathAgdaChars.sty
 
-
-%% %include RathAgdaChars.sty
 %% \def\fcmp{\fatsemi}
 
 \renewcommand{\hscodestyle}{\small}
@@ -241,8 +242,20 @@
 \pagebreak
 %}}}
 
-%{{{ \chapter{Introduction}
-\chapter{Introduction}
+%{{{ \section{Introduction}
+\section{Introduction}
+
+We aim to show how common data-structures naturally arise from elementary mathematical theories.
+
+In particular, we answer the following questions:
+\begin{itemize}
+\item Why do lists pop-up more frequently to the average programmer than, say, their duals: bags?
+\item More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
+\item Why is it that dependent sums and products do not pop-up expicitly to the average programmer?
+  They arise naturally all the time as tuples and as classes.
+\item How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
+\item Is it that the average programmer works in the category of classical Sets, with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in |Sets?| ---where quotienting is not computably feasible, in |Sets| at-least; and why is that?
+\end{itemize}
 
 \unfinished
 
@@ -263,26 +276,26 @@ at the following URL:
 %}}}
 
 %include Forget.lagda
-%include EqualityCombinators.lagda
-%include DataProperties.lagda
-%include RATH.lagda
-%include Structures/Rel.lagda
-%include Structures/Pointed.lagda
-%include Structures/UnaryAlgebra.lagda
-%include Structures/Magma.lagda
-%include Structures/Semigroup.lagda
-%include Structures/Monoid.lagda
-%include Structures/CommMonoid.lagda
-%include Structures/CommMonoidTerm.lagda
-%include Structures/InvolutiveAlgebra.lagda
-%include Structures/AbelianGroup.lagda
+%% %include EqualityCombinators.lagda
+%% %include DataProperties.lagda
+%% %include RATH.lagda
+%% %include Structures/Rel.lagda
+%% %include Structures/Pointed.lagda
+%% %include Structures/UnaryAlgebra.lagda
+%% %include Structures/Magma.lagda
+%% %include Structures/Semigroup.lagda
+%% %include Structures/Monoid.lagda
+%% %include Structures/CommMonoid.lagda
+%% %include Structures/CommMonoidTerm.lagda
+%% %include Structures/InvolutiveAlgebra.lagda
+%% %include Structures/AbelianGroup.lagda
 
-%include Structures/DistinguishedSubset.lagda
-%include Structures/IndexedUnaryAlgebra.lagda
-%include Structures/Dependent.lagda
-%include Structures/Experiments/Dependent2.lagda
-%include Structures/Experiments/Dependent3.lagda
-%include Structures/TwoSorted.lagda
+%% %include Structures/DistinguishedSubset.lagda
+%% %include Structures/IndexedUnaryAlgebra.lagda
+%% %include Structures/Dependent.lagda
+%% %include Structures/Experiments/Dependent2.lagda
+%% %include Structures/Experiments/Dependent3.lagda
+%% %include Structures/TwoSorted.lagda
 
 %{{{ \chapter{Conclusion and Outlook}\chaptlabel{Conclusion}
 \chapter{Conclusion and Outlook}\chaptlabel{Conclusion}

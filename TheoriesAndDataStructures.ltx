@@ -159,6 +159,10 @@
 %\excludecomment{ModuleHead}
 %}}}
 
+
+\DeclareUnicodeCharacter{9723}{\ensuremath{\square}} % WHITE MEDIUM SQUARE
+
+
 \pagestyle{headings}
 \parskip4pt
 \parindent0pt
@@ -210,6 +214,21 @@
 
 \kern0.6ex
 \noindent
+
+
+We aim to show how common data-structures naturally arise from elementary mathematical theories.
+
+In particular, we answer the following questions:
+\begin{itemize}
+\item Why do lists pop-up more frequently to the average programmer than, say, their duals: bags?
+\item More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
+\item Why is it that dependent sums and products do not pop-up expicitly to the average programmer?
+  They arise naturally all the time as tuples and as classes.
+\item How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
+\item Is it that the average programmer works in the category of classical Sets, with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in |Sets?| ---where quotienting is not computably feasible, in |Sets| at-least; and why is that?
+\end{itemize}
+
+
 \unfinished
 %\end{abstract}
 %}}}
@@ -245,18 +264,6 @@
 %{{{ \section{Introduction}
 \section{Introduction}
 
-We aim to show how common data-structures naturally arise from elementary mathematical theories.
-
-In particular, we answer the following questions:
-\begin{itemize}
-\item Why do lists pop-up more frequently to the average programmer than, say, their duals: bags?
-\item More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
-\item Why is it that dependent sums and products do not pop-up expicitly to the average programmer?
-  They arise naturally all the time as tuples and as classes.
-\item How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
-\item Is it that the average programmer works in the category of classical Sets, with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in |Sets?| ---where quotienting is not computably feasible, in |Sets| at-least; and why is that?
-\end{itemize}
-
 \unfinished
 
 %{{{ \section{Overview}
@@ -276,7 +283,7 @@ at the following URL:
 %}}}
 
 %include Forget.lagda
-%% %include EqualityCombinators.lagda
+%include EqualityCombinators.lagda
 %% %include DataProperties.lagda
 %% %include RATH.lagda
 %% %include Structures/Rel.lagda

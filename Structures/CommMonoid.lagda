@@ -21,6 +21,8 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 
+open import TypeEquiv using (swap₊)
+
 import Relation.Binary.PropositionalEquality as P
 \end{code}
 %}}}
@@ -279,13 +281,69 @@ Some {a} {ℓa} {A} P xs = record
 Some useful stuff about union of setoids commuting
 \begin{code}
 open import RATH
-open import Data.Sum using ([_,_]; inj₁; inj₂)
+open import Relation.Binary.Sum
 
 ⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B) ≅ (B ⊎⊎ A)
-⊎-comm = record
-  { to = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
-  ; from = record { _⟨$⟩_ = [ inj₂ , inj₁ ] ; cong = λ i≈j → {!!} }
-  ; inverse-of = record { left-inverse-of = λ x → {!!} ; right-inverse-of = {!!} } }
+⊎-comm {A = A} {B} = record
+  { to = record { _⟨$⟩_ = swap₊ ; cong = cong-i≈j }
+  ; from = record { _⟨$⟩_ = swap₊ ; cong = cong′-i≈j }
+  ; inverse-of = record { left-inverse-of = swapswap ; right-inverse-of = swapswap′ } }
+  where
+    A₀ = Setoid.Carrier A
+    B₀ = Setoid.Carrier B
+    _≈₁_ = Setoid._≈_ A
+    _≈₂_ = Setoid._≈_ B
+    cong-i≈j : {i j : A₀ ⊎ B₀} → (_⊎-Rel_ _≈₁_ _≈₂_ i j) → _⊎-Rel_ _≈₂_ _≈₁_ (swap₊ i) (swap₊ j)
+    cong-i≈j (⊎ʳ.₁∼₂ ())
+    cong-i≈j (⊎ʳ.₁∼₁ x∼₁y) = ⊎ʳ.₂∼₂ x∼₁y
+    cong-i≈j (⊎ʳ.₂∼₂ x∼₂y) = ⊎ʳ.₁∼₁ x∼₂y
+    -- cong′ could really be "the same" as cong-i≈j, but that can be done later
+    cong′-i≈j : {i j : B₀ ⊎ A₀} → (_⊎-Rel_ _≈₂_ _≈₁_ i j) → _⊎-Rel_ _≈₁_ _≈₂_ (swap₊ i) (swap₊ j)
+    cong′-i≈j (⊎ʳ.₁∼₂ ())
+    cong′-i≈j (⊎ʳ.₁∼₁ x∼₁y) = ⊎ʳ.₂∼₂ x∼₁y
+    cong′-i≈j (⊎ʳ.₂∼₂ x∼₂y) = ⊎ʳ.₁∼₁ x∼₂y
+    swapswap : (z : A₀ ⊎ B₀) → _⊎-Rel_ _≈₁_ _≈₂_ (swap₊ (swap₊ z)) z
+    swapswap (inj₁ x) = ⊎ʳ.₁∼₁ (Setoid.refl A)
+    swapswap (inj₂ y) = ⊎ʳ.₂∼₂ (Setoid.refl B)
+    swapswap′ : (z : B₀ ⊎ A₀) → _⊎-Rel_ _≈₂_ _≈₁_ (swap₊ (swap₊ z)) z
+    swapswap′ (inj₁ x) = ⊎ʳ.₁∼₁ (Setoid.refl B)
+    swapswap′ (inj₂ y) = ⊎ʳ.₂∼₂ (Setoid.refl A)
+
+-- Same names as in Data.List.Any.Properties
+-- (this file sorely needs to be split into pieces!)
+++≅ : ∀ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} {xs ys : List (Setoid.Carrier A) } →
+      (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
+++≅ {P = P} {xs} {ys} = record
+  { to = record { _⟨$⟩_ = ⊎→++ ; cong = cong-to }
+  ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = cong-from xs }
+  ; inverse-of = record
+    { left-inverse-of = {!!}
+    ; right-inverse-of = {!!} } }
+  where
+    ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
+    ⊎→ˡ (here p) = here p
+    ⊎→ˡ (there p) = there (⊎→ˡ p)
+    ⊎→ʳ : ∀ xs {ys} → Some₀ P ys → Some₀ P (xs ++ ys)
+    ⊎→ʳ []        p = p
+    ⊎→ʳ (x ∷ xs₁) p = there (⊎→ʳ xs₁ p)
+    ⊎→++ : (Some₀ P xs ⊎ Some₀ P ys) → Some₀ P (xs ++ ys)
+    ⊎→++ (inj₁ x) = ⊎→ˡ x
+    ⊎→++ (inj₂ y) = ⊎→ʳ xs y
+    ++→⊎ : ∀ xs {ys} → Some₀ P (xs ++ ys) → Some₀ P xs ⊎ Some₀ P ys
+    ++→⊎ [] p = inj₂ p
+    ++→⊎ (x ∷ l) (here p) = inj₁ (here p)
+    ++→⊎ (x ∷ l) (there p) = (there ⊎₁ id₀) (++→⊎ l p)
+
+    -- all of the following may need to change
+    cong-to : {a b : Some₀ P xs ⊎ Some₀ P ys} → _⊎-Rel_ _≡_ _≡_ a b → ⊎→++ a ≡ ⊎→++ b
+    cong-to (⊎ʳ.₁∼₂ ())
+    cong-to (⊎ʳ.₁∼₁ ≡.refl) = ≡.refl
+    cong-to (⊎ʳ.₂∼₂ ≡.refl) = ≡.refl
+      -- induction hypothesis probably needs generalized
+    cong-from : ∀ ws {zs} {a b : Some₀ P (ws ++ zs)} → a ≡ b → _⊎-Rel_ _≡_ _≡_ (++→⊎ ws a) (++→⊎ ws b)
+    cong-from [] ≡.refl = ⊎ʳ.₂∼₂ ≡.refl
+    cong-from (x ∷ xs) {a = here  p} ≡.refl = ⊎ʳ.₁∼₁ ≡.refl
+    cong-from (x ∷ xs) {zs} {a = there p} ≡.refl = {!!}
 \end{code}
 
 %{{{ ListMS
@@ -347,12 +405,12 @@ abstract
   ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys {y} → record { to = record { _⟨$⟩_ = λ x → {!!} ; cong = {!!} }
-                                              ; from = {!!} ; inverse-of = {!!} }
+      ; cong = λ {xs} {ys} xs≈ys {y} → {!!}
       }
-    ; pres-e = record { to = record { _⟨$⟩_ = λ {()} ; cong = λ { P.refl → P.refl } }
-                      ; from = record { _⟨$⟩_ = λ {()} ; cong = {!!} }
-                      ; inverse-of = {!!} }
+    ; pres-e = λ {z} → {!
+        z ∈ []     ≅⟨ ? ⟩
+        z ∈ e ∎!}
+
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
      {-
            |Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩|

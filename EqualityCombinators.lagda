@@ -11,7 +11,7 @@ open import Level
 
 %{{{ Propositional Equality
 
-\subsection*{Propositional Equality}
+\subsection{Propositional Equality}
 
 We use one of Agda's features to qualify all propositional equality properties
 by ``|≡.|'' for the sake of clarity and to avoid name clashes with similar other
@@ -34,7 +34,7 @@ x≈y ⟨≡≡˘⟩ z≈y = x≈y ⟨≡≡⟩ ≡.sym z≈y
 %}}}
 
 %{{{ Function Extensionality
-\subsection*{Function Extensionality}
+\subsection{Function Extensionality}
 
 We bring into scope pointwise equality, |_≐_|, and provide a proof that it constitutes
 an equivalence relation ---where the source and target of the functions being compared
@@ -64,7 +64,7 @@ Note that the precedence of this last operator is lower than that of function co
 %}}}
 
 %{{{ Equiv
-\subsection*{Equiv}
+\subsection{Equiv}
 
 We form some combinators for HoTT like reasoning.
 
@@ -92,7 +92,7 @@ X ◻ = id≃
 %}}}
 
 %{{{ _≈˘⟨_⟩_
-\subsection*{Making |sym|metry calls less intrusive}
+\subsection{Making |sym|metry calls less intrusive}
 
 It is common that we want to use an equality within a calculation as a right-to-left rewrite rule which
 is accomplished by utilizing its symmetry property. We simplify this rendition, thereby saving an explicit

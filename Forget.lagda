@@ -1,6 +1,12 @@
-\section{Forget}
+\section{Obtaining Forgetful Functors}
 
-It is a common scenario where we have an algebraic structure with a single
+We aim to realise a ``toolkit'' for an data-structure by considering a free
+construction and proving it adjoint to a forgetful functor. Since the majority
+of our theories are built on the category |Set|, we begin my making a helper
+method to produce the forgetful functors from as little information as needed
+about the mathematical structure being studied.
+
+Indeed, it is a common scenario where we have an algebraic structure with a single
 carrier set and we are interested in the categories of such structures along
 with functions preserving the structure.
 

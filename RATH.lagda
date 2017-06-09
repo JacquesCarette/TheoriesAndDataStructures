@@ -1,4 +1,8 @@
-Stuff copied over from the RATH-Agda libraries.
+‼ This module is not being called from anywhere ‼  June 9, 2017.
+
+\section{RATH}
+
+This module is intended to house material copied over from the |RATH-Agda| libraries.
 
 \begin{code}
 module RATH where
@@ -12,19 +16,22 @@ open import Relation.Binary.Sum using (_⊎-setoid_)
 infix 1 _⊎⊎_
 _⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊍ i₂) (i₁ ⊍ i₂ ⊍ k₁ ⊍ k₂)
 A ⊎⊎ B = A ⊎-setoid B
+\end{code}
 
-{-
+\centerline{\textbf{** Everything that follows, in this section, is not live code ** }}
+
+Z-style notation for sums,
+\begin{spec}
 open import Data.Product public renaming (<_,_> to ⟨_,_⟩) hiding (Σ-syntax)
 Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊍ b)
 Σ∶• = Data.Product.Σ
 infix -666 Σ∶•
 syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
--}
-\end{code}
+\end{spec}
 
 From private repos of Wolfram Kahl,
 
-\begin{code} {-
+\begin{spec}
 import Relation.Binary.Indexed as IS
 
 record IsDepEquivalence {a b c ℓ} {I : Setoid a b} {A : Setoid.Carrier I → Set c}
@@ -68,8 +75,8 @@ record DepSetoid {a b : Level} (I : Setoid a b) c ℓ : Set (ℓsuc (c ⊍ a ⊍
     ; sym = λ x≈y → Setoid.sym I (proj₁ x≈y) , sym (proj₂ x≈y)
     ; trans = λ x≈y y≈z → Setoid.trans I (proj₁ x≈y) (proj₁ y≈z) , trans (proj₂ x≈y) (proj₂ y≈z)
     }
-  } where open Setoid I using () renaming (_≈_ to _≈ᵢ_) -}
-\end{code}
+  } where open Setoid I using () renaming (_≈_ to _≈ᵢ_)
+\end{spec}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

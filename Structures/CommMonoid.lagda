@@ -280,8 +280,10 @@ Some {a} {ℓa} {A} P xs = record
 
 Some useful stuff about union of setoids commuting
 \begin{code}
-open import RATH
-open import Relation.Binary.Sum
+open import Relation.Binary.Sum -- using (_⊎-setoid_)
+infix 1 _⊎⊎_
+_⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊍ i₂) (i₁ ⊍ i₂ ⊍ k₁ ⊍ k₂)
+A ⊎⊎ B = A ⊎-setoid B
 
 ⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B) ≅ (B ⊎⊎ A)
 ⊎-comm {A = A} {B} = record

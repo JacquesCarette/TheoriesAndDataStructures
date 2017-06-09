@@ -161,6 +161,8 @@
 
 
 \DeclareUnicodeCharacter{9723}{\ensuremath{\square}} % WHITE MEDIUM SQUARE
+\DeclareUnicodeCharacter{119920}{\ensuremath{\mathbf{I}}} % MATHEMATICAL BOLD ITALIC CAPITAL I
+
 
 
 \pagestyle{headings}
@@ -284,9 +286,12 @@ at the following URL:
 
 %include Forget.lagda
 %include EqualityCombinators.lagda
-%% %include DataProperties.lagda
-%% %include RATH.lagda
-%% %include Structures/Rel.lagda
+%include DataProperties.lagda
+%% %include RATH.lagda  %% ‼ This module is not being called from anywhere ‼  June 9, 2017.
+
+%include Structures/TwoSorted.lagda
+%include Structures/Rel.lagda
+
 %% %include Structures/Pointed.lagda
 %% %include Structures/UnaryAlgebra.lagda
 %% %include Structures/Magma.lagda
@@ -302,10 +307,10 @@ at the following URL:
 %% %include Structures/Dependent.lagda
 %% %include Structures/Experiments/Dependent2.lagda
 %% %include Structures/Experiments/Dependent3.lagda
-%% %include Structures/TwoSorted.lagda
 
-%{{{ \chapter{Conclusion and Outlook}\chaptlabel{Conclusion}
-\chapter{Conclusion and Outlook}\chaptlabel{Conclusion}
+
+%{{{ \section{Conclusion and Outlook}\chaptlabel{Conclusion}
+\section{Conclusion and Outlook}\chaptlabel{Conclusion}
  
 \unfinished
 %}}}

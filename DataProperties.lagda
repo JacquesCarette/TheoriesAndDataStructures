@@ -1,8 +1,11 @@
+\section{Properties of Sums and Products}
 
 This module is for those domain-ubiquitous properties that, disappointingly,
-I could not locate these in the standard library.
+we could not locate in the standard library. ---The standard library needs some
+sort of ``table of contents \emph{with} subsection'' to make it easier to know
+of what is available.
 
-Moreover, this module also re-exports (some of) the contents of |Data.Product| and |Data.Sum|.
+This module re-exports (some of) the contents of the standard library's |Data.Product| and |Data.Sum|.
 
 %{{{ Imports
 \begin{code}
@@ -16,11 +19,13 @@ open import Data.Product public using (_×_; proj₁; proj₂; Σ; _,_; swap ; u
 open import Data.Sum     public using (inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
 \end{code}
 
+\subsection*{Precedence Levels}
+
 The standard library assigns precedence level of 1 for the infix operator |_⊎_|,
 which is rather odd since infix operators ought to have higher precedence that equality
 combinators, yet the standard library assigns |_≈⟨_⟩_| a precedence level of 2.
 The usage of these two ---e.g. in |CommMonoid.lagda|--- causes an annoying number of
-parens and so we reassign the level of the infix operator to avoid such a situation.
+parentheses and so we reassign the level of the infix operator to avoid such a situation.
 
 \begin{code}
 infixr 3 _⊎_
@@ -29,7 +34,10 @@ _⊎_ = Data.Sum._⊎_
 
 %}}}
 
-Generalised Empty and Unit, to avoid a flurry of |lift|'s.
+%{{{ Generalised Bot and Top
+\subsection{Generalised Bot and Top}
+To avoid a flurry of |lift|'s, and for the sake of clarity, we define level-polymorphic
+empty and unit types.
 \begin{code}
 open import Level
 
@@ -41,14 +49,17 @@ data ⊥ {ℓ : Level} : Set ℓ where
 record ⊤ {ℓ : Level} : Set ℓ where
   constructor tt
 \end{code}
+%}}}
 
-\begin{code}
--- The diagonal natural transformation
-diag : {ℓ : Level} {A : Set ℓ} (a : A) → A × A
-diag a = a , a
-\end{code}
+%{{{ sums
+\subsection{Sums}
 
-%{{{ the ⊎ operation on functions is a functorial congruence
+   %{{{ the ⊎ operation on functions is a functorial congruence
+
+Just as |_⊎_| takes types to types, its ``map'' variant |_⊎₁_| takes
+functions to functions and is a functorial congruence:
+It preserves identity, distributes over composition, and preserves
+extenstional equality.
 
 \begin{code}
 ⊎-id : {a b : Level} {A : Set a} {B : Set b} → id ⊎₁ id ≐ id {A = A ⊎ B}
@@ -60,38 +71,39 @@ diag a = a , a
       → (f' ∘ f) ⊎₁ (g' ∘ g) ≐ (f' ⊎₁ g') ∘ (f ⊎₁ g) --- aka “the exchange rule for sums”
 ⊎-∘ = [ ≐-refl , ≐-refl ]
 
-⊎-cong : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
-         {f f' : A → C} {g g' : B → D}
+⊎-cong : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d} {f f' : A → C} {g g' : B → D}
        → f ≐ f' → g ≐ g' → f ⊎₁ g ≐ f' ⊎₁ g'
 ⊎-cong f≈f' g≈g' = [ ∘-≐-cong₂ inj₁ f≈f' , ∘-≐-cong₂ inj₂ g≈g' ]
 \end{code}
-
 %}}}
 
-%{{{ ∘-[,] : fusion property for casing
+   %{{{ ∘-[,] : fusion property for casing
+
+Composition post-distributes into casing,
 
 \begin{code}
-∘-[,] : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d}
-        {f : A → C} {g : B → C} {h : C → D}
-     → h ∘ [ f , g ] ≐ [ h ∘ f , h ∘ g ]
+∘-[,] : {a b c d : Level} {A : Set a} {B : Set b} {C : Set c} {D : Set d} {f : A → C} {g : B → C} {h : C → D}
+     → h ∘ [ f , g ] ≐ [ h ∘ f , h ∘ g ]   -- aka “fusion”
 ∘-[,] = [ ≐-refl , ≐-refl ]
 \end{code}
 
 %}}}
 
-%{{{ from⊎ : the dual to |diag|
+   %{{{ from⊎ : the dual to |diag|
 
-|diag| is a natural transformation |𝑰 ⟶̇ _²|, where's
-|from⊎| is it's dual, |2×_ ⟶̇ 𝑰|.
+It is common that a data-type constructor |D : Set → Set| allows us to extract
+elements of the underlying type and so we have a natural transfomation |D ⟶ 𝑰|,
+where |𝑰| is the identity functor.
+These kind of results will occur for our other simple data-strcutres as well.
+In particular, this is the case for |D A = 2× A = A ⊎ A|:
 
 \begin{code}
-from⊎ : ∀ {ℓ} {A : Set ℓ} → A ⊎ A → A
+from⊎ : {ℓ : Level} {A : Set ℓ} → A ⊎ A → A
 from⊎ = [ id , id ]
 
 -- |from⊎| is a natural transformation
 --
-from⊎-nat : {a b : Level} {A : Set a} {B : Set b}
-        {f : A → B} → f ∘ from⊎  ≐ from⊎ ∘ (f ⊎₁ f)
+from⊎-nat : {a b : Level} {A : Set a} {B : Set b}{f : A → B} → f ∘ from⊎  ≐ from⊎ ∘ (f ⊎₁ f)
 from⊎-nat = [ ≐-refl , ≐-refl ]
 
 -- |from⊎| is injective and so is pre-invertible,
@@ -99,6 +111,24 @@ from⊎-nat = [ ≐-refl , ≐-refl ]
 from⊎-preInverse : {a b : Level} {A : Set a} {B : Set b} → id ≐ from⊎ {A = A ⊎ B} ∘ (inj₁ ⊎₁ inj₂)
 from⊎-preInverse = [ ≐-refl , ≐-refl ]
 \end{code}
+
+\edinsert{MA}{A brief mention about co-monads?}
+
+%}}}
+
+%}}}
+
+%{{{ products: diag
+\subsection{Products}
+Dual to |from⊎|, a natural transformation |2×_ ⟶ 𝑰|, is |diag|, the transformation |𝑰 ⟶ _²|.
+
+\begin{code}
+diag : {ℓ : Level} {A : Set ℓ} (a : A) → A × A
+diag a = a , a
+\end{code}
+
+\edinsert{MA}{ A brief mention of Haskell's |const|, which is |diag| curried. Also something about |K| combinator? }
+
 %}}}
 
 % Quick Folding Instructions:

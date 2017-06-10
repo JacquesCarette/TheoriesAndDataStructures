@@ -1,14 +1,21 @@
+\section{Two Sorted Structures}
+
+So far we have been considering algebraic structures with only one underlying carrier set,
+however programmers are faced with a variety of different types at the same time, and the
+graph structure between them, and so we consider briefly consider two sorted structures
+by starting the simplest possible case: Two type and no required interaction whatsoever between them.
+
 %{{{ Imports
 \begin{code}
 module Structures.TwoSorted where
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Categories.Category using (Category)
-open import Categories.Functor using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-open import Function using (id ; _∘_ ; const)
-open import Function2 using (_$ᵢ)
+open import Categories.Category     using   (Category)
+open import Categories.Functor      using   (Functor)
+open import Categories.Adjunction   using   (Adjunction)
+open import Categories.Agda         using   (Sets)
+open import Function                using   (id ; _∘_ ; const)
+open import Function2               using   (_$ᵢ)
 
 open import Forget
 open import EqualityCombinators
@@ -17,8 +24,7 @@ open import DataProperties
 %}}}
 
 %{{{ TwoSorted ; Hom
-
-A Free TwoSorted container is a ???. Let's formalise it and find out.
+\subsection{Definitions}
 
 A |TwoSorted| type is just a pair of sets in the same universe
 ---in the future, we may consider those in different levels.
@@ -44,16 +50,16 @@ record Hom {ℓ} (Src Tgt : TwoSorted ℓ) : Set ℓ where
 
 open Hom
 \end{code}
-
 %}}}
 
 %{{{ TwoCat ; Forget
+\subsection{Category and Forgetful Functors}
 
-We are using pairs of object and pairs of morphisms which is known to form a category:
+We are using pairs of object and pairs of morphisms which are known to form a category:
 
 \begin{code}
-TwoCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-TwoCat ℓ = record
+Twos : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+Twos ℓ = record
   { Obj        =   TwoSorted ℓ
   ; _⇒_       =   Hom
   ; _≡_       =   λ F G → one F ≐ one G   ×  two F ≐ two G
@@ -71,11 +77,14 @@ TwoCat ℓ = record
   }
 \end{code}
 
+The naming |Twos| is to be consistent with the category theory library we are using, which
+names the category of sets and functions by |Sets|.
+
 We can forget about the first sort or the second to arrive at our starting
 category and so we have two forgetful functors.
 
 \begin{code}
-Forget : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Forget : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Forget ℓ = record
   { F₀             =   TwoSorted.One
   ; F₁             =   Hom.one
@@ -85,7 +94,7 @@ Forget ℓ = record
   }
 
 
-Forget² : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Forget² : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Forget² ℓ = record
   { F₀             =   TwoSorted.Two
   ; F₁             =   Hom.two
@@ -97,12 +106,17 @@ Forget² ℓ = record
 %}}}
 
 %{{{ Free and CoFree
+\subsection{Free and CoFree}
 
 Given a type, we can pair it with the empty type or the singelton type
-and so we have a free and a co-free constructions. 
+and so we have a free and a co-free constructions.
+Intuitively, the first is free since the singelton type is the smallest
+type we can adjoin to obtain a |Twos| object, whereas |⊤| is the ``largest'' type
+we adjoin to obtain a |Twos| object. This is one way that the unit and empty types
+naturaly arise.
 
 \begin{code}
-Free : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Free : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Free ℓ = record
   { F₀             =   λ A → MkTwo A ⊥
   ; F₁             =   λ f → MkHom f id
@@ -111,7 +125,7 @@ Free ℓ = record
   ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
   }
 
-Cofree : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Cofree ℓ = record
   { F₀             =   λ A → MkTwo A ⊤
   ; F₁             =   λ f → MkHom f id
@@ -122,7 +136,7 @@ Cofree ℓ = record
 
 -- Dually,  ( also shorter due to eta reduction )
 
-Free² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Free² : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Free² ℓ = record
   { F₀             =   MkTwo ⊥
   ; F₁             =   MkHom id
@@ -131,7 +145,7 @@ Free² ℓ = record
   ; F-resp-≡      =   λ f≈g → ≐-refl , λ x → f≈g {x}
   }
 
-Cofree² : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Cofree² : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Cofree² ℓ = record
   { F₀             =   MkTwo ⊤
   ; F₁             =   MkHom id
@@ -143,6 +157,7 @@ Cofree² ℓ = record
 %}}}
 
 %{{{ Left and Right adjunctions
+\subsection{Adjunction Proofs}
 
 Now for the actual proofs that the |Free| and |Cofree| functors
 are deserving of their names.
@@ -203,13 +218,14 @@ Right² ℓ = record
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction
+\subsection{Merging is adjoint to duplication}
 
 The category of sets contains products and so |TwoSorted| algebras can be represented there
 and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
 
 \begin{code}
 -- The category of Sets has products and so the |TwoSorted| type can be reified there.
-Merge : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Merge : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Merge ℓ = record
   { F₀             =   λ S → One S ×  Two S
   ; F₁             =   λ F → one F ×₁ two F
@@ -219,7 +235,7 @@ Merge ℓ = record
   }
 
 -- Every set gives rise to its square as a |TwoSorted| type.
-Dup : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Dup : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Dup ℓ = record
   { F₀             =   λ A → MkTwo A A
   ; F₁             =   λ f → MkHom f f
@@ -243,12 +259,12 @@ Right₂ ℓ = record
 %}}}
 
 %{{{ Choice ; from⊎ ; Left₂ adjunction
-
+\subsection{Duplication also has a left adjoint}
 The category of sets admits sums and so an alternative is to represet a |TwoSorted|
 algebra as a sum, and moreover this is adjoint to the aforementioned duplication functor.
 
 \begin{code}
-Choice : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Choice : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Choice ℓ =   record
   { F₀             =   λ S → One S ⊎  Two S
   ; F₁             =   λ F → one F ⊎₁ two F

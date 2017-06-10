@@ -1,25 +1,33 @@
+\section{Binary Heterogeneous Relations ---\edcomm{MA}{What \emph{named} data structure do these correspond to in programming?}}
+
 We consider two sorted algebras endowed with a binary heterogeneous relation.
+An example of such a structure is a graph, or network, which has a sort for edges and a
+sort for nodes and an incidence relation.
 
 %{{{ Imports
 \begin{code}
 module Structures.Rel where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
-open import Categories.Category using (Category)
-open import Categories.Functor using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-open import Function using (id ; _∘_ ; const)
-open import Function2 using (_$ᵢ)
+open import Categories.Category     using   (Category)
+open import Categories.Functor      using   (Functor)
+open import Categories.Adjunction   using   (Adjunction)
+open import Categories.Agda         using   (Sets)
+open import Function                using   (id ; _∘_ ; const)
+open import Function2               using   (_$ᵢ)
 
 open import Forget
 open import EqualityCombinators
 open import DataProperties
-open import Structures.TwoSorted using (TwoSorted; TwoCat ; MkTwo) renaming (Hom to TwoHom ; MkHom to MkTwoHom)
+open import Structures.TwoSorted using (TwoSorted; Twos ; MkTwo) renaming (Hom to TwoHom ; MkHom to MkTwoHom)
 \end{code}
 %}}}
 
 %{{{ HetroRel ; Hom
+
+\subsection{Definitions}
+
+We define the structure involved, along with a notational convenience:
 
 \begin{code}
 record HetroRel ℓ ℓ′ : Set (lsuc (ℓ ⊍ ℓ′)) where
@@ -34,6 +42,8 @@ relOp = HetroRel.Rel
 syntax relOp A x y = x ⟨ A ⟩ y
 \end{code}
 
+Then define the strcture-preserving operations,
+
 \begin{code}
 record Hom {ℓ ℓ′} (Src Tgt : HetroRel ℓ ℓ′) : Set (ℓ ⊍ ℓ′) where
   constructor MkHom
@@ -47,11 +57,13 @@ open Hom
 
 %}}}
 
-%{{{ HRelCat
+\subsection{Category and Forgetful Functors}
+That these structures form a two-sorted algebraic category can easily be witnessed.
+%{{{ Rels
 
 \begin{code}
-HRelCat : (ℓ ℓ′ : Level) → Category (lsuc (ℓ ⊍ ℓ′)) (ℓ ⊍ ℓ′) ℓ
-HRelCat ℓ ℓ′ = record
+Rels : (ℓ ℓ′ : Level) → Category (lsuc (ℓ ⊍ ℓ′)) (ℓ ⊍ ℓ′) ℓ
+Rels ℓ ℓ′ = record
   { Obj        =   HetroRel ℓ ℓ′
   ; _⇒_       =   Hom
   ; _≡_       =   λ F G → one F ≐ one G   ×  two F ≐ two G
@@ -69,7 +81,6 @@ HRelCat ℓ ℓ′ = record
   }
 \end{code}
 %}}}
-
 %{{{ Forget¹ ; Forget² ; Forget³
 
 We can forget about the first sort or the second to arrive at our starting
@@ -77,7 +88,7 @@ category and so we have two forgetful functors. Moreover, we can simply
 forget about the relation to arrive at the two-sorted category :-)
 
 \begin{code}
-Forget¹ : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
+Forget¹ : (ℓ ℓ′ : Level) → Functor (Rels ℓ ℓ′) (Sets ℓ)
 Forget¹ ℓ ℓ′ = record
   { F₀             =   HetroRel.One
   ; F₁             =   Hom.one
@@ -86,7 +97,7 @@ Forget¹ ℓ ℓ′ = record
   ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₁G x }
   }
 
-Forget² : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (Sets ℓ)
+Forget² : (ℓ ℓ′ : Level) → Functor (Rels ℓ ℓ′) (Sets ℓ)
 Forget² ℓ ℓ′ = record
   { F₀             =   HetroRel.Two
   ; F₁             =   Hom.two
@@ -95,8 +106,8 @@ Forget² ℓ ℓ′ = record
   ; F-resp-≡      =   λ{ (F≈₁G , F≈₂G) {x} → F≈₂G x }
   }
 
--- Whence, HRelCat is a subcategory of TwoCat
-Forget³ : (ℓ ℓ′ : Level) → Functor (HRelCat ℓ ℓ′) (TwoCat ℓ)
+-- Whence, |Rels| is a subcategory of Twos
+Forget³ : (ℓ ℓ′ : Level) → Functor (Rels ℓ ℓ′) (Twos ℓ)
 Forget³ ℓ ℓ′ = record
   { F₀             =   λ S → MkTwo (One S) (Two S)
   ; F₁             =   λ F → MkTwoHom (one F) (two F)
@@ -108,6 +119,7 @@ Forget³ ℓ ℓ′ = record
 %}}}
 
 %{{{ Free and CoFree : 1,2,3 and 3′
+\subsection{Free and CoFree Functors}
 
 Given a (two)type, we can pair it with the empty type or the singleton type
 and so we have a free and a co-free constructions. Intuitively, the empty
@@ -117,8 +129,10 @@ which is the largest binary relation and so a cofree construction.
 
    %{{{ adjoints to forgetting the FIRST component of a HetroRel
 
+\subsubsection*{Candidate adjoints to forgetting the \emph{first} component of a |Rels|}
+
 \begin{code}
-Free¹ : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ′)
+Free¹ : (ℓ ℓ′ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ′)
 Free¹ ℓ ℓ′ = record
   { F₀             =   λ A → MkHRel A ⊥ (λ{ _ ()})
   ; F₁             =   λ f → MkHom f id (λ{ {y = ()} })
@@ -142,7 +156,7 @@ Left¹ ℓ ℓ′ = record
   ; zag = ≡.refl
   }
 
-CoFree¹ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree¹ : (ℓ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ)
 CoFree¹ ℓ = record
   { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → A)
   ; F₁             =   λ f → MkHom f id f 
@@ -165,7 +179,7 @@ Right¹ ℓ  = record
 
 -- Another cofree functor:
 
-CoFree¹′ : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree¹′ : (ℓ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ)
 CoFree¹′ ℓ = record
   { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → ⊤)
   ; F₁             =   λ f → MkHom f id id
@@ -198,8 +212,10 @@ and going to a singleton set.
 %}}}
 
    %{{{ adjoints to forgetting the SECOND component of a HetroRel
+\subsubsection*{Candidate adjoints to forgetting the \emph{second} component of a |Rels|}
+
 \begin{code}
-Free² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+Free² : (ℓ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ)
 Free² ℓ = record
   { F₀             =   λ A → MkHRel ⊥ A (λ ())
   ; F₁             =   λ f → MkHom id f (λ {})
@@ -223,7 +239,7 @@ Left² ℓ = record
   ; zag = ≡.refl
   }
 
-CoFree² : (ℓ : Level) → Functor (Sets ℓ) (HRelCat ℓ ℓ)
+CoFree² : (ℓ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ)
 CoFree² ℓ = record
   { F₀             =   λ A → MkHRel ⊤ A (λ _ _ → ⊤)
   ; F₁             =   λ f → MkHom id f id
@@ -251,8 +267,9 @@ Right² ℓ = record
 %}}}
 
    %{{{ adjoints to forgetting the THIRD component of a HetroRel
+\subsubsection*{Candidate adjoints to forgetting the \emph{third} component of a |Rels|}   
 \begin{code}
-Free³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+Free³ : (ℓ : Level) → Functor (Twos ℓ) (Rels ℓ ℓ)
 Free³ ℓ = record
   { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊥)
   ; F₁             =   λ f → MkHom (one f) (two f) id
@@ -278,7 +295,7 @@ Left³ ℓ = record
 \end{code}
 
 \begin{code}
-CoFree³ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+CoFree³ : (ℓ : Level) → Functor (Twos ℓ) (Rels ℓ ℓ)
 CoFree³ ℓ = record
   { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → ⊤)
   ; F₁             =   λ f → MkHom (one f) (two f) id
@@ -302,7 +319,7 @@ Right³ ℓ = record
   ; zag = ≐-refl , ≐-refl
   }
 
-CoFree³′ : (ℓ : Level) → Functor (TwoCat ℓ) (HRelCat ℓ ℓ)
+CoFree³′ : (ℓ : Level) → Functor (Twos ℓ) (Rels ℓ ℓ)
 CoFree³′ ℓ = record
   { F₀             =   λ S → MkHRel (One S) (Two S) (λ _ _ → One S × Two S)
   ; F₁             =   λ F → MkHom (one F) (two F) (one F ×₁ two F)
@@ -337,6 +354,13 @@ and going to a singleton set.
 
 %}}}
 
+\subsection{\unfinished}
+
+It remains to port over results such as Merge, Dup, and Choice from Twos to Rels.
+
+Also to consider: sets with an equivalence relation;
+whence propositional equality.
+
 %{{{ Merge and Dup functors ; Right₂ adjunction
 
 The category of sets contains products and so |TwoSorted| algebras can be represented there
@@ -344,7 +368,7 @@ and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| alg
 
 \begin{spec}
 -- The category of Sets has products and so the |TwoSorted| type can be reified there.
-Merge : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Merge : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Merge ℓ = record
   { F₀             =   λ S → One S ×  Two S
   ; F₁             =   λ F → one F ×₁ two F
@@ -354,7 +378,7 @@ Merge ℓ = record
   }
 
 -- Every set gives rise to its square as a |TwoSorted| type.
-Dup : (ℓ : Level) → Functor (Sets ℓ) (TwoCat ℓ)
+Dup : (ℓ : Level) → Functor (Sets ℓ) (Twos ℓ)
 Dup ℓ = record
   { F₀             =   λ A → MkTwo A A
   ; F₁             =   λ f → MkHom f f
@@ -383,7 +407,7 @@ The category of sets admits sums and so an alternative is to represet a |TwoSort
 algebra as a sum, and moreover this is adjoint to the aforementioned duplication functor.
 
 \begin{spec}
-Choice : (ℓ : Level) → Functor (TwoCat ℓ) (Sets ℓ)
+Choice : (ℓ : Level) → Functor (Twos ℓ) (Sets ℓ)
 Choice ℓ =   record
   { F₀             =   λ S → One S ⊎  Two S
   ; F₁             =   λ F → one F ⊎₁ two F

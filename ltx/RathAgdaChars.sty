@@ -1,0 +1,590 @@
+\usepackage{MnSymbol}
+\usepackage{stmaryrd}
+\usepackage{wasysym} % \pointer
+\usepackage{graphicx}
+
+\let\mathscr=\mathcal % trying to avoid too many math alphabets
+% http://www.tex.ac.uk/cgi-bin/texfaq2html?label=scriptfonts
+% http://tex.stackexchange.com/questions/43133/different-definitions-of-the-font-mathscr
+%\usepackage[mathscr]{euscript}
+%\usepackage{mathrsfs}
+%\DeclareMathAlphabet{\mathscr}{OT1}{pzc}{m}{it}
+
+
+\usepackage{textgreek}
+%\SetOption[T4]{fontenc}
+% \usepackage{fc} % would provide T4 encoding needed for \textFhook (U+0191)?
+%\usepackage{pifont} % /usr/share/texmf-dist/doc/latex/psnfss/psnfss2e.pdf
+
+% A lot of useful characters are listed in:
+% http://en.wikibooks.org/wiki/Unicode/Character_reference/1D000-1DFFF
+% (Visible 2011-10-31:  Complete sets of special letters,
+%                       including Fraktur, double-stroke, and Greek)
+
+% See also: http://www.w3.org/TR/2010/REC-xml-entity-names-20100401/
+%           http://www.w3.org/Math/
+
+% \textFhook is called by ucs.sty --- where defined? \unfinished
+\DeclareUnicodeCharacter{401}{{\j\kern-0.258em F}} % U+0191
+% LATIN CAPITAL LETTER F WITH HOOK
+\DeclareUnicodeCharacter{428}{{\kern0.25em\j\kern-0.46em T}} % U+01A2
+% LATIN CAPITAL LETTER T WITH HOOK
+
+% From RelNotation.sty:
+\def\RELconversesymb{\smallsmile}
+\def\RELconv#1{#1^{%
+     \mkern-1mu{}{\raise0.3ex\hbox{\tiny$\RELconversesymb$}}}%
+    \kern-0.1em{}}
+%%% WK comment: The closing group is a hack that allows
+%%%             other superscripts to appear BESIDES
+%%%             the one just generated ---
+%%%             apparently mathematicians like this.
+
+\DeclareUnicodeCharacter{728}{\ensuremath{\RELconv{}}} % U+02D8
+% BREVE
+%% RATH-Agda: converse
+
+\DeclareUnicodeCharacter{738}{\ensuremath{^{\mathrm{s}}}} % U+02E2
+% MODIFIER LETTER SMALL S
+\DeclareUnicodeCharacter{739}{\ensuremath{{}^{*}}} % U+02E3:
+% MODIFIER LETTER SMALL X
+\DeclareUnicodeCharacter{7506}{\ensuremath{{}^{o}}}  % U+1D52:
+% MODIFIER LETTER SMALL O
+\DeclareUnicodeCharacter{7510}{\ensuremath{{}^{p}}}  % U+1D56:
+% MODIFIER LETTER SMALL P
+
+\DeclareUnicodeCharacter{785}{\ensuremath{{}^{\smallfrown}}} % U+0311
+% COMBINING INVERTED BREVE
+% NON-SPACING INVERTED BREVE
+% Abused in Categoric.OCC.DirectPower for Λ̑-isMapping
+
+
+\DeclareUnicodeCharacter{915}{\ensuremath{\Gamma}} % \textGamma
+\DeclareUnicodeCharacter{926}{\ensuremath{\Xi}}
+%\DeclareUnicodeCharacter{928}{\ensuremath{\Pi}}
+%\DeclareUnicodeCharacter{931}{\ensuremath{\Sigma}} % U+03A3 \Sigma
+\DeclareUnicodeCharacter{934}{\ensuremath{\Phi}}
+\DeclareUnicodeCharacter{936}{\ensuremath{\Psi}}
+\DeclareUnicodeCharacter{937}{\ensuremath{\Omega}}
+
+\DeclareUnicodeCharacter{945}{\ensuremath{\alpha}} % \textalpha
+\DeclareUnicodeCharacter{946}{\ensuremath{\beta}} % \textbeta
+\DeclareUnicodeCharacter{947}{\ensuremath{\gamma}} % \textgamma
+\DeclareUnicodeCharacter{948}{\ensuremath{\delta}} % \textdelta
+\DeclareUnicodeCharacter{953}{\ensuremath{\iota}}
+\DeclareUnicodeCharacter{954}{\ensuremath{\kappa}}
+\DeclareUnicodeCharacter{955}{\ensuremath{\lambda}} % U+03BB \lambda
+\DeclareUnicodeCharacter{960}{\ensuremath{\pi}}
+\DeclareUnicodeCharacter{961}{\ensuremath{\rho}}
+\DeclareUnicodeCharacter{966}{\ensuremath{\phi}} % \textphi
+\DeclareUnicodeCharacter{968}{\ensuremath{\psi}} % \textpsi
+
+
+\DeclareUnicodeCharacter{7506}{\ensuremath{{}^{\mathsf{o}}}} % U+1D52
+% MODIFIER LETTER SMALL O
+\DeclareUnicodeCharacter{7510}{\ensuremath{{}^{\mathsf{p}}}} % U+1D56
+% MODIFIER LETTER SMALL P
+\DeclareUnicodeCharacter{7515}{\ensuremath{{}^{\mathsf{v}}}}  % U+1D5B ᵛ
+% MODIFIER LETTER SMALL V
+
+\DeclareUnicodeCharacter{8337}{\ensuremath{{}_{e}}}  % U+2091
+% LATIN SUBSCRIPT SMALL LETTER E
+\DeclareUnicodeCharacter{7522}{\ensuremath{{}_{i}}}  % U+1D62
+% LATIN SUBSCRIPT SMALL LETTER I
+\DeclareUnicodeCharacter{11388}{\ensuremath{{}_{j}}} % U+2C7C
+% LATIN SUBSCRIPT SMALL LETTER J
+\DeclareUnicodeCharacter{8347}{\ensuremath{{}_{s}}}  % U+209B
+% LATIN SUBSCRIPT SMALL LETTER S
+
+
+
+\DeclareUnicodeCharacter{8227}{\ensuremath{\filledmedtriangleright}} % U+2023 \unfinished
+% TRIANGULAR BULLET
+
+
+\DeclareUnicodeCharacter{8252}{\ensuremath{{!\kern-0.2em!}}} % U+203C:
+% DOUBLE EXCLAMATION MARK
+\DeclareUnicodeCharacter{8263}{\ensuremath{{?\kern-0.2em?}}} % U+2047:
+% DOUBLE QUESTION MARK
+
+\DeclareUnicodeCharacter{8271}{\ensuremath{\fcmp}} % 8271 = U+204F: % REVERSED SEMICOLON
+
+
+\DeclareUnicodeCharacter{10814}{\ensuremath{\fcmp}} % U+2A3E  \fcmp
+
+
+
+\DeclareUnicodeCharacter{8336}{\ensuremath{_{a}}} % U+2090
+% LATIN SUBSCRIPT SMALL LETTER A
+\DeclareUnicodeCharacter{8337}{\ensuremath{_{e}}} % U+2091
+% LATIN SUBSCRIPT SMALL LETTER E
+\DeclareUnicodeCharacter{8341}{\ensuremath{_{h}}} % U+2095
+% LATIN SUBSCRIPT SMALL LETTER H
+\DeclareUnicodeCharacter{8344}{\ensuremath{_{m}}} % U+2098
+% LATIN SUBSCRIPT SMALL LETTER M
+\DeclareUnicodeCharacter{8345}{\ensuremath{_{n}}} % U+2099
+% LATIN SUBSCRIPT SMALL LETTER N
+\DeclareUnicodeCharacter{8346}{\ensuremath{_{p}}} % U+209A
+% LATIN SUBSCRIPT SMALL LETTER P
+
+
+\DeclareUnicodeCharacter{8499}{\ensuremath{\mathcal{M}}} % U+2133 curly M
+% SCRIPT CAPITAL M
+\DeclareUnicodeCharacter{8475}{\ensuremath{\mathcal{R}}} % U+211B curly R
+% SCRIPT CAPITAL R
+
+\DeclareUnicodeCharacter{8495}{{\it{e}}} % U+212F curly e
+%\DeclareUnicodeCharacter{8467}{{\it{l}}} % U+2113 curly l
+%\DeclareUnicodeCharacter{8467}{{\fontseries{mb}\itshape\fontfamily{pzc}\selectfont{l\kern0.5ex}}} % U+2113 curly l
+
+\DeclareUnicodeCharacter{8594}{\ensuremath{\rightarrow}} % U+2192 \to
+
+\DeclareUnicodeCharacter{8599}{\ensuremath{\nearrow}} % U+2197
+% NORTH EAST ARROW
+% UPPER RIGHT ARROW
+
+
+\DeclareUnicodeCharacter{8608}{\ensuremath{\twoheadrightarrow}} % U+21A0
+% RIGHTWARDS TWO HEADED ARROW
+% RIGHT TWO HEADED ARROW
+
+\DeclareUnicodeCharacter{8611}{\ensuremath{\rightarrowtail}} % U+21A3
+% RIGHTWARDS ARROW WITH TAIL
+% RIGHT ARROW WITH TAIL
+
+
+
+\DeclareUnicodeCharacter{8614}{\ensuremath{\mapsto}} %U+21A6:
+% RIGHTWARDS ARROW FROM BAR
+% RIGHT ARROW FROM BAR
+
+\DeclareUnicodeCharacter{8618}{\ensuremath{\lhookrightarrow}} %U+21AA:
+%RIGHTWARDS ARROW WITH HOOK
+%RIGHT ARROW WITH HOOK
+
+%\DeclareUnicodeCharacter{8634}{\ensuremath{\rcirclearrowup}} % U+21BA
+\DeclareUnicodeCharacter{8634}{\ensuremath{\rcurvearrowne}} % U+21BA
+% ANTICLOCKWISE OPEN CIRCLE ARROW
+
+\DeclareUnicodeCharacter{8636}{\ensuremath{\leftharpoonup}} % U+21BC:
+% LEFTWARDS HARPOON WITH BARB UPWARDS
+% LEFT HARPOON WITH BARB UP
+
+\DeclareUnicodeCharacter{8638}{\ensuremath{\upharpoonright}} % U+21BE:
+% UPWARDS HARPOON WITH BARB RIGHTWARDS
+% UP HARPOON WITH BARB RIGHT
+
+\DeclareUnicodeCharacter{8639}{\ensuremath{\upharpoonleft}} % U+21BF:
+% UPWARDS HARPOON WITH BARB LEFTWARDS
+% UP HARPOON WITH BARB LEFT
+
+\DeclareUnicodeCharacter{8642}{\ensuremath{\downharpoonleft}} % U+21C2:
+% DOWNWARDS HARPOON WITH BARB RIGHTWARDS
+% DOWN HARPOON WITH BARB RIGHT
+
+\DeclareUnicodeCharacter{8643}{\ensuremath{\downharpoonleft}} % U+21C3:
+% DOWNWARDS HARPOON WITH BARB LEFTWARDS
+% DOWN HARPOON WITH BARB LEFT
+
+\DeclareUnicodeCharacter{8649}{\ensuremath{\rightrightarrows}} % U+21C9 RIGHTWARDS PAIRED ARROWS
+
+\DeclareUnicodeCharacter{8656}{\ensuremath{\Leftarrow}} % U+21D0:
+% LEFTWARDS DOUBLE ARROW
+% LEFT DOUBLE ARROW
+
+
+\DeclareUnicodeCharacter{8663}{\ensuremath{\mathbf{\Nearrow}}} % U+21D7:
+% NORTH EAST DOUBLE ARROW
+% UPPER RIGHT DOUBLE ARROW
+
+
+\DeclareUnicodeCharacter{8669}{\ensuremath{\rightlsquigarrow}} % U+21DD:
+% RIGHTWARDS SQUIGGLE ARROW
+% RIGHT SQUIGGLE ARROW
+
+
+\DeclareUnicodeCharacter{8674}{\ensuremath{\dashedrightarrow}} %U+21E2
+% RIGHTWARDS DASHED ARROW
+% RIGHT DASHED ARROW
+
+\DeclareUnicodeCharacter{8680}{\hbox{\pointer}} % 8680 U+21E8
+% RIGHTWARDS WHITE ARROW
+% WHITE RIGHT ARROW
+%                   relative semicomplement?
+% Function setoid in Function.Equality
+% \pointer is from wasysym
+
+\DeclareUnicodeCharacter{8702}{\ensuremath{{-}\kern-0.24em\smalltriangleright}} % U+21FE
+% RIGHTWARDS OPEN-HEADED ARROW
+
+\DeclareUnicodeCharacter{8760}{\ensuremath{\dotminus}} % U+2238
+% DOT MINUS
+
+\DeclareUnicodeCharacter{8762}{\ensuremath{{{:}\kern-0.3em{-}\kern-0.3em{:}}}} % U+223A ∺
+% GEOMETRIC PROPORTION
+
+\DeclareUnicodeCharacter{8763}{\ensuremath{{\kern0.3em{:}\kern-0.3em{\sim}}}} % U+223B ∻
+% HOMOTHETIC
+
+\DeclareUnicodeCharacter{8767}{\hbox{\large$\sim$}} % U+223F:
+% SINE WAVE
+
+%\DeclareUnicodeCharacter{8776}{\ensuremath{\mathbf{=}}} % U+2248 \~~
+
+\DeclareUnicodeCharacter{8788}{\ensuremath{:=}}  % U+2254:
+% COLON EQUALS
+
+%\DeclareUnicodeCharacter{8845}{\ensuremath{\kern-0.2em\scriptscriptstyle{\sqcup}\kern-0.2em}}
+%\DeclareUnicodeCharacter{8845}{\ensuremath{\kern-0.1em\scriptstyle{\doublecup}\kern-0.1em}}
+\DeclareUnicodeCharacter{8845}{\ensuremath{\kern-0.06em\scriptstyle{\cupdot}\kern-0.06em}} % U+228D
+% \u. MULTISET MULTIPLICATION
+
+%\DeclareUnicodeCharacter{8849}{\ensuremath{\sqsubseteq}} % U+2291
+%\sqsubseteq
+
+\DeclareUnicodeCharacter{8869}{\ensuremath{\bot}} % U+22A5 \bot
+
+%\DeclareUnicodeCharacter{8862}{\ensuremath{\boxplus}} % U+229E
+% SQUARED PLUS
+
+
+\DeclareUnicodeCharacter{8889}{\ensuremath{\fivedots}} % U+22B9 % \unfinished
+% HERMITIAN CONJUGATE MATRIX
+
+\DeclareUnicodeCharacter{8988}{\ensuremath{\ulcorner}} % U+231C:
+% TOP LEFT CORNER
+
+\DeclareUnicodeCharacter{8989}{\ensuremath{\urcorner}} % U+231D:
+% TOP RIGHT CORNER
+
+
+
+\DeclareUnicodeCharacter{9001}{\ensuremath{\langle}} % U+2329:
+% LEFT-POINTING ANGLE BRACKET
+% BRA
+
+\DeclareUnicodeCharacter{9002}{\ensuremath{\rangle}} % U+232A:
+% RIGHT-POINTING ANGLE BRACKET
+% KET
+
+\DeclareUnicodeCharacter{9023}{\ensuremath{\RELlresR}} % U+233F:
+% APL FUNCTIONAL SYMBOL SLASH BAR
+\DeclareUnicodeCharacter{9024}{\ensuremath{\RELrresR}} % U+2340:
+% APL FUNCTIONAL SYMBOL BACKSLASH BAR
+
+
+\DeclareUnicodeCharacter{9070}{\ensuremath{\underline{;}}} % U+236E
+% APL FUNCTIONAL SYMBOL SEMICOLON UNDERBAR
+
+
+%\DeclareUnicodeCharacter{9312}{\ensuremath{\triv}} % U+2460:
+% CIRCLED DIGIT ONE
+\DeclareUnicodeCharacter{9312}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.7em\raise0.1ex\hbox{\small 1}\kern0.3em}} % U+2460
+% CIRCLED DIGIT ONE
+
+
+\DeclareUnicodeCharacter{9374}{\hbox{\small(c)}} % U+249E:
+% PARENTHESIZED LATIN SMALL LETTER C
+
+\DeclareUnicodeCharacter{9375}{\hbox{\small(d)}} % U+249F:
+% PARENTHESIZED LATIN SMALL LETTER D
+
+\DeclareUnicodeCharacter{9384}{\hbox{\small(m)}} % U+24A8:
+% PARENTHESIZED LATIN SMALL LETTER M
+
+\DeclareUnicodeCharacter{9386}{\hbox{\small(o)}} % U+24AA:
+% PARENTHESIZED LATIN SMALL LETTER O
+
+\DeclareUnicodeCharacter{9390}{\hbox{\small(s)}} % U+24AE:
+% PARENTHESIZED LATIN SMALL LETTER S
+
+
+\DeclareUnicodeCharacter{9398}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.8em\raise0.1ex\hbox{\small A}\kern0.3em}}  % U+24B6
+% CIRCLED LATIN CAPITAL LETTER A
+
+\DeclareUnicodeCharacter{9406}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.6em\raise0.1ex\hbox{\small I}\kern0.4em}}  % U+24BE
+% CIRCLED LATIN CAPITAL LETTER I
+
+\DeclareUnicodeCharacter{9417}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.8em\raise0.1ex\hbox{\small T}\kern0.3em}} % U+24C9
+% CIRCLED LATIN CAPITAL LETTER T
+
+
+\DeclareUnicodeCharacter{9432}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.6em\raise0.1ex\hbox{\small i}\kern0.3em}} % U+24D8
+% CIRCLED LATIN SMALL LETTER I
+\DeclareUnicodeCharacter{9443}{\hbox{%
+\raise0.3ex\hbox{$\bigcirc$}\kern-0.7em\raise0.1ex\hbox{\small t}\kern0.3em}} % U+24D8
+% CIRCLED LATIN SMALL LETTER t
+
+
+\DeclareUnicodeCharacter{9585}{\ensuremath{\RELlres}} % U+2571:
+% BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO LOWER LEFT
+% FORMS LIGHT DIAGONAL UPPER RIGHT TO LOWER LEFT
+\DeclareUnicodeCharacter{9586}{\ensuremath{\RELrres}} % U+2572:
+% BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO LOWER RIGHT
+% FORMS LIGHT DIAGONAL UPPER LEFT TO LOWER RIGHT
+
+
+\DeclareUnicodeCharacter{9645}{\ensuremath{{\scriptstyle{\sqsubset}\kern-0.5em{\sqsupset}}}} % U+25AD:
+% WHITE RECTANGLE
+
+\DeclareUnicodeCharacter{9646}{\kern-0.1em{\vrule height1.57ex depth0.43ex width0.12em}\kern-0.1em} % U+25AE:
+% BLACK VERTICAL RECTANGLE
+\DeclareUnicodeCharacter{9647}{\ensuremath{{[}\kern-0.2em{]}}} % U+25AF:
+% WHITE VERTICAL RECTANGLE
+
+\DeclareUnicodeCharacter{9658}{\ensuremath{\filledtriangleright}} % U+25BA:
+% BLACK RIGHT-POINTING POINTER
+% BLACK RIGHT POINTING POINTER
+
+\DeclareUnicodeCharacter{9668}{\ensuremath{\filledtriangleleft}} % U+25C4:
+% BLACK LEFT-POINTING POINTER
+% BLACK LEFT POINTING POINTER
+
+
+\DeclareUnicodeCharacter{9671}{\ensuremath{\smalllozenge}} % U+25C7:
+% WHITE DIAMOND
+
+
+\DeclareUnicodeCharacter{9703}{\ensuremath{\filledsquare\kern-0.2em\smallsquare}} % U+25E7
+% SQUARE WITH LEFT HALF BLACK
+
+\DeclareUnicodeCharacter{9704}{\ensuremath{\smallsquare\kern-0.2em\filledsquare}} % U+25E8
+% SQUARE WITH RIGHT HALF BLACK
+
+
+\DeclareUnicodeCharacter{10003}{\ensuremath{\checkmark}} % U+2713:
+% CHECK MARK
+
+
+\DeclareUnicodeCharacter{10098}{\ensuremath{\lgroup}} %  U+2772 % \unfinished
+% LIGHT LEFT TORTOISE SHELL BRACKET ORNAMENT
+\DeclareUnicodeCharacter{10099}{\ensuremath{\rgroup}} %  U+2773 % \unfinished
+% LIGHT RIGHT TORTOISE SHELL BRACKET ORNAMENT
+
+\DeclareUnicodeCharacter{10138}{\ensuremath{\mathbf{\nearrow}}} % U+279A:
+% HEAVY NORTH EAST ARROW
+% HEAVY UPPER RIGHT ARROW
+
+
+\DeclareUnicodeCharacter{10150}{\ensuremath{\rhookrightarrow}} % U+27A6
+% HEAVY BLACK CURVED UPWARDS AND RIGHTWARDS ARROW
+% HEAVY BLACK CURVED UP AND RIGHT ARROW
+
+
+% Very ad-hoc choice:
+\DeclareUnicodeCharacter{10153}{\ensuremath{\rightslice}} % U+27A9
+% RIGHT-SHADED WHITE RIGHTWARDS ARROW
+% RIGHT-SHADED WHITE RIGHT ARROW
+
+\DeclareUnicodeCharacter{10169}{\ensuremath{\nearrowtail}} % U+27B9
+% HEAVY BLACK-FEATHERED NORTH EAST ARROW
+% HEAVY BLACK-FEATHERED UPPER RIGHT ARROW
+
+
+\DeclareUnicodeCharacter{10218}{\ensuremath{\llangle}} % U+27EA:
+% MATHEMATICAL LEFT DOUBLE ANGLE BRACKET
+
+\DeclareUnicodeCharacter{10219}{\ensuremath{\rrangle}} % U+27EB:
+% MATHEMATICAL RIGHT DOUBLE ANGLE BRACKET
+
+% DepFunctor._⟰_
+\DeclareUnicodeCharacter{10224}{\ensuremath{\mathbf{\diamondplus}}} % U+27F0:
+% UPWARDS QUADRUPLE ARROW
+
+\DeclareUnicodeCharacter{10230}{\ensuremath{\longrightarrow}} % U+27F6:
+% LONG RIGHTWARDS ARROW
+\DeclareUnicodeCharacter{10231}{\ensuremath{\longleftrightarrow}} % U+27F7:
+% LONG LEFT RIGHT ARROW
+
+\DeclareUnicodeCharacter{10232}{\ensuremath{\Longleftarrow}} % U+27F8:
+% LONG LEFTWARDS DOUBLE ARROW
+\DeclareUnicodeCharacter{10753}{\ensuremath{\bigoplus}} % U+2A01:
+% N-ARY CIRCLED PLUS OPERATOR
+
+\DeclareUnicodeCharacter{11025}{\rotatebox{90}{\ensuremath{\Rsh}}} % U+2B11
+% LEFTWARDS ARROW WITH TIP UPWARDS
+
+\DeclareUnicodeCharacter{12106}{\hbox{\underline{\it{Tree}}}} % U+2F4A
+% KANGXI RADICAL TREE
+
+\DeclareUnicodeCharacter{12298}{\ensuremath{\llangle}} % U+300A:
+% LEFT DOUBLE ANGLE BRACKET
+% OPENING DOUBLE ANGLE BRACKET
+
+\DeclareUnicodeCharacter{12299}{\ensuremath{\rrangle}} % U+300B:
+% RIGHT DOUBLE ANGLE BRACKET
+% CLOSING DOUBLE ANGLE BRACKET
+
+
+
+%%% Data.Sum.Setoid:
+
+\DeclareUnicodeCharacter{12308}{\ensuremath{\displaystyle(\kern-0.23em\mid}} % 〔 U+3014:
+% LEFT TORTOISE SHELL BRACKET
+% OPENING TORTOISE SHELL BRACKET
+
+\DeclareUnicodeCharacter{12309}{\ensuremath{\displaystyle\mid\kern-0.23em)}} % 〕 U+3015:
+%RIGHT TORTOISE SHELL BRACKET
+%CLOSING TORTOISE SHELL BRACKET
+
+
+\DeclareUnicodeCharacter{8600}{\ensuremath{\searrow}} %U+2198:
+% SOUTH EAST ARROW
+% LOWER RIGHT ARROW
+
+% SOUTH WEST ARROW
+% LOWER LEFT ARROW
+\DeclareUnicodeCharacter{8601}{\ensuremath{\swarrow}} %U+2199:
+% SOUTH WEST ARROW
+% LOWER LEFT ARROW
+
+
+\DeclareUnicodeCharacter{8648}{\ensuremath{\upuparrows}} % U+21C8
+%UPWARDS PAIRED ARROWS
+%UP PAIRED ARROWS
+
+\DeclareUnicodeCharacter{8650}{\ensuremath{\downdownarrows}} % U+21CA
+% DOWNWARDS PAIRED ARROWS
+% DOWN PAIRED ARROWS
+
+
+% \DeclareUnicodeCharacter{}{\ensuremath{\}} %
+
+
+\DeclareUnicodeCharacter{8779}{\ensuremath{\triplesim}} % U+224B:
+% TRIPLE TILDE
+
+\DeclareUnicodeCharacter{8902}{\ensuremath{^*}}
+% ⋆ (8902, #o21306, #x22c6)
+% STAR OPERATOR
+
+
+\DeclareUnicodeCharacter{9587}{\ensuremath{\RELsyqInfixOP}} % U+2573:
+% BOX DRAWINGS LIGHT DIAGONAL CROSS
+% FORMS LIGHT DIAGONAL CROSS
+\DeclareUnicodeCharacter{9659}{\ensuremath{\rhd}} % U+25BB:
+% WHITE RIGHT-POINTING POINTER --- should be long? \triangleright}
+
+
+\DeclareUnicodeCharacter{9657}{\ensuremath{\smalltriangleright}} % U+25B9:
+% WHITE RIGHT-POINTING SMALL TRIANGLE
+\DeclareUnicodeCharacter{9661}{\ensuremath{\medtriangledown}} % U+25BD:
+% WHITE DOWN-POINTING TRIANGLE?
+\DeclareUnicodeCharacter{9665}{\ensuremath{\medtriangleleft}} % U+25C1:
+% WHITE LEFT-POINTING TRIANGLE
+\DeclareUnicodeCharacter{9667}{\ensuremath{\smalltriangleleft}} % U+25C3:
+% WHITE LEFT-POINTING SMALL TRIANGLE
+
+%\DeclareUnicodeCharacter{9669}{\ensuremath{\triangleright}} % U+25C5:
+% WHITE LONG RIGHT-POINTING TRIANGLE
+
+% The following two are use together for ``functor fork'':
+\DeclareUnicodeCharacter{9700}{\ensuremath{\blacktriangledown}} % U+25E4:
+% BLACK UPPER LEFT TRIANGLE
+\DeclareUnicodeCharacter{9701}{} % U+25E45
+% BLACK UPPER RIGHT TRIANGLE
+
+
+\DeclareUnicodeCharacter{9733}{\ensuremath{\star}} % U+2605:
+% BLACK STAR
+
+
+\DeclareUnicodeCharacter{65281}{\ensuremath{\mathbf{!}}} % U+FF01
+% FULLWIDTH EXCLAMATION MARK
+
+\DeclareUnicodeCharacter{10754}{\ensuremath{\bigotimes}} % U+2A02
+% N-ARY CIRCLED TIMES OPERATOR
+
+\DeclareUnicodeCharacter{10797}{\rotatebox[origin = c]{270}{$\uplus$}}
+% Unicode character 10797 = U+2A2D:
+% PLUS SIGN IN LEFT HALF CIRCLE
+
+\DeclareUnicodeCharacter{10798}{\rotatebox[origin = c]{90}{$\uplus$}}
+% Unicode character 10798 = U+2A2E:
+% PLUS SIGN IN RIGHT HALF CIRCLE
+% ⨮
+
+\DeclareUnicodeCharacter{10809}{\hbox{$\largetriangleup\kern-0.8em+\kern0.2em$}}
+% U+2A39
+% PLUS SIGN IN TRIANGLE
+
+\DeclareUnicodeCharacter{12297}{\ensuremath{\large\rangle}} % U+3009:
+% RIGHT ANGLE BRACKET
+% CLOSING ANGLE BRACKET
+
+\DeclareUnicodeCharacter{65339}{\ensuremath{\large[}} % U+FF3B:
+% FULLWIDTH LEFT SQUARE BRACKET
+% FULLWIDTH OPENING SQUARE BRACKET
+
+
+
+
+\DeclareUnicodeCharacter{119914}{\ensuremath{\mathbf{C}}}
+% U+1D46A    MATHEMATICAL BOLD ITALIC CAPITAL C
+
+\DeclareUnicodeCharacter{119923}{\ensuremath{\mathbf{L}}}
+% U+1D473    MATHEMATICAL BOLD ITALIC CAPITAL L
+
+\DeclareUnicodeCharacter{119964}{\ensuremath{\mathcal{A}}}
+% U+1D49C    MATHEMATICAL SCRIPT CAPITAL A
+
+\DeclareUnicodeCharacter{119966}{\ensuremath{\mathcal{C}}}
+% U+1D49E    MATHEMATICAL SCRIPT CAPITAL C
+
+\DeclareUnicodeCharacter{119977}{\ensuremath{\mathcal{N}}}
+% U+1D49E    MATHEMATICAL SCRIPT CAPITAL N
+
+\DeclareUnicodeCharacter{119982}{\ensuremath{\mathcal{S}}}
+% U+1D4AE    MATHEMATICAL SCRIPT CAPITAL S
+
+% How to get lower case script letters?
+\DeclareUnicodeCharacter{119995}{\ensuremath{\mathbf{f}}}
+% U+1D4BB    MATHEMATICAL SCRIPT SMALL F
+
+\DeclareUnicodeCharacter{119999}{\ensuremath{\mathbf{j}}}
+% U+1D4BF    MATHEMATICAL SCRIPT SMALL J
+
+\DeclareUnicodeCharacter{120018}{\ensuremath{\mathcal{C}}}
+% U+1D4D2    MATHEMATICAL BOLD SCRIPT CAPITAL C
+
+\DeclareUnicodeCharacter{120019}{\ensuremath{\mathcal{D}}}
+% U+1D4D3    MATHEMATICAL BOLD SCRIPT CAPITAL D
+
+\DeclareUnicodeCharacter{120020}{\ensuremath{\mathcal{E}}}
+% U+1D4D4    MATHEMATICAL BOLD SCRIPT CAPITAL E
+
+\DeclareUnicodeCharacter{120021}{\ensuremath{\mathcal{F}}}
+% U+1D4D5    MATHEMATICAL BOLD SCRIPT CAPITAL F
+
+\DeclareUnicodeCharacter{120022}{\ensuremath{\mathcal{G}}}
+% U+1D4D6    MATHEMATICAL BOLD SCRIPT CAPITAL G
+
+\DeclareUnicodeCharacter{120023}{\ensuremath{\mathcal{H}}}
+% U+1D4D7    MATHEMATICAL BOLD SCRIPT CAPITAL H
+
+\DeclareUnicodeCharacter{120024}{\ensuremath{\mathcal{I}}}
+% U+1D4D8    MATHEMATICAL BOLD SCRIPT CAPITAL I
+
+\DeclareUnicodeCharacter{120025}{\ensuremath{\mathcal{J}}}
+% U+1D4D9    MATHEMATICAL BOLD SCRIPT CAPITAL J
+
+\DeclareUnicodeCharacter{120026}{\ensuremath{\mathcal{K}}}
+% U+1D4DA    MATHEMATICAL BOLD SCRIPT CAPITAL K
+
+\DeclareUnicodeCharacter{120027}{\ensuremath{\mathcal{L}}}
+% U+1D4DB    MATHEMATICAL BOLD SCRIPT CAPITAL L
+
+\DeclareUnicodeCharacter{120028}{\ensuremath{\mathcal{M}}}
+% U+1D4DC    MATHEMATICAL BOLD SCRIPT CAPITAL M
+
+\DeclareUnicodeCharacter{120033}{\ensuremath{\mathcal{R}}}
+% U+1D4E1    MATHEMATICAL BOLD SCRIPT CAPITAL R
+
+%\DeclareUnicodeCharacter{120793}{\ensuremath{\mathcal{1}}}
+\DeclareUnicodeCharacter{120793}{\ensuremath{\triv}} % U+1D7D9:
+% MATHEMATICAL DOUBLE-STRUCK DIGIT ONE

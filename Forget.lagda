@@ -1,33 +1,47 @@
+\section{Obtaining Forgetful Functors}
+
+We aim to realise a ``toolkit'' for an data-structure by considering a free
+construction and proving it adjoint to a forgetful functor. Since the majority
+of our theories are built on the category |Set|, we begin my making a helper
+method to produce the forgetful functors from as little information as needed
+about the mathematical structure being studied.
+
+Indeed, it is a common scenario where we have an algebraic structure with a single
+carrier set and we are interested in the categories of such structures along
+with functions preserving the structure.
+
+We consider a type of ``algebras'' built upon the category of |Sets|
+---in that, every algebra has a carrier set and every homomorphism is a
+essentially a function between carrier sets where the composition of
+homomorphisms is essentially the composition of functions and the identity
+homomorphism is essentially the identity function.
+
+Such algebras consistute a category from which we obtain a method to
 Forgetful functor builder for single-sorted algebras to Sets.
 
 %{{{ Imports
+\begin{ModuleHead}
 \begin{code}
 module Forget where
 
 open import Level
 
-open import Categories.Category using (Category)
-open import Categories.Functor  using (Functor)
-open import Categories.Agda     using (Sets)
+open import Categories.Category  using  (Category)
+open import Categories.Functor   using  (Functor)
+open import Categories.Agda      using  (Sets)
 
 open import Function2
-
 open import Function
 open import EqualityCombinators
 \end{code}
+\end{ModuleHead}
+\edcomm{MA}{For one reason or another, the module head is not making the imports smaller.}
 %}}}
 
 %{{{ OneSortedAlg
 
-It is a common scenario where we have an algebraic structure with a single
-carrier set and we are interested in the categories of such structures along
-with functions preserving the structure.
-
-We consider a type of ``algebras'' built upon the category of Sets
----in that, every algebra has a carrier set and every homomorphism is a
-essentially a function between carrier sets where the composition of
-homomorphisms is essentially the composition of functions and the identity
-homomorphism is essentially the identity function.
+A |OneSortedAlg| is essentially the details of a forgetful functor from
+some category to |Sets|,
 
 \begin{code}
 record OneSortedAlg (ℓ : Level) : Set (suc (suc ℓ)) where
@@ -41,9 +55,6 @@ record OneSortedAlg (ℓ : Level) : Set (suc (suc ℓ)) where
     Id           :   {A : Alg} → Hom A A
     .Id-is-id    :   {A : Alg} → mor (Id {A}) ≐ id
 \end{code}
-
-WK: This is really just a presheaf, and we may want to mention that viz realising as a forgetful functor to |Sets|:
-See |mkForgetful|.
 %}}}
 
 %{{{ oneSortedCategory
@@ -62,16 +73,11 @@ oneSortedCategory ℓ A = record
   ; id      =   Id
   ; _∘_     =   comp
   ; assoc   =   λ {A B C D} {F} {G} {H} → begin⟨ ≐-setoid (Carrier A) (Carrier D) ⟩
-          mor (comp (comp H G) F)
-            ≈⟨ comp-is-∘ ⟩
-          mor (comp H G) ∘ mor F
-            ≈⟨ ∘-≐-cong₁ _ comp-is-∘ ⟩ 
-          mor H ∘ mor G ∘ mor F
-            ≈˘⟨ ∘-≐-cong₂ (mor H) comp-is-∘ ⟩
-          mor H ∘ mor (comp G F)  
-            ≈˘⟨ comp-is-∘ ⟩
-          mor (comp H (comp G F))
-            ∎
+          mor (comp (comp H G) F)   ≈⟨ comp-is-∘                     ⟩  
+          mor (comp H G) ∘ mor F    ≈⟨ ∘-≐-cong₁ _ comp-is-∘         ⟩   
+          mor H ∘ mor G ∘ mor F     ≈˘⟨ ∘-≐-cong₂ (mor H) comp-is-∘  ⟩  
+          mor H ∘ mor (comp G F)    ≈˘⟨ comp-is-∘                    ⟩  
+          mor (comp H (comp G F))   ∎
   ; identityˡ   =   λ{ {f = f} → comp-is-∘ ⟨≐≐⟩ Id-is-id ∘ mor f } 
   ; identityʳ   =   λ{ {f = f} → comp-is-∘ ⟨≐≐⟩ ≡.cong (mor f) ∘ Id-is-id }
   ; equiv       =   record { IsEquivalence ≐-isEquivalence }
@@ -93,10 +99,13 @@ mkForgetful ℓ A = record
   ; F₁             =   mor
   ; identity       =   Id-is-id  $ᵢ
   ; homomorphism   =   comp-is-∘ $ᵢ
-  ; F-resp-≡      =    _$ᵢ
+  ; F-resp-≡       =    _$ᵢ
   }
   where open OneSortedAlg A
 \end{code}
+
+That is, the constituents of a |OneSortedAlgebra| suffice to produce a category
+and a so-called presheaf as well.
 %}}}
 
 % Quick Folding Instructions:

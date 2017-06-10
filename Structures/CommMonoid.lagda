@@ -13,7 +13,7 @@ open import Categories.Agda       using (Setoids)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Function2         using (_$ᵢ)
-open import Function          using () renaming (id to id₀; _∘_ to _⊚_)
+open import Function          using (case_of_) renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 
@@ -317,8 +317,8 @@ open import Relation.Binary.Sum
   { to = record { _⟨$⟩_ = ⊎→++ ; cong = cong-to }
   ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = cong-from xs }
   ; inverse-of = record
-    { left-inverse-of = {!!}
-    ; right-inverse-of = {!!} } }
+    { left-inverse-of = ++→⊎∘⊎→++≅id xs
+    ; right-inverse-of = ⊎→++∘++→⊎≅id xs } }
   where
     ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
     ⊎→ˡ (here p) = here p
@@ -326,9 +326,9 @@ open import Relation.Binary.Sum
     ⊎→ʳ : ∀ xs {ys} → Some₀ P ys → Some₀ P (xs ++ ys)
     ⊎→ʳ []        p = p
     ⊎→ʳ (x ∷ xs₁) p = there (⊎→ʳ xs₁ p)
-    ⊎→++ : (Some₀ P xs ⊎ Some₀ P ys) → Some₀ P (xs ++ ys)
+    ⊎→++ : ∀ {zs ws} → (Some₀ P zs ⊎ Some₀ P ws) → Some₀ P (zs ++ ws)
     ⊎→++ (inj₁ x) = ⊎→ˡ x
-    ⊎→++ (inj₂ y) = ⊎→ʳ xs y
+    ⊎→++ {zs} (inj₂ y) = ⊎→ʳ zs y
     ++→⊎ : ∀ xs {ys} → Some₀ P (xs ++ ys) → Some₀ P xs ⊎ Some₀ P ys
     ++→⊎ [] p = inj₂ p
     ++→⊎ (x ∷ l) (here p) = inj₁ (here p)
@@ -343,7 +343,27 @@ open import Relation.Binary.Sum
     cong-from : ∀ ws {zs} {a b : Some₀ P (ws ++ zs)} → a ≡ b → _⊎-Rel_ _≡_ _≡_ (++→⊎ ws a) (++→⊎ ws b)
     cong-from [] ≡.refl = ⊎ʳ.₂∼₂ ≡.refl
     cong-from (x ∷ xs) {a = here  p} ≡.refl = ⊎ʳ.₁∼₁ ≡.refl
-    cong-from (x ∷ xs) {zs} {a = there p} ≡.refl = {!!}
+    cong-from (x ∷ xs) {zs} {a = there p} ≡.refl with ++→⊎ xs p | cong-from xs {a = p} ≡.refl
+    ... | inj₁ z | ⊎ʳ.₁∼₁ ≡.refl = ⊎ʳ.₁∼₁ ≡.refl
+    ... | inj₂ z | ⊎ʳ.₂∼₂ ≡.refl = ⊎ʳ.₂∼₂ ≡.refl
+
+    ++→⊎∘⊎→++≅id : ∀ zs {ws} → (x : Some₀ P zs ⊎ Some₀ P ws) → _⊎-Rel_ _≡_ _≡_ (++→⊎ zs (⊎→++ x)) x
+    ++→⊎∘⊎→++≅id []           (inj₁ ())
+    ++→⊎∘⊎→++≅id []           (inj₂ y) = ⊎ʳ.₂∼₂ ≡.refl
+    ++→⊎∘⊎→++≅id (x ∷ l)      (inj₁ (here p)) = ⊎ʳ.₁∼₁ ≡.refl
+    ++→⊎∘⊎→++≅id (x ∷ l) {ws} (inj₁ (there p)) with ++→⊎ l {ws} (⊎→++ (inj₁ p)) | ++→⊎∘⊎→++≅id l {ws} (inj₁ p)
+    ... | inj₁ pf | ⊎ʳ.₁∼₁ ≡.refl = ⊎ʳ.₁∼₁ ≡.refl
+    ... | inj₂ pf | ()
+    ++→⊎∘⊎→++≅id (x ∷ l) {ws} (inj₂ y) with ++→⊎ l {ws} (⊎→++ {l} (inj₂ y)) | ++→⊎∘⊎→++≅id l (inj₂ y)
+    ... | inj₁ _ | ⊎ʳ.₁∼₂ ()
+    ... | inj₂ _ | ⊎ʳ.₂∼₂ ≡.refl = ⊎ʳ.₂∼₂ ≡.refl
+
+    ⊎→++∘++→⊎≅id : ∀ zs {ws} → (x : Some₀ P (zs ++ ws)) → ⊎→++ {zs} {ws} (++→⊎ zs x) ≡ x
+    ⊎→++∘++→⊎≅id []       x = ≡.refl
+    ⊎→++∘++→⊎≅id (x ∷ zs) (here p) = ≡.refl
+    ⊎→++∘++→⊎≅id (x ∷ zs) (there p) with ++→⊎ zs p | ⊎→++∘++→⊎≅id zs p
+    ... | inj₁ y | ≡.refl = ≡.refl
+    ... | inj₂ y | ≡.refl = ≡.refl
 \end{code}
 
 %{{{ ListMS
@@ -362,11 +382,15 @@ abstract
         ; right-unit = λ {xs} → ≡→≈ₘ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≈ₘ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} →
-          z ∈ xs ++ ys        ≅⟨ ≅-sym {!!} ⟩ -- |≅-sym Any-additive| ⟩
+          z ∈ xs ++ ys        ≅⟨ ≅-sym ++≅ ⟩
           (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎-comm ⟩
-          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- Any-additive                     ⟩
+          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ ⟩
           z ∈ ys ++ xs  ∎
-        ; _⟨*⟩_ = λ x≈y z≈w → {!!}
+        ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w {t} →
+           t ∈ x ++ z        ≅⟨ ≅-sym ++≅ ⟩
+          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ x≈y ⊎-inverse z≈w ⟩
+          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ ++≅ ⟩
+           t ∈ y ++ w ∎
         }
     ; singleton = λ x → x ∷ []
     }

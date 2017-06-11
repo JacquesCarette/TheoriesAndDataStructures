@@ -3,8 +3,7 @@
 module Structures.CommMonoid where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
-open import Relation.Binary using (Setoid; IsEquivalence;
-  Reflexive; Symmetric; Transitive)
+open import Relation.Binary using (Setoid)
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
@@ -13,13 +12,14 @@ open import Categories.Agda       using (Setoids)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Function2         using (_$ᵢ)
-open import Function          using (case_of_) renaming (id to id₀; _∘_ to _⊚_)
+open import Function          using () renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 
 open import Forget
 open import EqualityCombinators
 open import DataProperties
+open import SetoidEquiv
 
 open import TypeEquiv using (swap₊)
 
@@ -138,82 +138,6 @@ open MultisetHom
 
 %}}}
 
-%{{{ Setoid isos: _≅_, ≅-refl, ≅-trans, ≅-sym, _≅⟨_⟩_, _∎ , ≡→≅
-\begin{code}
-open import Function using (flip)
-open import Function.Inverse using () renaming
-  (Inverse to _≅_
-  ; id     to ≅-refl
-  ; sym    to ≅-sym
-  )
-
-≅-trans : {a b c ℓa ℓb ℓc : Level} {A : Setoid a ℓa} {B : Setoid b ℓb} {C : Setoid c ℓc}
-        → A ≅ B → B ≅ C → A ≅ C
-≅-trans = flip Function.Inverse._∘_
-
-infix  3 _∎
-infixr 2 _≅⟨_⟩_
-
-_≅⟨_⟩_ : {x y z ℓx ℓy ℓz : Level} (X : Setoid x ℓx) {Y : Setoid y ℓy} {Z : Setoid z ℓz}
-      →  X ≅ Y → Y ≅ Z → X ≅ Z
-X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
-
-_∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
-X ∎ = ≅-refl
-
--- |≅-reflexive|
-≡→≅ : {a ℓa : Level} {A B : Setoid a ℓa} → A ≡ B → A ≅ B
-≡→≅ ≡.refl = ≅-refl
-\end{code}
-%}}}
-
-%{{{ Isos between Isos: _≋_ , id≋, trans≋, sym≋, and setoid of such things: _≅S_
-\begin{code}
-record _≋_ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} (eq₁ eq₂ : A ≅ B) : Set (a ⊍ b ⊍ ℓa ⊍ ℓb) where
-  constructor eq
-  open _≅_
-  open Setoid A using () renaming (_≈_ to _≈₁_)
-  open Setoid B using () renaming (_≈_ to _≈₂_)
-  open Π
-  field
-    to≈ :   ∀ x → to   eq₁ ⟨$⟩ x ≈₂ to   eq₂ ⟨$⟩ x
-    from≈ : ∀ x → from eq₁ ⟨$⟩ x ≈₁ from eq₂ ⟨$⟩ x
-
-module _ {a b ℓa ℓb} {A : Setoid a ℓa} {B : Setoid b ℓb} where
-  id≋ : {x : A ≅ B} → x ≋ x
-  id≋ = eq (λ _ → Setoid.refl B) (λ _ → Setoid.refl A)
-
-  sym≋ : {i j : A ≅ B} → i ≋ j → j ≋ i
-  sym≋ (eq to≈ from≈) = eq (λ x → Setoid.sym B (to≈ x)) (λ x → Setoid.sym A (from≈ x))
-
-  trans≋ : {i j k : A ≅ B} → i ≋ j → j ≋ k → i ≋ k
-  trans≋ (eq to≈₀ from≈₀) (eq to≈₁ from≈₁) = eq (λ x → Setoid.trans B (to≈₀ x) (to≈₁ x)) (λ x → Setoid.trans A (from≈₀ x) (from≈₁ x))
-
-_≅S_ : ∀ {a b ℓa ℓb} (A : Setoid a ℓa) (B : Setoid b ℓb) → Setoid (ℓb ⊍ (ℓa ⊍ (b ⊍ a))) (ℓb ⊍ (ℓa ⊍ (b ⊍ a)))
-_≅S_ A B = record
-  { Carrier = A ≅ B
-  ; _≈_ = _≋_
-  ; isEquivalence = record { refl = id≋ ; sym = sym≋ ; trans = trans≋ } }
-
-\end{code}
-%}}}
-
-%{{{ Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
-This is an hSet (by fiat), so it is contractible, in that all proofs are the same.
-\begin{code}
-_≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
-_≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
-  record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ _ _ → ⊤
-         ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
-
-SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
-SSetoid {ℓ} {o} = record
-  { Carrier = Setoid ℓ o
-  ; _≈_ = _≅_
-  ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans } }
-\end{code}
-%}}}
-
 %{{{ Some₀
 Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
 really should be a 'Setoid of types', and not one necessarily with ≡ as its equivalence.
@@ -221,6 +145,8 @@ We really need an 'interpretable setoid', i.e. one which has ⟦_⟧ : Carrier �
 as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
 
 \begin{code}
+open import SetoidSetoid
+
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) where
    -- i.e., subst, transport
    -- |{lift : {x y : Setoid.Carrier A} → Setoid._≈_ A x y → Setoid.Carrier (Π._⟨$⟩_ P x) → Setoid.Carrier (Π._⟨$⟩_ P y)} where|

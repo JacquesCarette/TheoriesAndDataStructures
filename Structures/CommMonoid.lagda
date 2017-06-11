@@ -148,9 +148,6 @@ as I don't know how to otherwise say that the target Setoid must have a type as 
 open import SetoidSetoid
 
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) where
-   -- i.e., subst, transport
-   -- |{lift : {x y : Setoid.Carrier A} → Setoid._≈_ A x y → Setoid.Carrier (Π._⟨$⟩_ P x) → Setoid.Carrier (Π._⟨$⟩_ P y)} where|
-
    open Setoid A renaming (Carrier to A₀ ; _≈_ to _≈ₐ_)
    P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
 
@@ -297,9 +294,6 @@ A ⊎⊎ B = A ⊎-setoid B
 %{{{ ListMS
 \begin{code}
 abstract
--- RATH-Agda library import
-  -- |open import Relation.Binary.Setoid.Sum| -- previously lived in RATH's Data.Sum.Setoid
-
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
   ListMS {ℓ} {o} X = record
     { commMonoid = record
@@ -359,9 +353,7 @@ abstract
       { _⟨$⟩_ = mapL g
       ; cong = λ {xs} {ys} xs≈ys {y} → {!!}
       }
-    ; pres-e = λ {z} → {!
-        z ∈ []     ≅⟨ ? ⟩
-        z ∈ e ∎!}
+    ; pres-e = λ {z} → {!!}
 
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
      {-

@@ -14,7 +14,7 @@ open import Data.List
 
 open import Forget
 open import Function2
-open import Structures.Pointed using (PointedCat; Pointed) renaming (Hom to PHom ; MkHom to MkPHom)
+-- open import Structures.Pointed using (Pointeds; Pointed) renaming (Hom to PHom ; MkHom to MkPHom)
 
 open import EqualityCombinators
 

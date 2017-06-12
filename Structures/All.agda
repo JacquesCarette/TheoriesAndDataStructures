@@ -16,7 +16,7 @@ import DataProperties
 -- import RATH
 -- ‼ This module is not being called from anywhere ‼  June 9, 2017.
 
-import Structures.AbelianGroup   
+import Structures.AbelianGroup
 
 import Structures.Magma        
 
@@ -30,7 +30,10 @@ import Structures.Rel
 
 import Structures.Semigroup    
 
-import Structures.Pointed                                      
+-- A type along with a value of that type.
+--
+-- import Structures.Pointed
+-- Currently has a hole
 
 import Structures.UnaryAlgebra 
 
@@ -51,4 +54,7 @@ import Structures.InvolutiveAlgebra
 
 -- import Structures.CommMonoid
 
+import SetoidEquiv
+import SetoidOfIsos
+import SetoidSetoid
 import Structures.CommMonoidTerm

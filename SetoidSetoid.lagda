@@ -11,8 +11,10 @@ open import SetoidEquiv
 \end{code}
 %}}}
 
-%{{{ Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
+%{{{ _≈S_ ; SSetoid
+Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
 This is an hSet (by fiat), so it is contractible, in that all proofs are the same.
+\edcomm{WK}{Where is that fiat in the code? Not distinguishing different isomorphisms is a recipe for disaster.}
 \begin{code}
 _≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
 _≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in

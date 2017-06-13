@@ -1,3 +1,5 @@
+\module{Some}
+
 %{{{ Imports
 \begin{code}
 module Some where
@@ -18,20 +20,25 @@ open import SetoidEquiv
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
 open import Relation.Binary.Sum -- using (_⊎-setoid_)
-
 \end{code}
 %}}}
 
 %{{{ Some₀
-Setoid based variant of Any.  The definition is 'wrong' in the sense the target of P
-really should be a 'Setoid of types', and not one necessarily with |_≡_| as its equivalence.
-We really need an 'interpretable setoid', i.e. one which has |⟦_⟧ : Carrier → Set p|,
-as I don't know how to otherwise say that the target Setoid must have a type as a Carrier.
+Setoid based variant of Any.
+The definition is 'wrong' in the sense the target of P
+really should be a 'Setoid of types',
+and not one necessarily with |_≡_| as its equivalence.
+We really need an 'interpretable setoid',
+i.e., one which has |⟦_⟧ : Carrier → Set p|
+\edcomm{WK}{also known as ``universe''},
+as I don't know how to otherwise say that the target |Setoid|
+must have a type as a Carrier.
 
-Quite a bit of this is directly inspired by |Data.List.Any| and |Data.List.Any.Properties|.
+Quite a bit of this is directly inspired
+by |Data.List.Any| and |Data.List.Any.Properties|.
 
 \begin{code}
-module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) where
+module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    open Setoid A
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
 
@@ -53,7 +60,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid {ℓa} {ℓa}) where
      ; isEquivalence   =   ≡.isEquivalence
      }
 
-≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid}
+≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}}
          {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
 ≡→Some {A = A} ≡.refl = ≅-refl
 \end{code}
@@ -67,7 +74,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   infix 4 _∈₀_ _∈_
 
-  setoid≈ : Carrier → S ⟶ SSetoid {ℓ} {ℓ}
+  setoid≈ : Carrier → S ⟶ SSetoid ℓ ℓ
   setoid≈ x = record
     { _⟨$⟩_ = λ y → _≈S_ {A = S} x y   -- This is an ``evil'' which will be amended in time.
     ; cong = λ i≈j → record
@@ -187,13 +194,13 @@ A ⊎⊎ B = record
 
 %{{{ ++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong }
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }
     ; inverse-of = record
-      { left-inverse-of = {!!} -- ++→⊎∘⊎→++≅id xs
+      { left-inverse-of = ++→⊎∘⊎→++≅id xs
       ; right-inverse-of = ⊎→++∘++→⊎≅id xs
       }
     }
@@ -260,7 +267,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
 \end{code}
 
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
 
   ⊥≅Some[] : ⊥⊥ {a} {ℓa} ≅ Some P []
   ⊥≅Some[] = record
@@ -273,7 +280,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
 
 %{{{ map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 \begin{code}
-map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
+map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid {!!} {!!}} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
        Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 map≅ {A = A} {B} {P} {f} = record
   { to = record { _⟨$⟩_ = map⁺ ; cong = λ { ≡.refl → ≡.refl } }
@@ -306,7 +313,7 @@ map≅ {A = A} {B} {P} {f} = record
 %{{{ Some-cong : (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
 This isn't quite the full-powered cong, but is all we need.
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
 
  open Membership A
  open Setoid A

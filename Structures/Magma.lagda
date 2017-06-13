@@ -101,7 +101,6 @@ indT base ind = rec (λ a → base) (λ l r → ind)
 %}}}
 
 %{{{ TreeF ; TreeLeft
-
 \begin{code}
 TreeF : (ℓ : Level) → Functor (Sets ℓ) (MagmaCat ℓ)
 TreeF ℓ = record
@@ -130,7 +129,6 @@ TreeLeft ℓ = record
 
 How does this relate to the notion of ``co-trees'' ---infinitely long trees?
 ─similar to the lists vs streams view.
-
 %}}}
 
 % Quick Folding Instructions:

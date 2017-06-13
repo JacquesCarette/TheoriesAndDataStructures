@@ -19,8 +19,8 @@ _≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
   record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ _ _ → ⊤
          ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
 
-SSetoid : ∀ {ℓ o} → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
-SSetoid {ℓ} {o} = record
+SSetoid : (ℓ o : Level) → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
+SSetoid ℓ o = record
   { Carrier = Setoid ℓ o
   ; _≈_ = _≅_
   ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans } }

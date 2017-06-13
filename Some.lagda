@@ -193,7 +193,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
     { to = record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong }
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }
     ; inverse-of = record
-      { left-inverse-of = ++→⊎∘⊎→++≅id xs
+      { left-inverse-of = {!!} -- ++→⊎∘⊎→++≅id xs
       ; right-inverse-of = ⊎→++∘++→⊎≅id xs
       }
     }
@@ -210,7 +210,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
       ⊎→ʳ (x ∷ xs₁) p = there (⊎→ʳ xs₁ p)
       
       ⊎→++ : ∀ {zs ws} → (Some₀ P zs ⊎ Some₀ P ws) → Some₀ P (zs ++ ws)
-      ⊎→++ (inj₁ x) = ⊎→ˡ x
+      ⊎→++      (inj₁ x) = ⊎→ˡ x
       ⊎→++ {zs} (inj₂ y) = ⊎→ʳ zs y
       
       ++→⊎ : ∀ xs {ys} → Some₀ P (xs ++ ys) → Some₀ P xs ⊎ Some₀ P ys
@@ -234,11 +234,11 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid} where
       ++→⊎∘⊎→++≅id : ∀ zs {ws} → (pf : Some₀ P zs ⊎ Some₀ P ws) → (_≡_ ∥ _≡_) (++→⊎ zs (⊎→++ pf)) pf
       ++→⊎∘⊎→++≅id [] (inj₁ ())
       ++→⊎∘⊎→++≅id [] (inj₂ _) = right ≡.refl
-      ++→⊎∘⊎→++≅id (x ∷ xs) (inj₁ (here px)) = left ≡.refl
-      ++→⊎∘⊎→++≅id (x ∷ xs) {ws} (inj₁ (there pxs)) with ++→⊎ xs {ws} (⊎→++ (inj₁ pxs)) | ++→⊎∘⊎→++≅id xs {ws} (inj₁ pxs)
-      ...| inj₁ _ | left ≡.refl = left ≡.refl
-      ++→⊎∘⊎→++≅id (x ∷ xs) {ws} (inj₂ pf) with ++→⊎ xs {ws} (⊎→++ (inj₂ pf)) | ++→⊎∘⊎→++≅id xs {ws} (inj₂ pf)
-      ...| inj₂ _ | right ≡.refl = right ≡.refl
+      ++→⊎∘⊎→++≅id (z ∷ zs)      (inj₁ (here p)) = left ≡.refl
+      ++→⊎∘⊎→++≅id (z ∷ zs) {ws} (inj₁ (there p)) with ++→⊎ zs {ws} (⊎→++ (inj₁ p)) | ++→⊎∘⊎→++≅id zs {ws} (inj₁ p)
+      ... | inj₁ pp | left pp≡p = left (≡.cong there pp≡p)
+      ++→⊎∘⊎→++≅id (z ∷ zs) {ws} (inj₂ p) with ++→⊎ zs {ws} (⊎→++ {zs} (inj₂ p)) | ++→⊎∘⊎→++≅id zs (inj₂ p)
+      ... | inj₂ pp | right pp≡p = right pp≡p
 
       ⊎→++∘++→⊎≅id : ∀ zs {ws} → (x : Some₀ P (zs ++ ws)) → ⊎→++ {zs} {ws} (++→⊎ zs x) ≡ x
       ⊎→++∘++→⊎≅id []       x = ≡.refl

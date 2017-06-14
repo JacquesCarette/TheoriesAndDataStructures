@@ -363,8 +363,8 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
        Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 map≅ {A = A} {B} {P} {f} = record
-  { to = record { _⟨$⟩_ = map⁺ ; cong = {!!} }
-  ; from = record { _⟨$⟩_ = map⁻ ; cong = {!!} }
+  { to = record { _⟨$⟩_ = map⁺ ; cong = map⁺-cong }
+  ; from = record { _⟨$⟩_ = map⁻ ; cong = map⁻-cong }
   ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }
   }
   where
@@ -389,6 +389,15 @@ map≅ {A = A} {B} {P} {f} = record
   map⁻∘map⁺ {[]} ()
   map⁻∘map⁺ {x ∷ xs} (here p) = hereEq p p
   map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
+
+  map⁺-cong : {ys : List A₀} {i j : Some₀ (P ∘ f) ys} → _≋_ (P ∘ f) i j → map⁺ i ∼ map⁺ j
+  map⁺-cong (hereEq px py) = hereEq px py
+  map⁺-cong (thereEq i∼j) = thereEq (map⁺-cong i∼j)
+
+  map⁻-cong : {ys : List A₀} {i j : Some₀ P (map g ys)} → i ∼ j → _≋_ (P ∘ f) (map⁻ i) (map⁻ j)
+  map⁻-cong {[]} ()
+  map⁻-cong {x ∷ ys} (hereEq px py) = hereEq px py
+  map⁻-cong {x ∷ ys} (thereEq i∼j) = thereEq (map⁻-cong i∼j)
 \end{code}
 %}}}
 

@@ -1,4 +1,4 @@
-\module{Some}
+\section{Some}
 
 %{{{ Imports
 \begin{code}
@@ -20,7 +20,7 @@ open import SetoidEquiv
 
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
-open import Relation.Binary.Sum -- using (_⊎-setoid_)
+open import Relation.Binary.Sum
 
 open import Relation.Binary.PropositionalEquality using (inspect;[_])
 \end{code}
@@ -47,7 +47,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    toℕ (here _) = 0
    toℕ (there s) = suc (toℕ s)
    
-   -- proof irrelevance built-in here.  We only care that these are the same as members of ℕ
+   -- proof irrelevance built-in here.  We only care that these are the same as members of |ℕ|
    _∼S_ : ∀ {xs} → Some₀ xs → Some₀ xs → Set
    s₁ ∼S s₂ = toℕ s₁ ≡ toℕ s₂
      
@@ -100,7 +100,6 @@ open import Relation.Binary using (Rel)
 
 -- To avoid absurd patterns that we do not use, when using |_⊎-Rel_|, we make this:
 -- As such, we introduce the parallel composition of heterogeneous relations.
--- This may be better named |_⊎̇_|?
 data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
   {A₁ : Set a₁} {B₁ : Set b₁} (_~₁_ : A₁ → B₁ → Set c₁)
   {A₂ : Set a₂} {B₂ : Set b₂} (_~₂_ : A₂ → B₂ → Set c₂)
@@ -177,7 +176,7 @@ A ⊎⊎ B = record
     swap²≈∥≈id (inj₂ _)  =  right refl₂
 
     {-
-       Tried to obtain the following via ∥-sym| ...
+       Tried to obtain the following via |∥-sym| ...
     -}
 
     swap-on-∥′ : {i j : B₀ ⊎ A₀} → (≈₂ ∥ ≈₁) i j → (≈₁ ∥ ≈₂) (swap₊ i) (swap₊ j)
@@ -358,8 +357,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
    left-inv : ∀ {ys} (x : Some₀ P ys) → toℕ P (lose (find x)) ≡ toℕ P x
    left-inv (here px) = ≡.refl
    left-inv (there x₁) = ≡.cong suc (left-inv x₁)
- 
-{-
+\end{code}
+
+\begin{spec}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
  open Membership A
@@ -392,8 +392,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   ... | here pp | [ eq ] = {!!}
   ... | there qq | [ eq ] = {!!}
   left-inv {x ∷ xs} rel (there p) = {!!}
--}
-\end{code}
+\end{spec}
 
 %}}}
 

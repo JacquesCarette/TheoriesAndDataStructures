@@ -1,3 +1,5 @@
+\section{SetoidSetoid}
+
 %{{{ Imports
 \begin{code}
 module SetoidSetoid where
@@ -7,7 +9,6 @@ open import Relation.Binary using (Setoid)
 
 open import DataProperties using (⊤; tt)
 open import SetoidEquiv
-
 \end{code}
 %}}}
 

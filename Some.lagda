@@ -58,7 +58,6 @@ For now, we use a weaker operation.
      hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (py : P₀ y) → here {x} {xs} px ≋ here {y} {ys} py
      thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ xs} {pys : Some₀ ys} → pxs ≋ pys → there {x} pxs ≋ there {y} pys
 
-
    ≋-refl : {xs : List Carrier} {p : Some₀ xs} → p ≋ p
    ≋-refl {p = here px} = hereEq px px
    ≋-refl {p = there p} = thereEq ≋-refl
@@ -96,7 +95,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   setoid≈ : Carrier → S ⟶ SSetoid ℓ ℓ
   setoid≈ x = record
-    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y   -- This is an ``evil'' which will be amended in time.
+    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y
     ; cong = λ i≈j → record
       { to   = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j     ; cong = λ _ → tt }
       ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈⟩ sym i≈j ; cong = λ _ → tt }
@@ -366,12 +365,12 @@ map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A
 map≅ {A = A} {B} {P} {f} = record
   { to = record { _⟨$⟩_ = map⁺ ; cong = {!!} }
   ; from = record { _⟨$⟩_ = map⁻ ; cong = {!!} }
-  ; inverse-of = {!!} -- |record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }|
+  ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }
   }
   where
   g = _⟨$⟩_ f
   A₀ = Setoid.Carrier A
-  _∼_ = _∼S_ P
+  _∼_ = _≋_ P
   map⁺ : {xs : List A₀} → Some₀ (P ∘ f) xs → Some₀ P (map g xs)
   map⁺ (here p)  = here p
   map⁺ (there p) = there $ map⁺ p
@@ -383,13 +382,13 @@ map≅ {A = A} {B} {P} {f} = record
 
   map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ P (map g xs)) → map⁺ (map⁻ p) ∼ p
   map⁺∘map⁻ {[]} ()
-  map⁺∘map⁻ {x ∷ xs} (here p) = ≡.refl
-  map⁺∘map⁻ {x ∷ xs} (there p) = ≡.cong suc (map⁺∘map⁻ p)
+  map⁺∘map⁻ {x ∷ xs} (here p) = hereEq p p
+  map⁺∘map⁻ {x ∷ xs} (there p) = thereEq (map⁺∘map⁻ p)
 
-  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs) → let _∼₂_ = _∼S_ (P ∘ f) in map⁻ (map⁺ p) ∼₂ p
+  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs) → let _∼₂_ = _≋_ (P ∘ f) in map⁻ (map⁺ p) ∼₂ p
   map⁻∘map⁺ {[]} ()
-  map⁻∘map⁺ {x ∷ xs} (here p) = ≡.refl
-  map⁻∘map⁺ {x ∷ xs} (there p) = ≡.cong suc (map⁻∘map⁺ p)
+  map⁻∘map⁺ {x ∷ xs} (here p) = hereEq p p
+  map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
 \end{code}
 %}}}
 

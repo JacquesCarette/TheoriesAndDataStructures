@@ -11,7 +11,8 @@ open import Function.Equality using (Π ; _⟶_ ; id ; _∘_; _⟨$⟩_)
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; map)
-open import Data.Product using (∃)
+open import Data.Product  using (∃)
+open import Data.Nat      using (ℕ; zero; suc)
 
 open import EqualityCombinators
 open import DataProperties
@@ -20,19 +21,13 @@ open import SetoidEquiv
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
 open import Relation.Binary.Sum -- using (_⊎-setoid_)
+
+open import Relation.Binary.PropositionalEquality using (inspect;[_])
 \end{code}
 %}}}
 
 %{{{ Some₀
 Setoid based variant of Any.
-The definition is 'wrong' in the sense the target of P
-really should be a 'Setoid of types',
-and not one necessarily with |_≡_| as its equivalence.
-We really need an 'interpretable setoid',
-i.e., one which has |⟦_⟧ : Carrier → Set p|
-\edcomm{WK}{also known as ``universe''},
-as I don't know how to otherwise say that the target |Setoid|
-must have a type as a Carrier.
 
 Quite a bit of this is directly inspired
 by |Data.List.Any| and |Data.List.Any.Properties|.
@@ -46,21 +41,24 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
      here  : {x : Carrier} {xs : List Carrier} (px  : P₀ x    ) → Some₀ (x ∷ xs)
      there : {x : Carrier} {xs : List Carrier} (pxs : Some₀ xs) → Some₀ (x ∷ xs)
 
-   _≈E_ : (x y : Carrier) → Setoid ℓa ℓa
-   _≈E_ x y = record
-     { Carrier         =   x ≈ y
-     ; _≈_             =   λ _ _ → ⊤
-     ; isEquivalence   =   record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt }
-     }
-
-   Some : List Carrier → Setoid (a ⊔ ℓa) (a ⊔ ℓa)
+   -- inhabitants of Some₀ really are just locations...
+   -- could go to Fin (length xs) too.
+   toℕ : ∀ {xs} → Some₀ xs → ℕ
+   toℕ (here _) = 0
+   toℕ (there s) = suc (toℕ s)
+   
+   -- proof irrelevance built-in here.  We only care that these are the same as members of ℕ
+   _∼S_ : ∀ {xs} → Some₀ xs → Some₀ xs → Set
+   s₁ ∼S s₂ = toℕ s₁ ≡ toℕ s₂
+     
+   Some : List Carrier → Setoid (ℓa ⊔ a) lzero
    Some xs = record
      { Carrier         =   Some₀ xs
-     ; _≈_             =   _≡_ -- TODO, this is what needs changed next to fill
-     ; isEquivalence   =   ≡.isEquivalence
+     ; _≈_             =   _∼S_
+     ; isEquivalence   =   record { refl = ≡.refl ; sym = ≡.sym ; trans = ≡.trans }
      }
 
-≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}}
+≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa}
          {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
 ≡→Some {A = A} ≡.refl = ≅-refl
 \end{code}
@@ -90,7 +88,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
   _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
   x ∈₀ xs = Some₀ (setoid≈ x) xs
 
-  _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) (a ⊔ ℓ)
+  _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) lzero
   x ∈ xs = Some (setoid≈ x) xs
 
 \end{code}
@@ -194,17 +192,19 @@ A ⊎⊎ B = record
 
 %{{{ ++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
+
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
-    { to = record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong }
-    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }
+    { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
+    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = {! ++→⊎-cong xs {ys} !} }
     ; inverse-of = record
-      { left-inverse-of = ++→⊎∘⊎→++≅id xs
-      ; right-inverse-of = ⊎→++∘++→⊎≅id xs
+      { left-inverse-of = {! ++→⊎∘⊎→++≅id xs !}
+      ; right-inverse-of = {! ⊎→++∘++→⊎≅id xs !}
       }
     }
     where
+      _∼_ = _∼S_ P
 
       -- ``ealier''
       ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
@@ -227,9 +227,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} wher
 
       -- all of the following may need to change
 
-      ⊎→++-cong : {a b : Some₀ P xs ⊎ Some₀ P ys} → (_≡_ ∥ _≡_) a b → ⊎→++ a ≡ ⊎→++ b
-      ⊎→++-cong (left  ≡.refl)  =  ≡.refl
-      ⊎→++-cong (right ≡.refl)  =  ≡.refl
+      ⊎→++-cong : {a b : Some₀ P xs ⊎ Some₀ P ys} → (_∼_ ∥ _∼_) a b → ⊎→++ a ∼ ⊎→++ b
+      ⊎→++-cong (left  x₁∼x₂)  =  {!!}
+      ⊎→++-cong (right y₁∼y₂)  =  {!!}
 
       ++→⊎-cong : ∀ ws {zs} {a b : Some₀ P (ws ++ zs)} → a ≡ b → (_≡_ ∥ _≡_) (++→⊎ ws a) (++→⊎ ws b)
       ++→⊎-cong [] ≡.refl = right ≡.refl
@@ -267,7 +267,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} wher
 \end{code}
 
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
   ⊥≅Some[] : ⊥⊥ {a} {ℓa} ≅ Some P []
   ⊥≅Some[] = record
@@ -280,15 +280,16 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} wher
 
 %{{{ map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 \begin{code}
-map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid {!!} {!!}} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
+map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
        Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 map≅ {A = A} {B} {P} {f} = record
-  { to = record { _⟨$⟩_ = map⁺ ; cong = λ { ≡.refl → ≡.refl } }
-  ; from = record { _⟨$⟩_ = map⁻ ; cong = λ { ≡.refl → ≡.refl } }
+  { to = record { _⟨$⟩_ = map⁺ ; cong = {!!} }
+  ; from = record { _⟨$⟩_ = map⁻ ; cong = {!!} }
   ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ } }
   where
   g = _⟨$⟩_ f
   A₀ = Setoid.Carrier A
+  _∼_ = _∼S_ P
   map⁺ : {xs : List A₀} → Some₀ (P ∘ f) xs → Some₀ P (map g xs)
   map⁺ (here p)  = here p
   map⁺ (there p) = there $ map⁺ p
@@ -298,22 +299,68 @@ map≅ {A = A} {B} {P} {f} = record
   map⁻ {x ∷ xs} (here p) = here p
   map⁻ {x ∷ xs} (there p) = there (map⁻ {xs = xs} p)
 
-  map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ P (map g xs)) → map⁺ (map⁻ p) ≡ p
+  map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ P (map g xs)) → map⁺ (map⁻ p) ∼ p
   map⁺∘map⁻ {[]} ()
   map⁺∘map⁻ {x ∷ xs} (here p) = ≡.refl
-  map⁺∘map⁻ {x ∷ xs} (there p) = ≡.cong there (map⁺∘map⁻ p)
+  map⁺∘map⁻ {x ∷ xs} (there p) = ≡.cong suc (map⁺∘map⁻ p)
 
-  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs) → map⁻ (map⁺ p) ≡ p
+  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs) → let _∼₂_ = _∼S_ (P ∘ f) in map⁻ (map⁺ p) ∼₂ p
   map⁻∘map⁺ {[]} ()
   map⁻∘map⁺ {x ∷ xs} (here p) = ≡.refl
-  map⁻∘map⁺ {x ∷ xs} (there p) = ≡.cong there (map⁻∘map⁺ p)
+  map⁻∘map⁺ {x ∷ xs} (there p) = ≡.cong suc (map⁻∘map⁺ p)
 \end{code}
 %}}}
 
 %{{{ Some-cong : (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
 This isn't quite the full-powered cong, but is all we need.
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs : List (Setoid.Carrier A)} where
+ open Membership A
+ open Setoid A
+ private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+
+ ΣP-Setoid : Setoid (ℓa ⊔ a) ℓa
+ ΣP-Setoid = record
+   { Carrier = Σ Carrier (λ x → (x ∈₀ xs) × P₀ x)
+   ; _≈_ = λ { (a , a∈xs , Pa ) (b , b∈xs , Pb) → (a ≈ b) × toℕ (setoid≈ a) a∈xs ≡ toℕ (setoid≈ b) b∈xs × ((Π._⟨$⟩_ P a) ≅ (Π._⟨$⟩_ P b)) }
+   ; isEquivalence = record { refl = {!!} ; sym = {!!} ; trans = {!!} } }
+
+ find : ∀ {ys} → Some₀ P ys → ∃ (λ x → (x ∈₀ ys) × P₀ x)
+ find {[]} ()
+ find {x ∷ xs} (here p) = x , here (Setoid.refl A) , p
+ find {x ∷ xs} (there p) = 
+   let pos = find p in proj₁ pos , there (proj₁ (proj₂ pos)) , proj₂ (proj₂ pos)
+
+ lose : ∀ {ys} → Σ Carrier (λ x → x ∈₀ ys × P₀ x) → Some₀ P ys
+ lose (x , here px , Px) = here (_≅_.to (Π.cong P px) Π.⟨$⟩ Px)
+ lose (x , there x∈xs , Px) = there (lose (x , x∈xs , Px))
+
+ ΣP-Some : Some P xs ≅ ΣP-Setoid
+ ΣP-Some = record
+   { to = record { _⟨$⟩_ = find {xs} ; cong = {!!} }
+   ; from = record { _⟨$⟩_ = lose ; cong = lose-cong }
+   ; inverse-of = record
+     { left-inverse-of = left-inv
+     ; right-inverse-of = {!!}
+     }
+   }
+   where
+   _∼_ = _∼S_ P
+   lose-cong : ∀ {ys : List Carrier} {a b : Σ Carrier (λ x → x ∈₀ ys × P₀ x)} → let i = proj₁ a in let j = proj₁ b in
+       let i∈ys = proj₁ (proj₂ a) in let j∈ys = proj₁ (proj₂ b) in
+       i ≈ j × toℕ (setoid≈ i) i∈ys ≡ toℕ (setoid≈ j) j∈ys × ((Π._⟨$⟩_ P i) ≅ (Π._⟨$⟩_ P j)) → lose {ys} a ∼ lose b
+   lose-cong {_} {a₁ , here {x} px , Pa} {b , here px₁ , Pb} (i≈j , _ , Pi≅Pj) = ≡.refl
+   lose-cong {_} {a₁ , here px , Pa} {b , there b∈xs , Pb} (i≈j , () , Pi≅Pj)
+   lose-cong {_} {a₁ , there a∈xs , Pa} {b , here px , Pb} (i≈j , () , Pi≅Pj)
+   lose-cong {_} {a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , xx , Pi≅Pj) =
+     ≡.cong suc (lose-cong {a = a₁ , a∈xs , Pa} {b , b∈xs , Pb} (i≈j , suc-inj xx , Pi≅Pj))
+
+   left-inv : ∀ {ys} (x : Some₀ P ys) → toℕ P (lose (find x)) ≡ toℕ P x
+   left-inv (here px) = ≡.refl
+   left-inv (there x₁) = ≡.cong suc (left-inv x₁)
+ 
+{-
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
  open Membership A
  open Setoid A
@@ -329,28 +376,23 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid {!!} {!!}} wher
   }
   where
     
-  copy : ∀ {x} {ys} → x ∈₀ ys → Setoid.Carrier (P ⟨$⟩ x) → Some₀ P ys
+  copy : ∀ {x} {ys} → x ∈₀ ys → P₀ x → Some₀ P ys
   copy (here p) pf = here (_≅_.to (Π.cong P p) ⟨$⟩ pf)
   copy (there p) pf = there (copy p pf)
   
-  find : ∀ {xs} → Some₀ P xs → ∃ (λ x → (x ∈₀ xs) × P₀ x)
-  find {[]} ()
-  find {x ∷ xs} (here p) = x , here (Setoid.refl A) , p
-  find {x ∷ xs} (there p) = 
-    let pos = find p in proj₁ pos , there (proj₁ (proj₂ pos)) , proj₂ (proj₂ pos)
-    
   xs₁→xs₂ : ∀ {xs ys} →  (∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → Some₀ P xs → Some₀ P ys
   xs₁→xs₂ {[]} _ ()
-  xs₁→xs₂ {x ∷ xs}      rel (here {.x} p) = copy {x} (_≅_.to rel ⟨$⟩ here (Setoid.refl A)) p
-  xs₁→xs₂ {x ∷ xs} {ys} rel (there {.x} {.xs} p) = 
+  xs₁→xs₂ {x ∷ xs}      rel (here p) = copy (_≅_.to rel ⟨$⟩ here (Setoid.refl A)) p
+  xs₁→xs₂ {x ∷ xs} {ys} rel (there p) = 
     let pos = find p in copy (_≅_.to rel ⟨$⟩ there (proj₁ (proj₂ pos))) (proj₂ (proj₂ pos))
     
   left-inv : ∀ {xs ys} → (rel : ∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → (∀ y → xs₁→xs₂ (≅-sym rel) (xs₁→xs₂ rel y) ≡ y)
   left-inv {[]} rel ()
-  left-inv {x ∷ xs} rel (here p) with _≅_.to (rel {x}) ⟨$⟩ (here (Setoid.refl A))
-  ... | here q = {!!}
-  ... | there q = {!!}
+  left-inv {x ∷ xs} rel (here p) with _≅_.to rel ⟨$⟩ here refl | inspect (_⟨$⟩_ (_≅_.to rel)) (here refl)
+  ... | here pp | [ eq ] = {!!}
+  ... | there qq | [ eq ] = {!!}
   left-inv {x ∷ xs} rel (there p) = {!!}
+-}
 \end{code}
 
 %}}}

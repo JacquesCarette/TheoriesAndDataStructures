@@ -208,7 +208,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
-    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = {! ++→⊎-cong xs {ys} !} }
+    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs } -- |{! ++→⊎-cong xs {ys} !} }|
     ; inverse-of = record
       { left-inverse-of = {! ++→⊎∘⊎→++≅id xs !}
       ; right-inverse-of = {! ⊎→++∘++→⊎≅id xs !}
@@ -225,6 +225,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       ⊎→ˡ (there p) = there (⊎→ˡ p)
 \end{code}
 
+The following absurd patterns are what led me to make a new type for equalities.
 \begin{spec}
       yo : {xs : List Carrier} {x y : Some₀ P xs} → x ∼ y   →   ⊎→ˡ x ~ ⊎→ˡ y
       yo {x = here px} {here px₁} Relation.Binary.PropositionalEquality.refl = ≡.refl
@@ -270,6 +271,19 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       ++→⊎-cong (x ∷ xs) {a = there pxs} ≡.refl with ++→⊎ xs pxs | ++→⊎-cong xs {a = pxs} ≡.refl
       ...| inj₁ _ | left  ≡.refl  =  left  ≡.refl
       ...| inj₂ _ | right ≡.refl  =  right ≡.refl
+
+      ∽∥∽-cong   :  {xs ys us vs : List Carrier}
+                    → (F : Some₀ P xs → Some₀ P us) (F-cong : {p q : Some₀ P xs} → p ∽ q → F p ∽ F q)
+                    → (G : Some₀ P ys → Some₀ P vs) (G-cong : {p q : Some₀ P ys} → p ∽ q → G p ∽ G q)
+                    → {pf pf' : Some₀ P xs ⊎ Some₀ P ys}
+                    → (_∽_ ∥ _∽_) pf pf' → (_∽_ ∥ _∽_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
+      ∽∥∽-cong F F-cong G G-cong (left x~₁y) = left (F-cong x~₁y)
+      ∽∥∽-cong F F-cong G G-cong (right x~₂y) = right (G-cong x~₂y)
+
+      new-cong : (xs : List Carrier) {i j : Some₀ P (xs ++ ys)} → i ∽ j → (_∽_ ∥ _∽_) (++→⊎ xs i) (++→⊎ xs j)
+      new-cong [] pf = right pf
+      new-cong (x ∷ xs) (hereEq px py) = left (hereEq px py)
+      new-cong (x ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (new-cong xs pf)
 
       ++→⊎∘⊎→++≅id : ∀ zs {ws} → (pf : Some₀ P zs ⊎ Some₀ P ws) → (_≡_ ∥ _≡_) (++→⊎ zs (⊎→++ pf)) pf
       ++→⊎∘⊎→++≅id [] (inj₁ ())

@@ -60,6 +60,7 @@ module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ S
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    private Q₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ Q e)
 
+   infix 3 _≋_
    data _≋_ : {xs ys : List Carrier} (pf : Some₀ P xs) (pf' : Some₀ Q ys) → Set where
      hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (qy : Q₀ y)
             → _≋_ (here {x = x} {xs} px) (here {x = y} {ys} qy)
@@ -394,6 +395,7 @@ map≅ {A = A} {B} {P} {f} = record
   g = _⟨$⟩_ f
   A₀ = Setoid.Carrier A
   _∼_ = _≋_ {P = P}
+  
   map⁺ : {xs : List A₀} → Some₀ (P ∘ f) xs → Some₀ P (map g xs)
   map⁺ (here p)  = here p
   map⁺ (there p) = there $ map⁺ p
@@ -448,7 +450,29 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
    field
      ptEq : pt a ≈ pt b
      -- ∈Eq : belongs a ∼ belongs b
- 
+
+ Σ-Setoid : Setoid (ℓa ⊔ a) ℓa
+ Σ-Setoid = record
+   { Carrier = Support
+   ; _≈_ = Eq
+   ; isEquivalence = record { refl = Refl ; sym = Sym ; trans = Trans }
+   }
+   where
+
+     Support = Σ x ∶ Carrier • x ∈₀ xs × P₀ x
+
+     Eq : Support → Support → Set ℓa
+     Eq (a , a∈xs , Pa) (b , b∈xs , Pb) =  a ≈ b  ×  a∈xs ≋ b∈xs
+
+     Refl : {s : Support} → Eq s s
+     Refl {a , a∈xs , Pa} = refl , ≋-refl
+
+     Sym  : {s t : Support} → Eq s t → Eq t s
+     Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , ≋-sym a∈xs≋b∈xs
+
+     Trans : {s t u : Support} → Eq s t → Eq t u → Eq s u
+     Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , ≋-trans a∈xs≋b∈xs b∈xs≋c∈xs
+
  ΣP-Setoid : Setoid (ℓa ⊔ a) ℓa
  ΣP-Setoid = record
    { Carrier = Σ Carrier (λ x → (x ∈₀ xs) × P₀ x)

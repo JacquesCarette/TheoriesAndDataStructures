@@ -132,7 +132,6 @@ diag a = a , a
 
 Z-style notation for sums,
 \begin{code}
-open import Data.Product public renaming (<_,_> to ⟨_,_⟩) hiding (Σ-syntax)
 Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊔ b)
 Σ∶• = Data.Product.Σ
 infix -666 Σ∶•

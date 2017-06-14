@@ -17,6 +17,7 @@ open import EqualityCombinators
 
 open import Data.Product public using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
 open import Data.Sum     public using (inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
+open import Data.Nat            using (ℕ; zero; suc)
 \end{code}
 
 \subsection*{Precedence Levels}
@@ -129,6 +130,14 @@ diag a = a , a
 
 \edinsert{MA}{ A brief mention of Haskell's |const|, which is |diag| curried. Also something about |K| combinator? }
 
+%}}}
+
+%{{{ suc is injective
+\begin{code}
+suc-inj : ∀ {i j} → ℕ.suc i ≡ ℕ.suc j → i ≡ j
+suc-inj {0} _≡_.refl = _≡_.refl
+suc-inj {ℕ.suc i} _≡_.refl = _≡_.refl
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

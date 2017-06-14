@@ -210,7 +210,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs } -- |{! ++→⊎-cong xs {ys} !} }|
     ; inverse-of = record
-      { left-inverse-of = {! ++→⊎∘⊎→++≅id xs !}
+      { left-inverse-of = lefty xs -- |{! ++→⊎∘⊎→++≅id xs !}|
       ; right-inverse-of = {! ⊎→++∘++→⊎≅id xs !}
       }
     }
@@ -284,6 +284,21 @@ The following absurd patterns are what led me to make a new type for equalities.
       new-cong [] pf = right pf
       new-cong (x ∷ xs) (hereEq px py) = left (hereEq px py)
       new-cong (x ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (new-cong xs pf)
+
+      ∽-refl : {xs : List Carrier} {p : Some₀ P xs} → p ∽ p
+      ∽-refl {.(_ ∷ _)} {here px} = hereEq px px
+      ∽-refl {.(_ ∷ _)} {there p} = thereEq ∽-refl
+
+      lefty : (xs {ys} : List Carrier) (p : Some₀ P xs ⊎ Some₀ P ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
+      lefty [] (inj₁ ())
+      lefty [] (inj₂ p) = right ∽-refl
+      lefty (x ∷ xs) (inj₁ (here px)) = left ∽-refl
+      lefty (x ∷ xs) {ys} (inj₁ (there p)) with ++→⊎ xs {ys} (⊎→++ (inj₁ p)) | lefty xs {ys} (inj₁ p)
+      ... | inj₁ _ | (left x~₁y) = left (thereEq x~₁y)
+      ... | inj₂ _ | ()
+      lefty (z ∷ zs) {ws} (inj₂ p) with ++→⊎ zs {ws} (⊎→++ {zs} (inj₂ p)) | lefty zs (inj₂ p)
+      ... | inj₁ x | ()
+      ... | inj₂ y | (right x~₂y) = right x~₂y
 
       ++→⊎∘⊎→++≅id : ∀ zs {ws} → (pf : Some₀ P zs ⊎ Some₀ P ws) → (_≡_ ∥ _≡_) (++→⊎ zs (⊎→++ pf)) pf
       ++→⊎∘⊎→++≅id [] (inj₁ ())

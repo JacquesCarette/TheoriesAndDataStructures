@@ -410,6 +410,21 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  open Setoid A
  private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
 
+ record UnpackedSome : Set (ℓa ⊔ a) where
+   constructor US
+   field
+     pt : Carrier
+     belongs : pt ∈₀ xs
+     prop : P₀ pt
+
+ record _≈US_ (a b : UnpackedSome) : Set {!!} where
+   constructor us-eq
+   open UnpackedSome
+   _∼_ = _≋_ P
+   field
+     ptEq : pt a ≈ pt b
+     -- ∈Eq : belongs a ∼ belongs b
+ 
  ΣP-Setoid : Setoid (ℓa ⊔ a) ℓa
  ΣP-Setoid = record
    { Carrier = Σ Carrier (λ x → (x ∈₀ xs) × P₀ x)

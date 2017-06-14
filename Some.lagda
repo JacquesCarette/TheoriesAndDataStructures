@@ -494,14 +494,19 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  find-cong (hereEq px qy) = refl , ≋-refl
  find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
 
- lose-cong : {ys : List Carrier} {p q : Some₀ P ys} → p ≋ q → find p ∻ find q
- lose-cong (hereEq px qy) = refl , ≋-refl
- lose-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
+ P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
+ P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
+
+ llose-cong : {ys : List Carrier} {p q : Support ys} → p ∻ q → lose p ≋ lose q
+ llose-cong {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
+ llose-cong {p = a , here a≈x , Pa} {b , there b∈ys , Pb} (fst , ())
+ llose-cong {p = a , there a∈ys , Pa} {b , here px , Pb} (fst , ())
+ llose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (llose-cong (a≈b , a∈ys≋b∈ys))
 
  Σ-Some : Some P xs ≅ Σ-Setoid xs
  Σ-Some = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = find-cong }
-   ; from = record { _⟨$⟩_ = lose ; cong = {!!} } -- |lose-cong }|
+   ; from = record { _⟨$⟩_ = lose ; cong = llose-cong }
    ; inverse-of = record
      { left-inverse-of = {!!} -- left-inv
      ; right-inverse-of = {!!}

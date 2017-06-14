@@ -490,12 +490,18 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  lose (y , here py , Py)     = here (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
  lose (y , there y∈ys , Py) = there (lose (y , y∈ys , Py))
 
+ rright-inv : {ys : List Carrier} (p : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose p) ∻ p
+ rright-inv (y , here y≈x , Py) = sym y≈x , hereEq refl y≈x
+ rright-inv (y , there y∈ys , Py) = ?
+
  find-cong : {ys : List Carrier} {p q : Some₀ P ys} → p ≋ q → find p ∻ find q
  find-cong (hereEq px qy) = refl , ≋-refl
  find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
 
  P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
  P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
+
+ postulate P⁺refl≈Id : {x : Carrier} → P⁺ (refl {x = x}) ≐ id₀
 
  llose-cong : {ys : List Carrier} {p q : Support ys} → p ∻ q → lose p ≋ lose q
  llose-cong {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
@@ -504,16 +510,18 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  llose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (llose-cong (a≈b , a∈ys≋b∈ys))
 
  lleft-inv : (x : Some₀ P xs) → lose (find x) ≋ x
- lleft-inv (here px) = ?
- lleft-inv (there x₁) = {!!}
+ lleft-inv (here px) rewrite P⁺refl≈Id px = ≋-refl
+ lleft-inv (there pxs) with find pxs
+ lleft-inv (there pxs) | y , here px , Py = thereEq {!!}
+ lleft-inv (there pxs) | y , there proj₄ , Py = thereEq {!lleft-inv ?!}
 
  Σ-Some : Some P xs ≅ Σ-Setoid xs
  Σ-Some = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = find-cong }
    ; from = record { _⟨$⟩_ = lose ; cong = llose-cong }
    ; inverse-of = record
-     { left-inverse-of = {!!} -- left-inv
-     ; right-inverse-of = {!!}
+     { left-inverse-of = lleft-inv
+     ; right-inverse-of = rright-inv
      }
    }
    where

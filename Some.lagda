@@ -5,7 +5,7 @@
 module Some where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
-open import Relation.Binary using (Setoid)
+open import Relation.Binary using (Setoid ; IsEquivalence ; Rel)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_; _⟨$⟩_)
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
@@ -22,15 +22,15 @@ open import TypeEquiv using (swap₊)
 open import SetoidSetoid
 open import Relation.Binary.Sum
 
-open import Relation.Binary.PropositionalEquality using (inspect;[_])
+open import Relation.Binary.PropositionalEquality using (inspect)
 \end{code}
 %}}}
 
 %{{{ Some₀
+\subsection{|Some₀|}
 Setoid based variant of Any.
 
-Quite a bit of this is directly inspired
-by |Data.List.Any| and |Data.List.Any.Properties|.
+Quite a bit of this is directly inspired by |Data.List.Any| and |Data.List.Any.Properties|.
 
 \begin{code}
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
@@ -40,22 +40,30 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    data Some₀  : List Carrier → Set (a ⊔ ℓa) where
      here  : {x : Carrier} {xs : List Carrier} (px  : P₀ x    ) → Some₀ (x ∷ xs)
      there : {x : Carrier} {xs : List Carrier} (pxs : Some₀ xs) → Some₀ (x ∷ xs)
+\end{code}
 
-   -- inhabitants of Some₀ really are just locations...
-   -- could go to Fin (length xs) too.
-   toℕ : ∀ {xs} → Some₀ xs → ℕ
+Inhabitants of Some₀ really are just locations: |Some₀ P xs  ≅ Σ i ∶ Fin (length xs) • P (x ‼ i)|.
+For now, we use a weaker operation.
+\begin{code}   
+   toℕ : {xs : List Carrier} → Some₀ xs → ℕ
    toℕ (here _) = 0
-   toℕ (there s) = suc (toℕ s)
+   toℕ (there pf) = suc (toℕ pf)
    
    -- proof irrelevance built-in here.  We only care that these are the same as members of |ℕ|
-   _∼S_ : ∀ {xs} → Some₀ xs → Some₀ xs → Set
+   _∼S_ : {xs : List Carrier} → Some₀ xs → Some₀ xs → Set
    s₁ ∼S s₂ = toℕ s₁ ≡ toℕ s₂
-     
+
+   -- A more direct approach:
+   data _≋_ : {xs ys : List Carrier} (pf : Some₀ xs) (pf' : Some₀ ys) → Set where
+     hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (py : P₀ y) → here {x} {xs} px ≋ here {y} {ys} py
+     thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ xs} {pys : Some₀ ys} → pxs ≋ pys → there {x} pxs ≋ there {y} pys
+
    Some : List Carrier → Setoid (ℓa ⊔ a) lzero
    Some xs = record
      { Carrier         =   Some₀ xs
-     ; _≈_             =   _∼S_
-     ; isEquivalence   =   record { refl = ≡.refl ; sym = ≡.sym ; trans = ≡.trans }
+     ; _≈_             =   _≋_ -- |_∼S_|
+     ; isEquivalence   = {!!}
+     -- |record {IsEquivalence ≡.isEquivalence}|
      }
 
 ≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa}
@@ -65,6 +73,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 %}}}
 
 %{{{ Membership module : setoid≈ ; _∈_ ; _∈₀_
+\subsection{Membership module}
 \begin{code}
 module Membership {a ℓ} (S : Setoid a ℓ) where
 
@@ -85,21 +94,21 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
       }
     }
 
-  _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
-  x ∈₀ xs = Some₀ (setoid≈ x) xs
-
   _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) lzero
   x ∈ xs = Some (setoid≈ x) xs
 
+  _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
+  x ∈₀ xs = Setoid.Carrier (x ∈ xs)
 \end{code}
 %}}}
 
 %{{{ _∥_ ; [_∥_] ; ∥-sym ; _⊎⊎_
-\begin{code}
-open import Relation.Binary using (Rel)
+\subsection{Parallel Composition}
 
--- To avoid absurd patterns that we do not use, when using |_⊎-Rel_|, we make this:
--- As such, we introduce the parallel composition of heterogeneous relations.
+To avoid absurd patterns that we do not use, when using |_⊎-Rel_|, we make this:
+As such, we introduce the parallel composition of heterogeneous relations.
+
+\begin{code}
 data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
   {A₁ : Set a₁} {B₁ : Set b₁} (_~₁_ : A₁ → B₁ → Set c₁)
   {A₂ : Set a₂} {B₂ : Set b₂} (_~₂_ : A₂ → B₂ → Set c₂)
@@ -107,17 +116,17 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
   left  : {x : A₁} {y : B₁} (x~₁y : x ~₁ y) → (_~₁_ ∥ _~₂_) (inj₁ x) (inj₁ y)
   right : {x : A₂} {y : B₂} (x~₂y : x ~₂ y) → (_~₁_ ∥ _~₂_) (inj₂ x) (inj₂ y)
 
--- Before we move on, let us mention the eliminator for this type.
+-- Non-working ``eliminator'' for this type.
 [_∥_] : {a₁ b₁ c₁ a₂ b₂ c₂ ℓ : Level}
         {A₁ : Set a₁} {B₁ : Set b₁} {_~₁_ : A₁ → B₁ → Set c₁}
         {A₂ : Set a₂} {B₂ : Set b₂} {_~₂_ : A₂ → B₂ → Set c₂}
      →
-        {Z : Set ℓ}
-        (F : {a : A₁} {b : B₁} → a ~₁ b → Z)
-        (G : {a : A₂} {b : B₂} → a ~₂ b → Z)
+        {Z : {a : A₁ ⊎ A₂} {b : B₁ ⊎ B₂} → (_~₁_ ∥ _~₂_) a b → Set ℓ}        
+        (F : {a : A₁} {b : B₁} (a~b : a ~₁ b) → Z (left a~b))
+        (G : {a : A₂} {b : B₂} (a~b : a ~₂ b) → Z (right a~b))
      →
-        {x : A₁ ⊎ A₂} {y : B₁ ⊎ B₂}
-     → (_~₁_ ∥ _~₂_) x y  → Z
+        {x : A₁ ⊎ A₂} {y : B₁ ⊎ B₂}        
+     → (x∥y : (_~₁_ ∥ _~₂_) x y)  → Z x∥y
 [ F ∥ G ] (left  x~y) = F x~y
 [ F ∥ G ] (right x~y) = G x~y
 
@@ -131,8 +140,10 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
 ∥-sym sym₁ sym₂ (left x~y )  =  left  (sym₁ x~y)
 ∥-sym sym₁ sym₂ (right x~y)  =  right (sym₂ x~y)
 --
--- ought to be just: [ left ∘ sym₁ ∥ right ∘ sym₂ ]
+-- ought to be just: |[ left ∘ sym₁ ∥ right ∘ sym₂ ]|
 ---
+-- Instead, I can use, with much distasteful yellow,
+-- |∥-sym sym₁ sym₂ = [ (λ pf → left (sym₁ pf)) ∥ (λ pf → right (sym₂ pf)) ] |
 
 infix 999 _⊎⊎_
 _⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
@@ -155,6 +166,7 @@ A ⊎⊎ B = record
 %}}}
 
 %{{{ ⊎⊎-comm
+\subsection{|⊎⊎-comm|}
 \begin{code}
 ⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → A ⊎⊎ B  ≅  B ⊎⊎ A
 ⊎⊎-comm {A = A} {B} = record
@@ -190,8 +202,8 @@ A ⊎⊎ B = record
 %}}}
 
 %{{{ ++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
+\subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \begin{code}
-
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
@@ -203,17 +215,39 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       }
     }
     where
+      open Setoid A
       _∼_ = _∼S_ P
+      _∽_ = _≋_ P
 
       -- ``ealier''
       ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
       ⊎→ˡ (here p) = here p
       ⊎→ˡ (there p) = there (⊎→ˡ p)
+\end{code}
+
+\begin{spec}
+      yo : {xs : List Carrier} {x y : Some₀ P xs} → x ∼ y   →   ⊎→ˡ x ~ ⊎→ˡ y
+      yo {x = here px} {here px₁} Relation.Binary.PropositionalEquality.refl = ≡.refl
+      yo {x = here px} {there y} ()
+      yo {x = there x₁} {here px} ()
+      yo {x = there x₁} {there y} pf = ≡.cong suc (yo {!!})
+\end{spec}
+
+\begin{code}
+      yo : {xs : List Carrier} {x y : Some₀ P xs} → x ∽ y   →   ⊎→ˡ x  ∽  ⊎→ˡ y
+      yo (hereEq px py) = hereEq px py
+      yo (thereEq pf) = thereEq (yo pf)
 
       -- ``later''
       ⊎→ʳ : ∀ xs {ys} → Some₀ P ys → Some₀ P (xs ++ ys)
-      ⊎→ʳ []        p = p
-      ⊎→ʳ (x ∷ xs₁) p = there (⊎→ʳ xs₁ p)
+      ⊎→ʳ []       p = p
+      ⊎→ʳ (x ∷ xs) p = there (⊎→ʳ xs p)
+
+      oy : (xs : List Carrier) {x y : Some₀ P ys} → x ∽ y   →   ⊎→ʳ xs x  ∽  ⊎→ʳ xs y
+      oy [] pf = pf
+      oy (x ∷ xs) pf = thereEq (oy xs pf)
+
+      -- |Some₀| is |++→⊎|-homomorphic, in the second argument.
       
       ⊎→++ : ∀ {zs ws} → (Some₀ P zs ⊎ Some₀ P ws) → Some₀ P (zs ++ ws)
       ⊎→++      (inj₁ x) = ⊎→ˡ x
@@ -226,9 +260,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 
       -- all of the following may need to change
 
-      ⊎→++-cong : {a b : Some₀ P xs ⊎ Some₀ P ys} → (_∼_ ∥ _∼_) a b → ⊎→++ a ∼ ⊎→++ b
-      ⊎→++-cong (left  x₁∼x₂)  =  {!!}
-      ⊎→++-cong (right y₁∼y₂)  =  {!!}
+      ⊎→++-cong : {a b : Some₀ P xs ⊎ Some₀ P ys} → (_∽_ ∥ _∽_) a b → ⊎→++ a ∽ ⊎→++ b
+      ⊎→++-cong (left  x₁∼x₂)  =  yo x₁∼x₂
+      ⊎→++-cong (right y₁∼y₂)  =  oy xs y₁∼y₂
 
       ++→⊎-cong : ∀ ws {zs} {a b : Some₀ P (ws ++ zs)} → a ≡ b → (_≡_ ∥ _≡_) (++→⊎ ws a) (++→⊎ ws b)
       ++→⊎-cong [] ≡.refl = right ≡.refl
@@ -256,6 +290,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 %}}}
 
 %{{{ ⊥⊥ : bottom as a setoid ; ⊥≅Some[] : ⊥⊥ ≅ Some P []
+\subsection{Bottom as a setoid}
 \begin{code}
 ⊥⊥ : ∀ {a ℓa} → Setoid a ℓa
 ⊥⊥ {a} {ℓa} = record
@@ -278,13 +313,15 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 %}}}
 
 %{{{ map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
+\subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \begin{code}
 map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
        Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
 map≅ {A = A} {B} {P} {f} = record
   { to = record { _⟨$⟩_ = map⁺ ; cong = {!!} }
   ; from = record { _⟨$⟩_ = map⁻ ; cong = {!!} }
-  ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ } }
+  ; inverse-of = {!!} -- |record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }|
+  }
   where
   g = _⟨$⟩_ f
   A₀ = Setoid.Carrier A
@@ -311,6 +348,7 @@ map≅ {A = A} {B} {P} {f} = record
 %}}}
 
 %{{{ Some-cong : (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
+\subsection{Some-cong and holes}
 This isn't quite the full-powered cong, but is all we need.
 \begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs : List (Setoid.Carrier A)} where
@@ -337,9 +375,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  ΣP-Some : Some P xs ≅ ΣP-Setoid
  ΣP-Some = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = {!!} }
-   ; from = record { _⟨$⟩_ = lose ; cong = lose-cong }
+   ; from = record { _⟨$⟩_ = lose ; cong = {!!} } -- |lose-cong }|
    ; inverse-of = record
-     { left-inverse-of = left-inv
+     { left-inverse-of = {!!} -- left-inv
      ; right-inverse-of = {!!}
      }
    }

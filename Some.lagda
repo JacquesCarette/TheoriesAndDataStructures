@@ -58,11 +58,24 @@ For now, we use a weaker operation.
      hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (py : P₀ y) → here {x} {xs} px ≋ here {y} {ys} py
      thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ xs} {pys : Some₀ ys} → pxs ≋ pys → there {x} pxs ≋ there {y} pys
 
+
+   ≋-refl : {xs : List Carrier} {p : Some₀ xs} → p ≋ p
+   ≋-refl {p = here px} = hereEq px px
+   ≋-refl {p = there p} = thereEq ≋-refl
+
+   ≋-sym : {xs : List Carrier} {p q : Some₀ xs} → p ≋ q → q ≋ p
+   ≋-sym (hereEq px py) = hereEq py px
+   ≋-sym (thereEq eq) = thereEq (≋-sym eq)
+
+   ≋-trans : {xs : List Carrier} {p q r : Some₀ xs} → p ≋ q → q ≋ r → p ≋ r
+   ≋-trans (hereEq px py) (hereEq .py pz) = hereEq px pz
+   ≋-trans (thereEq e) (thereEq f) = thereEq (≋-trans e f)
+
    Some : List Carrier → Setoid (ℓa ⊔ a) lzero
    Some xs = record
      { Carrier         =   Some₀ xs
      ; _≈_             =   _≋_ -- |_∼S_|
-     ; isEquivalence   = {!!}
+     ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
      -- |record {IsEquivalence ≡.isEquivalence}|
      }
 
@@ -217,7 +230,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     where
       open Setoid A
       _∼_ = _∼S_ P
-      _∽_ = _≋_ P
+      _∽_ = _≋_ P ; ∽-refl = ≋-refl P
 
       -- ``ealier''
       ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
@@ -284,10 +297,6 @@ The following absurd patterns are what led me to make a new type for equalities.
       new-cong [] pf = right pf
       new-cong (x ∷ xs) (hereEq px py) = left (hereEq px py)
       new-cong (x ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (new-cong xs pf)
-
-      ∽-refl : {xs : List Carrier} {p : Some₀ P xs} → p ∽ p
-      ∽-refl {.(_ ∷ _)} {here px} = hereEq px px
-      ∽-refl {.(_ ∷ _)} {there p} = thereEq ∽-refl
 
       lefty : (xs {ys} : List Carrier) (p : Some₀ P xs ⊎ Some₀ P ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
       lefty [] (inj₁ ())

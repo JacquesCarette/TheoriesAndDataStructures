@@ -53,27 +53,49 @@ For now, we use a weaker operation.
    _∼S_ : {xs : List Carrier} → Some₀ xs → Some₀ xs → Set
    s₁ ∼S s₂ = toℕ s₁ ≡ toℕ s₂
 
-   -- A more direct approach:
-   data _≋_ : {xs ys : List Carrier} (pf : Some₀ xs) (pf' : Some₀ ys) → Set where
-     hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (py : P₀ y) → here {x} {xs} px ≋ here {y} {ys} py
-     thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ xs} {pys : Some₀ ys} → pxs ≋ pys → there {x} pxs ≋ there {y} pys
+   -- A more direct approach: |_≋_|
 
-   ≋-refl : {xs : List Carrier} {p : Some₀ xs} → p ≋ p
+module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where
+   open Setoid A
+   private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   private Q₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ Q e)
+
+   data _≋_ : {xs ys : List Carrier} (pf : Some₀ P xs) (pf' : Some₀ Q ys) → Set where
+     hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (qy : Q₀ y)
+            → _≋_ (here {x = x} {xs} px) (here {x = y} {ys} qy)
+     thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ P xs} {qys : Some₀ Q ys}
+             → _≋_ pxs qys → _≋_ (there {x = x} pxs) (there {x = y} qys)
+
+module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
+   open Setoid A
+   
+   ≋-refl : {xs : List Carrier} {p : Some₀ P xs} → p ≋ p
    ≋-refl {p = here px} = hereEq px px
    ≋-refl {p = there p} = thereEq ≋-refl
 
-   ≋-sym : {xs : List Carrier} {p q : Some₀ xs} → p ≋ q → q ≋ p
+module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where
+   open Setoid A
+
+   ≋-sym : {xs : List Carrier} {p : Some₀ P xs} {q : Some₀ Q xs} → p ≋ q → q ≋ p
    ≋-sym (hereEq px py) = hereEq py px
    ≋-sym (thereEq eq) = thereEq (≋-sym eq)
 
-   ≋-trans : {xs : List Carrier} {p q r : Some₀ xs} → p ≋ q → q ≋ r → p ≋ r
+module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} {R : A ⟶ SSetoid ℓa ℓa} where
+   open Setoid A
+
+   ≋-trans : {xs : List Carrier} {p : Some₀ P xs} {q : Some₀ Q xs} {r : Some₀ R xs}
+           → p ≋ q → q ≋ r → p ≋ r
    ≋-trans (hereEq px py) (hereEq .py pz) = hereEq px pz
    ≋-trans (thereEq e) (thereEq f) = thereEq (≋-trans e f)
 
+module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
+   open Setoid A
+   private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   
    Some : List Carrier → Setoid (ℓa ⊔ a) lzero
    Some xs = record
-     { Carrier         =   Some₀ xs
-     ; _≈_             =   _≋_ -- |_∼S_|
+     { Carrier         =   Some₀ P xs
+     ; _≈_             =   _≋_
      ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
      -- |record {IsEquivalence ≡.isEquivalence}|
      }
@@ -82,6 +104,7 @@ For now, we use a weaker operation.
          {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
 ≡→Some {A = A} ≡.refl = ≅-refl
 \end{code}
+
 %}}}
 
 %{{{ Membership module : setoid≈ ; _∈_ ; _∈₀_
@@ -229,7 +252,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     where
       open Setoid A
       _∼_ = _∼S_ P
-      _∽_ = _≋_ P ; ∽-refl = ≋-refl P
+      _∽_ = _≋_ ; ∽-refl = ≋-refl {P = P}
 
       -- ``ealier''
       ⊎→ˡ : ∀ {ws zs} → Some₀ P ws → Some₀ P (ws ++ zs)
@@ -299,7 +322,7 @@ The following absurd patterns are what led me to make a new type for equalities.
 
       lefty : (xs {ys} : List Carrier) (p : Some₀ P xs ⊎ Some₀ P ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
       lefty [] (inj₁ ())
-      lefty [] (inj₂ p) = right ∽-refl
+      lefty [] (inj₂ p) = right ≋-refl
       lefty (x ∷ xs) (inj₁ (here px)) = left ∽-refl
       lefty (x ∷ xs) {ys} (inj₁ (there p)) with ++→⊎ xs {ys} (⊎→++ (inj₁ p)) | lefty xs {ys} (inj₁ p)
       ... | inj₁ _ | (left x~₁y) = left (thereEq x~₁y)
@@ -370,7 +393,7 @@ map≅ {A = A} {B} {P} {f} = record
   where
   g = _⟨$⟩_ f
   A₀ = Setoid.Carrier A
-  _∼_ = _≋_ P
+  _∼_ = _≋_ {P = P}
   map⁺ : {xs : List A₀} → Some₀ (P ∘ f) xs → Some₀ P (map g xs)
   map⁺ (here p)  = here p
   map⁺ (there p) = there $ map⁺ p
@@ -385,16 +408,17 @@ map≅ {A = A} {B} {P} {f} = record
   map⁺∘map⁻ {x ∷ xs} (here p) = hereEq p p
   map⁺∘map⁻ {x ∷ xs} (there p) = thereEq (map⁺∘map⁻ p)
 
-  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs) → let _∼₂_ = _≋_ (P ∘ f) in map⁻ (map⁺ p) ∼₂ p
+  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P ∘ f) xs)
+            → let _∼₂_ = _≋_ {P = P ∘ f} in map⁻ (map⁺ p) ∼₂ p
   map⁻∘map⁺ {[]} ()
   map⁻∘map⁺ {x ∷ xs} (here p) = hereEq p p
   map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
 
-  map⁺-cong : {ys : List A₀} {i j : Some₀ (P ∘ f) ys} → _≋_ (P ∘ f) i j → map⁺ i ∼ map⁺ j
+  map⁺-cong : {ys : List A₀} {i j : Some₀ (P ∘ f) ys} →  _≋_ {P = P ∘ f} i j → map⁺ i ∼ map⁺ j
   map⁺-cong (hereEq px py) = hereEq px py
   map⁺-cong (thereEq i∼j) = thereEq (map⁺-cong i∼j)
 
-  map⁻-cong : {ys : List A₀} {i j : Some₀ P (map g ys)} → i ∼ j → _≋_ (P ∘ f) (map⁻ i) (map⁻ j)
+  map⁻-cong : {ys : List A₀} {i j : Some₀ P (map g ys)} → i ∼ j → _≋_ {P = P ∘ f} (map⁻ i) (map⁻ j)
   map⁻-cong {[]} ()
   map⁻-cong {x ∷ ys} (hereEq px py) = hereEq px py
   map⁻-cong {x ∷ ys} (thereEq i∼j) = thereEq (map⁻-cong i∼j)
@@ -420,7 +444,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  record _≈US_ (a b : UnpackedSome) : Set {!!} where
    constructor us-eq
    open UnpackedSome
-   _∼_ = _≋_ P
+   _∼_ = _≋_ {P = P}
    field
      ptEq : pt a ≈ pt b
      -- ∈Eq : belongs a ∼ belongs b

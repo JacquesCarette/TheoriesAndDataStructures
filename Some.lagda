@@ -211,7 +211,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs } -- |{! ++→⊎-cong xs {ys} !} }|
     ; inverse-of = record
       { left-inverse-of = lefty xs -- |{! ++→⊎∘⊎→++≅id xs !}|
-      ; right-inverse-of = {! ⊎→++∘++→⊎≅id xs !}
+      ; right-inverse-of = righty xs -- |{! ⊎→++∘++→⊎≅id xs !}|
       }
     }
     where
@@ -308,6 +308,14 @@ The following absurd patterns are what led me to make a new type for equalities.
       ... | inj₁ pp | left pp≡p = left (≡.cong there pp≡p)
       ++→⊎∘⊎→++≅id (z ∷ zs) {ws} (inj₂ p) with ++→⊎ zs {ws} (⊎→++ {zs} (inj₂ p)) | ++→⊎∘⊎→++≅id zs (inj₂ p)
       ... | inj₂ pp | right pp≡p = right pp≡p
+
+      
+      righty : (zs {ws} : List Carrier) (p : Some₀ P (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ∽ p
+      righty [] {ws} p = ∽-refl
+      righty (x ∷ zs) {ws} (here px) = ∽-refl
+      righty (x ∷ zs) {ws} (there p) with ++→⊎ zs p | righty zs p
+      ... | inj₁ _  | res = thereEq res
+      ... | inj₂ _  | res = thereEq res
 
       ⊎→++∘++→⊎≅id : ∀ zs {ws} → (x : Some₀ P (zs ++ ws)) → ⊎→++ {zs} {ws} (++→⊎ zs x) ≡ x
       ⊎→++∘++→⊎≅id []       x = ≡.refl

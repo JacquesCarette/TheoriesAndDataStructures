@@ -503,6 +503,10 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  llose-cong {p = a , there a∈ys , Pa} {b , here px , Pb} (fst , ())
  llose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (llose-cong (a≈b , a∈ys≋b∈ys))
 
+ lleft-inv : (x : Some₀ P xs) → lose (find x) ≋ x
+ lleft-inv (here px) = ?
+ lleft-inv (there x₁) = {!!}
+
  Σ-Some : Some P xs ≅ Σ-Setoid xs
  Σ-Some = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = find-cong }

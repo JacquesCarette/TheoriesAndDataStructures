@@ -134,10 +134,16 @@ diag a = a , a
 
 %{{{ suc is injective
 \begin{code}
+open import Data.Nat.Properties
 suc-inj : ∀ {i j} → ℕ.suc i ≡ ℕ.suc j → i ≡ j
+suc-inj = cancel-+-left (ℕ.suc ℕ.zero)
+\end{code}
+or
+\begin{spec}
 suc-inj {0} _≡_.refl = _≡_.refl
 suc-inj {ℕ.suc i} _≡_.refl = _≡_.refl
-\end{code}
+\end{spec}
+
 %}}}
 
 % Quick Folding Instructions:

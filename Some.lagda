@@ -37,7 +37,11 @@ Quite a bit of this is directly inspired by |Data.List.Any| and |Data.List.Any.P
 
 \edcomm{WK}{|A ⟶ SSetoid _ _| is a pretty strong assumption.
 Logical equivalence does not ask for the two morphisms back and forth to be inverse.}
-
+\edcomm{JC}{This is pretty much directly influenced by Nisse's paper: logical equivalence
+only gives Set, not Multiset, at least if used for the equivalence of over List.  To
+get Multiset, we need to preserve full equivalence, i.e. capture permutations.  My reason
+to use |A ⟶ SSetoid _ _| is to mesh well with the rest.  It is not cast in stone and
+can potentially be weakened.}
 \begin{code}
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    open Setoid A
@@ -474,10 +478,10 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
  find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
 
  private
- 
+
    P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
    P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
-   
+
    Q⁺ : {x y : Carrier} → x ≈ y → Q₀ x → Q₀ y
    Q⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong Q x≈y))
 
@@ -487,12 +491,12 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
  lose-cong {p = a , there a∈xs , Pa} {b , here px , Qb} (fst , ())
  lose-cong {p = a , there a∈xs , Pa} {b , there b∈ys , Qb} (a≈b , thereEq a∈xs≋b∈ys) = thereEq (lose-cong (a≈b , a∈xs≋b∈ys))
 
- 
+
  cong-fwd : {xs ys : List Carrier} {xs≅ys : BagEq xs ys} {p : Some₀ P xs} {q : Some₀ Q xs}
           → p ≋ q → bag-as-⇒ P xs≅ys p ≋ bag-as-⇒ Q xs≅ys q
  cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q
  ...| (x , x∈xs , px) | (y , y∈ys , py) = lose-cong ({!need decidable equality?!} , {!!})
-                                                
+
 \end{code}
 
 \edcomm{Somebody}{Commented out:

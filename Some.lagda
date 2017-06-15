@@ -143,6 +143,9 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
+
+  BagEq : (xs ys : List Carrier) → Set (ℓ ⊔ a)
+  BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 \end{code}
 %}}}
 
@@ -411,38 +414,100 @@ map≅ {A = A} {B} {P} {f} = record
 \end{code}
 %}}}
 
+\begin{code}
+module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa ℓa) where
+ open Membership A
+ open Setoid A
+ open Π
+ open _≅_
+ private
+   P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
+
+ find : {ys : List Carrier} → Some₀ P ys → Support ys
+ find {y ∷ ys} (here p) = y , here refl , p
+ find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
+                            in a , there a∈ys , Pa
+
+ lose : {ys : List Carrier} → Support ys → Some₀ P ys
+ lose (y , here py , Py)     = here (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
+ lose (y , there y∈ys , Py) = there (lose (y , y∈ys , Py))
+
+ -- ``If an element of ys has a property P, then some element of ys has property P''
+ -- cf |copy| below
+ Some-Intro : {y : Carrier} {ys : List Carrier}
+      → y ∈₀ ys → P₀ y → Some₀ P ys
+ Some-Intro {y} y∈ys Qy = lose (y , y∈ys , Qy)
+
+ bag-as-⇒ : {xs ys : List Carrier} → BagEq xs ys → Some₀ P xs → Some₀ P ys
+ bag-as-⇒ xs≅ys Pxs = let (x , x∈xs , Px) = find Pxs in
+                       let x∈ys = to xs≅ys ⟨$⟩ x∈xs
+                       in lose (x , x∈ys , Px)
+
+
+module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where
+ open Membership A
+ open Setoid A
+ private
+   P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   Q₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ Q e)
+   PSupport = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
+   QSupport = λ ys → Σ y ∶ Carrier • y ∈₀ ys × Q₀ y
+
+ _∻_ : {xs ys : List Carrier} → PSupport xs → QSupport ys → Set ℓa
+ (a , a∈xs , Pa) ∻ (b , b∈ys , Qb) =  a ≈ b  ×  a∈xs ≋ b∈ys
+
+ open FindLose
+
+ find-cong : {ys : List Carrier} {p : Some₀ P ys} {q : Some₀ Q ys} → p ≋ q → find P p ∻ find Q q
+ find-cong (hereEq px qy) = refl , ≋-refl
+ find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
+
+ private
+ 
+   P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
+   P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
+   
+   Q⁺ : {x y : Carrier} → x ≈ y → Q₀ x → Q₀ y
+   Q⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong Q x≈y))
+
+ lose-cong : {xs ys : List Carrier} {p : PSupport xs} {q : QSupport ys} → p ∻ q → lose P p ≋ lose Q q
+ lose-cong {p = a , here a≈x , Pa} {b , here b≈x , Qb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (Q⁺ b≈x Qb)
+ lose-cong {p = a , here a≈x , Pa} {b , there b∈ys , Qb} (fst , ())
+ lose-cong {p = a , there a∈xs , Pa} {b , here px , Qb} (fst , ())
+ lose-cong {p = a , there a∈xs , Pa} {b , there b∈ys , Qb} (a≈b , thereEq a∈xs≋b∈ys) = thereEq (lose-cong (a≈b , a∈xs≋b∈ys))
+
+ 
+ cong-fwd : {xs ys : List Carrier} {xs≅ys : BagEq xs ys} {p : Some₀ P xs} {q : Some₀ Q xs}
+          → p ≋ q → bag-as-⇒ P xs≅ys p ≋ bag-as-⇒ Q xs≅ys q
+ cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q
+ ...| (x , x∈xs , px) | (y , y∈ys , py) = lose-cong ({!need decidable equality?!} , {!!})
+                                                
+\end{code}
+
+ bag-as-⇒ : {xs ys : List Carrier} → BagEq xs ys → Some₀ P xs → Some₀ P ys
+ bag-as-⇒ xs≅ys Pxs = let (x , x∈xs , Px) = find Pxs in
+                       let x∈ys = to xs≅ys ⟨$⟩ x∈xs
+                       in lose (x , x∈ys , Px)
+
+
 %{{{ Some-cong : (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
 \subsection{Some-cong and holes}
 This isn't quite the full-powered cong, but is all we need.
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs : List (Setoid.Carrier A)} where
+module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
  open Membership A
  open Setoid A
- private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
-
- record UnpackedSome : Set (ℓa ⊔ a) where
-   constructor US
-   field
-     pt : Carrier
-     belongs : pt ∈₀ xs
-     prop : P₀ pt
-
- record _≈US_ (a b : UnpackedSome) : Set ℓa where
-   constructor us-eq
-   open UnpackedSome
-   _∼_ = _≋_ {P = setoid≈ (pt a)} {setoid≈ (pt b)}
-   field
-     ptEq : pt a ≈ pt b
-     ∈Eq : belongs a ∼ belongs b
-
- Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
+ private
+   P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set ℓa
  (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =  a ≈ b  ×  a∈xs ≋ b∈xs
 
  Σ-Setoid : (ys : List Carrier) → Setoid (ℓa ⊔ a) ℓa
  Σ-Setoid ys = record
-   { Carrier = Support xs
+   { Carrier = Support ys
    ; _≈_ = _∻_
    ; isEquivalence = record
      { refl = λ {s} → Refl {s}
@@ -462,27 +527,8 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
 
  module ∻ {ys} where open Setoid (Σ-Setoid ys) public
 
- find : {ys : List Carrier} → Some₀ P ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
- find {y ∷ ys} (here p) = y , here refl , p
- find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
-                            in a , there a∈ys , Pa
-
- lose : {ys : List Carrier} → Σ y ∶ Carrier • y ∈₀ ys × P₀ y → Some₀ P ys
- lose (y , here py , Py)     = here (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
- lose (y , there y∈ys , Py) = there (lose (y , y∈ys , Py))
-
- find-cong : {ys : List Carrier} {p q : Some₀ P ys} → p ≋ q → find p ∻ find q
- find-cong (hereEq px qy) = refl , ≋-refl
- find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
-
- P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
- P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
-
- lose-cong : {ys : List Carrier} {p q : Support ys} → p ∻ q → lose p ≋ lose q
- lose-cong {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
- lose-cong {p = a , here a≈x , Pa} {b , there b∈ys , Pb} (fst , ())
- lose-cong {p = a , there a∈ys , Pa} {b , here px , Pb} (fst , ())
- lose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (lose-cong (a≈b , a∈ys≋b∈ys))
+ open FindLose P
+ open FindLoseCong hiding (_∻_)
 
  left-inv : {ys : List Carrier} (x∈ys : Some₀ P ys) → lose (find x∈ys) ≋ x∈ys
  left-inv (here px) = hereEq _ px
@@ -492,8 +538,8 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  right-inv (y , here px , Py) = (sym px) , (hereEq refl px)
  right-inv (y , there y∈ys , Py) = (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₂ (right-inv (y , y∈ys , Py))))
 
- Σ-Some : Some P xs ≅ Σ-Setoid xs
- Σ-Some = record
+ Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
+ Σ-Some xs = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = find-cong }
    ; from = record { _⟨$⟩_ = lose ; cong = lose-cong }
    ; inverse-of = record
@@ -514,11 +560,13 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
            Some P xs₁ ≅ Some P xs₂
  Some-cong {xs₁} {xs₂} list-rel = record
-  { to           =   record { _⟨$⟩_ = xs₁→xs₂ list-rel ; cong = cong-fwd }
+  { to           =   record { _⟨$⟩_ = bag-as-⇒ list-rel ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} }
   ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {!!} }
   ; inverse-of   =   record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
   }
   where
+
+  open FindLose P using (bag-as-⇒ ; find)
 
   -- this is probably a specialized version of Respects.
   -- is also related to an uncurried version of 'lose'.
@@ -535,7 +583,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 
   xs₁→xs₂ : ∀ {xs ys} →  (∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → Some₀ P xs → Some₀ P ys
   xs₁→xs₂ {xs} rel p =
-    let pos = find {xs = xs} p in
+    let pos = find {ys = xs} p in
     copy (_≅_.to rel ⟨$⟩ proj₁ (proj₂ pos)) (proj₂ (proj₂ pos))
 
   cong-fwd : {i j : Some₀ P xs₁} →

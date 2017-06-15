@@ -503,7 +503,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
    }
 \end{code}
 
-\begin{spec}
+\begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
  open Membership A
@@ -514,29 +514,34 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
            Some P xs₁ ≅ Some P xs₂ 
  Some-cong {xs₁} {xs₂} list-rel = record
-  { to           =   record { _⟨$⟩_ = xs₁→xs₂ list-rel ; cong = {!!} }
+  { to           =   record { _⟨$⟩_ = xs₁→xs₂ list-rel ; cong = cong-fwd }
   ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {!!} }
-  ; inverse-of   =   record { left-inverse-of = left-inv list-rel ; right-inverse-of = {!!} }
+  ; inverse-of   =   record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
   }
   where
-    
+
   copy : ∀ {x} {ys} → x ∈₀ ys → P₀ x → Some₀ P ys
   copy (here p) pf = here (_≅_.to (Π.cong P p) ⟨$⟩ pf)
   copy (there p) pf = there (copy p pf)
+
+  -- this should be generalized to qy coming from Q₀ x.
+  copy-cong : ∀ {x} {xs : List Carrier} (px qy : P₀ x) (x∈xs : x ∈₀ xs) →
+    copy x∈xs px ≋ copy x∈xs qy
+  copy-cong px qy (here px₁) = hereEq _ _
+  copy-cong px qy (there x∈xs) = thereEq (copy-cong px qy x∈xs)
   
   xs₁→xs₂ : ∀ {xs ys} →  (∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → Some₀ P xs → Some₀ P ys
   xs₁→xs₂ {[]} _ ()
-  xs₁→xs₂ {x ∷ xs}      rel (here p) = copy (_≅_.to rel ⟨$⟩ here (Setoid.refl A)) p
-  xs₁→xs₂ {x ∷ xs} {ys} rel (there p) = 
-    let pos = find p in copy (_≅_.to rel ⟨$⟩ there (proj₁ (proj₂ pos))) (proj₂ (proj₂ pos))
-    
-  left-inv : ∀ {xs ys} → (rel : ∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → (∀ y → xs₁→xs₂ (≅-sym rel) (xs₁→xs₂ rel y) ≡ y)
-  left-inv {[]} rel ()
-  left-inv {x ∷ xs} rel (here p) with _≅_.to rel ⟨$⟩ here refl | inspect (_⟨$⟩_ (_≅_.to rel)) (here refl)
-  ... | here pp | [ eq ] = {!!}
-  ... | there qq | [ eq ] = {!!}
-  left-inv {x ∷ xs} rel (there p) = {!!}
-\end{spec}
+  xs₁→xs₂ {x ∷ xs} rel (here p) = copy (_≅_.to rel ⟨$⟩ here (Setoid.refl A)) p
+  xs₁→xs₂ {x ∷ xs} rel (there p) = 
+    let pos = find {xs = xs} p in copy (_≅_.to rel ⟨$⟩ there (proj₁ (proj₂ pos))) (proj₂ (proj₂ pos))
+
+  cong-fwd : {i j : Some₀ P xs₁} →
+    i ≋ j → xs₁→xs₂ list-rel i ≋ xs₁→xs₂ list-rel j
+  cong-fwd (hereEq px qy) = copy-cong px qy _
+  cong-fwd (thereEq {pxs = pxs} {qys} i≋j) = {!copy-cong (proj₂ (proj₂ (find pxs))) (proj₂ (proj₂ (find qys))) _!}
+  
+\end{code}
 
 %}}}
 

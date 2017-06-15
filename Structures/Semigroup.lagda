@@ -1,3 +1,4 @@
+\section{Semigroups: Non-empty Lists}
 
 %{{{ Imports
 \begin{code}
@@ -19,7 +20,7 @@ open import Forget
 %}}}
 
 %{{{ Semigroup ; _⟨_⟩_ ; Hom
-
+\subsection{Definition}
 A Free Semigroup is a Non-empty list
 \begin{code}
 record Semigroup {a} : Set (lsuc a) where
@@ -46,6 +47,7 @@ open Hom
 %}}}
 
 %{{{ SGAlg ; SemigroupCat ; Forget
+\subsection{Category and Forgetful Functor}
 \begin{code}
 SGAlg : {ℓ : Level} → OneSortedAlg ℓ
 SGAlg = record
@@ -70,8 +72,8 @@ Forget-isFaithful F G F≈G = λ x → F≈G {x}
 \end{code}
 %}}}
 
-%{{{ List₁ ; _++_ ; ⟦_,_⟧ ; mapNE ; list₁ ; indNE
-
+%{{{ List₁ ; _++_ ; ⟦_,_⟧ ; map  ; list₁ ; ind 
+\subsection{Free Structure}
 The non-empty lists constitute a free semigroup algebra.
 
 They can be presented as |X × List X| or via
@@ -104,14 +106,10 @@ This is indeed a semigroup,
 \begin{code}
 _++_ : {ℓ : Level} {X : Set ℓ} → List₁ X → List₁ X → List₁ X
 xs ++ ys = rec (_∷ ys) (λ x xs' res → x ∷ res) xs
--- [ x ] ++ ys    = x ∷ ys
--- (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
 ++-assoc : {ℓ : Level} {X : Set ℓ} {xs ys zs : List₁ X}
          → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
 ++-assoc {xs = xs} {ys} {zs} = rec {X = λ xs → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs} ≐-refl (λ x xs' ind → ≡.cong (x ∷_) ind) xs         
--- ++-assoc {xs = [ x ]}   =  ≡.refl
--- ++-assoc {xs = x ∷ xs}  =  ≡.cong (x ∷_) ++-assoc         
 
 List₁SG : {ℓ : Level} (X : Set ℓ) → Semigroup {ℓ}
 List₁SG X = MkSG (List₁ X) _++_ ++-assoc
@@ -127,9 +125,8 @@ lifted to a homomorphism of semigroups.
     → (op   : Y → Y → Y)
     → (List₁ X → Y)
 ⟦ w , o ⟧ = rec w (λ x xs res → o (w x) res)
--- ⟦ 𝔀 , _𝓸_ ⟧ [ x ]     =  𝔀 x
--- ⟦ 𝔀 , _𝓸_ ⟧ (x ∷ xs)  =  (𝔀 x)  𝓸  (⟦ 𝔀 , _𝓸_ ⟧ xs)
 
+-- lift 
 list₁ : {ℓ : Level} {X : Set ℓ} {S : Semigroup {ℓ} }
      →  (X → Carrier S)  →  Hom (List₁SG X) S
 list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
@@ -137,48 +134,47 @@ list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
         ⟦⟧-over-++ : {xs ys : List₁ X} → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)
         ⟦⟧-over-++ {xs} {ys} = rec {X = λ xs → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)}
                                    ≐-refl (λ x xs' ind → ≡.cong (Op S (f x)) ind ⟨≡≡⟩ assoc S) xs
---        ⟦⟧-over-++ {[ x ]}  = ≡.refl
---        ⟦⟧-over-++ {x ∷ xs} = ≡.cong (Op S (f x)) ⟦⟧-over-++ ⟨≡≡⟩ assoc S
 \end{code}
 
 In particular, the map operation over lists is:
 
 \begin{code}
-mapNE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → List₁ A → List₁ B
-mapNE f = ⟦ [_] ∘ f , _++_ ⟧
+map : {a b : Level} {A : Set a} {B : Set b} → (A → B) → List₁ A → List₁ B
+map f = ⟦ [_] ∘ f , _++_ ⟧
 \end{code}
 
 At the dependent level, we have the induction principle,
 
 \begin{code}
-indNE : {a b : Level} {A : Set a} {P : List₁ A → Set b}
+ind  : {a b : Level} {A : Set a} {P : List₁ A → Set b}
       → (base : {x : A} → P [ x ])
       → (ind  : {x : A} {xs : List₁ A} → P [ x ] → P xs → P (x ∷ xs))
       → (xs : List₁ A) → P xs
-indNE base ind = rec (λ y → base) (λ y ys → ind base)
--- indNE {P = P} base ind [ x ] = base
--- indNE {P = P} base ind (x ∷ xs) = ind {x} {xs} (base {x}) (indNE {P = P} base ind xs)
+ind  base ind = rec (λ y → base) (λ y ys → ind base)
+-- |ind  {P = P} base ind [ x ] = base|
+-- |ind  {P = P} base ind (x ∷ xs) = ind {x} {xs} (base {x}) (ind  {P = P} base ind xs)|
 \end{code}
 
 For example, map preserves identity:
 
 \begin{code}
-map-id : {a : Level} {A : Set a} → mapNE id ≐ id {A = List₁ A}
-map-id = indNE ≡.refl (λ {x} {xs} refl ind → ≡.cong (x ∷_) ind)
+map-id : {a : Level} {A : Set a} → map id ≐ id {A = List₁ A}
+map-id = ind ≡.refl (λ {x} {xs} refl ind → ≡.cong (x ∷_) ind)
 
 map-∘ : {ℓ : Level} {A B C : Set ℓ} {f : A → B} {g : B → C}
-        → mapNE (g ∘ f) ≐ mapNE g ∘ mapNE f
-map-∘ {f = f} {g} = indNE ≡.refl (λ {x} {xs} refl ind → ≡.cong ((g (f x)) ∷_) ind)
+        → map (g ∘ f) ≐ map g ∘ map  f
+map-∘ {f = f} {g} = ind  ≡.refl (λ {x} {xs} refl ind → ≡.cong ((g (f x)) ∷_) ind)
 
 map-cong : {ℓ : Level} {A B : Set ℓ} {f g : A → B}
-  → f ≐ g → mapNE f ≐ mapNE g
-map-cong {f = f} {g} f≐g = indNE (≡.cong [_] (f≐g _))
+  → f ≐ g → map  f ≐ map  g
+map-cong {f = f} {g} f≐g = ind  (≡.cong [_] (f≐g _))
                                  (λ {x} {xs} refl ind → ≡.cong₂ _∷_ (f≐g x) ind)
 \end{code}
 
 %}}}
 
 %{{{ Free ; TreeLeft   wrt  SETS
+\subsection{Adjunction Proof}
 \begin{code}
 Free : (ℓ : Level) → Functor (Sets ℓ) (SemigroupCat ℓ)
 Free ℓ = record
@@ -209,11 +205,12 @@ ToDo ∷ Discuss streams and their realisation in Agda.
 %}}}
 
 %{{{ Free ; TreeLeft   wrt  MAGMA
+\subsection{Non-empty lists are trees}
 \begin{code}
 open import Structures.Magma renaming (Hom to MagmaHom)
 open MagmaHom using () renaming (mor to morₘ)
 
-ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (MagmaCat ℓ)
+ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (Magmas ℓ)
 ForgetM ℓ = record
   { F₀             =   λ S → MkMagma (Carrier S) (Op S)
   ; F₁             =   λ F → MkHom (mor F) (pres F)
@@ -229,12 +226,12 @@ ForgetM-isFaithful F G F≈G = λ x → F≈G x
 Even though there's essentially no difference between the homsets of MagmaCat and SemigroupCat,
 I ``feel'' that there ought to be no free functor from the former to the latter.
 More precisely, I feel that there cannot be an associative “extension” of an arbitrary binary operator;
-see _⟪_ below.
+see |_⟪_| below.
 
 \begin{code}
 open import Relation.Nullary
 open import Categories.NaturalTransformation hiding (id ; _≡_)
-NoLeft : {ℓ : Level} (FreeM : Functor (MagmaCat lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
+NoLeft : {ℓ : Level} (FreeM : Functor (Magmas lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
 NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
   where open Adjunction Adjunct
         open NaturalTransformation
@@ -254,17 +251,17 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
         
         _⟪_ : ℕ → ℕ → ℕ
         x ⟪ y = x * y + 1
-        -- (x ⟪ y) ⟪ z   ≡  x * y * z + z + 1
-        -- x ⟪ (y  ⟪ z)  ≡  x * y * z + x + 1
+        -- |(x ⟪ y) ⟪ z   ≡  x * y * z + z + 1|
+        -- |x ⟪ (y  ⟪ z)  ≡  x * y * z + x + 1|
         --
-        -- Taking z , x ≔ 1 , 0 yields 2 ≡ 1
+        -- Taking |z , x ≔ 1 , 0 yields 2 ≡ 1|
         --
         -- The following code realises this pseudo-argument correctly.
 
         ohno : ¬ (2 ≡.≡ 1)
         ohno ()
         
-        𝒩 : Magma
+        𝒩 : Magma lzero
         𝒩 = MkMagma ℕ _⟪_
 
         𝑵 : Semigroup
@@ -277,13 +274,13 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
         inj₀ = MagmaHom.mor inj
 
         -- the components of the unit are monic precisely when the left adjoint is faithful
-        .work : {X Y : Magma} {F G : MagmaHom X Y}
+        .work : {X Y : Magma lzero} {F G : MagmaHom X Y}
              → morₘ (η unit Y) ∘ morₘ F ≐ morₘ (η unit Y) ∘ morₘ G
              → morₘ F ≐ morₘ G
         work {X} {Y} {F} {G} ηF≈ηG =
           let 𝑴₀   = Functor.F₀ FreeM
               𝑴    = Functor.F₁ FreeM
-              _∘ₘ_  = Category._∘_ (MagmaCat lzero)
+              _∘ₘ_  = Category._∘_ (Magmas lzero)
               εY    = mor (η counit (𝑴₀ Y))
               ηY    = η unit Y
           in faithfull F G (begin⟨ ≐-setoid (Carrier (𝑴₀ X)) (Carrier (𝑴₀ Y)) ⟩
@@ -300,14 +297,14 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
         postulate inj-is-injective : {x y : ℕ} → inj₀ x ≡ inj₀ y → x ≡ y
 
         open import Data.Unit
-        𝒯 : Magma
+        𝒯 : Magma lzero
         𝒯 = MkMagma ⊤ (λ _ _ → tt)
         --
-        -- ★ It may be that monics do not correspond to the underlying/mor function being injective for MagmaCat.
-        -- ‼ .cminj-is-injective : {x y : ℕ} → {!!} -- inj₀ x ≡ inj₀ y → x ≡ y
-        -- ‼ cminj-is-injective {x} {y} = work {𝒯} {𝒩} {F = MkHom (λ x → 0) (λ{ {tt} {tt} → {!!}})} {G = {!!}} {!!} 
+        -- |★ It may be that monics do not correspond to the underlying/mor function being injective for MagmaCat.|
+        -- |‼ .cminj-is-injective : {x y : ℕ} → {!!} -- inj₀ x ≡ inj₀ y → x ≡ y|
+        -- |‼ cminj-is-injective {x} {y} = work {𝒯} {𝒩} {F = MkHom (λ x → 0) (λ{ {tt} {tt} → {!!}})} {G = {!!}} {!!}| 
         --
-        -- ToDo! … perhaps this lives in the libraries someplace?
+        -- |ToDo! … perhaps this lives in the libraries someplace?|
           
         bad : Hom (Functor.F₀ FreeM (Functor.F₀ (ForgetM _) 𝑵)) 𝑵
         bad = η counit 𝑵
@@ -330,7 +327,6 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
             ≡⟨ ≡.refl ⟩
           inj₀ 1
             ∎
-
 \end{code}
 
 %}}}

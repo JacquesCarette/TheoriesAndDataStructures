@@ -1,3 +1,5 @@
+\section{Monoids: Lists}
+
 %{{{ Imports
 \begin{code}
 module Structures.Monoid where
@@ -19,7 +21,7 @@ open import DataProperties
 %}}}
 
 %{{{ Some remarks about recursion principles
-
+\subsection{Some remarks about recursion principles}
 ( To be relocated elsewhere )
 
 \begin{spec}
@@ -34,19 +36,20 @@ open import Data.Nat hiding (_*_)
 rcℕ : {ℓ : Level} {X : ℕ → Set ℓ} (g₁ : X zero) (g₂ : (n : ℕ) → X n → X (suc n)) → (n : ℕ) → X n
 rcℕ g₁ g₂ zero = g₁
 rcℕ g₁ g₂ (suc n) = g₂ n (rcℕ g₁ g₂ n)
-
---  Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss → X (c ss)|, more or less :-)
---  to obtain a “recursion theorem” like principle. The second piece |X ss| may not be possible due to type considerations.
---  Really, the induction principle is just the *dependent* version of folding/recursion!
---
--- Observe that if we instead use arguments of the form |{ss : Srcs} → X ss → X (c ss)| then, for one reason or another,
--- the dependent type |X| needs to be supplies explicity ─yellow Agda! Hence, it behooves us to use explicits in this case.
--- Sometimes, the yellow cannot be avoided. 
 \end{spec}
+
+Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss → X (c ss)|, more or less :-)
+to obtain a “recursion theorem” like principle.
+The second piece |X ss| may not be possible due to type considerations.
+Really, the induction principle is just the *dependent* version of folding/recursion!
+ 
+Observe that if we instead use arguments of the form |{ss : Srcs} → X ss → X (c ss)| then, for one reason or
+another, the dependent type |X| needs to be supplies explicity --yellow Agda! Hence, it behooves us to use explicits
+in this case. Sometimes, the yellow cannot be avoided. 
 %}}}
 
 %{{{ Monoid ; Hom
-
+\subsection{Definition}
 \begin{code}
 record Monoid ℓ : Set (lsuc ℓ) where
   field 
@@ -74,6 +77,7 @@ open Hom
 %}}}
 
 %{{{ MonoidAlg ; MonoidCat
+\subsection{Category}
 \begin{code}
 MonoidAlg : {ℓ : Level} → OneSortedAlg ℓ
 MonoidAlg {ℓ} = record
@@ -97,6 +101,7 @@ MonoidCat ℓ = oneSortedCategory ℓ MonoidAlg
 %}}}
 
 %{{{ forgetful functorS
+\subsection{Forgetful Functors \unfinished}
 \begin{code}
 -- Forget all structure, and maintain only the underlying carrier
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
@@ -108,7 +113,7 @@ Forget ℓ = mkForgetful ℓ MonoidAlg
 
 -- ToDo ∷ forget to the underlying magma
 
--- ToDo ∷ forget to the underlying binary relation, with x ∼ y ∶≡ (∀ z → x * z ≡ y * z)
+-- ToDo ∷ forget to the underlying binary relation, with |x ∼ y ∶≡ (∀ z → x * z ≡ y * z)|
           -- the monoid-indistuighability equivalence relation
 \end{code}
 %}}}

@@ -27,6 +27,8 @@ open import Relation.Binary.PropositionalEquality using (inspect)
 \end{code}
 %}}}
 
+\edcomm{WK}{Goal?}
+
 %{{{ \subsection{|Some₀|}
 \subsection{|Some₀|}
 Setoid based variant of Any.
@@ -46,9 +48,10 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
      there : {x : Carrier} {xs : List Carrier} (pxs : Some₀ xs) → Some₀ (x ∷ xs)
 \end{code}
 
-Inhabitants of Some₀ really are just locations: |Some₀ P xs  ≅ Σ i ∶ Fin (length xs) • P (x ‼ i)|.
-Thus one possibility is to go with integers directly, and entirely ignore the proofs contained
-in a |Some₀ P xs|.
+Inhabitants of |Some₀| really are just locations:
+|Some₀ P xs  ≅ Σ i ∶ Fin (length xs) • P (x ‼ i)|.
+Thus one possibility is to go with natural numbers directly,
+and entirely ignore the proof contained in a |Some₀ P xs|.
 \begin{code}
    toℕ : {xs : List Carrier} → Some₀ xs → ℕ
    toℕ (here _) = 0
@@ -113,21 +116,25 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
          {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
 ≡→Some {A = A} ≡.refl = ≅-refl
 \end{code}
-
 %}}}
 
 %{{{ \subsection{Membership module}: setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
 
-|setoid≈ x|, is actually a mapping from S to SSetoid; it maps
-elements |y| of |Carrier S| to the setoid of "x ≈ₛ y".
+\savecolumns
 \begin{code}
 module Membership {a ℓ} (S : Setoid a ℓ) where
 
   open Setoid S renaming (trans to _⟨≈≈⟩_)
 
   infix 4 _∈₀_ _∈_
+\end{code}
 
+|setoid≈ x| is actually a mapping from |S| to |SSetoid _ _|; it maps
+elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
+
+\restorecolumns
+\begin{code}
   setoid≈ : Carrier → S ⟶ SSetoid ℓ ℓ
   setoid≈ x = record
     { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {A = S} x y

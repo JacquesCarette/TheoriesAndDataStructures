@@ -1,3 +1,11 @@
+\section{Magmas: Binary Trees}
+
+Needless to say Binary Trees are a ubiquitous concept in programming.
+We look at the associate theory and see that they are easy to use
+since they are a free structure and their associate tool kit of
+combinators are a result of the proof that they are indeed free.
+\unfinished
+
 %{{{ Imports
 \begin{code}
 module Structures.Magma where
@@ -18,21 +26,21 @@ open import EqualityCombinators
 %}}}
 
 %{{{ Magma ; Hom
-
+\subsection{Definition}
 A Free Magma is a binary tree.
 \begin{code}
 
-record Magma {a} : Set (lsuc a) where
+record Magma ℓ : Set (lsuc ℓ) where
   constructor MkMagma
   field
-    Carrier : Set a
+    Carrier : Set ℓ
     Op      : Carrier → Carrier → Carrier
 
 open Magma
 bop = Magma.Op
 syntax bop M x y = x ⟨ M ⟩ y
 
-record Hom {ℓ} (X Y : Magma {ℓ}) : Set ℓ where
+record Hom {ℓ} (X Y : Magma ℓ) : Set ℓ where
   constructor MkHom
   field
     mor          : Carrier X → Carrier Y
@@ -44,34 +52,35 @@ open Hom
 %}}}
 
 %{{{ MagmaAlg ; MagmaCat ; Forget
-
+\subsection{Category and Forgetful Functor}
 \begin{code}
-MagmaAlg : ∀ {ℓ} → OneSortedAlg ℓ
-MagmaAlg = record
-  { Alg         =   Magma
+MagmaAlg : {ℓ : Level} → OneSortedAlg ℓ
+MagmaAlg {ℓ} = record
+  { Alg         =   Magma ℓ
   ; Carrier     =   Carrier
   ; Hom         =   Hom
   ; mor         =   mor
   ; comp        =   λ F G → record
     { mor            =   mor F ∘ mor G
-    ; preservation   =   ≡.trans (≡.cong (mor F) (preservation G)) (preservation F)
+    ; preservation   =   ≡.cong (mor F) (preservation G) ⟨≡≡⟩ preservation F
     }
   ; comp-is-∘   =   ≐-refl
   ; Id          =   MkHom id ≡.refl
   ; Id-is-id    =   ≐-refl
   }
    
-MagmaCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-MagmaCat ℓ = oneSortedCategory ℓ MagmaAlg
+Magmas : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+Magmas ℓ = oneSortedCategory ℓ MagmaAlg
 
-Forget : (ℓ : Level) → Functor (MagmaCat ℓ) (Sets ℓ)
+Forget : (ℓ : Level) → Functor (Magmas ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ MagmaAlg
 \end{code}
 
 %}}}
 
 %{{{ Tree ; ⟦_,_⟧ ; mapT ; indT
-
+\subsection{Syntax}
+\edcomm{MA}{Mention free functor and free monads? Syntax.}
 \begin{code}
 data Tree {a : Level} (A : Set a) : Set a where
  Leaf   : A → Tree A
@@ -87,8 +96,8 @@ rec lf br (Branch l r) = br l r (rec lf br l) (rec lf br r)
 ⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝓁 : A → B) (𝒷 : B → B → B) → Tree A → B
 ⟦ 𝓁 , 𝒷 ⟧ = rec 𝓁 (λ _ _ x y → 𝒷 x y)
 
-mapT : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Tree A → Tree B
-mapT f = ⟦ Leaf ∘ f , Branch ⟧  -- cf UnaryAlgebra's map for |Eventually|
+map : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Tree A → Tree B
+map f = ⟦ Leaf ∘ f , Branch ⟧  -- cf UnaryAlgebra's map for |Eventually|
 
 -- implicits variant of |rec|
 indT : ∀ {a c} {A : Set a} {P : Tree A → Set c}
@@ -102,33 +111,69 @@ indT base ind = rec (λ a → base) (λ l r → ind)
 
 %{{{ TreeF ; TreeLeft
 \begin{code}
-TreeF : (ℓ : Level) → Functor (Sets ℓ) (MagmaCat ℓ)
+id-as-⟦⟧ : {ℓ : Level} {A : Set ℓ} → ⟦ Leaf , Branch ⟧  ≐ id {A = Tree A}
+id-as-⟦⟧ = indT ≡.refl (≡.cong₂ Branch)
+
+map-∘ : {ℓ : Level} {X Y Z : Set ℓ} {f : X → Y} {g : Y → Z} → map (g ∘ f) ≐ map g ∘ map f
+map-∘ = indT ≡.refl (≡.cong₂ Branch)
+
+map-cong : {ℓ : Level} {A B : Set ℓ} {f g : A → B}
+         → f ≐ᵢ g
+         → map f ≐ map g
+map-cong = λ F≈G → indT (≡.cong Leaf F≈G) (≡.cong₂ Branch)
+
+TreeF : (ℓ : Level) → Functor (Sets ℓ) (Magmas ℓ)
 TreeF ℓ = record
   { F₀             =   λ A → MkMagma(Tree A) Branch
-  ; F₁             =   λ f → MkHom (mapT f) ≡.refl
-  ; identity       =   indT ≡.refl (≡.cong₂ Branch)
-  ; homomorphism   =   indT ≡.refl (≡.cong₂ Branch)
-  ; F-resp-≡      =   λ F≈G → indT (≡.cong Leaf F≈G) (≡.cong₂ Branch)
+  ; F₁             =   λ f → MkHom (map f) ≡.refl
+  ; identity       =   id-as-⟦⟧
+  ; homomorphism   =   map-∘
+  ; F-resp-≡      =   map-cong
   }
+
+eval : {ℓ : Level} (M : Magma ℓ) → Tree (Carrier M) → Carrier M
+eval M = ⟦ id , Op M ⟧
+
+eval-naturality : {ℓ : Level} {M N : Magma ℓ} (F : Hom M N)
+                → eval N ∘ map (mor F) ≐ mor F ∘ eval M
+eval-naturality {ℓ} {M} {N} F = indT ≡.refl $ λ pf₁ pf₂ → ≡.cong₂ (Op N) pf₁ pf₂ ⟨≡≡˘⟩ preservation F
+
+-- `eval Trees' has a pre-inverse.
+as-id : {ℓ : Level} {A : Set ℓ} → id {A = Tree A} ≐ ⟦ id , Branch ⟧ ∘ map Leaf
+as-id = indT ≡.refl (≡.cong₂ Branch)
 
 TreeLeft : (ℓ : Level) → Adjunction (TreeF ℓ) (Forget ℓ)
 TreeLeft ℓ = record
   { unit    =  record { η = λ _ → Leaf ; commute = λ _ → ≡.refl }
   ; counit  =  record
-    { η        =  λ A → MkHom ⟦ id , Op A ⟧ ≡.refl
-    ; commute  =  λ {_} {Y} F → indT ≡.refl $ λ pf₁ pf₂ → ≡.cong₂ (Op Y) pf₁ pf₂ ⟨≡≡˘⟩ preservation F
+    { η        =  λ A → MkHom (eval A) ≡.refl
+    ; commute  =  eval-naturality
     } 
-  ; zig   =   indT ≡.refl (≡.cong₂ Branch)
+  ; zig   =   as-id
   ; zag   =   ≡.refl
   }
 \end{code}
 
+Notice that the adjunction proof forces us to come-up with the operations and properties about them!
+\begin{itemize}
+\item |id-as-⟦⟧|: \unfinished
+\item |map|: usually functions can be packaged-up to work on trees.
+\item |map-id|: the identity function leaves syntax alone; or: |map id| can be replaced with a constant
+  time algorithm, namely, |id|.
+\item |map-∘|: sequential substitutions on syntax can be efficiently replaced with a single substitution.
+\item |map-cong|: observably indistinguishable substitutions can be used in place of one another, similar to the
+      transparency principle of Haskell programs.      
+\item |eval| : \unfinished
+\item |eval-naturality| : \unfinished
+\item |as-id| : \unfinished
+\end{itemize}
 
--- Looks like there is no right adjoint, because its binary constructor would have to anticipate
--- all magma _*_, so that "singleton (x * y)" has to be the same as "Binary x y".
+
+Looks like there is no right adjoint, because its binary constructor would have to anticipate
+all magma |_*_|, so that |singleton (x * y)| has to be the same as |Binary x y|.
 
 How does this relate to the notion of ``co-trees'' ---infinitely long trees?
-─similar to the lists vs streams view.
+--similar to the lists vs streams view.
 %}}}
 
 % Quick Folding Instructions:

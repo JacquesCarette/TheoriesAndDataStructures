@@ -603,7 +603,10 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
            Some P xs₁ ≅ Some P xs₂
  Some-cong {xs₁} {xs₂} list-rel = record
-  { to           =   record { _⟨$⟩_ = bag-as-⇒ list-rel ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} } -- Yellow! \unfinished
+  { to           =   record
+     { _⟨$⟩_ = bag-as-⇒ list-rel
+     ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} {xs≅ys = list-rel}
+     }
   ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {! {- \unfinished -}!} }
   ; inverse-of   =   record { left-inverse-of = {! {- \unfinished -}!} ; right-inverse-of = {! {- \unfinished -}!} }
   }
@@ -612,12 +615,12 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   open FindLose P using (bag-as-⇒ ; find)
 
   -- this is probably a specialized version of Respects.
-  -- is also related to an uncurried version of 'lose'.
+  -- is also related to an uncurried version of |lose|.
   copy : ∀ {x} {ys} {Q : A ⟶ SSetoid ℓa ℓa} → x ∈₀ ys → (Setoid.Carrier (Π._⟨$⟩_ Q x)) → Some₀ Q ys
   copy {Q = Q} (here p)  pf = here (_≅_.to (Π.cong Q p) ⟨$⟩ pf)
   copy         (there p) pf = there (copy p pf)
 
-  -- this should be generalized to qy coming from Q₀ x.
+  -- \edcomm{Somebody}{this should be generalized to |qy| coming from |Q₀ x|.}
   copy-cong : {x y : Carrier} {xs ys : List Carrier} {Q : A ⟶ SSetoid ℓa ℓa}
     (px : P₀ x) (qy : Setoid.Carrier (Π._⟨$⟩_ Q y)) (x∈xs : x ∈₀ xs) (y∈ys : y ∈₀ ys) →
     (x∈xs ≋ y∈ys) → copy {Q = P} x∈xs px ≋ copy {Q = Q} y∈ys qy

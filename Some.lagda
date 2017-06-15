@@ -27,11 +27,14 @@ open import Relation.Binary.PropositionalEquality using (inspect)
 \end{code}
 %}}}
 
-%{{{ Some₀
+%{{{ \subsection{|Some₀|}
 \subsection{|Some₀|}
 Setoid based variant of Any.
 
 Quite a bit of this is directly inspired by |Data.List.Any| and |Data.List.Any.Properties|.
+
+\edcomm{WK}{|A ⟶ SSetoid _ _| is a pretty strong assumption.
+Logical equivalence does not ask for the two morphisms back and forth to be inverse.}
 
 \begin{code}
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
@@ -113,7 +116,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 
 %}}}
 
-%{{{ Membership module : setoid≈ ; _∈_ ; _∈₀_
+%{{{ \subsection{Membership module}: setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
 
 |setoid≈ x|, is actually a mapping from S to SSetoid; it maps
@@ -149,7 +152,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 \end{code}
 %}}}
 
-%{{{ _∥_ ; [_∥_] ; ∥-sym ; _⊎⊎_
+%{{{ \subsection{Parallel Composition} _∥_ ; [_∥_] ; ∥-sym ; _⊎⊎_
 \subsection{Parallel Composition}
 
 To avoid absurd patterns that we do not use, when using |_⊎-Rel_|, we make this:
@@ -212,7 +215,7 @@ A ⊎⊎ B = record
 \end{code}
 %}}}
 
-%{{{ ⊎⊎-comm
+%{{{ \subsection{|⊎⊎-comm|}
 \subsection{|⊎⊎-comm|}
 \begin{code}
 ⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → A ⊎⊎ B  ≅  B ⊎⊎ A
@@ -248,7 +251,7 @@ A ⊎⊎ B = record
 \end{code}
 %}}}
 
-%{{{ ++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
+%{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
@@ -345,7 +348,7 @@ The following absurd patterns are what led me to make a new type for equalities.
 \end{code}
 %}}}
 
-%{{{ ⊥⊥ : bottom as a setoid ; ⊥≅Some[] : ⊥⊥ ≅ Some P []
+%{{{ \subsection{Bottom as a setoid} ⊥⊥ ; ⊥≅Some[] : ⊥⊥ ≅ Some P []
 \subsection{Bottom as a setoid}
 \begin{code}
 ⊥⊥ : ∀ {a ℓa} → Setoid a ℓa
@@ -368,7 +371,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 \end{code}
 %}}}
 
-%{{{ map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
+%{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \begin{code}
 map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
@@ -485,13 +488,16 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
                                                 
 \end{code}
 
+\edcomm{Somebody}{Commented out:
+\begin{spec}
  bag-as-⇒ : {xs ys : List Carrier} → BagEq xs ys → Some₀ P xs → Some₀ P ys
  bag-as-⇒ xs≅ys Pxs = let (x , x∈xs , Px) = find Pxs in
                        let x∈ys = to xs≅ys ⟨$⟩ x∈xs
                        in lose (x , x∈ys , Px)
+\end{spec}
+}%edcomm
 
-
-%{{{ Some-cong : (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
+%{{{ \subsection{Some-cong and holes} (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
 \subsection{Some-cong and holes}
 This isn't quite the full-powered cong, but is all we need.
 \begin{code}

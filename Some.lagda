@@ -81,7 +81,12 @@ module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ S
             → _≋_ (here {x = x} {xs} px) (here {x = y} {ys} qy)
      thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ P xs} {qys : Some₀ Q ys}
              → _≋_ pxs qys → _≋_ (there {x = x} pxs) (there {x = y} qys)
+\end{code}             
 
+Notice that these another from of ``natural numbers'' whose elements are of the form
+|thereEqⁿ (hereEq Px Qx)| for some |n : ℕ|.
+
+\begin{code}
 module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
    open Setoid A
 
@@ -113,7 +118,6 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
      { Carrier         =   Some₀ P xs
      ; _≈_             =   _≋_
      ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
-     -- |record {IsEquivalence ≡.isEquivalence}|
      }
 
 ≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa}
@@ -496,9 +500,29 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
 
  cong-fwd : {xs ys : List Carrier} {xs≅ys : BagEq xs ys} {p : Some₀ P xs} {q : Some₀ Q xs}
           → p ≋ q → bag-as-⇒ P xs≅ys p ≋ bag-as-⇒ Q xs≅ys q
- cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q
- ...| (x , x∈xs , px) | (y , y∈ys , py) = lose-cong ({!need decidable equality? {- \unfinished -}!} , {! {- \unfinished -}!})
+ cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q | find-cong p≋q
+ ...| (x , x∈xs , px) | (y , y∈xs , py) | (x≈y , x∈xs≋y∈xs) = lose-cong (x≈y , goal)
+ 
+   where
+   
+     open _≅_ (xs≅ys {x}) using () renaming (to to F)
+     open _≅_ (xs≅ys {y}) using () renaming (to to G)
+     
+     F-cong : {a b : x ∈₀ xs} → a ≋ b → F ⟨$⟩ a ≋ F ⟨$⟩ b
+     F-cong = Π.cong F
+     
+     G-cong : {a b : y ∈₀ xs} → a ≋ b → G ⟨$⟩ a ≋ G ⟨$⟩ b
+     G-cong = Π.cong G
 
+     To = λ {i} → Π._⟨$⟩_ (_≅_.to (xs≅ys {i}))
+
+     postulate helper : {i j : Carrier} → i ≈ j → {!To {i} ≐ To {j}!}
+     -- switch to john major equality in the defn of ≐ ?
+     goal : F ⟨$⟩ x∈xs ≋ G ⟨$⟩ y∈xs
+     goal = {!Π.cong F!}
+     
+     y∈ysT : y ∈₀ xs
+     y∈ysT = y∈xs
 \end{code}
 
 \edcomm{Somebody}{Commented out:

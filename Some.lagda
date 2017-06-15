@@ -5,7 +5,8 @@
 module Some where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
-open import Relation.Binary using (Setoid ; IsEquivalence ; Rel)
+open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
+  Reflexive ; Symmetric ; Transitive)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_; _⟨$⟩_)
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
@@ -43,25 +44,29 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 \end{code}
 
 Inhabitants of Some₀ really are just locations: |Some₀ P xs  ≅ Σ i ∶ Fin (length xs) • P (x ‼ i)|.
-For now, we use a weaker operation.
+Thus one possibility is to go with integers directly, and entirely ignore the proofs contained
+in a |Some₀ P xs|.
 \begin{code}   
    toℕ : {xs : List Carrier} → Some₀ xs → ℕ
    toℕ (here _) = 0
    toℕ (there pf) = suc (toℕ pf)
    
-   -- proof irrelevance built-in here.  We only care that these are the same as members of |ℕ|
    _∼S_ : {xs : List Carrier} → Some₀ xs → Some₀ xs → Set
    s₁ ∼S s₂ = toℕ s₁ ≡ toℕ s₂
+\end{code}
 
-   -- A more direct approach: |_≋_|
+Instead, we choose a more direct approach: |_≋_|.  This is an extremely strong relation:
+two proofs, of different properties of elements of different lists are considered related
+when the ``witness'' for the property is in the same location in both lists.
 
+\begin{code}
 module _ {a ℓa} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where
    open Setoid A
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    private Q₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ Q e)
 
    infix 3 _≋_
-   data _≋_ : {xs ys : List Carrier} (pf : Some₀ P xs) (pf' : Some₀ Q ys) → Set where
+   data _≋_ : {xs ys : List Carrier} (pf : Some₀ P xs) (pf' : Some₀ Q ys) → Set ℓa where
      hereEq : {xs ys : List Carrier} {x y : Carrier} (px : P₀ x) (qy : Q₀ y)
             → _≋_ (here {x = x} {xs} px) (here {x = y} {ys} qy)
      thereEq : {xs ys : List Carrier} {x y : Carrier} {pxs : Some₀ P xs} {qys : Some₀ Q ys}
@@ -93,7 +98,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    open Setoid A
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    
-   Some : List Carrier → Setoid (ℓa ⊔ a) lzero
+   Some : List Carrier → Setoid (ℓa ⊔ a) ℓa
    Some xs = record
      { Carrier         =   Some₀ P xs
      ; _≈_             =   _≋_
@@ -110,6 +115,9 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 
 %{{{ Membership module : setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
+
+|setoid≈ x|, is actually a mapping from S to SSetoid; it maps
+elements |y| of |Carrier S| to the setoid of "x ≈ₛ y".
 \begin{code}
 module Membership {a ℓ} (S : Setoid a ℓ) where
 
@@ -119,7 +127,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
 
   setoid≈ : Carrier → S ⟶ SSetoid ℓ ℓ
   setoid≈ x = record
-    { _⟨$⟩_ = λ y → _≈S_ {A = S} x y
+    { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {A = S} x y
     ; cong = λ i≈j → record
       { to   = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j     ; cong = λ _ → tt }
       ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈⟩ sym i≈j ; cong = λ _ → tt }
@@ -130,7 +138,7 @@ module Membership {a ℓ} (S : Setoid a ℓ) where
       }
     }
 
-  _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) lzero
+  _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) ℓ
   x ∈ xs = Some (setoid≈ x) xs
 
   _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
@@ -244,10 +252,10 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
-    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs } -- |{! ++→⊎-cong xs {ys} !} }|
+    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs }
     ; inverse-of = record
-      { left-inverse-of = lefty xs -- |{! ++→⊎∘⊎→++≅id xs !}|
-      ; right-inverse-of = righty xs -- |{! ⊎→++∘++→⊎≅id xs !}|
+      { left-inverse-of = lefty xs
+      ; right-inverse-of = righty xs
       }
     }
     where
@@ -291,8 +299,8 @@ The following absurd patterns are what led me to make a new type for equalities.
       ⊎→++ {zs} (inj₂ y) = ⊎→ʳ zs y
       
       ++→⊎ : ∀ xs {ys} → Some₀ P (xs ++ ys) → Some₀ P xs ⊎ Some₀ P ys
-      ++→⊎ [] p = inj₂ p
-      ++→⊎ (x ∷ l) (here p) = inj₁ (here p)
+      ++→⊎ []             p  = inj₂ p
+      ++→⊎ (x ∷ l) (here  p) = inj₁ (here p)
       ++→⊎ (x ∷ l) (there p) = (there ⊎₁ id₀) (++→⊎ l p)
 
       -- all of the following may need to change
@@ -300,13 +308,6 @@ The following absurd patterns are what led me to make a new type for equalities.
       ⊎→++-cong : {a b : Some₀ P xs ⊎ Some₀ P ys} → (_∽_ ∥ _∽_) a b → ⊎→++ a ∽ ⊎→++ b
       ⊎→++-cong (left  x₁∼x₂)  =  yo x₁∼x₂
       ⊎→++-cong (right y₁∼y₂)  =  oy xs y₁∼y₂
-
-      ++→⊎-cong : ∀ ws {zs} {a b : Some₀ P (ws ++ zs)} → a ≡ b → (_≡_ ∥ _≡_) (++→⊎ ws a) (++→⊎ ws b)
-      ++→⊎-cong [] ≡.refl = right ≡.refl
-      ++→⊎-cong (x ∷ xs) {a = here px} ≡.refl = left ≡.refl
-      ++→⊎-cong (x ∷ xs) {a = there pxs} ≡.refl with ++→⊎ xs pxs | ++→⊎-cong xs {a = pxs} ≡.refl
-      ...| inj₁ _ | left  ≡.refl  =  left  ≡.refl
-      ...| inj₂ _ | right ≡.refl  =  right ≡.refl
 
       ∽∥∽-cong   :  {xs ys us vs : List Carrier}
                     → (F : Some₀ P xs → Some₀ P us) (F-cong : {p q : Some₀ P xs} → p ∽ q → F p ∽ F q)
@@ -332,29 +333,12 @@ The following absurd patterns are what led me to make a new type for equalities.
       ... | inj₁ x | ()
       ... | inj₂ y | (right x~₂y) = right x~₂y
 
-      ++→⊎∘⊎→++≅id : ∀ zs {ws} → (pf : Some₀ P zs ⊎ Some₀ P ws) → (_≡_ ∥ _≡_) (++→⊎ zs (⊎→++ pf)) pf
-      ++→⊎∘⊎→++≅id [] (inj₁ ())
-      ++→⊎∘⊎→++≅id [] (inj₂ _) = right ≡.refl
-      ++→⊎∘⊎→++≅id (z ∷ zs)      (inj₁ (here p)) = left ≡.refl
-      ++→⊎∘⊎→++≅id (z ∷ zs) {ws} (inj₁ (there p)) with ++→⊎ zs {ws} (⊎→++ (inj₁ p)) | ++→⊎∘⊎→++≅id zs {ws} (inj₁ p)
-      ... | inj₁ pp | left pp≡p = left (≡.cong there pp≡p)
-      ++→⊎∘⊎→++≅id (z ∷ zs) {ws} (inj₂ p) with ++→⊎ zs {ws} (⊎→++ {zs} (inj₂ p)) | ++→⊎∘⊎→++≅id zs (inj₂ p)
-      ... | inj₂ pp | right pp≡p = right pp≡p
-
-      
       righty : (zs {ws} : List Carrier) (p : Some₀ P (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ∽ p
       righty [] {ws} p = ∽-refl
       righty (x ∷ zs) {ws} (here px) = ∽-refl
       righty (x ∷ zs) {ws} (there p) with ++→⊎ zs p | righty zs p
       ... | inj₁ _  | res = thereEq res
       ... | inj₂ _  | res = thereEq res
-
-      ⊎→++∘++→⊎≅id : ∀ zs {ws} → (x : Some₀ P (zs ++ ws)) → ⊎→++ {zs} {ws} (++→⊎ zs x) ≡ x
-      ⊎→++∘++→⊎≅id []       x = ≡.refl
-      ⊎→++∘++→⊎≅id (x ∷ zs) (here p) = ≡.refl
-      ⊎→++∘++→⊎≅id (x ∷ zs) (there p) with ++→⊎ zs p | ⊎→++∘++→⊎≅id zs p
-      ... | inj₁ y | ≡.refl = ≡.refl
-      ... | inj₂ y | ≡.refl = ≡.refl
 \end{code}
 %}}}
 
@@ -443,13 +427,13 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
      belongs : pt ∈₀ xs
      prop : P₀ pt
 
- record _≈US_ (a b : UnpackedSome) : Set {!!} where
+ record _≈US_ (a b : UnpackedSome) : Set ℓa where
    constructor us-eq
    open UnpackedSome
-   _∼_ = _≋_ {P = P}
+   _∼_ = _≋_ {P = setoid≈ (pt a)} {setoid≈ (pt b)}
    field
      ptEq : pt a ≈ pt b
-     -- ∈Eq : belongs a ∼ belongs b
+     ∈Eq : belongs a ∼ belongs b
 
  Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
@@ -467,16 +451,13 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
      }
    }
    where
-
-     Eq = _∻_
-
-     Refl : {s : Support xs} → Eq s s
+     Refl : Reflexive _∻_
      Refl {a , a∈xs , Pa} = refl , ≋-refl
 
-     Sym  : {s t : Support xs} → Eq s t → Eq t s
+     Sym  : Symmetric _∻_
      Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , ≋-sym a∈xs≋b∈xs
 
-     Trans : {s t u : Support xs} → Eq s t → Eq t u → Eq s u
+     Trans : Transitive _∻_
      Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , ≋-trans a∈xs≋b∈xs b∈xs≋c∈xs
 
  module ∻ {ys} where open Setoid (Σ-Setoid ys) public
@@ -490,10 +471,6 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  lose (y , here py , Py)     = here (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
  lose (y , there y∈ys , Py) = there (lose (y , y∈ys , Py))
 
- rright-inv : {ys : List Carrier} (p : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose p) ∻ p
- rright-inv (y , here y≈x , Py) = sym y≈x , hereEq refl y≈x
- rright-inv (y , there y∈ys , Py) = ?
-
  find-cong : {ys : List Carrier} {p q : Some₀ P ys} → p ≋ q → find p ∻ find q
  find-cong (hereEq px qy) = refl , ≋-refl
  find-cong (thereEq eq) = let (fst , snd) = find-cong eq in fst , thereEq snd
@@ -501,43 +478,29 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} {xs 
  P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
  P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
 
- postulate P⁺refl≈Id : {x : Carrier} → P⁺ (refl {x = x}) ≐ id₀
+ lose-cong : {ys : List Carrier} {p q : Support ys} → p ∻ q → lose p ≋ lose q
+ lose-cong {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
+ lose-cong {p = a , here a≈x , Pa} {b , there b∈ys , Pb} (fst , ())
+ lose-cong {p = a , there a∈ys , Pa} {b , here px , Pb} (fst , ())
+ lose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (lose-cong (a≈b , a∈ys≋b∈ys))
 
- llose-cong : {ys : List Carrier} {p q : Support ys} → p ∻ q → lose p ≋ lose q
- llose-cong {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
- llose-cong {p = a , here a≈x , Pa} {b , there b∈ys , Pb} (fst , ())
- llose-cong {p = a , there a∈ys , Pa} {b , here px , Pb} (fst , ())
- llose-cong {p = a , there a∈ys , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈ys≋b∈ys) = thereEq (llose-cong (a≈b , a∈ys≋b∈ys))
+ left-inv : {ys : List Carrier} (x∈ys : Some₀ P ys) → lose (find x∈ys) ≋ x∈ys
+ left-inv (here px) = hereEq _ px
+ left-inv (there x∈ys) = thereEq (left-inv x∈ys)
 
- lleft-inv : (x : Some₀ P xs) → lose (find x) ≋ x
- lleft-inv (here px) rewrite P⁺refl≈Id px = ≋-refl
- lleft-inv (there pxs) with find pxs
- lleft-inv (there pxs) | y , here px , Py = thereEq {!!}
- lleft-inv (there pxs) | y , there proj₄ , Py = thereEq {!lleft-inv ?!}
-
+ right-inv : {ys : List Carrier} (pf : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose pf) ∻ pf
+ right-inv (y , here px , Py) = (sym px) , (hereEq refl px)
+ right-inv (y , there y∈ys , Py) = (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₂ (right-inv (y , y∈ys , Py))))
+ 
  Σ-Some : Some P xs ≅ Σ-Setoid xs
  Σ-Some = record
    { to = record { _⟨$⟩_ = find {xs} ; cong = find-cong }
-   ; from = record { _⟨$⟩_ = lose ; cong = llose-cong }
+   ; from = record { _⟨$⟩_ = lose ; cong = lose-cong }
    ; inverse-of = record
-     { left-inverse-of = lleft-inv
-     ; right-inverse-of = rright-inv
+     { left-inverse-of = left-inv
+     ; right-inverse-of = right-inv
      }
    }
-   where
-   _∼_ = _∼S_ P
-   lose-cong : ∀ {ys : List Carrier} {a b : Σ Carrier (λ x → x ∈₀ ys × P₀ x)} → let i = proj₁ a in let j = proj₁ b in
-       let i∈ys = proj₁ (proj₂ a) in let j∈ys = proj₁ (proj₂ b) in
-       i ≈ j × toℕ (setoid≈ i) i∈ys ≡ toℕ (setoid≈ j) j∈ys × ((Π._⟨$⟩_ P i) ≅ (Π._⟨$⟩_ P j)) → lose {ys} a ∼ lose b
-   lose-cong {_} {a₁ , here {x} px , Pa} {b , here px₁ , Pb} (i≈j , _ , Pi≅Pj) = ≡.refl
-   lose-cong {_} {a₁ , here px , Pa} {b , there b∈xs , Pb} (i≈j , () , Pi≅Pj)
-   lose-cong {_} {a₁ , there a∈xs , Pa} {b , here px , Pb} (i≈j , () , Pi≅Pj)
-   lose-cong {_} {a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , xx , Pi≅Pj) =
-     ≡.cong suc (lose-cong {a = a₁ , a∈xs , Pa} {b , b∈xs , Pb} (i≈j , suc-inj xx , Pi≅Pj))
-
-   left-inv : ∀ {ys} (x : Some₀ P ys) → toℕ P (lose (find x)) ≡ toℕ P x
-   left-inv (here px) = ≡.refl
-   left-inv (there x₁) = ≡.cong suc (left-inv x₁)
 \end{code}
 
 \begin{spec}

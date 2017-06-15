@@ -283,6 +283,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 \end{code}
 
 The following absurd patterns are what led me to make a new type for equalities.
+\edcomm{``me''}{Commented out:
 \begin{spec}
       yo : {xs : List Carrier} {x y : Some₀ P xs} → x ∼ y   →   ⊎→ˡ x ~ ⊎→ˡ y
       yo {x = here px} {here px₁} Relation.Binary.PropositionalEquality.refl = ≡.refl
@@ -290,6 +291,7 @@ The following absurd patterns are what led me to make a new type for equalities.
       yo {x = there x₁} {here px} ()
       yo {x = there x₁} {there y} pf = ≡.cong suc (yo {!!})
 \end{spec}
+}%edcomm
 
 \begin{code}
       yo : {xs : List Carrier} {x y : Some₀ P xs} → x ∽ y   →   ⊎→ˡ x  ∽  ⊎→ˡ y

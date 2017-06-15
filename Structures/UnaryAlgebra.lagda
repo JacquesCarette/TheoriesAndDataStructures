@@ -1,3 +1,13 @@
+\section{UnaryAlgebra}
+
+Unary algebras are tantamount to an OOP interface with a single operation.
+The associated free structure captures the ``syntax'' of such interfaces, say, for the sake
+of delayed evaluation in a particular interface implementation.
+
+This example algebra serves to set-up the approach we take in more involved settings.
+
+\edcomm{MA}{This section requires massive reorganisation.}
+
 %{{{ Imports
 \begin{code}
 module Structures.UnaryAlgebra where
@@ -20,12 +30,10 @@ open import EqualityCombinators
 \end{code}
 %}}}
 
-%{{{ Unary ; Hom ; UnaryAlg ; UnaryCat ; Forget
-
+%{{{ \subsection{Definition} Unary ; Hom
+\subsection{Definition}
 A single-sorted |Unary| algebra consists of a type along with a function on that type.
 For example, the naturals and addition-by-1 or lists and the reverse operation.
-
-Along with functions that preserve the elected operation, such algberas form a category.
 
 \begin{code}
 record Unary {ℓ} : Set (lsuc ℓ) where
@@ -40,10 +48,18 @@ record Hom {ℓ} (X Y : Unary {ℓ}) : Set ℓ where
   constructor MkHom
   field
     mor        :  Carrier X → Carrier Y
-    pres-op    :  mor ∘ Op X ≐  Op Y ∘ mor
+    pres-op    :  mor ∘ Op X  ≐ᵢ  Op Y ∘ mor
 
 open Hom
+\end{code}
+%}}}
 
+%{{{ \subsection{Category and Forgetful Functor} UnaryAlg ; UnaryCat ; Forget
+\subsection{Category and Forgetful Functor}
+
+Along with functions that preserve the elected operation, such algberas form a category.
+
+\begin{code}
 UnaryAlg : {ℓ : Level} → OneSortedAlg ℓ
 UnaryAlg = record
   { Alg       = Unary
@@ -52,24 +68,24 @@ UnaryAlg = record
   ; mor       = mor
   ; comp      = λ F G → record
     { mor     =  mor F ∘ mor G
-    ; pres-op =  λ a → ≡.trans (≡.cong (mor F) (pres-op G a)) (pres-op F (mor G a))
+    ; pres-op =  ≡.cong (mor F) (pres-op G) ⟨≡≡⟩ pres-op F
     }
   ; comp-is-∘ =  ≐-refl
-  ; Id        =  MkHom id ≐-refl
+  ; Id        =  MkHom id ≡.refl
   ; Id-is-id  =  ≐-refl
   }
 
-UnaryCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-UnaryCat ℓ = oneSortedCategory ℓ UnaryAlg
+Unarys : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+Unarys ℓ = oneSortedCategory ℓ UnaryAlg
 
-Forget : (ℓ : Level) → Functor (UnaryCat ℓ) (Sets ℓ)
+Forget : (ℓ : Level) → Functor (Unarys ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ UnaryAlg
 \end{code}
 
 %}}}
 
-%{{{ Eventually ; ⟦_,_⟧ ; indE
-
+%{{{ \subsection{Free Structure} Eventually ; ⟦_,_⟧ ; indE
+\subsection{Free Structure}
 We now turn to finding a free unary algebra.
 
 Indeed, we do so by simply not ``interpreting'' the single function symbol that is required
@@ -78,45 +94,48 @@ unary algebras.
 
 \begin{code}
 data Eventually {ℓ} (A : Set ℓ) : Set ℓ where
-  base : A → Eventually A
-  step : Eventually A → Eventually A
+  base   :              A → Eventually A
+  step   :   Eventually A → Eventually A
 \end{code}
 The elements of this type are of the form |stepⁿ (base a)| for |a : A|.
+This leads to an alternative presentation, |Eventually A   ≅   Σ n ∶ ℕ • A|
+viz |stepⁿ (base a) ↔ (n , a)| ---cf |Free²| below.
+Incidentally, or promisingly, |Eventually ⊤ ≅ ℕ|.
 
-Alternatively, |Eventually A   ≅   Σ n ∶ ℕ • A| viz |stepⁿ (base a) ↔ (n , a)| ---cf |Free²| below.
-Consequently, |Eventually ⊤ ≅ ℕ|.
+We will realise this claim later on. For now, we turn to the dependent-eliminator/induction/recursion principle:
+\begin{code}
+elim : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
+     → ({x : A} → P (base x))
+     → ({sofar : Eventually A} → P sofar → P (step sofar))
+     → (ev : Eventually A) → P ev
+elim b s (base x) = b {x}
+elim {P = P} b s (step e) = s {e} (elim {P = P} b s e)
+\end{code}
 
 Given an unary algebra |(B, 𝒷, 𝓈)| we can interpret the terms of |Eventually A|
 where the injection |base| is reified by |𝒷| and the unary operation |step| is
 reified by |𝓈|.
 
 \begin{code}
+open import Function using (const)
 ⟦_,_⟧ : {a b : Level} {A : Set a} {B : Set b} (𝒷 : A → B) (𝓈 : B → B) → Eventually A → B
-⟦ 𝒷 , 𝓈 ⟧ (base x) = 𝒷 x
-⟦ 𝒷 , 𝓈 ⟧ (step e) = 𝓈 (⟦ 𝒷 , 𝓈 ⟧ e)
---
--- “The number of 𝓈teps is preserved” : ⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧
---
--- Essentially, ⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x
-
-indE : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
-     → ({x : A} → P (base x))
-     → ({sofar : Eventually A} → P sofar → P (step sofar))
-     → (ev : Eventually A) → P ev
-indE {P = P} b s (base x) = b
-indE {P = P} b s (step ev) = s (indE {P = P} b s ev)
+⟦ 𝒷 , 𝓈 ⟧ = elim (λ {a} → 𝒷 a) 𝓈
 \end{code}
 
-There's gotta be a way to put these two together into a single operation...
+Notice that: The number of |𝓈|teps is preserved, |⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧|.
+Essentially, |⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x|. A similar general remark applies to |elim|.
 
+Here is an implicit version of |elim|,
+\begin{code}
+\end{code}
 %}}}
 
 %{{{ mapeE ; ⟦⟧-naturality
 Eventually is clearly a functor,
 
 \begin{code}
-mapE : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
-mapE f = ⟦ base ∘ f , step ⟧
+map : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
+map f = ⟦ base ∘ f , step ⟧
 \end{code}
 
 Whence the folding operation is natural,
@@ -124,10 +143,10 @@ Whence the folding operation is natural,
 \begin{code}
 ⟦⟧-naturality : {a b : Level} {A : Set a} {B : Set b}
               → {𝒷′ 𝓈′ : A → A} {𝒷 𝓈 : B → B} {f : A → B}
-              → (basis : 𝒷 ∘ f ≐ f ∘ 𝒷′)
-              → (next  : 𝓈 ∘ f ≐ f ∘ 𝓈′)
-              → ⟦ 𝒷 , 𝓈 ⟧ ∘ mapE f ≐ f ∘ ⟦ 𝒷′ , 𝓈′ ⟧
-⟦⟧-naturality {𝓈 = 𝓈} basis next = indE (basis $ᵢ) (λ ind → ≡.trans (≡.cong 𝓈 ind) (next _))
+              → (basis : 𝒷 ∘ f ≐ᵢ f ∘ 𝒷′)
+              → (next  : 𝓈 ∘ f ≐ᵢ f ∘ 𝓈′)
+              → ⟦ 𝒷 , 𝓈 ⟧ ∘ map f ≐ f ∘ ⟦ 𝒷′ , 𝓈′ ⟧
+⟦⟧-naturality {𝓈 = 𝓈} basis next = elim basis (λ ind → ≡.cong 𝓈 ind ⟨≡≡⟩ next)
 \end{code}
 %}}}
 
@@ -136,19 +155,22 @@ Whence the folding operation is natural,
 Other instances of the fold include:
 
 \begin{code}
-fromE : ∀{ℓ} {A : Set ℓ} → Eventually A → A
-fromE = ⟦ id , id ⟧ -- cf |from⊎| ;)
+extract : ∀{ℓ} {A : Set ℓ} → Eventually A → A
+extract = ⟦ id , id ⟧ -- cf |from⊎| ;)
+\end{code}
 
--- More generally,
+\edcomm{MA}{Mention comonads?}
 
-iterateE : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
-iterateE f = ⟦ id , f ⟧
+More generally,
+\begin{code}
+iterate : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
+iterate  f = ⟦ id , f ⟧
 --
 -- that is, |iterateE f (stepⁿ base x) ≈ fⁿ x|
 
-iterateE-nat : {ℓ : Level} {X Y : Unary {ℓ}} (F : Hom X Y)
-              → iterateE (Op Y) ∘ mapE (mor F) ≐ mor F ∘ iterateE (Op X)
-iterateE-nat F = ⟦⟧-naturality {f = mor F} ≐-refl (≡.sym ∘ pres-op F)
+iterate-nat : {ℓ : Level} {X Y : Unary {ℓ}} (F : Hom X Y)
+              → iterate (Op Y) ∘ map (mor F) ≐ mor F ∘ iterate (Op X)
+iterate-nat F = ⟦⟧-naturality {f = mor F} ≡.refl (≡.sym (pres-op F))
 \end{code}
 
 %}}}
@@ -158,53 +180,64 @@ iterateE-nat F = ⟦⟧-naturality {f = mor F} ≐-refl (≡.sym ∘ pres-op F)
 The induction rule yields identical looking proofs for clearly distinct results:
 
 \begin{code}
-iterateE-mapE-id : {ℓ : Level} {X : Set ℓ} → id {A = Eventually X} ≐ iterateE step ∘ mapE base
-iterateE-mapE-id = indE ≡.refl (≡.cong step)
+iterate-map-id : {ℓ : Level} {X : Set ℓ} → id {A = Eventually X} ≐ iterate step ∘ map base
+iterate-map-id = elim ≡.refl (≡.cong step)
 
-mapE-id : {a : Level}  {A : Set a} → mapE (id {A = A}) ≐ id
-mapE-id = indE ≡.refl (≡.cong step)
+map-id : {a : Level}  {A : Set a} → map (id {A = A}) ≐ id
+map-id = elim ≡.refl (≡.cong step)
 
-mapE-∘ : {ℓ : Level} {X Y Z : Set ℓ} {f : X → Y} {g : Y → Z}
-        →  mapE (g ∘ f) ≐ mapE g ∘ mapE f
-mapE-∘ = indE ≡.refl (≡.cong step)
+map-∘ : {ℓ : Level} {X Y Z : Set ℓ} {f : X → Y} {g : Y → Z}
+        →  map (g ∘ f) ≐ map g ∘ map f
+map-∘ = elim ≡.refl (≡.cong step)
 
-mapE-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → mapE F ≐ mapE G
-mapE-cong eq = indE (≡.cong base ∘ eq $ᵢ) (≡.cong step)
+map-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → map F ≐ map G
+map-cong eq = elim (≡.cong base ∘ eq $ᵢ) (≡.cong step)
 \end{code}
 
-These results could be generalised to ⟦_,_⟧ if needed.
+These results could be generalised to |⟦_,_⟧| if needed.
 
 %}}}
 
 %{{{ Free ; AdjLeft
+\subsection{The Toolki Appears Naturally: Part 1}
 
 That |Eventually| furnishes a set with its free unary algebra can now be realised.
 
 \begin{code}
-Free : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat ℓ)
+Free : (ℓ : Level) → Functor (Sets ℓ) (Unarys ℓ)
 Free ℓ = record
   { F₀             =   λ A → MkUnary (Eventually A) step
-  ; F₁             =   λ f → MkHom (mapE f) ≐-refl
-  ; identity       =   mapE-id
-  ; homomorphism   =   mapE-∘
-  ; F-resp-≡      =   λ F≈G → mapE-cong (λ _ → F≈G)
+  ; F₁             =   λ f → MkHom (map f) ≡.refl
+  ; identity       =   map-id
+  ; homomorphism   =   map-∘
+  ; F-resp-≡      =   λ F≈G → map-cong (λ _ → F≈G)
   }
 
 AdjLeft : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
 AdjLeft ℓ = record
   { unit     =   record { η = λ _ → base ; commute = λ _ → ≡.refl }
-  ; counit   =   record { η = λ A → MkHom (iterateE (Op A)) ≐-refl ; commute = iterateE-nat }
-  ; zig      =   iterateE-mapE-id
+  ; counit   =   record { η = λ A → MkHom (iterate (Op A)) ≡.refl ; commute = iterate-nat }
+  ; zig      =   iterate-map-id
   ; zag      =   ≡.refl
   }
 \end{code}
+
+Notice that the adjunction proof forces us to come-up with the operations and properties about them!
+\begin{itemize}
+\item |map|: usually functions can be packaged-up to work on syntax of unary algebras.
+\item |map-id|: the identity function leaves syntax alone; or: |map id| can be replaced with a constant
+  time algorithm, namely, |id|.
+\item |map-∘|: sequential substitutions on syntax can be efficiently replaced with a single substitution.
+\item |map-cong|: observably indistinguishable substitutions can be used in place of one another, similar to the
+      transparency principle of Haskell programs.      
+\item |iterate|: given a function |f|, we have |stepⁿ base x ↦ fⁿ x|. Along with properties of this operation.
+\end{itemize}
 
 %}}}
 
 %{{{ Iteration and properties
 
 \begin{code}
-
 _^_ : {a : Level} {A : Set a} (f : A → A) → ℕ → (A → A)
 f ^ zero = id
 f ^ suc n = f ^ n ∘ f
@@ -216,11 +249,10 @@ iter-swap {f = f} {n = suc n} = ∘-≐-cong₁ f iter-swap
 
 -- iteration of commutable functions
 iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
-  → (leap-frog : f ∘ g ≐ h ∘ f)
-  → {n : ℕ} → h ^ n ∘ f ≐ f ∘ g ^ n
-iter-comm leap {zero} = ≐-refl
-iter-comm {g = g} {h} leap {suc n} =    ∘-≐-cong₂ (h ^ n) (≐-sym leap) 
-                                    ⟨≐≐⟩ ∘-≐-cong₁ g (iter-comm leap)
+  → (leap-frog : f ∘ g ≐ᵢ h ∘ f)
+  → {n : ℕ} → h ^ n ∘ f ≐ᵢ f ∘ g ^ n
+iter-comm leap {zero} = ≡.refl
+iter-comm {g = g} {h} leap {suc n} = ≡.cong (h ^ n) (≡.sym leap) ⟨≡≡⟩ iter-comm leap
 
 -- exponentation distributes over product
 ^-over-× : {a b : Level} {A : Set a} {B : Set b} {f : A → A} {g : B → B}
@@ -232,15 +264,16 @@ iter-comm {g = g} {h} leap {suc n} =    ∘-≐-cong₂ (h ^ n) (≐-sym leap)
 %}}}
 
 %{{{ Direct representation
+\subsection{The Toolki Appears Naturally: Part 2}
 
 And now for a different way of looking at the same algebra.
 We ``mark'' a piece of data with its depth.
 
 \begin{code}
-Free² : (ℓ : Level) → Functor (Sets ℓ) (UnaryCat ℓ)
+Free² : (ℓ : Level) → Functor (Sets ℓ) (Unarys ℓ)
 Free² ℓ = record
   { F₀             =   λ A → MkUnary (ℕ × A) (suc ×₁ id)
-  ; F₁             =   λ f → MkHom (id ×₁ f) (λ _ → ≡.refl)
+  ; F₁             =   λ f → MkHom (id ×₁ f) ≡.refl
   ; identity       =   ≐-refl
   ; homomorphism   =   ≐-refl
   ; F-resp-≡      =   λ F≈G → λ { (n , x) → ≡.cong₂ _,_ ≡.refl (F≈G {x}) }
@@ -262,14 +295,21 @@ AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
   { unit        =   record { η = λ _ → at 0 ; commute = λ _ → ≡.refl }
   ; counit      =   record
-    { η         =   λ A → MkHom (uncurry (Op A ^_)) (uncurry (λ _ → iter-swap))
-    ; commute   =   λ F → uncurry $ λ _ → iter-comm $ pres-op F
+    { η         =   λ A → MkHom (uncurry (Op A ^_)) (λ{ {n , a} → iter-swap a})
+    ; commute   =   λ F → uncurry (λ x y → iter-comm (pres-op F))
     }
   ; zig         =   uncurry ziggy
   ; zag         =   ≡.refl
   }
 \end{code}
 
+Notice that the adjunction proof forces us to come-up with the operations and properties about them!
+\begin{itemize}
+\item |iter-comm|: \unfinished
+\item |_^_|: \unfinished
+\item |iter-swap|: \unfinished
+\item |ziggy|: \unfinished
+\end{itemize}
 %}}}
 
 % Quick Folding Instructions:

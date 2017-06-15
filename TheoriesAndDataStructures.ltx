@@ -163,7 +163,8 @@
 \DeclareUnicodeCharacter{7472}{\ensuremath{^\mathsf{D}}} % MODIFIER LETTER CAPITAL D
 \DeclareUnicodeCharacter{9723}{\ensuremath{\square}} % WHITE MEDIUM SQUARE
 \DeclareUnicodeCharacter{119920}{\ensuremath{\mathbf{I}}} % MATHEMATICAL BOLD ITALIC CAPITAL I
-
+\DeclareUnicodeCharacter{119991}{\ensuremath{_\mathsf{B}}} % MATHEMATICAL SCRIPT SMALL B
+\DeclareUnicodeCharacter{120008}{\ensuremath{_\mathsf{B}}} % MATHEMATICAL SCRIPT SMALL S
 
 
 \pagestyle{headings}
@@ -290,11 +291,13 @@ at the following URL:
 %include DataProperties.lagda
 %% %include RATH.lagda  %% ‼ This module is not being called from anywhere ‼  June 9, 2017.
 
+%include SetoidSetoid.lagda
+
 %include Structures/TwoSorted.lagda
 %include Structures/Rel.lagda
 
 %include Structures/Pointed.lagda
-%% %include Structures/UnaryAlgebra.lagda
+%include Structures/UnaryAlgebra.lagda
 %% %include Structures/Magma.lagda
 %% %include Structures/Semigroup.lagda
 %% %include Structures/Monoid.lagda
@@ -306,10 +309,11 @@ at the following URL:
 %% %include Structures/DistinguishedSubset.lagda
 %% %include Structures/IndexedUnaryAlgebra.lagda
 %% %include Structures/Dependent.lagda
+%%
+%% MA: We do not want to include the experiements; perhaps.
+%% 
 %% %include Structures/Experiments/Dependent2.lagda
 %% %include Structures/Experiments/Dependent3.lagda
-
-%include SetoidSetoid.lagda
 
 %include Some.lagda
 

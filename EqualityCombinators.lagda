@@ -61,6 +61,17 @@ _⟨≐≐⟩_ = ≐-trans
 \end{code}
 
 Note that the precedence of this last operator is lower than that of function composition so as to avoid superfluous parenthesis.
+
+Here is an implicit version of extensional
+---we use it as a transitionary tool since the standard library and the category theory library differ
+on their uses of implicit versus explicit variable usage.
+
+\begin{code}
+infixr 5 _≐ᵢ_
+_≐ᵢ_ : {a b : Level} {A : Set a} {B : A → Set b}
+    (f g : (x : A) → B x) → Set (a ⊔ b)
+f ≐ᵢ g = ∀{x} → f x ≡ g x
+\end{code}
 %}}}
 
 %{{{ Equiv

@@ -497,7 +497,7 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
  cong-fwd : {xs ys : List Carrier} {xs≅ys : BagEq xs ys} {p : Some₀ P xs} {q : Some₀ Q xs}
           → p ≋ q → bag-as-⇒ P xs≅ys p ≋ bag-as-⇒ Q xs≅ys q
  cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q
- ...| (x , x∈xs , px) | (y , y∈ys , py) = lose-cong ({!need decidable equality?!} , {!!})
+ ...| (x , x∈xs , px) | (y , y∈ys , py) = lose-cong ({!need decidable equality? {- \unfinished -}!} , {! {- \unfinished -}!})
 
 \end{code}
 
@@ -579,9 +579,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
            Some P xs₁ ≅ Some P xs₂
  Some-cong {xs₁} {xs₂} list-rel = record
-  { to           =   record { _⟨$⟩_ = bag-as-⇒ list-rel ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} }
-  ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {!!} }
-  ; inverse-of   =   record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
+  { to           =   record { _⟨$⟩_ = bag-as-⇒ list-rel ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} } -- Yellow! \unfinished
+  ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {! {- \unfinished -}!} }
+  ; inverse-of   =   record { left-inverse-of = {! {- \unfinished -}!} ; right-inverse-of = {! {- \unfinished -}!} }
   }
   where
 
@@ -607,7 +607,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 
   cong-fwd : {i j : Some₀ P xs₁} →
     i ≋ j → xs₁→xs₂ list-rel i ≋ xs₁→xs₂ list-rel j
-  cong-fwd {i} {j} i≋j = copy-cong _ _ _ _ {!!}
+  cong-fwd {i} {j} i≋j = copy-cong _ _ _ _ {! {- \unfinished -}!}
 
 \end{code}
 

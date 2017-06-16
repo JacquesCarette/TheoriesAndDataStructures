@@ -514,7 +514,8 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
               → {x₁∈xs : x₁ ∈₀ xs} {x₂∈xs : x₂ ∈₀ xs}
               → (x₁∈xs≋x₂∈xs : x₁∈xs  ≋ x₂∈xs)
               → ∈₀-subst₂ xs≅ys x₁∈xs ≋ ∈₀-subst₂ xs≅ys x₂∈xs
- -- \edcomm{WK}{That is, |xs≅ys| preserves positions. It don't think it has to, from the definition of |BagEq|! \unfinished}
+ -- \edcomm{WK}{That is, |xs≅ys| preserves positions.}
+ -- \edcomm{WK}{I don't think it has to, from the definition of |BagEq|! \unfinished}
  BagEq-cong≋ {xs} {ys} xs≅ys {x₁} {x₂} {x₁∈xs} {x₂∈xs} x₁∈xs≋x₂∈xs = {!!}
 
 

@@ -453,8 +453,8 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
  lose (y , here py , Py)     = here (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
  lose (y , there y∈ys , Py) = there (lose (y , y∈ys , Py))
 
- -- ``If an element of ys has a property P, then some element of ys has property P''
- -- cf |copy| below
+ -- ``If an element of |ys| has a property |P|, then some element of |ys| has property |P|.''
+ -- cf.\null{} |copy| below
  Some-Intro : {y : Carrier} {ys : List Carrier}
       → y ∈₀ ys → P₀ y → Some₀ P ys
  Some-Intro {y} y∈ys Qy = lose (y , y∈ys , Qy)
@@ -464,6 +464,30 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
                        let x∈ys = to xs≅ys ⟨$⟩ x∈xs
                        in lose (x , x∈ys , Px)
 
+ _∻₀_ : {xs : List Carrier} → Support xs → Support xs → Set ℓa
+ (a , a∈xs , Pa) ∻₀ (b , b∈xs , Pb) =  a ≈ b  ×  a∈xs ≋ b∈xs
+
+ find-cong₀ : {xs : List Carrier} {p q : Some₀ P xs} → p ≋ q → find p ∻₀ find q
+ find-cong₀ (hereEq px qy) = refl , ≋-refl
+ find-cong₀ (thereEq eq) = let (fst , snd) = find-cong₀ eq in fst , thereEq snd
+
+ private
+
+   P⁺ : {x y : Carrier} → x ≈ y → P₀ x → P₀ y
+   P⁺ x≈y = Π._⟨$⟩_ (_≅_.to (Π.cong P x≈y))
+
+ lose-cong₀ : {xs : List Carrier} {p q : Support xs} → p ∻₀ q → lose p ≋ lose q
+ lose-cong₀ {p = a , here a≈x , Pa} {b , here b≈x , Pb} (fst , hereEq .a≈x .b≈x) = hereEq (P⁺ a≈x Pa) (P⁺ b≈x Pb)
+ lose-cong₀ {p = a , here a≈x , Pa} {b , there b∈ys , Pb} (fst , ())
+ lose-cong₀ {p = a , there a∈xs , Pa} {b , here px , Pb} (fst , ())
+ lose-cong₀ {p = a , there a∈xs , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈xs≋b∈ys) = thereEq (lose-cong₀ (a≈b , a∈xs≋b∈ys))
+
+ bag-as-⇒-cong  : {xs ys : List Carrier} {xs≅ys : BagEq xs ys}
+                → {p q : Some₀ P xs} → p ≋ q → bag-as-⇒ xs≅ys p ≋ bag-as-⇒ xs≅ys q
+ bag-as-⇒-cong {xs} {ys} {xs≅ys} {p} {q} p≋q = let
+    a≈b , a∈xs≋b∈xs = find-cong₀ p≋q
+  in let a∈ys≋b∈ys = ≋-trans (Π.cong (_≅_.to xs≅ys) {{!!}} {{!!}} {!a∈xs≋b∈xs!}) {!!}
+  in lose-cong₀ (a≈b , a∈ys≋b∈ys)
 
 module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where
  open Membership A
@@ -500,13 +524,20 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
 
  cong-fwd : {xs ys : List Carrier} {xs≅ys : BagEq xs ys} {p : Some₀ P xs} {q : Some₀ Q xs}
           → p ≋ q → bag-as-⇒ P xs≅ys p ≋ bag-as-⇒ Q xs≅ys q
+ cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q = let
+    a≈b , a∈xs≋b∈xs = find-cong p≋q
+  in let a∈ys≋b∈ys = ≋-trans (Π.cong (_≅_.to xs≅ys) {{!!}} {{!!}} {!a∈xs≋b∈xs!}) {!!}
+  in lose-cong (a≈b , a∈ys≋b∈ys)
+\end{code}
+\edcomm{WK}{Old attempt, disabled for now:
+\begin{spec}
  cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q | find-cong p≋q
  ...| (x , x∈xs , px) | (y , y∈xs , py) | (x≈y , x∈xs≋y∈xs) = lose-cong (x≈y , goal)
  
    where
    
-     open _≅_ (xs≅ys {x}) using () renaming (to to F)
-     open _≅_ (xs≅ys {y}) using () renaming (to to G)
+     open _≅_ (xs≅ys {x}) using () renaming (to to F)  -- \edcomm{WK}{Pretty horrible renamings.}
+     open _≅_ (xs≅ys {y}) using () renaming (to to G)  -- \edcomm{WK}{At least without diagram or plenty of explanation.}
      
      F-cong : {a b : x ∈₀ xs} → a ≋ b → F ⟨$⟩ a ≋ F ⟨$⟩ b
      F-cong = Π.cong F
@@ -516,14 +547,19 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
 
      To = λ {i} → Π._⟨$⟩_ (_≅_.to (xs≅ys {i}))
 
-     postulate helper : {i j : Carrier} → i ≈ j → {!To {i} ≐ To {j}!}
+     -- |postulate helper : {i j : Carrier} → i ≈ j → {!To {i} ≐ To {j}!}|
+     -- \edcomm{WK}{Don't activate unused postulates.}
      -- switch to john major equality in the defn of ≐ ?
+
      goal : F ⟨$⟩ x∈xs ≋ G ⟨$⟩ y∈xs
-     goal = {!Π.cong F!}
+     goal =  ≋-trans ({! _≅_.left-inverse-of (xs≅ys {y}) y∈xs {- {x∈xs} {{!!}} {! x∈xs≋y∈xs !} -}!}) {!!}
      
      y∈ysT : y ∈₀ xs
      y∈ysT = y∈xs
-\end{code}
+\end{spec}
+}%edcomm
+
+\edcomm{WK}{Indentation needs to be fixed: Always by at least two positions.}
 
 \edcomm{Somebody}{Commented out:
 \begin{spec}
@@ -607,8 +643,13 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
      { _⟨$⟩_ = bag-as-⇒ list-rel
      ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} {xs≅ys = list-rel}
      }
-  ; from         =   record { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel) ; cong = {! {- \unfinished -}!} }
-  ; inverse-of   =   record { left-inverse-of = {! {- \unfinished -}!} ; right-inverse-of = {! {- \unfinished -}!} }
+  ; from = record
+    { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel)
+    ; cong = {! {- \unfinished -}!} }
+  ; inverse-of = record
+    { left-inverse-of = {! {- \unfinished -}!}
+    ; right-inverse-of = {! {- \unfinished -}!}
+    }
   }
   where
 

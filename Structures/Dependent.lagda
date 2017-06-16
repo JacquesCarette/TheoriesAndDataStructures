@@ -97,14 +97,20 @@ Dependents : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
 Dependents ℓ = record
   { Obj        =     Dependent ℓ ℓ
   ; _⇒_       =     Hom
-  ; _≡_       =     λ {A} {B} F G → {x : Sort A} → mor F x ≅ mor G x -- |λ F G → mor F ≐ mor G|  -- |? and  shift F ≐ shift G ? ; for dependent product functor below|
+  ; _≡_       =     λ {A} {B} F G → ({x : Sort A} → mor F x ≅ mor G x)
+                                    × ({s : Sort A} {f : Carrier A s} → shift F f ≅ shift G f)
   ; id         =    MkHom id id
   ; _∘_        =    λ F G → MkHom (mor F ∘ mor G) (shift F ∘ shift G)
-  ; assoc      =    ≅.refl
-  ; identityˡ   =    ≅.refl
-  ; identityʳ   =    ≅.refl
-  ; equiv       =    record { refl = ≅.refl ; sym = λ eq {x} → ≅.sym eq ; trans = λ p q → ≅.trans p q }
-  ; ∘-resp-≡   =   λ{ {f = f} f≅h g≅k → ≅.trans (≅.cong (mor f) g≅k) f≅h }
+  ; assoc      =    ≅.refl , ≅.refl
+  ; identityˡ   =    ≅.refl , ≅.refl
+  ; identityʳ   =    ≅.refl , ≅.refl
+  ; equiv       =    record
+    { refl = ≅.refl , ≅.refl
+    ; sym = λ{ (eq , eq') → ≅.sym eq , ≅.sym eq'}
+    ; trans = λ{ (peq , peq') (qeq , qeq') → ≅.trans peq qeq , ≅.trans peq' qeq' }
+    }
+  ; ∘-resp-≡   =   λ{ {f = f} (f≅h , f≅h') (g≅k , g≅k') → ≅.trans (≅.cong (mor f) g≅k) f≅h ,
+                    ≅.trans (≅.cong (shift {!f!}) g≅k') f≅h' }
   }
   where open import Relation.Binary
 \end{code}
@@ -119,7 +125,7 @@ Forget ℓ = record
   ; F₁             =   Hom.mor
   ; identity       =   ≅.refl
   ; homomorphism   =   ≅.refl
-  ; F-resp-≡      =   λ F≈G {x} → F≈G
+  ; F-resp-≡      =   λ{ (F≈G , _) → F≈G }
   }
 \end{code}
 
@@ -137,18 +143,18 @@ Free : (ℓ : Level) → Functor (Sets ℓ) (Dependents ℓ)
 Free ℓ = record
   { F₀               =   λ A → MkDep A (λ _ → ⊥)
   ; F₁               =   λ f → MkHom f id
-  ; identity         =   ≅.refl
-  ; homomorphism     =   ≅.refl
-  ; F-resp-≡        =   λ F≈G → F≈G
+  ; identity         =   ≅.refl , ≅.refl
+  ; homomorphism     =   ≅.refl , ≅.refl
+  ; F-resp-≡        =   λ F≈G → F≈G , ≅.refl
   }
 
 Cofree : (ℓ : Level) → Functor (Sets ℓ) (Dependents ℓ)
 Cofree ℓ = record
   { F₀             =   λ A → MkDep A (λ _ → ⊤)
   ; F₁             =   λ f → MkHom f id
-  ; identity       =   ≅.refl
-  ; homomorphism   =   ≅.refl
-  ; F-resp-≡      =   λ f≈g → f≈g
+  ; identity       =   ≅.refl , ≅.refl
+  ; homomorphism   =   ≅.refl , ≅.refl
+  ; F-resp-≡      =   λ f≈g → f≈g , ≅.refl
   }
 \end{code}
 
@@ -168,21 +174,21 @@ Left ℓ = record
     }
   ; counit = record
     { η       = λ _ → MkHom id (λ {()})
-    ; commute = λ f → ≅.refl
+    ; commute = λ f → ≅.refl , (λ{ {_}{()} })
     }
-  ; zig = {!!} -- ≐-refl
-  ; zag = {!!} -- ≡.refl
+  ; zig = ≅.refl , (λ{ {_}{()} })
+  ; zag = ≅.refl
   }
   
 Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
 Right ℓ = record
   { unit = record
     { η = λ _ → MkHom id (λ _ → tt) 
-    ; commute = λ _ → {!!} -- ≐-refl
+    ; commute = λ _ → ≅.refl , ≅.refl
     }
-  ; counit   =   record { η = λ _ → id ; commute = λ _ → {!!} } -- ≡.refl }
-  ; zig      =   {!!} -- ≡.refl
-  ; zag      =   {!!} -- ≐-refl
+  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≅.refl }
+  ; zig      =   ≅.refl
+  ; zag      =   ≅.refl , (λ{ {_} {tt} → ≅.refl})
   }
 \end{code}
 %}}}
@@ -198,15 +204,18 @@ and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| alg
           →  {x₁ x₂ : A} {y₁ : B x₁} {y₂ : B x₂}
           →  (x₁≡x₂ : x₁ ≡ x₂) → y₁ ≡ ≡.subst B (≡.sym x₁≡x₂) y₂ → (x₁ , y₁) ≡ (x₂ , y₂)
 ≡-cong-Σ ≡.refl ≡.refl = ≡.refl
+\end{spec}
 
+\begin{code}
 DepProd : (ℓ : Level) → Functor (Dependents ℓ) (Sets ℓ)
 DepProd ℓ = record
   { F₀             =   λ S → Σ (Sort S) (Carrier S)
   ; F₁             =   λ F → mor F ×₁ shift F
-  ; identity       =   ≡.refl
-  ; homomorphism   =   ≡.refl
-  ; F-resp-≡      =   λ F≈G → λ{ {x = (i , f)} → ≡-cong-Σ (F≈G i) {!!}  } -- |{! seems like I need ``shift F ≈ shift G'' …!}}|
+  ; identity       =   λ{ {_} {fst , snd} → ≅.refl }
+  ; homomorphism   =   ≅.refl
+  ; F-resp-≡      =   λ{ (F≈G , eq) → ≅.cong₂ _,_ F≈G eq } -- This was the troublesome hole; now filled!
   }
+\end{code}  
   where helper : {a b : Level} {S T : Dependent a b} {F G : Hom S T}
                → (F≈G : mor F ≐ mor G)
                → {i : Sort S} {f : Carrier S i} 
@@ -245,7 +254,7 @@ Right₂ ℓ = record
   ; zig      =   ≐-refl
   ; zag      =   ≡.refl
   }
-\end{spec}
+
 %}}}
 
 |Note that since Σ encompasses both × and ⊎, it may not be that there is another functor|

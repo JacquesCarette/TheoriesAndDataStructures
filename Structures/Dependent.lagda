@@ -1,3 +1,5 @@
+\section{Dependent Sums}
+
 We consider “dependent algebras” which consist of an index set and
 a family of sets on it. Alternatively, in can be construed as a universe
 of discourse along with an elected subset of interest. In the latter view
@@ -12,18 +14,39 @@ open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
+
 open import Function using (id ; _∘_ ; const)
 open import Function2 using (_$ᵢ)
 
 open import Forget
-open import EqualityCombinators
+open import EqualityCombinators hiding (_≡_ ; module ≡)
 open import DataProperties
+
+import Relation.Binary.HeterogeneousEquality
+module ≅ = Relation.Binary.HeterogeneousEquality
+open ≅ using (_≅_)
+
+-- category of sets with heterogenous equality
+Sets : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ 
+Sets ℓ = record
+  { Obj       = Set ℓ
+  ; _⇒_       = λ A B → A → B
+  ; _≡_       = λ {A} {B} f g → {x : A} → f x ≅ g x
+
+  ; _∘_       = λ f g x → f (g x)
+  ; id        = λ x → x
+
+  ; assoc     = ≅.refl
+  ; identityˡ = ≅.refl
+  ; identityʳ = ≅.refl
+  ; equiv     = record { refl = ≅.refl; sym = λ eq → ≅.sym eq ; trans = λ p q → ≅.trans p q }
+  ; ∘-resp-≡  = λ{ {f = f} f≅h g≅k → ≅.trans (≅.cong f g≅k) f≅h}
+  }
 \end{code}
 %}}}
 
 %{{{ Dependent ; Hom
-
+\subsection{Definition}
 A |Dependent| algebra consists of a carrier acting as an index for another family of
 functions. An array is an example of this with the index set being the valid indices.
 Alternatively, the named fields of a class-object are the indices for that class-object.
@@ -68,20 +91,20 @@ with an elected subset''.
 %}}}
 
 %{{{ TwoCat ; Forget
-
+\subsection{Category and Forgetful Functor}
 \begin{code}
-DependentCat : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
-DependentCat ℓ = record
+Dependents : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
+Dependents ℓ = record
   { Obj        =     Dependent ℓ ℓ
   ; _⇒_       =     Hom
-  ; _≡_       =     λ F G → mor F ≐ mor G  -- ? and  shift F ≐ shift G ? ; for dependent product functor below
+  ; _≡_       =     λ {A} {B} F G → {x : Sort A} → mor F x ≅ mor G x -- |λ F G → mor F ≐ mor G|  -- |? and  shift F ≐ shift G ? ; for dependent product functor below|
   ; id         =    MkHom id id
   ; _∘_        =    λ F G → MkHom (mor F ∘ mor G) (shift F ∘ shift G)
-  ; assoc      =    ≐-refl
-  ; identityˡ   =    ≐-refl
-  ; identityʳ   =    ≐-refl
-  ; equiv       =    record { IsEquivalence ≐-isEquivalence } 
-  ; ∘-resp-≡   =   ∘-resp-≐
+  ; assoc      =    ≅.refl
+  ; identityˡ   =    ≅.refl
+  ; identityʳ   =    ≅.refl
+  ; equiv       =    record { refl = ≅.refl ; sym = λ eq {x} → ≅.sym eq ; trans = λ p q → ≅.trans p q }
+  ; ∘-resp-≡   =   λ{ {f = f} f≅h g≅k → ≅.trans (≅.cong (mor f) g≅k) f≅h }
   }
   where open import Relation.Binary
 \end{code}
@@ -90,49 +113,49 @@ We can forget about the first sort or the second to arrive at our starting
 category and so we have two forgetful functors.
 
 \begin{code}
-Forget : (ℓ : Level) → Functor (DependentCat ℓ) (Sets ℓ)
+Forget : (ℓ : Level) → Functor (Dependents ℓ) (Sets ℓ)
 Forget ℓ = record
   { F₀             =   Dependent.Sort
   ; F₁             =   Hom.mor
-  ; identity       =   ≡.refl
-  ; homomorphism   =   ≡.refl
-  ; F-resp-≡      =   λ F≈G {x} → F≈G x
+  ; identity       =   ≅.refl
+  ; homomorphism   =   ≅.refl
+  ; F-resp-≡      =   λ F≈G {x} → F≈G
   }
 \end{code}
 
-ToDo ∷ construct another forgetful functor
+\edcomm{MA}{ToDo ∷ construct another forgetful functor}
 
 %}}}
 
 %{{{ Free and CoFree
-
+\subsection{Free and CoFree}
 Given a type, we can pair it with the empty type or the singelton type
 and so we have a free and a co-free constructions. 
 
 \begin{code}
-Free : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
+Free : (ℓ : Level) → Functor (Sets ℓ) (Dependents ℓ)
 Free ℓ = record
   { F₀               =   λ A → MkDep A (λ _ → ⊥)
   ; F₁               =   λ f → MkHom f id
-  ; identity         =   ≐-refl
-  ; homomorphism     =   ≐-refl
-  ; F-resp-≡        =   λ F≈G x → F≈G {x}
+  ; identity         =   ≅.refl
+  ; homomorphism     =   ≅.refl
+  ; F-resp-≡        =   λ F≈G → F≈G
   }
 
-Cofree : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
+Cofree : (ℓ : Level) → Functor (Sets ℓ) (Dependents ℓ)
 Cofree ℓ = record
   { F₀             =   λ A → MkDep A (λ _ → ⊤)
   ; F₁             =   λ f → MkHom f id
-  ; identity       =   ≐-refl
-  ; homomorphism   =   ≐-refl
-  ; F-resp-≡      =   λ f≈g x → f≈g {x}
+  ; identity       =   ≅.refl
+  ; homomorphism   =   ≅.refl
+  ; F-resp-≡      =   λ f≈g → f≈g
   }
 \end{code}
 
 %}}}
 
 %{{{ Left and Right adjunctions
-
+\subsection{Left and Right adjunctions}
 Now for the actual proofs that the |Free| and |Cofree| functors
 are deserving of their names.
 
@@ -141,47 +164,48 @@ Left : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
 Left ℓ = record
   { unit   = record
     { η       = λ _ → id
-    ; commute = λ _ → ≡.refl
+    ; commute = λ _ → ≅.refl
     }
   ; counit = record
     { η       = λ _ → MkHom id (λ {()})
-    ; commute = λ f → ≐-refl
+    ; commute = λ f → ≅.refl
     }
-  ; zig = ≐-refl
-  ; zag = ≡.refl
+  ; zig = {!!} -- ≐-refl
+  ; zag = {!!} -- ≡.refl
   }
   
 Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
 Right ℓ = record
   { unit = record
     { η = λ _ → MkHom id (λ _ → tt) 
-    ; commute = λ _ → ≐-refl
+    ; commute = λ _ → {!!} -- ≐-refl
     }
-  ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
-  ; zig      =   ≡.refl
-  ; zag      =   ≐-refl
+  ; counit   =   record { η = λ _ → id ; commute = λ _ → {!!} } -- ≡.refl }
+  ; zig      =   {!!} -- ≡.refl
+  ; zag      =   {!!} -- ≐-refl
   }
 \end{code}
 %}}}
 
 %{{{ Merge and Dup functors ; Right₂ adjunction
+\subsection{DepProd}
 
 The category of sets contains products and so |Dependent| algebras can be represented there
 and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
 
-\begin{code}
+\begin{spec}
 ≡-cong-Σ  :  {a b : Level} {A : Set a} {B : A → Set b}
           →  {x₁ x₂ : A} {y₁ : B x₁} {y₂ : B x₂}
           →  (x₁≡x₂ : x₁ ≡ x₂) → y₁ ≡ ≡.subst B (≡.sym x₁≡x₂) y₂ → (x₁ , y₁) ≡ (x₂ , y₂)
 ≡-cong-Σ ≡.refl ≡.refl = ≡.refl
 
-DepProd : (ℓ : Level) → Functor (DependentCat ℓ) (Sets ℓ)
+DepProd : (ℓ : Level) → Functor (Dependents ℓ) (Sets ℓ)
 DepProd ℓ = record
   { F₀             =   λ S → Σ (Sort S) (Carrier S)
   ; F₁             =   λ F → mor F ×₁ shift F
   ; identity       =   ≡.refl
   ; homomorphism   =   ≡.refl
-  ; F-resp-≡      =   λ F≈G → λ{ {x = (i , f)} → ≡-cong-Σ (F≈G i) {!!}  } -- {! seems like I need ``shift F ≈ shift G'' …!}}
+  ; F-resp-≡      =   λ F≈G → λ{ {x = (i , f)} → ≡-cong-Σ (F≈G i) {!!}  } -- |{! seems like I need ``shift F ≈ shift G'' …!}}|
   }
   where helper : {a b : Level} {S T : Dependent a b} {F G : Hom S T}
                → (F≈G : mor F ≐ mor G)
@@ -191,10 +215,10 @@ DepProd ℓ = record
         ...| r = {!see RATH's propeq utils, maybe something there helps!} 
 
 
--- ‼ consider using Relation.Binary.HeterogenousEquality …!
+-- |‼ consider using Relation.Binary.HeterogenousEquality …!|
 
 -- Every set gives rise to an identity family on itself
-ID : (ℓ : Level) → Functor (Sets ℓ) (DependentCat ℓ)
+ID : (ℓ : Level) → Functor (Sets ℓ) (Dependents ℓ)
 ID ℓ = record
   { F₀             =   λ A → MkDep A (λ _ → A)
   ; F₁             =   λ f → MkHom f f
@@ -204,16 +228,16 @@ ID ℓ = record
   }
 
 
--- look into having a free functor from TwoCat, then _×_ pops up!
+-- |look into having a free functor from TwoCat, then _×_ pops up!|
 -- maybe not, what is the forgetful functor...!
-f : {!!}
-f = {!!}
+f : {!\unfinished!}
+f = {!\unfinished!}
 
-\end{code}
+
 
 Then the proof that these two form the desired adjunction
 
-\begin{code}
+
 Right₂ : (ℓ : Level) → Adjunction (ID ℓ) (DepProd ℓ)
 Right₂ ℓ = record
   { unit     =   record { η = λ _ → diag ; commute = λ _ → ≡.refl }
@@ -221,10 +245,10 @@ Right₂ ℓ = record
   ; zig      =   ≐-refl
   ; zag      =   ≡.refl
   }
-\end{code}
+\end{spec}
 %}}}
 
-Note that since Σ encompasses both × and ⊎, it may not be that there is another functor
+|Note that since Σ encompasses both × and ⊎, it may not be that there is another functor|
 co-adjoint to ID ---not sure though.
 
 % Quick Folding Instructions:

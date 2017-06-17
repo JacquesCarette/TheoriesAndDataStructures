@@ -514,7 +514,7 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
               → {x₁∈xs : x₁ ∈₀ xs} {x₂∈xs : x₂ ∈₀ xs}
               → (x₁∈xs≋x₂∈xs : x₁∈xs  ≋ x₂∈xs)
               → ∈₀-subst₂ xs≅ys x₁∈xs ≋ ∈₀-subst₂ xs≅ys x₂∈xs
- -- \edcomm{WK}{That is, |xs≅ys| preserves positions.}
+ -- \edcomm{WK}{That is, |xs≅ys| preserves position-equality.}
  -- \edcomm{WK}{I don't think it has to, from the definition of |BagEq|! \unfinished}
  BagEq-cong≋ {xs} {ys} xs≅ys {x₁} {x₂} {x₁∈xs} {x₂∈xs} x₁∈xs≋x₂∈xs = {!!}
 
@@ -579,15 +579,15 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
 \begin{spec}
  cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q | find-cong p≋q
  ...| (x , x∈xs , px) | (y , y∈xs , py) | (x≈y , x∈xs≋y∈xs) = lose-cong (x≈y , goal)
- 
+
    where
-   
+
      open _≅_ (xs≅ys {x}) using () renaming (to to F)  -- \edcomm{WK}{Pretty horrible renamings.}
      open _≅_ (xs≅ys {y}) using () renaming (to to G)  -- \edcomm{WK}{At least without diagram or plenty of explanation.}
-     
+
      F-cong : {a b : x ∈₀ xs} → a ≋ b → F ⟨$⟩ a ≋ F ⟨$⟩ b
      F-cong = Π.cong F
-     
+
      G-cong : {a b : y ∈₀ xs} → a ≋ b → G ⟨$⟩ a ≋ G ⟨$⟩ b
      G-cong = Π.cong G
 
@@ -599,7 +599,7 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
 
      goal : F ⟨$⟩ x∈xs ≋ G ⟨$⟩ y∈xs
      goal =  ≋-trans ({! _≅_.left-inverse-of (xs≅ys {y}) y∈xs {- {x∈xs} {{!!}} {! x∈xs≋y∈xs !} -}!}) {!!}
-     
+
      y∈ysT : y ∈₀ xs
      y∈ysT = y∈xs
 \end{spec}

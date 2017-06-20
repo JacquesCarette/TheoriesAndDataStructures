@@ -2,7 +2,7 @@
 
 %{{{ Imports
 \begin{code}
-module Some where
+module Some-Alt where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
@@ -80,18 +80,17 @@ is straightforward:
 \end{code}
 
 \begin{code}
-module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
+module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa}
+  {Q₀ : Setoid.Carrier S → Set ℓa} where
    open Setoid S renaming (Carrier to A)
    infix 3 _≋_
-   data _≋_ : {xs : List A} (pf pf' : Some₀ {S = S} P₀ xs) → Set (a ⊔ ℓa) where
-     hereEq : {xs : List A} {x y z : A} (px : P₀ x) (qy : P₀ y)
+   data _≋_ : {xs : List A} (pf : Some₀ {S = S} P₀ xs) (pf : Some₀ {S = S} Q₀ xs) → Set (a ⊔ ℓa) where
+     hereEq : {xs : List A} {x y z : A} (px : P₀ x) (qy : Q₀ y)
             → (x≈z : x ≈ z) → (y≈z : y ≈ z)
             → _≋_ (here {x = z} {x} {xs} x≈z px) (here {x = z} {y} {xs} y≈z qy)
-     thereEq : {xs : List A} {x : A} {pxs : Some₀ P₀ xs} {qxs : Some₀ P₀ xs}
+     thereEq : {xs : List A} {x : A} {pxs : Some₀ P₀ xs} {qxs : Some₀ Q₀ xs}
              → _≋_ pxs qxs → _≋_ (there {x = x} pxs) (there {x = x} qxs)
 \end{code}
-
-\edcomm{MA}{We may avoid substs/transports, below, by introducing a |Q₀| alongside |P₀|.}
 
 Notice that these another from of ``natural numbers'' whose elements are of the form
 |thereEqⁿ (hereEq Px Qx)| for some |n : ℕ|.
@@ -103,11 +102,20 @@ module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} whe
    ≋-refl {p = here a≈x px} = hereEq px px a≈x a≈x
    ≋-refl {p = there p} = thereEq ≋-refl
 
-   ≋-sym : {xs : List A} {p : Some₀ {S = S} P₀ xs} {q : Some₀ P₀ xs} → p ≋ q → q ≋ p
-   ≋-sym (hereEq a≈x b≈x px py) = hereEq b≈x a≈x py px
+module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa}
+  {Q₀ : Setoid.Carrier S → Set ℓa} where
+   open Setoid S renaming (Carrier to A)
+
+   ≋-sym : {xs : List A} {p : Some₀ {S = S} P₀ xs} {q : Some₀ Q₀ xs} → p ≋ q → q ≋ p
+   ≋-sym (hereEq a≈x b≈x px qy) = hereEq b≈x a≈x qy px
    ≋-sym (thereEq eq) = thereEq (≋-sym eq)
 
-   ≋-trans : {xs : List A} {p q r : Some₀ {S = S} P₀ xs}
+module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa}
+  {Q₀ : Setoid.Carrier S → Set ℓa} {R₀ : Setoid.Carrier S → Set ℓa} where
+   open Setoid S renaming (Carrier to A)
+
+   ≋-trans : {xs : List A}
+           → {p : Some₀ {S = S} P₀ xs} {q : Some₀ {S = S} Q₀ xs} {r : Some₀ {S = S} R₀ xs}
            → p ≋ q → q ≋ r → p ≋ r
    ≋-trans (hereEq pa qb a≈x b≈x) (hereEq pc qd c≈y d≈y) = hereEq pa qd _ _
    ≋-trans (thereEq e) (thereEq f) = thereEq (≋-trans e f)
@@ -172,7 +180,6 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   BagEq : (xs ys : List Carrier) → Set (ℓ ⊔ a)
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 
-
   ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
   ∈₀-Subst₂ {x} {xs} {ys} xs≅ys = _≅_.to (xs≅ys {x})
 
@@ -185,15 +192,10 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
                   → ∈₀-subst₂ xs≅ys p ≈⌊ x ∈ ys ⌋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
-  transport : (Q : S ⟶ SSetoid ℓ ℓ) →
-    let Q₀ = λ e → Setoid.Carrier (Q ⟨$⟩ e) in
-    {a x : Carrier} (p : Q₀ a) (a≈x : a ≈ x) → Q₀ x
-  transport Q p a≈x = _≅_.to (Π.cong Q a≈x) ⟨$⟩ p
-
-  ∈₀-subst₁-elim : {x : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) →
-    ∈₀-subst₁ refl x∈xs ≋ x∈xs
-  ∈₀-subst₁-elim (here sm px) = hereEq (sym refl ⟨≈≈⟩ px) px sm sm
-  ∈₀-subst₁-elim (there x∈xs) = thereEq (∈₀-subst₁-elim x∈xs)
+{-
+  ∈₀-cong₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → (x ∈ xs) ≅ (x ∈ ys)
+  ∈₀-cong₂ {x} {xs} {ys} xs≅ys = ?
+-}
 \end{code}
 %}}}
 
@@ -320,7 +322,6 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
   }
   where
   open Setoid
-  open Membership using (transport)
   A₀ = Carrier A
   P₀ = λ e → Carrier (P ⟨$⟩ e)
   _∼_ = _≋_ {S = B} {P₀ = P₀}
@@ -334,15 +335,21 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
   map⁻ {x ∷ xs} (here {b} b≈x p) = here (refl A) (_≅_.to (Π.cong P b≈x) ⟨$⟩ p)
   map⁻ {x ∷ xs} (there p) = there (map⁻ {xs = xs} p)
 
+  -- the following definition should be moved up
+  transport : {C : Setoid a ℓa} (Q : C ⟶ SSetoid ℓa ℓa) →
+    let Q₀ = λ e → Carrier (Q ⟨$⟩ e) in let open Setoid C renaming (_≈_ to _≈ₐ_) in
+    {a x : Carrier C} (p : Q₀ a) (a≈x : a ≈ₐ x) → Q₀ x
+  transport Q p a≈x = _≅_.to (Π.cong Q a≈x) ⟨$⟩ p
+
   map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ P₀ (map (_⟨$⟩_ f) xs)) → map⁺ (map⁻ p) ∼ p
   map⁺∘map⁻ {[]} ()
-  map⁺∘map⁻ {x ∷ xs} (here b≈x p) = hereEq (transport B P p b≈x) p (Π.cong f (refl A)) b≈x
+  map⁺∘map⁻ {x ∷ xs} (here b≈x p) = hereEq (transport P p b≈x) p (Π.cong f (refl A)) b≈x
   map⁺∘map⁻ {x ∷ xs} (there p) = thereEq (map⁺∘map⁻ p)
 
   map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P₀ ⊚ (_⟨$⟩_ f)) xs)
             → let _∼₂_ = _≋_ {P₀ = P₀ ⊚ (_⟨$⟩_ f)} in map⁻ (map⁺ p) ∼₂ p
   map⁻∘map⁺ {[]} ()
-  map⁻∘map⁺ {x ∷ xs} (here a≈x p) = hereEq (transport A (P ∘ f) p a≈x) p (refl A) a≈x
+  map⁻∘map⁺ {x ∷ xs} (here a≈x p) = hereEq (transport (P ∘ f) p a≈x) p (refl A) a≈x
   map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
 
   map⁺-cong : {ys : List A₀} {i j : Some₀ (P₀ ⊚ _⟨$⟩_ f) ys} →  _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} i j → map⁺ i ∼ map⁺ j
@@ -352,7 +359,7 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
   map⁻-cong : {ys : List A₀} {i j : Some₀ P₀ (map (_⟨$⟩_ f) ys)} → i ∼ j → _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} (map⁻ i) (map⁻ j)
   map⁻-cong {[]} ()
   map⁻-cong {z ∷ zs} (hereEq {x = x} {y} px py x≈z y≈z) =
-    hereEq (transport B P px x≈z) (transport B P py y≈z) (refl A) (refl A)
+    hereEq (transport P px x≈z) (transport P py y≈z) (refl A) (refl A)
   map⁻-cong {z ∷ zs} (thereEq i∼j) = thereEq (map⁻-cong i∼j)
 \end{code}
 %}}}
@@ -371,13 +378,13 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
  find : {ys : List Carrier} → Some₀ {S = A} P₀ ys → Support ys
- find {y ∷ ys} (here {a} a≈y p) = a , here a≈y (sym a≈y) , transport P p a≈y
+ find {y ∷ ys} (here a≈x p) = y , here refl refl , to (cong P a≈x) ⟨$⟩ p
  find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
                             in a , there a∈ys , Pa
 
  lose : {ys : List Carrier} → Support ys → Some₀ {S = A} P₀ ys
  lose (y , here b≈y py , Py)  = here b≈y (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
- lose (y , there {b} y∈ys , Py)   = there (lose (y , y∈ys , Py))
+ lose (y , there y∈ys , Py)   = there (lose (y , y∈ys , Py))
 \end{code}
 
 \edcomm{MA}{Below are old, inactive, attempts.}
@@ -522,12 +529,11 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (a ⊔ ℓa)
- (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =  Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs)
+ (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =  (a ≈ b) × (a∈xs ≋ b∈xs)
 
  Σ-Setoid : (ys : List Carrier) → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
- Σ-Setoid [] = ⊥⊥
- Σ-Setoid (y ∷ ys) = record
-   { Carrier = Support (y ∷ ys)
+ Σ-Setoid ys = record
+   { Carrier = Support ys
    ; _≈_ = _∻_
    ; isEquivalence = record
      { refl = λ {s} → Refl {s}
@@ -537,32 +543,33 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
    }
    where
      Refl : Reflexive _∻_
-     Refl {a₁ , here sm px , Pa} = refl , hereEq (trans (sym refl) px) px sm sm
-     Refl {a₁ , there a∈xs , Pa} = refl , thereEq (∈₀-subst₁-elim a∈xs)
+     Refl {a , a∈xs , Pa} = refl , ≋-refl
 
      Sym  : Symmetric _∻_
-     Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , {!!}
+     Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , ≋-sym a∈xs≋b∈xs
 
      Trans : Transitive _∻_
-     Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , {!!} -- |≋-trans a∈xs≋b∈xs {! b∈xs≋c∈xs !} |
+     Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , ≋-trans a∈xs≋b∈xs b∈xs≋c∈xs 
 
  module ∻ {ys} where open Setoid (Σ-Setoid ys) public
 
  open FindLose P
  -- |open FindLoseCong hiding (_∻_)|
 
- left-inv : {zs : List Carrier} (x∈zs : Some₀ P₀ zs) → lose (find x∈zs) ≋ x∈zs
- left-inv (here {a} {x} a≈x px) = hereEq (transport P (transport P px a≈x) (sym a≈x)) px a≈x a≈x
+ open Π
+ open _≅_
+
+ left-inv : {ys : List Carrier} (x∈ys : Some₀ P₀ ys) → lose (find x∈ys) ≋ x∈ys
+ left-inv (here a≈x pa) = hereEq {!to (cong P a≈x) ⟨$⟩ pa!} {!!} {!!} {!!}
  left-inv (there x∈ys) = thereEq (left-inv x∈ys)
 
  right-inv : {ys : List Carrier} (pf : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose pf) ∻ pf
- right-inv (y , here a≈x px , Py) = trans (sym a≈x) (sym px) , hereEq {!!} {!!} {!!} {!!}
+ right-inv (y , here a≈x px , Py) = {!!} , hereEq {!!} {!!} {!!} {!!}
  right-inv (y , there y∈ys , Py) = (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₂ (right-inv (y , y∈ys , Py))))
 
  Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
- Σ-Some [] = {!!}
- Σ-Some (x ∷ xs) =  record
-   { to = record { _⟨$⟩_ = find ; cong = {!!} }
+ Σ-Some xs = record
+   { to = record { _⟨$⟩_ = find {xs} ; cong = {!!} }
    ; from = record { _⟨$⟩_ = lose ; cong = {!!} }
    ; inverse-of = record
      { left-inverse-of = left-inv

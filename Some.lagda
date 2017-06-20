@@ -91,6 +91,8 @@ module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} whe
              → _≋_ pxs qxs → _≋_ (there {x = x} pxs) (there {x = x} qxs)
 \end{code}
 
+\edcomm{MA}{We may avoid substs/transports, below, by introducing a |Q₀| alongside |P₀|.}
+
 Notice that these another from of ``natural numbers'' whose elements are of the form
 |thereEqⁿ (hereEq Px Qx)| for some |n : ℕ|.
 
@@ -182,11 +184,6 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
                   → p ≈⌊ x ∈ xs ⌋ q
                   → ∈₀-subst₂ xs≅ys p ≈⌊ x ∈ ys ⌋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
-
-{-
-  ∈₀-cong₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → (x ∈ xs) ≅ (x ∈ ys)
-  ∈₀-cong₂ {x} {xs} {ys} xs≅ys = ?
--}
 \end{code}
 %}}}
 
@@ -369,7 +366,7 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
  find : {ys : List Carrier} → Some₀ {S = A} P₀ ys → Support ys
- find {y ∷ ys} (here a≈x p) = y , here refl refl , {!transport P !}
+ find {y ∷ ys} (here a≈x p) = y , here refl refl , to (cong P a≈x) ⟨$⟩ p
  find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
                             in a , there a∈ys , Pa
 
@@ -520,7 +517,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (a ⊔ ℓa)
- (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =  Σ (a ≈ b) (λ a≈b → {!!} ≋ b∈xs)
+ (a , a∈ys , Pa) ∻ (b , b∈ys , Pb) =  Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈ys ≋ b∈ys)
 
  Σ-Setoid : (ys : List Carrier) → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
  Σ-Setoid ys = record
@@ -534,7 +531,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
    }
    where
      Refl : Reflexive _∻_
-     Refl {a , a∈xs , Pa} = refl , ≋-refl
+     Refl {a , a∈xs , Pa} = refl , {! !}
 
      Sym  : Symmetric _∻_
      Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , {!!} -- |≋-sym a∈xs≋b∈xs|

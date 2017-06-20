@@ -355,6 +355,9 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
 \end{code}
 %}}}
 
+%{{{ \subsection{FindLose}
+\subsection{FindLose}
+
 \begin{code}
 module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa ℓa) where
  open Membership A
@@ -374,6 +377,8 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
  lose (y , here b≈y py , Py)  = here b≈y (_≅_.to (Π.cong P py) Π.⟨$⟩ Py)
  lose (y , there y∈ys , Py)   = there (lose (y , y∈ys , Py))
 \end{code}
+
+\edcomm{MA}{Below are old, inactive, attempts.}
 
 \begin{spec}
  -- ``If an element of |ys| has a property |P|, then some element of |ys| has property |P|.''
@@ -470,7 +475,7 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
   in let a∈ys≋b∈ys = ≋-trans (Π.cong (_≅_.to xs≅ys) {{!!}} {{!!}} {!a∈xs≋b∈xs!}) {!!}
   in lose-cong (a≈b , a∈ys≋b∈ys)
 \end{spec}
-\edcomm{WK}{Old attempt, disabled for now:
+
 \begin{spec}
  cong-fwd {xs} {ys} {xs≅ys} {p} {q} p≋q with find P p | find Q q | find-cong p≋q
  ...| (x , x∈xs , px) | (y , y∈xs , py) | (x≈y , x∈xs≋y∈xs) = lose-cong (x≈y , goal)
@@ -498,9 +503,10 @@ module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓ
      y∈ysT : y ∈₀ xs
      y∈ysT = y∈xs
 \end{spec}
-}%edcomm
 
 \edcomm{WK}{Indentation needs to be fixed: Always by at least two positions.}
+
+%}}}
 
 %{{{ \subsection{Some-cong and holes} (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
 \subsection{Some-cong and holes}
@@ -531,15 +537,15 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
      Refl {a , a∈xs , Pa} = refl , ≋-refl
 
      Sym  : Symmetric _∻_
-     Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , {!!} -- ≋-sym a∈xs≋b∈xs
+     Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , {!!} -- |≋-sym a∈xs≋b∈xs|
 
      Trans : Transitive _∻_
-     Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , {!!} -- ≋-trans a∈xs≋b∈xs {! b∈xs≋c∈xs !}
+     Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , {!!} -- |≋-trans a∈xs≋b∈xs {! b∈xs≋c∈xs !} |
 
  module ∻ {ys} where open Setoid (Σ-Setoid ys) public
 
  open FindLose P
- -- open FindLoseCong hiding (_∻_)
+ -- |open FindLoseCong hiding (_∻_)|
 
  left-inv : {ys : List Carrier} (x∈ys : Some₀ P₀ ys) → lose (find x∈ys) ≋ x∈ys
  left-inv (here a≈x px) = hereEq {!!} {!!} {!!} {!!}
@@ -559,6 +565,8 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
      }
    }
 \end{code}
+
+\edcomm{MA}{Below are some old, inactive, attempts.}
 
 \begin{spec}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
@@ -611,6 +619,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 \end{spec}
 
 %}}}
+
+\iffalse
+\fi
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

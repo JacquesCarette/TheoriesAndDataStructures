@@ -8,7 +8,7 @@ open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
   Reflexive ; Symmetric ; Transitive)
 
-open import Function.Equality using (Π ; _⟶_ ; id ; _∘_; _⟨$⟩_)
+open import Function.Equality using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; map)
@@ -22,6 +22,12 @@ open import SetoidEquiv
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
 open import Relation.Binary.Sum
+
+infix 4 inSetoidEquiv
+inSetoidEquiv : {a ℓ : Level} → (S : Setoid a ℓ) → Setoid.Carrier S → Setoid.Carrier S → Set ℓ
+inSetoidEquiv = Setoid._≈_
+
+syntax inSetoidEquiv S x y = x ≈⌊ S ⌋ y
 \end{code}
 %}}}
 
@@ -156,8 +162,30 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
 
+  ∈₀-subst₁ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
+  ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
+  ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (there x∈xs) = there (∈₀-subst₁ x≈y x∈xs)
+
   BagEq : (xs ys : List Carrier) → Set (ℓ ⊔ a)
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
+
+
+  ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
+  ∈₀-Subst₂ {x} {xs} {ys} xs≅ys = _≅_.to (xs≅ys {x})
+
+  ∈₀-subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈₀ xs → x ∈₀ ys
+  ∈₀-subst₂ xs≅ys x∈xs = ∈₀-Subst₂ xs≅ys ⟨$⟩ x∈xs
+
+  ∈₀-subst₂-cong  : {x : Carrier} {xs ys : List Carrier} (xs≅ys : BagEq xs ys)
+                  → {p q : x ∈₀ xs}
+                  → p ≈⌊ x ∈ xs ⌋ q
+                  → ∈₀-subst₂ xs≅ys p ≈⌊ x ∈ ys ⌋ ∈₀-subst₂ xs≅ys q
+  ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
+
+{-
+  ∈₀-cong₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → (x ∈ xs) ≅ (x ∈ ys)
+  ∈₀-cong₂ {x} {xs} {ys} xs≅ys = ?
+-}
 \end{code}
 %}}}
 
@@ -475,11 +503,29 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
  lose-cong₀ {p = a , there a∈xs , Pa} {b , here px , Pb} (fst , ())
  lose-cong₀ {p = a , there a∈xs , Pa} {b , there b∈ys , Pb} (a≈b , thereEq a∈xs≋b∈ys) = thereEq (lose-cong₀ (a≈b , a∈xs≋b∈ys))
 
+ BagEq-cong≋  : {xs ys : List Carrier} (xs≅ys : BagEq xs ys) {x₁ x₂ : Carrier}
+              → {x₁∈xs : x₁ ∈₀ xs} {x₂∈xs : x₂ ∈₀ xs}
+              → (x₁∈xs≋x₂∈xs : x₁∈xs  ≋ x₂∈xs)
+              → ∈₀-subst₂ xs≅ys x₁∈xs ≋ ∈₀-subst₂ xs≅ys x₂∈xs
+ -- \edcomm{WK}{That is, |xs≅ys| preserves position-equality.}
+ -- \edcomm{WK}{I don't think it has to, from the definition of |BagEq|! \unfinished}
+ BagEq-cong≋ {xs} {ys} xs≅ys {x₁} {x₂} {x₁∈xs} {x₂∈xs} x₁∈xs≋x₂∈xs = {!!}
+
+
+
  bag-as-⇒-cong  : {xs ys : List Carrier} {xs≅ys : BagEq xs ys}
                 → {p q : Some₀ P₀ xs} → p ≋ q → bag-as-⇒ xs≅ys p ≋ bag-as-⇒ xs≅ys q
  bag-as-⇒-cong {xs} {ys} {xs≅ys} {p} {q} p≋q = let
+    a , a∈xs , Pa = find p
+    b , b∈xs , Pb = find q
     a≈b , a∈xs≋b∈xs = find-cong₀ p≋q
-  in let a∈ys≋b∈ys = ≋-trans (Π.cong (_≅_.to xs≅ys) {{!!}} {{!!}} {!a∈xs≋b∈xs!}) {!!}
+    a∈ys : a ∈₀ ys
+    a∈ys = ∈₀-subst₂ xs≅ys a∈xs
+    b∈ys : b ∈₀ ys
+    b∈ys = ∈₀-subst₂ xs≅ys b∈xs
+  in let
+    a∈ys≋b∈ys : a∈ys ≋ b∈ys
+    a∈ys≋b∈ys = BagEq-cong≋ xs≅ys a∈xs≋b∈xs
   in lose-cong₀ (a≈b , a∈ys≋b∈ys)
 
 module FindLoseCong {a ℓa : Level} {A : Setoid a ℓa}  {P : A ⟶ SSetoid ℓa ℓa} {Q : A ⟶ SSetoid ℓa ℓa} where

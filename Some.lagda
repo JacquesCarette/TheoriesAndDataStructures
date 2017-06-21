@@ -411,7 +411,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
   _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (a ⊔ ℓa)
-  (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =  Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs)
+  (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =
+    let _≈ₛ_ = Setoid._≈_ (P ⟨$⟩ b) in
+    Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs × transport P Pa a≈b ≈ₛ Pb)
 
   Σ-Setoid : (ys : List Carrier) → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
   Σ-Setoid [] = ⊥⊥
@@ -426,14 +428,14 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     }
     where
       Refl : Reflexive _∻_
-      Refl {a₁ , here sm px , Pa} = refl , hereEq (trans (sym refl) px) px sm sm
-      Refl {a₁ , there a∈xs , Pa} = refl , thereEq (∈₀-subst₁-elim a∈xs)
+      Refl {a₁ , here sm px , Pa} = refl , hereEq (trans (sym refl) px) px sm sm , {!!}
+      Refl {a₁ , there a∈xs , Pa} = refl , thereEq (∈₀-subst₁-elim a∈xs) , {!!}
 
       Sym  : Symmetric _∻_
-      Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , ∈₀-subst₁-sym a∈xs≋b∈xs
+      Sym (a≈b , a∈xs≋b∈xs , Pa≈Pb) = sym a≈b , ∈₀-subst₁-sym a∈xs≋b∈xs , {!!}
 
       Trans : Transitive _∻_
-      Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , ∈₀-subst₁-trans a∈xs≋b∈xs b∈xs≋c∈xs
+      Trans (a≈b , a∈xs≋b∈xs , Pa≈Pb) (b≈c , b∈xs≋c∈xs , Pb≈Pc) = trans a≈b b≈c , ∈₀-subst₁-trans a∈xs≋b∈xs b∈xs≋c∈xs , {!!}
 
   module ∻ {ys} where open Setoid (Σ-Setoid ys) public
 
@@ -441,25 +443,28 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 
   find-cong : {xs : List Carrier} {p q : Some₀ P₀ xs} → p ≋ q → find p ∻ find q
   find-cong {p = .(here x≈z px)} {.(here y≈z qy)} (hereEq px qy x≈z y≈z) =
-    refl , hereEq (trans (sym refl) (sym x≈z)) (sym y≈z) x≈z y≈z
+    refl , hereEq (trans (sym refl) (sym x≈z)) (sym y≈z) x≈z y≈z , {!!}
   find-cong {p = .(there _)} {.(there _)} (thereEq p≋q) =
-    proj₁ (find-cong p≋q) , thereEq (proj₂ (find-cong p≋q))
+    proj₁ (find-cong p≋q) , thereEq (proj₁ (proj₂ (find-cong p≋q))) , proj₂ (proj₂ (find-cong p≋q))
 
   forget-cong : {xs : List Carrier} {i j : Support xs } → i ∻ j → lose i ≋ lose j
   forget-cong {i = a₁ , here sm px , Pa} {b , here sm₁ px₁ , Pb} (i≈j , a∈xs≋b∈xs) =
     hereEq (transport P Pa px) (transport P Pb px₁) sm sm₁
-  forget-cong {i = a₁ , here sm px , Pa} {b , there b∈xs , Pb} (i≈j , ())
-  forget-cong {i = a₁ , there a∈xs , Pa} {b , here sm px , Pb} (i≈j , ())
-  forget-cong {i = a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , thereEq pf) =
-    thereEq (forget-cong (i≈j , pf))
+  forget-cong {i = a₁ , here sm px , Pa} {b , there b∈xs , Pb} (i≈j , () , _)
+  forget-cong {i = a₁ , there a∈xs , Pa} {b , here sm px , Pb} (i≈j , () , _)
+  forget-cong {i = a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , thereEq pf , Pa≈Pb) =
+    thereEq (forget-cong (i≈j , pf , Pa≈Pb))
 
   left-inv : {zs : List Carrier} (x∈zs : Some₀ P₀ zs) → lose (find x∈zs) ≋ x∈zs
   left-inv (here {a} {x} a≈x px) = hereEq (transport P (transport P px a≈x) (sym a≈x)) px a≈x a≈x
   left-inv (there x∈ys) = thereEq (left-inv x∈ys)
 
   right-inv : {ys : List Carrier} (pf : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose pf) ∻ pf
-  right-inv (y , here a≈x px , Py) = trans (sym a≈x) (sym px) , hereEq (trans (sym (trans (sym a≈x) (sym px))) (sym a≈x)) px a≈x a≈x
-  right-inv (y , there y∈ys , Py) = (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₂ (right-inv (y , y∈ys , Py))))
+  right-inv (y , here a≈x px , Py) = trans (sym a≈x) (sym px) , hereEq (trans (sym (trans (sym a≈x) (sym px))) (sym a≈x)) px a≈x a≈x , {!!}
+  right-inv (y , there y∈ys , Py) =
+    let (α₁ , α₂ , α₃) = right-inv (y , y∈ys , Py) in
+    (α₁ , thereEq α₂ , α₃)
+    -- (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₁ (proj₂ (right-inv (y , y∈ys , Py))))) , {!proj₂ (proj₂ (right-inv!}
 
   Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
   Σ-Some [] = ≅-sym (⊥≅Some[] {a} {ℓa} {A} {P})
@@ -477,13 +482,20 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   Σ-cong {[]} {z ∷ zs} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ z}) ⟨$⟩ (_≅_.from iso ⟨$⟩ here refl refl))
   Σ-cong {x ∷ xs} {[]} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ x}) ⟨$⟩ (_≅_.to iso ⟨$⟩ here refl refl))
   Σ-cong {x ∷ xs} {y ∷ ys} xs≅ys = record
-    { to = record { _⟨$⟩_ = xs→ys xs≅ys ; cong = {!!} }
-    ; from = record { _⟨$⟩_ = xs→ys (≅-sym xs≅ys) ; cong = {!!} }
-    ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
+    { to   = record { _⟨$⟩_ = xs→ys xs≅ys         ; cong = xs→ys-cong {eq = xs≅ys} }
+    ; from = record { _⟨$⟩_ = xs→ys (≅-sym xs≅ys) ; cong = xs→ys-cong {eq = ≅-sym xs≅ys } }
+    ; inverse-of = record
+      { left-inverse-of = {!!}
+      ; right-inverse-of = {!!}
+      }
     }
     where
       xs→ys : {zs ws : List Carrier} → BagEq zs ws → Support zs → Support ws
-      xs→ys eq (a , a∈xs , Pa) = find (lose (a , _≅_.to eq ⟨$⟩ a∈xs , Pa))
+      xs→ys eq (a , a∈xs , Pa) = (a , _≅_.to eq ⟨$⟩ a∈xs , Pa )
+      xs→ys-cong : {zs ws : List Carrier} {eq : BagEq zs ws} {i j : Support zs} →
+        i ∻ j → xs→ys eq i ∻ xs→ys eq j
+      xs→ys-cong {i = (a , a∈xs , Pa)} {(b , b∈xs , Pb)} (a≈b , a∈xs≋b∈xs , Pa≈Pb) =
+        a≈b , {!!}, Pa≈Pb
 \end{code}
 %}}}
 

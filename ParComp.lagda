@@ -56,7 +56,7 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
 -- Instead, I can use, with much distasteful yellow,
 -- |∥-sym sym₁ sym₂ = [ (λ pf → left (sym₁ pf)) ∥ (λ pf → right (sym₂ pf)) ] |
 
-infix 999 _⊎⊎_
+infix 3 _⊎⊎_
 _⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
 A ⊎⊎ B = record
   { Carrier = A₀ ⊎ B₀
@@ -79,7 +79,7 @@ A ⊎⊎ B = record
 %{{{ \subsection{|⊎⊎-comm|}
 \subsection{|⊎⊎-comm|}
 \begin{code}
-⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → A ⊎⊎ B  ≅  B ⊎⊎ A
+⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B)  ≅  (B ⊎⊎ A)
 ⊎⊎-comm {A = A} {B} = record
   { to           =  record { _⟨$⟩_ = swap₊ ; cong = swap-on-∥   }
   ; from         =  record { _⟨$⟩_ = swap₊ ; cong = swap-on-∥′ }

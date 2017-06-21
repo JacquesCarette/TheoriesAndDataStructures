@@ -21,6 +21,7 @@ open import Forget
 open import EqualityCombinators
 open import DataProperties
 open import SetoidEquiv
+open import ParComp
 open import Some
 
 \end{code}
@@ -151,12 +152,12 @@ abstract
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≈ₘ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} →
           z ∈ xs ++ ys        ≅⟨ ≅-sym ++≅ ⟩
-          (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎-comm ⟩
+          (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎⊎-comm ⟩
           (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ ⟩
           z ∈ ys ++ xs  ∎
         ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w {t} →
            t ∈ x ++ z        ≅⟨ ≅-sym ++≅ ⟩
-          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ x≈y ⊎-inverse z≈w ⟩
+          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ {!!} ⟩
           (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ ++≅ ⟩
            t ∈ y ++ w ∎
         }
@@ -177,7 +178,7 @@ abstract
       ≡→≈ₘ ≡.refl = record
         { to = record { _⟨$⟩_ = λ x → x ; cong = λ z → z }
         ; from = record { _⟨$⟩_ = λ x → x ; cong = λ z → z }
-        ; inverse-of = record { left-inverse-of = λ _ → ≡.refl ; right-inverse-of = λ _ → ≡.refl } }
+        ; inverse-of = record { left-inverse-of = λ _ → ≋-refl ; right-inverse-of = λ _ → ≋-refl } }
 
       LM : Setoid ℓ (ℓ ⊍ o)
       LM = record
@@ -192,13 +193,13 @@ abstract
   ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys {y} → 
+      ; cong = λ {xs} {ys} xs≈ys {y} →
       y ∈ mapL g xs           ≅⟨ ≅-sym map≅  ⟩
       Some (setoid≈ y ∘ F) xs ≅⟨ {!!} ⟩
       Some (setoid≈ y ∘ F) ys ≅⟨ map≅ ⟩
       y ∈ mapL g ys ∎
       }
-    ; pres-e = λ {z} → 
+    ; pres-e = λ {z} →
       z ∈ []     ≅⟨ ≅-sym ⊥≅Some[] ⟩
       ⊥⊥         ≅⟨ ⊥≅Some[] ⟩
       (z ∈ zero) ∎

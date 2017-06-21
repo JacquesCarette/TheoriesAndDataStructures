@@ -197,12 +197,19 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
   -- note how the back-and-forth is clearly apparent below
   ∈₀-subst₁-sym : {a b : Carrier} {xs : List Carrier} {a≈b : a ≈ b}
-    {a∈xs : a ∈₀ xs} {b∈xs : b ∈₀ xs} (a∈xs≋b∈xs : ∈₀-subst₁ a≈b a∈xs ≋ b∈xs) →
+    {a∈xs : a ∈₀ xs} {b∈xs : b ∈₀ xs} → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs →
     ∈₀-subst₁ (sym a≈b) b∈xs ≋ a∈xs
   ∈₀-subst₁-sym {a≈b = a≈b} {here sm px} {here sm₁ px₁} (hereEq _ .px₁ .sm .sm₁) = hereEq (sym (sym a≈b) ⟨≈≈⟩ px₁) px sm₁ sm
   ∈₀-subst₁-sym {a∈xs = there a∈xs} {here sm px} ()
   ∈₀-subst₁-sym {a∈xs = here sm px} {there b∈xs} ()
   ∈₀-subst₁-sym {a∈xs = there a∈xs} {there b∈xs} (thereEq pf) = thereEq (∈₀-subst₁-sym pf)
+
+  ∈₀-subst₁-trans : {a b c : Carrier} {xs : List Carrier} {a≈b : a ≈ b}
+    {b≈c : b ≈ c} {a∈xs : a ∈₀ xs} {b∈xs : b ∈₀ xs} {c∈xs : c ∈₀ xs} →
+    ∈₀-subst₁ a≈b a∈xs ≋ b∈xs → ∈₀-subst₁ b≈c b∈xs ≋ c∈xs →
+    ∈₀-subst₁ (a≈b ⟨≈≈⟩ b≈c) a∈xs ≋ c∈xs
+  ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {here sm px} {.(here y≈z qy)} {.(here z≈w qz)} (hereEq ._ qy .sm y≈z) (hereEq ._ qz foo z≈w) = hereEq (sym (a≈b ⟨≈≈⟩ b≈c) ⟨≈≈⟩ px) qz sm z≈w
+  ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {there a∈xs} {there b∈xs} {.(there _)} (thereEq pp) (thereEq qq) = thereEq (∈₀-subst₁-trans pp qq)
 \end{code}
 %}}}
 
@@ -426,7 +433,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       Sym (a≈b , a∈xs≋b∈xs) = sym a≈b , ∈₀-subst₁-sym a∈xs≋b∈xs
 
       Trans : Transitive _∻_
-      Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , {!!} -- |≋-trans a∈xs≋b∈xs {! b∈xs≋c∈xs !} |
+      Trans (a≈b , a∈xs≋b∈xs) (b≈c , b∈xs≋c∈xs) = trans a≈b b≈c , ∈₀-subst₁-trans a∈xs≋b∈xs b∈xs≋c∈xs
 
   module ∻ {ys} where open Setoid (Σ-Setoid ys) public
 
@@ -464,15 +471,27 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       ; right-inverse-of = right-inv
       }
     }
+
+  Σ-cong : {xs ys : List Carrier} → BagEq xs ys → Σ-Setoid xs ≅ Σ-Setoid ys
+  Σ-cong {[]} {[]} iso = ≅-refl
+  Σ-cong {[]} {z ∷ zs} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ z}) ⟨$⟩ (_≅_.from iso ⟨$⟩ here refl refl))
+  Σ-cong {x ∷ xs} {[]} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ x}) ⟨$⟩ (_≅_.to iso ⟨$⟩ here refl refl))
+  Σ-cong {x ∷ xs} {y ∷ ys} xs≅ys = record
+    { to = record { _⟨$⟩_ = xs→ys xs≅ys ; cong = {!!} }
+    ; from = record { _⟨$⟩_ = xs→ys (≅-sym xs≅ys) ; cong = {!!} }
+    ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
+    }
+    where
+      xs→ys : {zs ws : List Carrier} → BagEq zs ws → Support zs → Support ws
+      xs→ys eq (a , a∈xs , Pa) = find (lose (a , _≅_.to eq ⟨$⟩ a∈xs , Pa))
 \end{code}
 %}}}
 
-\edcomm{MA}{Below are some old, inactive, attempts.}
-%{{{ \subsection{Some-cong and holes} (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
-\subsection{Some-cong and holes}
+%{{{ \subsection{Some-cong} (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
+\subsection{Some-cong}
 This isn't quite the full-powered cong, but is all we need.
 
-\begin{spec}
+\begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
  open Membership A
@@ -482,45 +501,13 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
  Some-cong : {xs₁ xs₂ : List Carrier} →
            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
            Some P xs₁ ≅ Some P xs₂
- Some-cong {xs₁} {xs₂} list-rel = record
-  { to           =   record
-     { _⟨$⟩_ = bag-as-⇒ list-rel
-     ; cong = FindLoseCong.cong-fwd {P = P} {Q = P} {xs≅ys = list-rel}
-     }
-  ; from = record
-    { _⟨$⟩_ = xs₁→xs₂ (≅-sym list-rel)
-    ; cong = {! {- \unfinished -}!} }
-  ; inverse-of = record
-    { left-inverse-of = {! {- \unfinished -}!}
-    ; right-inverse-of = {! {- \unfinished -}!}
-    }
-  }
-  where
+ Some-cong {xs₁} {xs₂} list-rel =
+   Some P xs₁             ≅⟨ Σ-Some xs₁ ⟩
+   Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong list-rel ⟩
+   Σ-Setoid {P = P} xs₂   ≅⟨ ≅-sym (Σ-Some xs₂) ⟩
+   Some P xs₂ ∎
 
-  open FindLose P using (bag-as-⇒ ; find)
-
-  -- this is probably a specialized version of Respects.
-  -- is also related to an uncurried version of |lose|.
-  copy : ∀ {x} {ys} {Q : A ⟶ SSetoid ℓa ℓa} → x ∈₀ ys → (Setoid.Carrier (Π._⟨$⟩_ Q x)) → Some₀ (λ e → Setoid.Carrier (Q ⟨$⟩ e)) ys
-  copy {Q = Q} (here p)  pf = here (_≅_.to (Π.cong Q p) ⟨$⟩ pf)
-  copy         (there p) pf = there (copy p pf)
-
-  -- \edcomm{Somebody}{this should be generalized to |qy| coming from |Q₀ x|.}
-  copy-cong : {x y : Carrier} {xs ys : List Carrier} {Q : A ⟶ SSetoid ℓa ℓa}
-    (px : P₀ x) (qy : Setoid.Carrier (Π._⟨$⟩_ Q y)) (x∈xs : x ∈₀ xs) (y∈ys : y ∈₀ ys) →
-    (x∈xs ≋ y∈ys) → copy {Q = P} x∈xs px ≋ copy {Q = Q} y∈ys qy
-  copy-cong px qy₁ (here px₁) .(here qy) (hereEq .px₁ qy) = hereEq _ _
-  copy-cong px qy (there i) .(there _) (thereEq i≋j) = thereEq (copy-cong px qy _ _ i≋j)
-
-  xs₁→xs₂ : ∀ {xs ys} →  (∀ {x} → (x ∈ xs) ≅ (x ∈ ys)) → Some₀ P₀ xs → Some₀ P₀ ys
-  xs₁→xs₂ {xs} rel p =
-    let pos = find {ys = xs} p in
-    copy (_≅_.to rel ⟨$⟩ proj₁ (proj₂ pos)) (proj₂ (proj₂ pos))
-
-  cong-fwd : {i j : Some₀ P₀ xs₁} →
-    i ≋ j → xs₁→xs₂ list-rel i ≋ xs₁→xs₂ list-rel j
-  cong-fwd {i} {j} i≋j = copy-cong _ _ _ _ {! {- \unfinished -}!}
-\end{spec}
+\end{code}
 
 %}}}
 

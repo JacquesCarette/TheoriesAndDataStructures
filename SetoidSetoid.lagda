@@ -6,6 +6,8 @@ module SetoidSetoid where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
 open import Relation.Binary using (Setoid)
+open import Function.Equivalence using (Equivalence; id; _∘_; sym)
+open import Function using (flip)
 
 open import DataProperties using (⊤; tt)
 open import SetoidEquiv
@@ -15,11 +17,12 @@ open import SetoidEquiv
 %{{{ _≈S_ ; SSetoid
 Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
 \begin{code}
-SSetoid : (ℓ o : Level) → Setoid (lsuc o ⊍ lsuc ℓ) (o ⊍ ℓ)
-SSetoid ℓ o = record
+SSetoid : (o ℓ : Level) → Setoid (lsuc ℓ ⊍ lsuc o) (ℓ ⊍ o)
+SSetoid o ℓ = record
   { Carrier = Setoid ℓ o
-  ; _≈_ = _≅_
-  ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans } }
+  ; _≈_ = Equivalence
+  ; isEquivalence = record
+    { refl = id ; sym = sym ; trans = flip _∘_ } }
 \end{code}
 
 Given two elements of a given Setoid |A|, define a Setoid of equivalences of

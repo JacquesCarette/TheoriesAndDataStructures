@@ -6,6 +6,8 @@ module ParComp where
 
 open import Level
 open import Relation.Binary using (Setoid)
+open import Function using (_∘_)
+open import Function.Equality using (Π; _⟨$⟩_; cong)
 
 open import DataProperties
 open import SetoidEquiv
@@ -109,6 +111,51 @@ A ⊎⊎ B = record
     swap²≈∥≈id′ : (z : B₀ ⊎ A₀) → (≈₂ ∥ ≈₁) (swap₊ (swap₊ z)) z
     swap²≈∥≈id′ (inj₁ _)  =  left  refl₂
     swap²≈∥≈id′ (inj₂ _)  =  right refl₁
+\end{code}
+%}}}
+
+%{{{ \subsection{|⊎⊎₁|}
+\subsection{|⊎⊎₁| - parallel composition of equivalences}
+\begin{code}
+_⊎⊎₁_ : {a b c d aℓ bℓ cℓ dℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} {C : Setoid c cℓ}
+  {D : Setoid d dℓ} → A ≅ C → B ≅ D → (A ⊎⊎ B) ≅ (C ⊎⊎ D)
+_⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D =
+  let A→C = _⟨$⟩_ (to   A≅C) in let B→D = _⟨$⟩_ (to   B≅D) in
+  let C→A = _⟨$⟩_ (from A≅C) in let D→B = _⟨$⟩_ (from B≅D) in
+  record
+  { to = record   { _⟨$⟩_ = A→C   ⊎₁ B→D
+                  ; cong = cong-AB }
+  ; from = record { _⟨$⟩_ = _⟨$⟩_ (from A≅C) ⊎₁ _⟨$⟩_ (from B≅D)
+                  ; cong = cong-CD }
+  ; inverse-of = record
+    { left-inverse-of  = left-inv
+    ; right-inverse-of = right-inv }
+  }
+  where
+    open _≅_
+    A→C = _⟨$⟩_ (to A≅C)
+    B→D = _⟨$⟩_ (to B≅D)
+    C→A = _⟨$⟩_ (from A≅C)
+    D→B = _⟨$⟩_ (from B≅D)
+    open Setoid A renaming (Carrier to AA; _≈_ to _≈₁_)
+    open Setoid B renaming (Carrier to BB; _≈_ to _≈₂_)
+    open Setoid C renaming (Carrier to CC; _≈_ to _≈₃_)
+    open Setoid D renaming (Carrier to DD; _≈_ to _≈₄_)
+    cong-AB : {i j : AA ⊎ BB} → (_≈₁_ ∥ _≈₂_) i j → (_≈₃_ ∥ _≈₄_) ((A→C ⊎₁ B→D) i) ((A→C ⊎₁ B→D) j)
+    cong-AB (left x~₁y) = left   (cong (to A≅C) x~₁y)
+    cong-AB (right x~₂y) = right (cong (to B≅D) x~₂y)
+
+    cong-CD : {i j : CC ⊎ DD} → (_≈₃_ ∥ _≈₄_) i j → (_≈₁_ ∥ _≈₂_) ((C→A ⊎₁ D→B) i) ((C→A ⊎₁ D→B) j)
+    cong-CD (left x~₁y) = left   (cong (from A≅C) x~₁y)
+    cong-CD (right x~₂y) = right (cong (from B≅D) x~₂y)
+
+    left-inv : (x : AA ⊎ BB) → (_≈₁_ ∥ _≈₂_) ((C→A ⊎₁ D→B) ((A→C ⊎₁ B→D) x)) x
+    left-inv (inj₁ x) = left  (left-inverse-of A≅C x)
+    left-inv (inj₂ y) = right (left-inverse-of B≅D y)
+
+    right-inv : (x : CC ⊎ DD) → (_≈₃_ ∥ _≈₄_) ((A→C ⊎₁ B→D) ((C→A ⊎₁ D→B) x)) x
+    right-inv (inj₁ x) = left  (right-inverse-of A≅C x)
+    right-inv (inj₂ y) = right (right-inverse-of B≅D y)
 \end{code}
 %}}}
 

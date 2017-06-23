@@ -218,12 +218,32 @@ abstract
   id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
     (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)
   id-pres {X = X} x {z} =
-    z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩
+    -- z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩
     z ∈ mapL id₀ x                       ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {f = id}) ⟩
     z ∈ x ∎
     where
       open Membership X
       open Setoid X
+
+  homMS : ∀ {ℓ o} {X Y Z : Setoid ℓ o} {f : X ⟶ Y} {g : Y ⟶ Z} (x : Carrier (ListMS X)) →
+    let gg = lift (ListCMHom Y Z) g in
+    let ff = lift (ListCMHom X Y) f in
+    Hom.mor (lift (ListCMHom X Z) (g ∘ f)) Π.⟨$⟩ x ≈
+      gg Hom.⟨$⟩ (ff Hom.⟨$⟩ x) ∶ commMonoid (ListMS Z)
+  homMS {Z = Z} {f} {g} xs {x} =
+    x ∈ mapL (_⟨$⟩_ (g ∘ f)) xs              ≅⟨ ≅-sym (map≅ {P = setoid≈ x} {g ∘ f}) ⟩
+    Some (setoid≈ x ∘ (g ∘ f)) xs           ≅⟨ ≅-refl ⟩ -- associativity of ∘ is "free"
+    Some ((setoid≈ x ∘ g) ∘ f) xs           ≅⟨ map≅ {P = setoid≈ x ∘ g} {f} ⟩
+    Some (setoid≈ x ∘ g) (mapL (_⟨$⟩_ f) xs) ≅⟨ map≅ {P = setoid≈ x} {g} ⟩
+    x ∈ mapL (_⟨$⟩_ g) (mapL (_⟨$⟩_ f) xs) ∎
+    where open Membership Z; open Π
+
+  cong-singleton : ∀ {ℓ o} {X : Setoid ℓ o} {i j : Setoid.Carrier X} →
+    (Setoid._≈_ X i j) → singleton (ListMS X) i ≈ singleton (ListMS X) j ∶ commMonoid (ListMS X)
+  cong-singleton {X = X} {i} {j} i≈j {x} =
+    x ∈ i ∷ [] ≅⟨ {!!} ⟩
+    x ∈ j ∷ [] ∎
+    where open Membership X
 
   fold : ∀ {ℓ o} {X : Setoid ℓ o} {B : Set ℓ} →
     let A = Setoid.Carrier X in
@@ -237,8 +257,8 @@ MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
   ; identity = λ {A} {x} → id-pres x
-  ; homomorphism = λ {X} {Y} {Z} {f} {g} {x} → {!!}
-  ; F-resp-≡ = λ F≈G → {!!}
+  ; homomorphism = λ { {x = x} → homMS x }
+  ; F-resp-≡ = λ F≈G {x} → {!!}
   }
   where
     open Multiset; open MultisetHom
@@ -246,7 +266,7 @@ MultisetF ℓ o = record
 MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊍ ℓ)) (Forget ℓ (o ⊍ ℓ))
 MultisetLeft ℓ o = record
   { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
-                                     ; cong = {!!} }
+                                     ; cong = cong-singleton }
                   ; commute = λ f → λ {x} → {!!} }
   ; counit = record
     { η = λ { (MkCommMon A z _+_ _ _ _ _ _) →

@@ -202,11 +202,16 @@ abstract
     ; pres-e = λ {z} →
       z ∈ []     ≅⟨ ≅-sym (⊥≅Some[] {P = setoid≈ z}) ⟩
       ⊥⊥         ≅⟨ ⊥≅Some[] {P = setoid≈ z} ⟩
-      (z ∈ zero) ∎
+      (z ∈ e₁) ∎
 
-    ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}
+      -- in the proof below, *₀ and *₁ are both ++
+    ; pres-* = λ {x} {y} {z} → let g = Π._⟨$⟩_ F in
+      z ∈ mapL g (x *₀ y)                              ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {F}) ⟩
+      Some (setoid≈ z ∘ F) (x *₀ y)                    ≅⟨ ≅-sym (++≅ {P = setoid≈ z ∘ F}) ⟩
+      Some (setoid≈ z ∘ F) x ⊎⊎ Some (setoid≈ z ∘ F) y ≅⟨ (map≅ {P = setoid≈ z} {F}) ⊎⊎₁ (map≅ {P = setoid≈ z} {F})⟩
+      z ∈ mapL g x ⊎⊎ z ∈ mapL g y                     ≅⟨ ++≅ {P = setoid≈ z} ⟩
+      z ∈ mapL g x *₁ mapL g y ∎
      {-
-           |Any-map (Setoid._≈_ Y e) g (x ++ y) ⟨≃≃⟩|
            |Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩|
            |(sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃|
            |(sym≃ (Any-map (Setoid._≈_ Y e) g y)) ⟨≃≃⟩|
@@ -215,7 +220,8 @@ abstract
     })
     where
       -- open Multiset (ListMS Y)
-      open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to zero)
+      open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀  ; _*_ to _*₀_)
+      open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y
       \end{code}
 

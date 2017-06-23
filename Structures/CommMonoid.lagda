@@ -151,14 +151,14 @@ abstract
         ; right-unit = λ {xs} → ≡→≈ₘ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→≈ₘ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} {z} →
-          z ∈ xs ++ ys        ≅⟨ ≅-sym ++≅ ⟩
+          z ∈ xs ++ ys        ≅⟨ ≅-sym (++≅ {P = setoid≈ z}) ⟩
           (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎⊎-comm ⟩
-          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ ⟩
+          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ {P = setoid≈ z}⟩
           z ∈ ys ++ xs  ∎
         ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w {t} →
-           t ∈ x ++ z        ≅⟨ ≅-sym ++≅ ⟩
-          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ {!!} ⟩
-          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ ++≅ ⟩
+           t ∈ x ++ z        ≅⟨ ≅-sym (++≅ {P = setoid≈ t}) ⟩
+          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ x≈y ⊎⊎₁ z≈w ⟩
+          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ ++≅ {P = setoid≈ t}⟩
            t ∈ y ++ w ∎
         }
     ; singleton = λ x → x ∷ []
@@ -194,14 +194,14 @@ abstract
     { mor = record
       { _⟨$⟩_ = mapL g
       ; cong = λ {xs} {ys} xs≈ys {y} →
-      y ∈ mapL g xs           ≅⟨ ≅-sym map≅  ⟩
-      Some (setoid≈ y ∘ F) xs ≅⟨ {!!} ⟩
-      Some (setoid≈ y ∘ F) ys ≅⟨ map≅ ⟩
+      y ∈ mapL g xs           ≅⟨ ≅-sym (map≅ {P = setoid≈ y} {F}) ⟩
+      Some (setoid≈ y ∘ F) xs ≅⟨ Some-cong {P = setoid≈ y ∘ F} xs≈ys ⟩
+      Some (setoid≈ y ∘ F) ys ≅⟨ map≅ {P = setoid≈ y} {F} ⟩
       y ∈ mapL g ys ∎
       }
     ; pres-e = λ {z} →
-      z ∈ []     ≅⟨ ≅-sym ⊥≅Some[] ⟩
-      ⊥⊥         ≅⟨ ⊥≅Some[] ⟩
+      z ∈ []     ≅⟨ ≅-sym (⊥≅Some[] {P = setoid≈ z}) ⟩
+      ⊥⊥         ≅⟨ ⊥≅Some[] {P = setoid≈ z} ⟩
       (z ∈ zero) ∎
 
     ; pres-* = λ {x} {y} {e} → let g = Π._⟨$⟩_ F in {!!}

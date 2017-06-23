@@ -169,7 +169,6 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   BagEq : (xs ys : List Carrier) → Set (ℓ ⊔ a)
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 
-
   ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
   ∈₀-Subst₂ {x} {xs} {ys} xs≅ys = _≅_.to (xs≅ys {x})
 
@@ -207,6 +206,10 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
     ∈₀-subst₁ (a≈b ⟨≈≈⟩ b≈c) a∈xs ≋ c∈xs
   ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {here sm px} {.(here y≈z qy)} {.(here z≈w qz)} (hereEq ._ qy .sm y≈z) (hereEq ._ qz foo z≈w) = hereEq (sym (a≈b ⟨≈≈⟩ b≈c) ⟨≈≈⟩ px) qz sm z≈w
   ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {there a∈xs} {there b∈xs} {.(there _)} (thereEq pp) (thereEq qq) = thereEq (∈₀-subst₁-trans pp qq)
+
+  postulate
+    ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)
+      (a∈zs : a ∈₀ zs) → ∈₀-subst₁ a≈b (_≅_.to eq ⟨$⟩ a∈zs) ≋ _≅_.to eq ⟨$⟩ (∈₀-subst₁ a≈b a∈zs)
 \end{code}
 %}}}
 
@@ -491,11 +494,12 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     where
       open _≅_
       xs→ys : {zs ws : List Carrier} → BagEq zs ws → Support zs → Support ws
-      xs→ys eq (a , a∈xs , Pa) = (a , _≅_.to eq ⟨$⟩ a∈xs , Pa )
+      xs→ys eq (a , a∈xs , Pa) = (a , ∈₀-subst₂ eq a∈xs , Pa)
+
       xs→ys-cong : {zs ws : List Carrier} (eq : BagEq zs ws) {i j : Support zs} →
         i ∻ j → xs→ys eq i ∻ xs→ys eq j
-      xs→ys-cong eq {i = (a , a∈xs , Pa)} {(b , b∈xs , Pb)} (a≈b , a∈xs≋b∈xs , Pa≈Pb) =
-        a≈b , {!!}, Pa≈Pb
+      xs→ys-cong eq {_ , a∈zs , _} {j} (a≈b , pf , Pa≈Pb) =
+        a≈b , (≋-trans (∈₀-subst₁-to {a≈b = a≈b} eq a∈zs) (cong (to eq) pf) , tt)
 \end{code}
 %}}}
 

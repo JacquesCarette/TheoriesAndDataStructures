@@ -187,8 +187,6 @@ abstract
         ; isEquivalence = record { refl = ≅-refl ; sym = λ x → ≅-sym x ; trans = λ x y → ≅-trans x y }
         }
 
-  -- |open import Data.Product using (∃₂)|
-
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
@@ -211,57 +209,57 @@ abstract
       Some (setoid≈ z ∘ F) x ⊎⊎ Some (setoid≈ z ∘ F) y ≅⟨ (map≅ {P = setoid≈ z} {F}) ⊎⊎₁ (map≅ {P = setoid≈ z} {F})⟩
       z ∈ mapL g x ⊎⊎ z ∈ mapL g y                     ≅⟨ ++≅ {P = setoid≈ z} ⟩
       z ∈ mapL g x *₁ mapL g y ∎
-     {-
-           |Any-++ (λ z → (Setoid._≈_ Y e (g z))) x y ⟨≃≃⟩|
-           |(sym≃ (Any-map (Setoid._≈_ Y e) g x)) ⊎≃|
-           |(sym≃ (Any-map (Setoid._≈_ Y e) g y)) ⟨≃≃⟩|
-           |sym≃ (Any-++ (Setoid._≈_ Y e) (mapL g x) (mapL g y))|
-     -}
     })
     where
-      -- open Multiset (ListMS Y)
       open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀  ; _*_ to _*₀_)
       open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y
-      \end{code}
 
-    fold : {X : Setoid ℓ o} {B : Set ℓ} →
-      let A = Carrier X in
-      (A → B → B) → B → Carrier (Multiset X) → B
-    fold = foldr
+  id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
+    (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)
+  id-pres {X = X} x {z} =
+    z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩
+    z ∈ mapL id₀ x                       ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {f = id}) ⟩
+    z ∈ x ∎
+    where
+      open Membership X
+      open Setoid X
 
-    singleton-map : {A B : Setoid ℓ o} (f : A ⟶ B) {a : Setoid.Carrier A} →
-      _≈_ (Multiset B) (singleton {B} (f ⟨$⟩ a)) (map (_⟨$⟩_ f) (singleton {A} a))
-    singleton-map {_} {B} f = Setoid.refl (Multiset B)
+  fold : ∀ {ℓ o} {X : Setoid ℓ o} {B : Set ℓ} →
+    let A = Setoid.Carrier X in
+    (A → B → B) → B → Carrier (ListMS X) → B
+  fold = foldr
+\end{code}
 
-MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊔ o))
+\begin{code}
+MultisetF : (ℓ o : Level) → Functor (Setoids ℓ o) (MonoidCat ℓ (ℓ ⊍ o))
 MultisetF ℓ o = record
   { F₀ = λ S → commMonoid (ListMS S)
   ; F₁ = λ {X} {Y} f → let F = lift (ListCMHom X Y) f in record { Hom F }
-  ; identity = {!!}
-  ; homomorphism = {!!}
+  ; identity = λ {A} {x} → id-pres x
+  ; homomorphism = λ {X} {Y} {Z} {f} {g} {x} → {!!}
   ; F-resp-≡ = λ F≈G → {!!}
   }
   where
     open Multiset; open MultisetHom
 
-MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊔ ℓ)) (Forget ℓ (o ⊔ ℓ))
+MultisetLeft : (ℓ o : Level) → Adjunction (MultisetF ℓ (o ⊍ ℓ)) (Forget ℓ (o ⊍ ℓ))
 MultisetLeft ℓ o = record
   { unit = record { η = λ X → record { _⟨$⟩_ = singleton (ListMS X)
                                      ; cong = {!!} }
-                  ; commute = {!!} }
+                  ; commute = λ f → λ {x} → {!!} }
   ; counit = record
-    { η = λ { (MkCommMon A z _+_ _ _ _ _) →
-          MkHom (record { _⟨$⟩_ = {! fold _+_ z !} ; cong = {!!} }) {!!} {!!} }
+    { η = λ { (MkCommMon A z _+_ _ _ _ _ _) →
+          MkHom (record { _⟨$⟩_ = fold _+_ z ; cong = {!!} }) {!!} {!!} }
     ; commute = {!!}
     }
-  ; zig = {!!}
-  ; zag = {!!}
+  ; zig = λ {X} {l} → {!!}
+  ; zag = λ {X} {l} → {!!}
   }
   where
     open Multiset
     open CommMonoid
-
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

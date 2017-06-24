@@ -134,6 +134,7 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 \subsection{Membership module}
 
 \edcomm{WK}{Please don't waste valuable variable names on levels.}
+\edcomm{JC}{Good point.}
 \savecolumns
 \begin{code}
 module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
@@ -210,7 +211,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 \end{code}
 
 \edcomm{WK}{Trying --- but |BagEq| still does not preserve positions!
-
+\edcomm{JC}{And it is not supposed to preserve them.  |BagEq| is a permutation.}
 Commented out:
 \begin{spec}
   ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b}
@@ -417,6 +418,8 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
 \subsection{Σ-Setoid}
 
 \edcomm{WK}{Abstruse name!}
+\edcomm{JC}{Feel free to rename.  I agree that it is not a good name.  I was more
+concerned with the semantics, and then could come back to clean up once it worked.}
 
 This is an ``unpacked'' version of |Some|, where each piece (see |Support| below) is
 separated out.  For some equivalences, it seems to work with this representation.
@@ -528,6 +531,14 @@ This isn't quite the full-powered cong, but is all we need.
 
 \edcomm{WK}{It has position preservation neither in the assumption (|list-rel|),
 nor in the conclusion. Why did you bother with position preservation for |_≋_|?}
+\edcomm{JC}{Because |_≋_| is about showing that two positions \emph{in the same
+list} are equivalent.  And |list-rel| is a permutation between two lists.
+I agree that |_≋_| could be ``loosened'' to be up to
+permutation of elements which are |_≈_| to a given one.
+
+But if our notion of permutation is |BagEq|, which depends on |_∈_|, which
+depends on |Some|, which depends on |_≋_|. If that now depends on |BagEq|,
+we've got a mutual recursion that seems unecessary.}
 
 \begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where

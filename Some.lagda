@@ -133,9 +133,10 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 %{{{ \subsection{Membership module}: setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
 
+\edcomm{WK}{Please don't waste valuable variable names on levels.}
 \savecolumns
 \begin{code}
-module Membership {a ℓ} (S : Setoid a ℓ) where
+module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 
   open Setoid S renaming (trans to _⟨≈≈⟩_)
 
@@ -147,7 +148,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
 \restorecolumns
 \begin{code}
-  setoid≈ : Carrier → S ⟶ SSetoid ℓ ℓ
+  setoid≈ : Carrier → S ⟶ SSetoid ℓs ℓs
   setoid≈ x = record
     { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {A = S} x y
     ; cong = λ i≈j → record
@@ -156,17 +157,17 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
       }
     }
 
-  _∈_ : Carrier → List Carrier → Setoid (a ⊔ ℓ) (ℓ ⊔ a)
+  _∈_ : Carrier → List Carrier → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
   x ∈ xs = Some (setoid≈ x) xs
 
-  _∈₀_ : Carrier → List Carrier → Set (ℓ ⊔ a)
+  _∈₀_ : Carrier → List Carrier → Set (ℓS ⊔ ℓs)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
 
   ∈₀-subst₁ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (there x∈xs) = there (∈₀-subst₁ x≈y x∈xs)
 
-  BagEq : (xs ys : List Carrier) → Set (ℓ ⊔ a)
+  BagEq : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 
   ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
@@ -181,7 +182,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
                   → ∈₀-subst₂ xs≅ys p ≈⌊ x ∈ ys ⌋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
-  transport : (Q : S ⟶ SSetoid ℓ ℓ) →
+  transport : (Q : S ⟶ SSetoid ℓs ℓs) →
     let Q₀ = λ e → Setoid.Carrier (Q ⟨$⟩ e) in
     {a x : Carrier} (p : Q₀ a) (a≈x : a ≈ x) → Q₀ x
   transport Q p a≈x = Equivalence.to (Π.cong Q a≈x) ⟨$⟩ p
@@ -206,7 +207,22 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
     ∈₀-subst₁ (a≈b ⟨≈≈⟩ b≈c) a∈xs ≋ c∈xs
   ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {here sm px} {.(here y≈z qy)} {.(here z≈w qz)} (hereEq ._ qy .sm y≈z) (hereEq ._ qz foo z≈w) = hereEq (sym (a≈b ⟨≈≈⟩ b≈c) ⟨≈≈⟩ px) qz sm z≈w
   ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {there a∈xs} {there b∈xs} {.(there _)} (thereEq pp) (thereEq qq) = thereEq (∈₀-subst₁-trans pp qq)
+\end{code}
 
+\edcomm{WK}{Trying --- but |BagEq| still does not preserve positions!
+
+Commented out:
+\begin{spec}
+  ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b}
+      → (zs≅ws : BagEq zs ws) (a∈zs : a ∈₀ zs)
+      → ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs) ≋ ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
+  -- ∈₀-subst₁-to {a} {b} {zs} {ws} {a≈b} zs≅ws a∈zs = ?
+  ∈₀-subst₁-to {a} {b} {z ∷ zs} {ws} {a≈b} zs≅ws (here {v} {a₁} {vs} a₁≈z a≈a₁) = {!hereEq!}
+  ∈₀-subst₁-to {a} {b} {z ∷ zs} {ws} {a≈b} zs≅ws (there a∈zs) = {!!}
+\end{spec}
+}%edcomm
+
+\begin{code}
   postulate
     ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)
       (a∈zs : a ∈₀ zs) → ∈₀-subst₁ a≈b (_≅_.to eq ⟨$⟩ a∈zs) ≋ _≅_.to eq ⟨$⟩ (∈₀-subst₁ a≈b a∈zs)
@@ -399,6 +415,9 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
 
 %{{{ \subsection{Σ-Setoid}
 \subsection{Σ-Setoid}
+
+\edcomm{WK}{Abstruse name!}
+
 This is an ``unpacked'' version of |Some|, where each piece (see |Support| below) is
 separated out.  For some equivalences, it seems to work with this representation.
 
@@ -507,22 +526,24 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 \subsection{Some-cong}
 This isn't quite the full-powered cong, but is all we need.
 
+\edcomm{WK}{It has position preservation neither in the assumption (|list-rel|),
+nor in the conclusion. Why did you bother with position preservation for |_≋_|?}
+
 \begin{code}
 module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
 
- open Membership A
- open Setoid A
- private P₀ = λ e → (Π._⟨$⟩_ P e)
+  open Membership A
+  open Setoid A
+  private P₀ = λ e → (Π._⟨$⟩_ P e)
 
- Some-cong : {xs₁ xs₂ : List Carrier} →
-           (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
-           Some P xs₁ ≅ Some P xs₂
- Some-cong {xs₁} {xs₂} list-rel =
-   Some P xs₁             ≅⟨ Σ-Some xs₁ ⟩
-   Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong list-rel ⟩
-   Σ-Setoid {P = P} xs₂   ≅⟨ ≅-sym (Σ-Some xs₂) ⟩
-   Some P xs₂ ∎
-
+  Some-cong : {xs₁ xs₂ : List Carrier} →
+            (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
+            Some P xs₁ ≅ Some P xs₂
+  Some-cong {xs₁} {xs₂} list-rel =
+    Some P xs₁             ≅⟨ Σ-Some xs₁ ⟩
+    Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong list-rel ⟩
+    Σ-Setoid {P = P} xs₂   ≅⟨ ≅-sym (Σ-Some xs₂) ⟩
+    Some P xs₂ ∎
 \end{code}
 
 %}}}

@@ -110,9 +110,10 @@ Forget ℓ o = record
 
 %{{{ Multiset
 
-A “multiset on type X” is a commutative monoid with a to it from |X|.
+A “multiset on type X” is a commutative monoid with a map to it from |X|.
+\edcomm{WK}{Misnomer!}
 For now, we make no constraints on the map, however it may be that
-future proof obligations will require it to be an injection ---which is reasonable.
+future proof obligations will require it to be an injection --- which is reasonable.
 
 \begin{code}
 record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where

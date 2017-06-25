@@ -61,6 +61,8 @@ only gives Set, not Multiset, at least if used for the equivalence of over List.
 get Multiset, we need to preserve full equivalence, i.e. capture permutations.  My reason
 to use |A ⟶ SSetoid _ _| is to mesh well with the rest.  It is not cast in stone and
 can potentially be weakened.}
+
+\edcomm{WK}{|S| would better be explicit.}
 \begin{code}
 module _ {a ℓa} {S : Setoid a ℓa} (P₀ : Setoid.Carrier S → Set ℓa) where
    open Setoid S renaming (Carrier to A)
@@ -275,6 +277,96 @@ Commented out:
     ∈₀-subst₁-to′ : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)
       (a∈zs : a ∈₀ zs) → ∈₀-subst₁ a≈b (∈₀-subst₂ eq a∈zs) ≋ ∈₀-subst₂ eq (∈₀-subst₁ a≈b a∈zs)
 \end{code}
+%}}}
+
+%{{{ -- module NICE
+\edcomm{WK}{A |BagEq| that is easily recognised as not just a permutation on indices.
+
+Commented out since there are still holes.
+
+\begin{spec}
+module NICE where
+  open import Data.Bool
+  data Nice {ℓA : Level} {A : Set ℓA} (x : A) : A → Set where
+    nice : Bool → Nice x x
+
+  NiceSetoid : {ℓA : Level} → Set ℓA → Setoid ℓA lzero
+  NiceSetoid A = record
+    { Carrier = A
+    ; _≈_ = Nice
+    ; isEquivalence = record
+      { refl = nice true
+      ; sym = λ { (nice b) → nice (not b) }
+      ; trans = λ { (nice b₁) (nice b₂) → nice (b₁ xor b₂) }
+      }
+    }
+
+  data E : Set where
+    E₁ E₂ : E
+
+  xs ys : List E
+  xs = E₁ ∷ E₂ ∷ E₂ ∷ []
+  ys = E₂ ∷ E₁ ∷ E₂ ∷ []
+
+  open Membership (NiceSetoid E)
+
+  xs⇒ys : (e : E)  → Some₀ {S = NiceSetoid E} (Nice e) xs
+                   → Some₀ {S = NiceSetoid E} (Nice e) ys
+  xs⇒ys E₁ (here (nice false) (nice false)) = there (here (nice false) (nice true))
+  xs⇒ys E₁ (here (nice false) (nice true)) = there (here (nice true) (nice true))
+  xs⇒ys E₁ (here (nice true) (nice false)) = there (here (nice false) (nice false))
+  xs⇒ys E₁ (here (nice true) (nice true)) = there (here (nice true) (nice false))
+  xs⇒ys E₁ (there (here (nice x) ()))
+  xs⇒ys E₁ (there (there (here (nice x) ())))
+  xs⇒ys E₁ (there (there (there ())))
+  xs⇒ys E₂ (here (nice x) ())
+  xs⇒ys E₂ (there (here (nice false) (nice false))) = here (nice true) (nice true)
+  xs⇒ys E₂ (there (here (nice false) (nice true))) = there (there (here (nice true) (nice true)))
+  xs⇒ys E₂ (there (here (nice true) (nice false))) = here (nice true) (nice false)
+  xs⇒ys E₂ (there (here (nice true) (nice true))) = there (there (here (nice false) (nice true)))
+  xs⇒ys E₂ (there (there (here (nice false) (nice false)))) = here (nice false) (nice false)
+  xs⇒ys E₂ (there (there (here (nice false) (nice true)))) = there (there (here (nice true) (nice false)))
+  xs⇒ys E₂ (there (there (here (nice true) (nice false)))) = there (there (here (nice false) (nice false)))
+  xs⇒ys E₂ (there (there (here (nice true) (nice true)))) = here (nice false) (nice true)
+  xs⇒ys E₂ (there (there (there ())))
+
+  xs⇒ys-cong : (e : E) {i j : Some₀ (Nice e) xs} → i ≋ j → xs⇒ys e i ≋ xs⇒ys e j
+  xs⇒ys-cong E₁ {.(here (nice false) (nice false))} {.(here (nice false) (nice false))} (hereEq (nice false) (nice false) (nice false) (nice false)) = thereEq (hereEq (nice true) (nice true) (nice false) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice false))} {.(here (nice true) (nice false))} (hereEq (nice false) (nice false) (nice false) (nice true)) = thereEq (hereEq (nice true) (nice false) (nice false) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice false))} {.(here (nice false) (nice false))} (hereEq (nice false) (nice false) (nice true) (nice false)) = thereEq (hereEq (nice false) (nice true) (nice false) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice false))} {.(here (nice true) (nice false))} (hereEq (nice false) (nice false) (nice true) (nice true)) = thereEq
+                                                                                                                                                     (hereEq (nice false) (nice false) (nice false) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice false))} {.(here (nice false) (nice true))} (hereEq (nice false) (nice true) (nice false) (nice false)) = thereEq (hereEq (nice true) (nice true) (nice false) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice false))} {.(here (nice true) (nice true))} (hereEq (nice false) (nice true) (nice false) (nice true)) = thereEq (hereEq (nice true) (nice false) (nice false) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice false))} {.(here (nice false) (nice true))} (hereEq (nice false) (nice true) (nice true) (nice false)) = thereEq (hereEq (nice false) (nice true) (nice false) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice false))} {.(here (nice true) (nice true))} (hereEq (nice false) (nice true) (nice true) (nice true)) = thereEq (hereEq (nice false) (nice false) (nice false) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice true))} {.(here (nice false) (nice false))} (hereEq (nice true) (nice false) (nice false) (nice false)) = thereEq (hereEq (nice true) (nice true) (nice true) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice true))} {.(here (nice true) (nice false))} (hereEq (nice true) (nice false) (nice false) (nice true)) = thereEq (hereEq (nice true) (nice false) (nice true) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice true))} {.(here (nice false) (nice false))} (hereEq (nice true) (nice false) (nice true) (nice false)) = thereEq (hereEq (nice false) (nice true) (nice true) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice true))} {.(here (nice true) (nice false))} (hereEq (nice true) (nice false) (nice true) (nice true)) = thereEq (hereEq (nice false) (nice false) (nice true) (nice false))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice true))} {.(here (nice false) (nice true))} (hereEq (nice true) (nice true) (nice false) (nice false)) = thereEq (hereEq (nice true) (nice true) (nice true) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice false) (nice true))} {.(here (nice true) (nice true))} (hereEq (nice true) (nice true) (nice false) (nice true)) = thereEq (hereEq (nice true) (nice false) (nice true) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice true))} {.(here (nice false) (nice true))} (hereEq (nice true) (nice true) (nice true) (nice false)) = thereEq (hereEq (nice false) (nice true) (nice true) (nice true))
+  xs⇒ys-cong E₁ {.(here (nice true) (nice true))} {.(here (nice true) (nice true))} (hereEq (nice true) (nice true) (nice true) (nice true)) = thereEq (hereEq (nice false) (nice false) (nice true) (nice true))
+  xs⇒ys-cong E₁ {.(there (here _ (nice x)))} {.(there (here y≈z (nice x₁)))} (thereEq (hereEq (nice x) (nice x₁) () y≈z))
+  xs⇒ys-cong E₁ {.(there (there (here _ (nice x))))} {.(there (there (here y≈z (nice x₁))))} (thereEq (thereEq (hereEq (nice x) (nice x₁) () y≈z)))
+  xs⇒ys-cong E₁ {.(there (there (there _)))} {.(there (there (there _)))} (thereEq (thereEq (thereEq ())))
+  xs⇒ys-cong E₂ {.(here x≈z px)} {.(here y≈z qy)} (hereEq px qy x≈z y≈z) = {!!}
+  xs⇒ys-cong E₂ {.(there _)} {.(there _)} (thereEq i≋j) = {!!}
+
+  ys⇒xs : (e : E)  → Some₀ {S = NiceSetoid E} (Nice e) ys
+                   → Some₀ {S = NiceSetoid E} (Nice e) xs
+  ys⇒xs e p = {!!}
+
+
+  xs≊ys : BagEq xs ys
+  xs≊ys {e} = record
+    { to = record { _⟨$⟩_ = xs⇒ys e ; cong = xs⇒ys-cong e }
+    ; from = record { _⟨$⟩_ = ys⇒xs e ; cong = {!!} }
+    ; inverse-of = {!!}
+    }
+\end{spec}
+}%edcomm
 %}}}
 
 %{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}

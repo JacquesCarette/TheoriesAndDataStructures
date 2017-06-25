@@ -7,6 +7,7 @@ module Some where
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
   Reflexive ; Symmetric ; Transitive)
+open import Relation.Binary.PropositionalEquality using ( inspect ; [_] )
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
@@ -62,7 +63,7 @@ get Multiset, we need to preserve full equivalence, i.e. capture permutations.  
 to use |A ⟶ SSetoid _ _| is to mesh well with the rest.  It is not cast in stone and
 can potentially be weakened.}
 
-\edcomm{WK}{|S| would better be explicit.}
+\edcomm{WK}{|S| would better be explicit. And this module would be much better named!!!}
 \begin{code}
 module _ {a ℓa} {S : Setoid a ℓa} (P₀ : Setoid.Carrier S → Set ℓa) where
    open Setoid S renaming (Carrier to A)
@@ -148,7 +149,12 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 
   open Setoid S renaming (trans to _⟨≈≈⟩_)
-
+  _⟨≈˘≈⟩_ : {a b c : Carrier} → b ≈ a → b ≈ c → a ≈ c
+  _⟨≈˘≈⟩_ = λ b≈a b≈c → sym b≈a ⟨≈≈⟩ b≈c
+  _⟨≈≈˘⟩_ : {a b c : Carrier} → a ≈ b → c ≈ b → a ≈ c
+  _⟨≈≈˘⟩_ = λ a≈b c≈b → a≈b ⟨≈≈⟩ sym c≈b
+  _⟨≈˘≈˘⟩_ : {a b c : Carrier} → b ≈ a → c ≈ b → a ≈ c
+  _⟨≈˘≈˘⟩_ = λ b≈a c≈b → b≈a ⟨≈˘≈⟩ sym c≈b
   infix 4 _∈₀_ _∈_
 \end{code}
 
@@ -176,15 +182,17 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (there x∈xs) = there (∈₀-subst₁ x≈y x∈xs)
 
+  ∈₀-subst₁-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
+                  {i j : x ∈₀ xs} → i ≋ j → ∈₀-subst₁ x≈y i ≋ ∈₀-subst₁ x≈y j
+  ∈₀-subst₁-cong x≈y (hereEq px qy x≈z y≈z) = hereEq (sym x≈y ⟨≈≈⟩ px ) (sym x≈y ⟨≈≈⟩ qy) x≈z y≈z
+  ∈₀-subst₁-cong x≈y (thereEq i≋j) = thereEq (∈₀-subst₁-cong x≈y i≋j)
+
   ∈₀-subst₁-equiv  : {x y : Carrier} {xs : List Carrier} → x ≈ y → (x ∈ xs) ≅ (y ∈ xs)
   ∈₀-subst₁-equiv {x} {y} {xs} x≈y = record
-    { to = record { _⟨$⟩_ = ∈₀-subst₁ x≈y ; cong = ∈₀-subst₁-cong }
+    { to = record { _⟨$⟩_ = ∈₀-subst₁ x≈y ; cong = ∈₀-subst₁-cong x≈y }
     ; from = record { _⟨$⟩_ = ∈₀-subst₁ (sym x≈y) ; cong = ∈₀-subst₁-cong′ }
     ; inverse-of = record { left-inverse-of = left-inv ; right-inverse-of = right-inv } }
     where
-      ∈₀-subst₁-cong : ∀ {ys} {i j : x ∈₀ ys} → i ≋ j → ∈₀-subst₁ x≈y i ≋ ∈₀-subst₁ x≈y j
-      ∈₀-subst₁-cong (hereEq px qy x≈z y≈z) = hereEq (sym x≈y ⟨≈≈⟩ px ) (sym x≈y ⟨≈≈⟩ qy) x≈z y≈z
-      ∈₀-subst₁-cong (thereEq i≋j) = thereEq (∈₀-subst₁-cong i≋j)
 
       ∈₀-subst₁-cong′ : ∀ {ys} {i j : y ∈₀ ys} → i ≋ j → ∈₀-subst₁ (sym x≈y) i ≋ ∈₀-subst₁ (sym x≈y) j
       ∈₀-subst₁-cong′ (hereEq px qy x≈z y≈z) = hereEq (sym (sym x≈y) ⟨≈≈⟩ px) (sym (sym x≈y) ⟨≈≈⟩ qy) x≈z y≈z
@@ -209,8 +217,8 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
   ∈₀-subst₂-cong  : {x : Carrier} {xs ys : List Carrier} (xs≅ys : BagEq xs ys)
                   → {p q : x ∈₀ xs}
-                  → p ≈⌊ x ∈ xs ⌋ q
-                  → ∈₀-subst₂ xs≅ys p ≈⌊ x ∈ ys ⌋ ∈₀-subst₂ xs≅ys q
+                  → p ≋ q
+                  → ∈₀-subst₂ xs≅ys p ≋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
   transport : (Q : S ⟶ SSetoid ℓs ℓs) →
@@ -240,9 +248,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   ∈₀-subst₁-trans {a≈b = a≈b} {b≈c} {there a∈xs} {there b∈xs} {.(there _)} (thereEq pp) (thereEq qq) = thereEq (∈₀-subst₁-trans pp qq)
 \end{code}
 
-\edcomm{WK}{Trying --- but |BagEq| still does not preserve positions!
-\edcomm{JC}{And it is not supposed to preserve them.  |BagEq| is a permutation.}
-Commented out:
+\restorecolumns
 \begin{code}
   infix  3 _□
   infixr 2 _≋⟨_⟩_
@@ -262,16 +268,37 @@ Commented out:
   private
     Some[]→⊥ : {P₀ : Carrier → Set ℓs} → Some₀ {ℓS} {ℓs} {S} P₀ [] → ⊥ {ℓs}
     Some[]→⊥ ()
+\end{code}
 
-{-
+\edcomm{WK}{Trying --- unfinished --- commented out:
+\restorecolumns
+\begin{spec}
   ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b}
       → (zs≅ws : BagEq zs ws) (a∈zs : a ∈₀ zs)
-      → ∈₀-subst₂ zs≅ws a∈zs ≋ ∈₀-subst₂ (≋-trans (∈₀-subst₁-equiv a≈b) zs≅ws) ?
-  ∈₀-subst₁-to {a} {b} {zs} {ws} {a≈b} zs≅ws a∈zs = {!!}
--}
-\end{code}
+      → ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs) ≋ ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
+\end{spec}
+\restorecolumns
+\begin{spec}
+  ∈₀-subst₁-to {a} {b} {zs} {ws} {a≈b} zs≅ws a∈zs =
+      ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs)
+    ≋⟨ {!cong (_≅_.to zs≅ws)!} ⟩
+      ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
+    □
+\end{spec}
+\restorecolumns
+\begin{spec}
+  ∈₀-subst₁-to {a} {b} {.(_ ∷ _)} {ws} {a≈b} zs≅ws (here {x} {c} {xs} c≈x a≈c)
+    with _≅_.to zs≅ws ⟨$⟩ here c≈x a≈c | inspect (_⟨$⟩_ (_≅_.to zs≅ws)) (here c≈x a≈c)
+  ∈₀-subst₁-to {a} {b} {.(x ∷ xs)} {.(_ ∷ _)} {a≈b} zs≅ws (here {x} {z} {xs} z≈x a≈z) | here {y} {w} {ys} w≈y a≈w | [ a∈ws-eq ] = {!0!}
+    where
+      eq₁ : here z≈x a≈z ≋ here z≈x (a≈b ⟨≈˘≈⟩ a≈z)
+      eq₁ = hereEq  a≈z (a≈b ⟨≈˘≈⟩ a≈z) z≈x z≈x
+  ∈₀-subst₁-to {a} {b} {.(x ∷ xs)} {.(_ ∷ _)} {a≈b} zs≅ws (here {x} {a₁} {xs} c≈x a≈c) | there a∈ws | [ a∈ws-eq ] = {!!}
+  ∈₀-subst₁-to {a} {b} {.(_ ∷ _)} {ws} {a≈b} zs≅ws (there a∈zs) = {!!}
+\end{spec}
 }%edcomm
 
+\restorecolumns
 \begin{code}
   postulate
     ∈₀-subst₁-to′ : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)

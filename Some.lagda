@@ -84,7 +84,7 @@ is straightforward:
 module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
    open Setoid S renaming (Carrier to A)
    infix 3 _≋_
-   data _≋_ : {xs : List A} (pf pf' : Some₀ {S = S} P₀ xs) → Set (a ⊔ ℓa) where
+   data _≋_ : {ys : List A} (pf pf' : Some₀ {S = S} P₀ ys) → Set (a ⊔ ℓa) where
      hereEq : {xs : List A} {x y z : A} (px : P₀ x) (qy : P₀ y)
             → (x≈z : x ≈ z) → (y≈z : y ≈ z)
             → _≋_ (here {x = z} {x} {xs} x≈z px) (here {x = z} {y} {xs} y≈z qy)
@@ -92,10 +92,13 @@ module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} whe
              → _≋_ pxs qxs → _≋_ (there {x = x} pxs) (there {x = x} qxs)
 \end{code}
 
-\edcomm{MA}{We may avoid substs/transports, below, by introducing a |Q₀| alongside |P₀|.}
-
 Notice that these another from of ``natural numbers'' whose elements are of the form
-|thereEqⁿ (hereEq Px Qx)| for some |n : ℕ|.
+|thereEqⁿ (hereEq Px Qx _ _)| for some |n : ℕ|.
+
+It is on purpose that |_≋_| preserves positions.  Suppose that we take the setoid of
+the Latin alphabet, with |_≈_| identifying upper and lower case. There should be
+3 elements of |_≋_| for | a ∷ A ∷ a ∷ [] |, not 6.  When we get to defining |BagEq|,
+there will be 6 different ways in which that list, as a Bag, is equivalent to itself.
 
 \begin{code}
 module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
@@ -112,6 +115,9 @@ module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} whe
            → p ≋ q → q ≋ r → p ≋ r
    ≋-trans (hereEq pa qb a≈x b≈x) (hereEq pc qd c≈y d≈y) = hereEq pa qd _ _
    ≋-trans (thereEq e) (thereEq f) = thereEq (≋-trans e f)
+
+   ≡→≋ : {xs : List A} {p q : Some₀ {S = S} P₀ xs} → p ≡ q → p ≋ q
+   ≡→≋ ≡.refl = ≋-refl
 
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    open Setoid A
@@ -168,6 +174,28 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (there x∈xs) = there (∈₀-subst₁ x≈y x∈xs)
 
+  ∈₀-subst₁-equiv  : {x y : Carrier} {xs : List Carrier} → x ≈ y → (x ∈ xs) ≅ (y ∈ xs)
+  ∈₀-subst₁-equiv {x} {y} {xs} x≈y = record
+    { to = record { _⟨$⟩_ = ∈₀-subst₁ x≈y ; cong = ∈₀-subst₁-cong }
+    ; from = record { _⟨$⟩_ = ∈₀-subst₁ (sym x≈y) ; cong = ∈₀-subst₁-cong′ }
+    ; inverse-of = record { left-inverse-of = left-inv ; right-inverse-of = right-inv } }
+    where
+      ∈₀-subst₁-cong : ∀ {ys} {i j : x ∈₀ ys} → i ≋ j → ∈₀-subst₁ x≈y i ≋ ∈₀-subst₁ x≈y j
+      ∈₀-subst₁-cong (hereEq px qy x≈z y≈z) = hereEq (sym x≈y ⟨≈≈⟩ px ) (sym x≈y ⟨≈≈⟩ qy) x≈z y≈z
+      ∈₀-subst₁-cong (thereEq i≋j) = thereEq (∈₀-subst₁-cong i≋j)
+
+      ∈₀-subst₁-cong′ : ∀ {ys} {i j : y ∈₀ ys} → i ≋ j → ∈₀-subst₁ (sym x≈y) i ≋ ∈₀-subst₁ (sym x≈y) j
+      ∈₀-subst₁-cong′ (hereEq px qy x≈z y≈z) = hereEq (sym (sym x≈y) ⟨≈≈⟩ px) (sym (sym x≈y) ⟨≈≈⟩ qy) x≈z y≈z
+      ∈₀-subst₁-cong′ (thereEq i≋j) = thereEq (∈₀-subst₁-cong′ i≋j)
+
+      left-inv : ∀ {ys} (x∈ys : x ∈₀ ys) → ∈₀-subst₁ (sym x≈y) (∈₀-subst₁ x≈y x∈ys) ≋ x∈ys
+      left-inv (here sm px) = hereEq (sym (sym x≈y) ⟨≈≈⟩ (sym x≈y ⟨≈≈⟩ px)) px sm sm
+      left-inv (there x∈ys) = thereEq (left-inv x∈ys)
+
+      right-inv : ∀ {ys} (y∈ys : y ∈₀ ys) → ∈₀-subst₁ x≈y (∈₀-subst₁ (sym x≈y) y∈ys) ≋ y∈ys
+      right-inv (here sm px) = hereEq (sym x≈y ⟨≈≈⟩ (sym (sym x≈y) ⟨≈≈⟩ px)) px sm sm
+      right-inv (there y∈ys) = thereEq (right-inv y∈ys)
+
   BagEq : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 
@@ -213,20 +241,39 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 \edcomm{WK}{Trying --- but |BagEq| still does not preserve positions!
 \edcomm{JC}{And it is not supposed to preserve them.  |BagEq| is a permutation.}
 Commented out:
-\begin{spec}
+\begin{code}
+  infix  3 _□
+  infixr 2 _≋⟨_⟩_
+
+  _≋⟨_⟩_ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ {S = S} P₀ xs) {Y Z : Some₀ P₀ xs}
+        →  X ≋ Y → Y ≋ Z → X ≋ Z
+  X ≋⟨ X≋Y ⟩ Y≋Z = ≋-trans X≋Y Y≋Z
+
+  _□ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ {S = S} P₀ xs) → X ≋ X
+  X □ = ≋-refl
+
+  here≋there : {P₀ : Carrier → Set ℓs} {xs : List Carrier} {a x : Carrier} {a≈x : a ≈ x}
+    {Pa : P₀ a} {pf : Some₀ {S = S} P₀ xs } →
+    here {x = x} {a} {xs} a≈x Pa ≋ there pf → ⊥ {ℓS}
+  here≋there ()
+
+  private
+    Some[]→⊥ : {P₀ : Carrier → Set ℓs} → Some₀ {ℓS} {ℓs} {S} P₀ [] → ⊥ {ℓs}
+    Some[]→⊥ ()
+
+{-
   ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b}
       → (zs≅ws : BagEq zs ws) (a∈zs : a ∈₀ zs)
-      → ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs) ≋ ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
-  -- ∈₀-subst₁-to {a} {b} {zs} {ws} {a≈b} zs≅ws a∈zs = ?
-  ∈₀-subst₁-to {a} {b} {z ∷ zs} {ws} {a≈b} zs≅ws (here {v} {a₁} {vs} a₁≈z a≈a₁) = {!hereEq!}
-  ∈₀-subst₁-to {a} {b} {z ∷ zs} {ws} {a≈b} zs≅ws (there a∈zs) = {!!}
-\end{spec}
+      → ∈₀-subst₂ zs≅ws a∈zs ≋ ∈₀-subst₂ (≋-trans (∈₀-subst₁-equiv a≈b) zs≅ws) ?
+  ∈₀-subst₁-to {a} {b} {zs} {ws} {a≈b} zs≅ws a∈zs = {!!}
+-}
+\end{code}
 }%edcomm
 
 \begin{code}
   postulate
-    ∈₀-subst₁-to : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)
-      (a∈zs : a ∈₀ zs) → ∈₀-subst₁ a≈b (_≅_.to eq ⟨$⟩ a∈zs) ≋ _≅_.to eq ⟨$⟩ (∈₀-subst₁ a≈b a∈zs)
+    ∈₀-subst₁-to′ : {a b : Carrier} {zs ws : List Carrier} {a≈b : a ≈ b} (eq : BagEq zs ws)
+      (a∈zs : a ∈₀ zs) → ∈₀-subst₁ a≈b (∈₀-subst₂ eq a∈zs) ≋ ∈₀-subst₂ eq (∈₀-subst₁ a≈b a∈zs)
 \end{code}
 %}}}
 
@@ -518,10 +565,11 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       xs→ys : {zs ws : List Carrier} → BagEq zs ws → Support zs → Support ws
       xs→ys eq (a , a∈xs , Pa) = (a , ∈₀-subst₂ eq a∈xs , Pa)
 
+      --  ∈₀-subst₁-equiv  : x ≈ y → (x ∈ xs) ≅ (y ∈ xs)
       xs→ys-cong : {zs ws : List Carrier} (eq : BagEq zs ws) {i j : Support zs} →
         i ∻ j → xs→ys eq i ∻ xs→ys eq j
-      xs→ys-cong eq {_ , a∈zs , _} {j} (a≈b , pf , Pa≈Pb) =
-        a≈b , (≋-trans (∈₀-subst₁-to {a≈b = a≈b} eq a∈zs) (cong (to eq) pf) , tt)
+      xs→ys-cong eq {_ , a∈zs , _} {_ , b∈zs , _} (a≈b , pf , Pa≈Pb) =
+        a≈b , {!!} , tt
 \end{code}
 %}}}
 
@@ -550,17 +598,14 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
   Some-cong : {xs₁ xs₂ : List Carrier} →
             (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
             Some P xs₁ ≅ Some P xs₂
-  Some-cong {xs₁} {xs₂} list-rel =
+  Some-cong {xs₁} {xs₂} xs₁≅xs₂ =
     Some P xs₁             ≅⟨ Σ-Some xs₁ ⟩
-    Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong list-rel ⟩
+    Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong xs₁≅xs₂ ⟩
     Σ-Setoid {P = P} xs₂   ≅⟨ ≅-sym (Σ-Some xs₂) ⟩
     Some P xs₂ ∎
 \end{code}
 
 %}}}
-
-\iffalse
-\fi
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

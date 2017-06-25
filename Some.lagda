@@ -564,21 +564,21 @@ This is an ``unpacked'' version of |Some|, where each piece (see |Support| below
 separated out.  For some equivalences, it seems to work with this representation.
 
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
+module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS} where
   open Membership A
   open Setoid A
   private
     P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
-    squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓa
+    squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓs
     squish _ _ = ⊤
 
   -- FIXME : this definition is still not right
-  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (a ⊔ ℓa)
+  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (ℓs ⊔ ℓS)
   (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =
     Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs × squish Pa Pb)
 
-  Σ-Setoid : (ys : List Carrier) → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
+  Σ-Setoid : (ys : List Carrier) → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
   Σ-Setoid [] = ⊥⊥
   Σ-Setoid (y ∷ ys) = record
     { Carrier = Support (y ∷ ys)
@@ -630,7 +630,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     -- (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₁ (proj₂ (right-inv (y , y∈ys , Py))))) , {!proj₂ (proj₂ (right-inv!}
 
   Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
-  Σ-Some [] = ≅-sym (⊥≅Some[] {a} {ℓa} {A} {P})
+  Σ-Some [] = ≅-sym (⊥≅Some[] {ℓs} {ℓS} {A} {P})
   Σ-Some (x ∷ xs) =  record
     { to = record { _⟨$⟩_ = find ; cong = find-cong }
     ; from = record { _⟨$⟩_ = lose ; cong = forget-cong }

@@ -163,6 +163,7 @@ module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 |setoid≈ x| is actually a mapping from |S| to |SSetoid _ _|; it maps
 elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
+TODO: clean up there levels here.
 \restorecolumns
 \begin{code}
   setoid≈ : Carrier → S ⟶ SSetoid ℓs ℓs
@@ -225,7 +226,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
                   → ∈₀-subst₂ xs≅ys p ≋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
-  transport : (Q : S ⟶ SSetoid ℓs ℓs) →
+  transport : {ℓQ ℓq : Level} → (Q : S ⟶ SSetoid ℓQ ℓq) →
     let Q₀ = λ e → Setoid.Carrier (Q ⟨$⟩ e) in
     {a x : Carrier} (p : Q₀ a) (a≈x : a ≈ x) → Q₀ x
   transport Q p a≈x = Equivalence.to (Π.cong Q a≈x) ⟨$⟩ p
@@ -257,20 +258,20 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   infix  3 _□
   infixr 2 _≋⟨_⟩_
 
-  _≋⟨_⟩_ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ S P₀ xs) {Y Z : Some₀ S P₀ xs}
+  _≋⟨_⟩_ : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} (X : Some₀ S P₀ xs) {Y Z : Some₀ S P₀ xs}
         →  X ≋ Y → Y ≋ Z → X ≋ Z
   X ≋⟨ X≋Y ⟩ Y≋Z = ≋-trans X≋Y Y≋Z
 
-  _□ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ S P₀ xs) → X ≋ X
+  _□ : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} (X : Some₀ S P₀ xs) → X ≋ X
   X □ = ≋-refl
 
-  here≋there : {P₀ : Carrier → Set ℓs} {xs : List Carrier} {a x : Carrier} {a≈x : a ≈ x}
+  here≋there : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} {a x : Carrier} {a≈x : a ≈ x}
     {Pa : P₀ a} {pf : Some₀ S P₀ xs } →
     here {x = x} {a} {xs} a≈x Pa ≋ there pf → ⊥ {ℓS}
   here≋there ()
 
   private
-    Some[]→⊥ : {P₀ : Carrier → Set ℓs} → Some₀ S P₀ [] → ⊥ {ℓs}
+    Some[]→⊥ : {ℓP : Level} {P₀ : Carrier → Set ℓP} → Some₀ S P₀ [] → ⊥ {ℓs}
     Some[]→⊥ ()
 \end{code}
 
@@ -525,7 +526,7 @@ module NICE where
 %{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
+module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp} where
   ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
@@ -615,8 +616,8 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 %{{{ \subsection{Bottom as a setoid} ⊥⊥ ; ⊥≅Some[] : ⊥⊥ ≅ Some P []
 \subsection{Bottom as a setoid}
 \begin{code}
-⊥⊥ : ∀ {a ℓa} → Setoid a ℓa
-⊥⊥ {a} {ℓa} = record
+⊥⊥ : ∀ {ℓS ℓs} → Setoid ℓS ℓs
+⊥⊥ = record
   { Carrier = ⊥
   ; _≈_ = λ _ _ → ⊤
   ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt }

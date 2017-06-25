@@ -83,15 +83,15 @@ Nevertheless, the 'location' function is straightforward:
 \end{code}
 
 \begin{code}
-module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
+module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} {P₀ : Setoid.Carrier S → Set ℓP} where
    open Setoid S renaming (Carrier to A)
-   open Locations S P₀
+   open Locations
    infix 3 _≋_
-   data _≋_ : {ys : List A} (pf pf' : Some₀ ys) → Set (a ⊔ ℓa) where
+   data _≋_ : {ys : List A} (pf pf' : Some₀ S P₀ ys) → Set (ℓS ⊔ ℓs) where
      hereEq : {xs : List A} {x y z : A} (px : P₀ x) (qy : P₀ y)
             → (x≈z : x ≈ z) → (y≈z : y ≈ z)
             → _≋_ (here {x = z} {x} {xs} x≈z px) (here {x = z} {y} {xs} y≈z qy)
-     thereEq : {xs : List A} {x : A} {pxs : Some₀ xs} {qxs : Some₀ xs}
+     thereEq : {xs : List A} {x : A} {pxs : Some₀ S P₀ xs} {qxs : Some₀ S P₀ xs}
              → _≋_ pxs qxs → _≋_ (there {x = x} pxs) (there {x = x} qxs)
 \end{code}
 
@@ -106,7 +106,7 @@ When we get to defining |BagEq|,
 there will be 6 different ways in which that list, as a Bag, is equivalent to itself.
 
 \begin{code}
-module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
+module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} {P₀ : Setoid.Carrier S → Set ℓP} where
    open Setoid S renaming (Carrier to A)
    open Locations
    ≋-refl : {xs : List A} {p : Some₀ S P₀ xs} → p ≋ p
@@ -125,19 +125,19 @@ module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} whe
    ≡→≋ : {xs : List A} {p q : Some₀ S P₀ xs} → p ≡ q → p ≋ q
    ≡→≋ ≡.refl = ≋-refl
 
-module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
+module _ {ℓS ℓs ℓP ℓp} {A : Setoid ℓS ℓs} (P : A ⟶ SSetoid ℓP ℓp) where
    open Setoid A
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    open Locations
 
-   Some : List Carrier → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
+   Some : List Carrier → Setoid ((ℓS ⊔ ℓs) ⊔ ℓp) (ℓS ⊔ ℓs)
    Some xs = record
      { Carrier         =   Some₀ A P₀ xs
      ; _≈_             =   _≋_
      ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
      }
 
-≡→Some : {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa}
+≡→Some : {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp}
          {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
 ≡→Some {A = A} ≡.refl = ≅-refl
 \end{code}
@@ -146,8 +146,6 @@ module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
 %{{{ \subsection{Membership module}: setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
 
-\edcomm{WK}{Please don't waste valuable variable names on levels.}
-\edcomm{JC}{Good point.}
 \savecolumns
 \begin{code}
 module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where

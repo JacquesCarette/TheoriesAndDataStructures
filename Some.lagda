@@ -27,7 +27,7 @@ open import SetoidSetoid
 open import Relation.Binary.Sum
 
 infix 4 inSetoidEquiv
-inSetoidEquiv : {a ℓ : Level} → (S : Setoid a ℓ) → Setoid.Carrier S → Setoid.Carrier S → Set ℓ
+inSetoidEquiv : {ℓs ℓS : Level} → (S : Setoid ℓs ℓS) → Setoid.Carrier S → Setoid.Carrier S → Set ℓS
 inSetoidEquiv = Setoid._≈_
 
 syntax inSetoidEquiv S x y = x ≈⌊ S ⌋ y
@@ -63,11 +63,10 @@ get Multiset, we need to preserve full equivalence, i.e. capture permutations.  
 to use |A ⟶ SSetoid _ _| is to mesh well with the rest.  It is not cast in stone and
 can potentially be weakened.}
 
-\edcomm{WK}{|S| would better be explicit. And this module would be much better named!!!}
 \begin{code}
-module _ {ℓS ℓs : Level} {S : Setoid ℓS ℓs} (P₀ : Setoid.Carrier S → Set ℓs) where
+module Locations {ℓS ℓs ℓp : Level} (S : Setoid ℓS ℓs) (P₀ : Setoid.Carrier S → Set ℓp) where
    open Setoid S renaming (Carrier to A)
-   data Some₀  : List A → Set (ℓS ⊔ ℓs) where
+   data Some₀  : List A → Set ((ℓS ⊔ ℓs) ⊔ ℓp) where
      here  : {x a : A} {xs : List A} (sm : a ≈ x) (px  : P₀ a    ) → Some₀ (x ∷ xs)
      there : {x   : A} {xs : List A}              (pxs : Some₀ xs) → Some₀ (x ∷ xs)
 \end{code}
@@ -86,12 +85,13 @@ Nevertheless, the 'location' function is straightforward:
 \begin{code}
 module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
    open Setoid S renaming (Carrier to A)
+   open Locations S P₀
    infix 3 _≋_
-   data _≋_ : {ys : List A} (pf pf' : Some₀ {S = S} P₀ ys) → Set (a ⊔ ℓa) where
+   data _≋_ : {ys : List A} (pf pf' : Some₀ ys) → Set (a ⊔ ℓa) where
      hereEq : {xs : List A} {x y z : A} (px : P₀ x) (qy : P₀ y)
             → (x≈z : x ≈ z) → (y≈z : y ≈ z)
             → _≋_ (here {x = z} {x} {xs} x≈z px) (here {x = z} {y} {xs} y≈z qy)
-     thereEq : {xs : List A} {x : A} {pxs : Some₀ P₀ xs} {qxs : Some₀ P₀ xs}
+     thereEq : {xs : List A} {x : A} {pxs : Some₀ xs} {qxs : Some₀ xs}
              → _≋_ pxs qxs → _≋_ (there {x = x} pxs) (there {x = x} qxs)
 \end{code}
 
@@ -108,29 +108,31 @@ there will be 6 different ways in which that list, as a Bag, is equivalent to it
 \begin{code}
 module _ {a ℓa} {S : Setoid a ℓa} {P₀ : Setoid.Carrier S → Set ℓa} where
    open Setoid S renaming (Carrier to A)
-   ≋-refl : {xs : List A} {p : Some₀ {S = S} P₀ xs} → p ≋ p
+   open Locations
+   ≋-refl : {xs : List A} {p : Some₀ S P₀ xs} → p ≋ p
    ≋-refl {p = here a≈x px} = hereEq px px a≈x a≈x
    ≋-refl {p = there p} = thereEq ≋-refl
 
-   ≋-sym : {xs : List A} {p : Some₀ {S = S} P₀ xs} {q : Some₀ P₀ xs} → p ≋ q → q ≋ p
+   ≋-sym : {xs : List A} {p : Some₀ S P₀ xs} {q : Some₀ S P₀ xs} → p ≋ q → q ≋ p
    ≋-sym (hereEq a≈x b≈x px py) = hereEq b≈x a≈x py px
    ≋-sym (thereEq eq) = thereEq (≋-sym eq)
 
-   ≋-trans : {xs : List A} {p q r : Some₀ {S = S} P₀ xs}
+   ≋-trans : {xs : List A} {p q r : Some₀ S P₀ xs}
            → p ≋ q → q ≋ r → p ≋ r
    ≋-trans (hereEq pa qb a≈x b≈x) (hereEq pc qd c≈y d≈y) = hereEq pa qd _ _
    ≋-trans (thereEq e) (thereEq f) = thereEq (≋-trans e f)
 
-   ≡→≋ : {xs : List A} {p q : Some₀ {S = S} P₀ xs} → p ≡ q → p ≋ q
+   ≡→≋ : {xs : List A} {p q : Some₀ S P₀ xs} → p ≡ q → p ≋ q
    ≡→≋ ≡.refl = ≋-refl
 
 module _ {a ℓa} {A : Setoid a ℓa} (P : A ⟶ SSetoid ℓa ℓa) where
    open Setoid A
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+   open Locations
 
    Some : List Carrier → Setoid (ℓa ⊔ a) (ℓa ⊔ a)
    Some xs = record
-     { Carrier         =   Some₀ {S = A} P₀ xs
+     { Carrier         =   Some₀ A P₀ xs
      ; _≈_             =   _≋_
      ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
      }
@@ -167,7 +169,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 \begin{code}
   setoid≈ : Carrier → S ⟶ SSetoid ℓs ℓs
   setoid≈ x = record
-    { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {A = S} x y
+    { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {S = S} x y
     ; cong = λ i≈j → record
       { to = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j ; cong = λ _ → tt }
       ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈⟩ sym i≈j ; cong = λ _ → tt }
@@ -179,6 +181,8 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
   _∈₀_ : Carrier → List Carrier → Set (ℓS ⊔ ℓs)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
+
+  open Locations
 
   ∈₀-subst₁ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
@@ -255,20 +259,20 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
   infix  3 _□
   infixr 2 _≋⟨_⟩_
 
-  _≋⟨_⟩_ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ {S = S} P₀ xs) {Y Z : Some₀ P₀ xs}
+  _≋⟨_⟩_ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ S P₀ xs) {Y Z : Some₀ S P₀ xs}
         →  X ≋ Y → Y ≋ Z → X ≋ Z
   X ≋⟨ X≋Y ⟩ Y≋Z = ≋-trans X≋Y Y≋Z
 
-  _□ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ {S = S} P₀ xs) → X ≋ X
+  _□ : {P₀ : Carrier → Set ℓs} {xs : List Carrier} (X : Some₀ S P₀ xs) → X ≋ X
   X □ = ≋-refl
 
   here≋there : {P₀ : Carrier → Set ℓs} {xs : List Carrier} {a x : Carrier} {a≈x : a ≈ x}
-    {Pa : P₀ a} {pf : Some₀ {S = S} P₀ xs } →
+    {Pa : P₀ a} {pf : Some₀ S P₀ xs } →
     here {x = x} {a} {xs} a≈x Pa ≋ there pf → ⊥ {ℓS}
   here≋there ()
 
   private
-    Some[]→⊥ : {P₀ : Carrier → Set ℓs} → Some₀ {ℓS} {ℓs} {S} P₀ [] → ⊥ {ℓs}
+    Some[]→⊥ : {P₀ : Carrier → Set ℓs} → Some₀ S P₀ [] → ⊥ {ℓs}
     Some[]→⊥ ()
 \end{code}
 
@@ -419,6 +423,7 @@ module NICE where
   ys = E₃ ∷ E₁ ∷ E₁ ∷ []
 
   open Membership E-setoid
+  open Locations
 
   xs⇒ys : (x : E) → x ∈₀ xs → x ∈₀ ys
   xs⇒ys E₁ (here sm px) = there (here sm px)
@@ -535,59 +540,61 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
     where
       open Setoid A
       private P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
+      open Locations
+
       _∽_ = _≋_ ; ∽-refl = ≋-refl {S = A} {P₀}
 
       -- ``ealier''
-      ⊎→ˡ : ∀ {ws zs} → Some₀ {S = A} P₀ ws → Some₀ {S = A} P₀ (ws ++ zs)
+      ⊎→ˡ : ∀ {ws zs} → Some₀ A P₀ ws → Some₀ A P₀ (ws ++ zs)
       ⊎→ˡ (here p a≈x) = here p a≈x
       ⊎→ˡ (there p) = there (⊎→ˡ p)
 
-      yo : {xs : List Carrier} {x y : Some₀ P₀ xs} → x ∽ y   →   ⊎→ˡ x  ∽  ⊎→ˡ y
+      yo : {xs : List Carrier} {x y : Some₀ A P₀ xs} → x ∽ y   →   ⊎→ˡ x  ∽  ⊎→ˡ y
       yo (hereEq px py _ _) = hereEq px py _ _
       yo (thereEq pf) = thereEq (yo pf)
 
       -- ``later''
-      ⊎→ʳ : ∀ xs {ys} → Some₀ {S = A} P₀ ys → Some₀ P₀ (xs ++ ys)
+      ⊎→ʳ : ∀ xs {ys} → Some₀ A P₀ ys → Some₀ A P₀ (xs ++ ys)
       ⊎→ʳ []       p = p
       ⊎→ʳ (x ∷ xs) p = there (⊎→ʳ xs p)
 
-      oy : (xs : List Carrier) {x y : Some₀ P₀ ys} → x ∽ y   →   ⊎→ʳ xs x  ∽  ⊎→ʳ xs y
+      oy : (xs : List Carrier) {x y : Some₀ A P₀ ys} → x ∽ y   →   ⊎→ʳ xs x  ∽  ⊎→ʳ xs y
       oy [] pf = pf
       oy (x ∷ xs) pf = thereEq (oy xs pf)
 
       -- |Some₀| is |++→⊎|-homomorphic, in the second argument.
 
-      ⊎→++ : ∀ {zs ws} → (Some₀ P₀ zs ⊎ Some₀ P₀ ws) → Some₀ P₀ (zs ++ ws)
+      ⊎→++ : ∀ {zs ws} → (Some₀ A P₀ zs ⊎ Some₀ A P₀ ws) → Some₀ A P₀ (zs ++ ws)
       ⊎→++      (inj₁ x) = ⊎→ˡ x
       ⊎→++ {zs} (inj₂ y) = ⊎→ʳ zs y
 
-      ++→⊎ : ∀ xs {ys} → Some₀ P₀ (xs ++ ys) → Some₀ P₀ xs ⊎ Some₀ P₀ ys
+      ++→⊎ : ∀ xs {ys} → Some₀ A P₀ (xs ++ ys) → Some₀ A P₀ xs ⊎ Some₀ A P₀ ys
       ++→⊎ []             p    = inj₂ p
       ++→⊎ (x ∷ l) (here  p _) = inj₁ (here p _)
       ++→⊎ (x ∷ l) (there p)   = (there ⊎₁ id₀) (++→⊎ l p)
 
       -- all of the following may need to change
 
-      ⊎→++-cong : {a b : Some₀ P₀ xs ⊎ Some₀ P₀ ys} → (_∽_ ∥ _∽_) a b → ⊎→++ a ∽ ⊎→++ b
+      ⊎→++-cong : {a b : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys} → (_∽_ ∥ _∽_) a b → ⊎→++ a ∽ ⊎→++ b
       ⊎→++-cong (left  x₁∼x₂)  =  yo x₁∼x₂
       ⊎→++-cong (right y₁∼y₂)  =  oy xs y₁∼y₂
 
       ∽∥∽-cong   :  {xs ys us vs : List Carrier}
-                    (F : Some₀ {S = A} P₀ xs → Some₀ {S = A} P₀ us)
-                    (F-cong : {p q : Some₀ P₀ xs} → p ∽ q → F p ∽ F q)
-                    (G : Some₀ {S = A} P₀ ys → Some₀ {S = A} P₀ vs)
-                    (G-cong : {p q : Some₀ P₀ ys} → p ∽ q → G p ∽ G q)
-                    → {pf pf' : Some₀ P₀ xs ⊎ Some₀ P₀ ys}
+                    (F : Some₀ A P₀ xs → Some₀ A P₀ us)
+                    (F-cong : {p q : Some₀ A P₀ xs} → p ∽ q → F p ∽ F q)
+                    (G : Some₀ A P₀ ys → Some₀ A P₀ vs)
+                    (G-cong : {p q : Some₀ A P₀ ys} → p ∽ q → G p ∽ G q)
+                    → {pf pf' : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys}
                     → (_∽_ ∥ _∽_) pf pf' → (_∽_ ∥ _∽_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
       ∽∥∽-cong F F-cong G G-cong (left x~₁y) = left (F-cong x~₁y)
       ∽∥∽-cong F F-cong G G-cong (right x~₂y) = right (G-cong x~₂y)
 
-      new-cong : (xs : List Carrier) {i j : Some₀ P₀ (xs ++ ys)} → i ∽ j → (_∽_ ∥ _∽_) (++→⊎ xs i) (++→⊎ xs j)
+      new-cong : (xs : List Carrier) {i j : Some₀ A P₀ (xs ++ ys)} → i ∽ j → (_∽_ ∥ _∽_) (++→⊎ xs i) (++→⊎ xs j)
       new-cong [] pf = right pf
       new-cong (x ∷ xs) (hereEq px py _ _) = left (hereEq px py _ _)
       new-cong (x ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (new-cong xs pf)
 
-      lefty : (xs {ys} : List Carrier) (p : Some₀ P₀ xs ⊎ Some₀ P₀ ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
+      lefty : (xs {ys} : List Carrier) (p : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
       lefty [] (inj₁ ())
       lefty [] (inj₂ p) = right ≋-refl
       lefty (x ∷ xs) (inj₁ (here px _)) = left ∽-refl
@@ -598,7 +605,7 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
       ... | inj₁ x | ()
       ... | inj₂ y | (right x~₂y) = right x~₂y
 
-      righty : (zs {ws} : List Carrier) (p : Some₀ P₀ (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ∽ p
+      righty : (zs {ws} : List Carrier) (p : Some₀ A P₀ (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ∽ p
       righty [] {ws} p = ∽-refl
       righty (x ∷ zs) {ws} (here px _) = ∽-refl
       righty (x ∷ zs) {ws} (there p) with ++→⊎ zs p | righty zs p
@@ -645,33 +652,34 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
   open Membership using (transport)
   A₀ = Carrier A
   P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
+  open Locations
   _∼_ = _≋_ {S = B} {P₀ = P₀}
 
-  map⁺ : {xs : List A₀} → Some₀ {S = A} (P₀ ⊚ _⟨$⟩_ f) xs → Some₀ {S = B} P₀ (map (_⟨$⟩_ f) xs)
+  map⁺ : {xs : List A₀} → Some₀ A (P₀ ⊚ _⟨$⟩_ f) xs → Some₀ B P₀ (map (_⟨$⟩_ f) xs)
   map⁺ (here a≈x p)  = here (Π.cong f a≈x) p
   map⁺ (there p) = there $ map⁺ p
 
-  map⁻ : {xs : List A₀} → Some₀ {S = B} P₀ (map (_⟨$⟩_ f) xs) → Some₀ {S = A} (P₀ ⊚ (_⟨$⟩_ f)) xs
+  map⁻ : {xs : List A₀} → Some₀ B P₀ (map (_⟨$⟩_ f) xs) → Some₀ A (P₀ ⊚ (_⟨$⟩_ f)) xs
   map⁻ {[]} ()
   map⁻ {x ∷ xs} (here {b} b≈x p) = here (refl A) (Equivalence.to (Π.cong P b≈x) ⟨$⟩ p)
   map⁻ {x ∷ xs} (there p) = there (map⁻ {xs = xs} p)
 
-  map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ P₀ (map (_⟨$⟩_ f) xs)) → map⁺ (map⁻ p) ∼ p
+  map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ B P₀ (map (_⟨$⟩_ f) xs)) → map⁺ (map⁻ p) ∼ p
   map⁺∘map⁻ {[]} ()
   map⁺∘map⁻ {x ∷ xs} (here b≈x p) = hereEq (transport B P p b≈x) p (Π.cong f (refl A)) b≈x
   map⁺∘map⁻ {x ∷ xs} (there p) = thereEq (map⁺∘map⁻ p)
 
-  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ (P₀ ⊚ (_⟨$⟩_ f)) xs)
+  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ A (P₀ ⊚ (_⟨$⟩_ f)) xs)
             → let _∼₂_ = _≋_ {P₀ = P₀ ⊚ (_⟨$⟩_ f)} in map⁻ (map⁺ p) ∼₂ p
   map⁻∘map⁺ {[]} ()
   map⁻∘map⁺ {x ∷ xs} (here a≈x p) = hereEq (transport A (P ∘ f) p a≈x) p (refl A) a≈x
   map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
 
-  map⁺-cong : {ys : List A₀} {i j : Some₀ (P₀ ⊚ _⟨$⟩_ f) ys} →  _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} i j → map⁺ i ∼ map⁺ j
+  map⁺-cong : {ys : List A₀} {i j : Some₀ A (P₀ ⊚ _⟨$⟩_ f) ys} →  _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} i j → map⁺ i ∼ map⁺ j
   map⁺-cong (hereEq px py x≈z y≈z) = hereEq px py (Π.cong f x≈z) (Π.cong f y≈z)
   map⁺-cong (thereEq i∼j) = thereEq (map⁺-cong i∼j)
 
-  map⁻-cong : {ys : List A₀} {i j : Some₀ P₀ (map (_⟨$⟩_ f) ys)} → i ∼ j → _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} (map⁻ i) (map⁻ j)
+  map⁻-cong : {ys : List A₀} {i j : Some₀ B P₀ (map (_⟨$⟩_ f) ys)} → i ∼ j → _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} (map⁻ i) (map⁻ j)
   map⁻-cong {[]} ()
   map⁻-cong {z ∷ zs} (hereEq {x = x} {y} px py x≈z y≈z) =
     hereEq (transport B P px x≈z) (transport B P py y≈z) (refl A) (refl A)
@@ -688,16 +696,17 @@ module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa �
   open Setoid A
   open Π
   open _≅_
+  open Locations
   private
     P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
-  find : {ys : List Carrier} → Some₀ {S = A} P₀ ys → Support ys
+  find : {ys : List Carrier} → Some₀ A P₀ ys → Support ys
   find {y ∷ ys} (here {a} a≈y p) = a , here a≈y (sym a≈y) , transport P p a≈y
   find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
                              in a , there a∈ys , Pa
 
-  lose : {ys : List Carrier} → Support ys → Some₀ {S = A} P₀ ys
+  lose : {ys : List Carrier} → Support ys → Some₀ A P₀ ys
   lose (y , here b≈y py , Py)  = here b≈y (Equivalence.to (Π.cong P py) Π.⟨$⟩ Py)
   lose (y , there {b} y∈ys , Py)   = there (lose (y , y∈ys , Py))
 \end{code}
@@ -722,6 +731,8 @@ module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
     squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓs
     squish _ _ = ⊤
+
+  open Locations
 
   -- FIXME : this definition is still not right
   _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (ℓs ⊔ ℓS)
@@ -754,7 +765,7 @@ module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS
 
   open FindLose P
 
-  find-cong : {xs : List Carrier} {p q : Some₀ P₀ xs} → p ≋ q → find p ∻ find q
+  find-cong : {xs : List Carrier} {p q : Some₀ A P₀ xs} → p ≋ q → find p ∻ find q
   find-cong {p = .(here x≈z px)} {.(here y≈z qy)} (hereEq px qy x≈z y≈z) =
     refl , hereEq (trans (sym refl) (sym x≈z)) (sym y≈z) x≈z y≈z , tt
   find-cong {p = .(there _)} {.(there _)} (thereEq p≋q) =
@@ -768,7 +779,7 @@ module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS
   forget-cong {i = a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , thereEq pf , Pa≈Pb) =
     thereEq (forget-cong (i≈j , pf , Pa≈Pb))
 
-  left-inv : {zs : List Carrier} (x∈zs : Some₀ P₀ zs) → lose (find x∈zs) ≋ x∈zs
+  left-inv : {zs : List Carrier} (x∈zs : Some₀ A P₀ zs) → lose (find x∈zs) ≋ x∈zs
   left-inv (here {a} {x} a≈x px) = hereEq (transport P (transport P px a≈x) (sym a≈x)) px a≈x a≈x
   left-inv (there x∈ys) = thereEq (left-inv x∈ys)
 

@@ -65,9 +65,9 @@ can potentially be weakened.}
 
 \edcomm{WK}{|S| would better be explicit. And this module would be much better named!!!}
 \begin{code}
-module _ {a ℓa} {S : Setoid a ℓa} (P₀ : Setoid.Carrier S → Set ℓa) where
+module _ {ℓS ℓs : Level} {S : Setoid ℓS ℓs} (P₀ : Setoid.Carrier S → Set ℓs) where
    open Setoid S renaming (Carrier to A)
-   data Some₀  : List A → Set (a ⊔ ℓa) where
+   data Some₀  : List A → Set (ℓS ⊔ ℓs) where
      here  : {x a : A} {xs : List A} (sm : a ≈ x) (px  : P₀ a    ) → Some₀ (x ∷ xs)
      there : {x   : A} {xs : List A}              (pxs : Some₀ xs) → Some₀ (x ∷ xs)
 \end{code}
@@ -373,6 +373,150 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
     □₀)
 \end{spec}
 }%edcomm
+%}}}
+
+%{{{ |module NICE|: |∈₀-subst₂-cong′| and |∈₀-subst₁-to| do not hold
+|∈₀-subst₂-cong′| and |∈₀-subst₁-to| actually do not hold ---
+the following module aonly serve to provide a counterexample:
+
+\begin{code}
+module NICE where
+  data E : Set where
+    E₁ E₂ E₃ : E
+
+  data _≈E_ : E → E → Set where
+    ≈E-refl : {x : E} → x ≈E x
+    E₁₂ : E₁ ≈E E₂
+    E₂₁ : E₂ ≈E E₁
+
+  ≈E-sym : {x y : E} → x ≈E y → y ≈E x
+  ≈E-sym ≈E-refl = ≈E-refl
+  ≈E-sym E₁₂ = E₂₁
+  ≈E-sym E₂₁ = E₁₂
+
+  ≈E-trans : {x y z : E} → x ≈E y → y ≈E z → x ≈E z
+  ≈E-trans ≈E-refl ≈E-refl = ≈E-refl
+  ≈E-trans ≈E-refl E₁₂ = E₁₂
+  ≈E-trans ≈E-refl E₂₁ = E₂₁
+  ≈E-trans E₁₂ ≈E-refl = E₁₂
+  ≈E-trans E₁₂ E₂₁ = ≈E-refl
+  ≈E-trans E₂₁ ≈E-refl = E₂₁
+  ≈E-trans E₂₁ E₁₂ = ≈E-refl
+
+  E-setoid : Setoid lzero lzero
+  E-setoid = record
+    { Carrier = E
+    ; _≈_ = _≈E_
+    ; isEquivalence = record
+      { refl = ≈E-refl
+      ; sym = ≈E-sym
+      ; trans = ≈E-trans
+      }
+    }
+
+  xs ys : List E
+  xs = E₁ ∷ E₁ ∷ E₃ ∷ []
+  ys = E₃ ∷ E₁ ∷ E₁ ∷ []
+
+  open Membership E-setoid
+
+  xs⇒ys : (x : E) → x ∈₀ xs → x ∈₀ ys
+  xs⇒ys E₁ (here sm px) = there (here sm px)
+  xs⇒ys E₁ (there p) = there (there (here ≈E-refl ≈E-refl))
+  xs⇒ys E₂ (here sm px) = there (there (here sm px))
+  xs⇒ys E₂ (there p) = there (here ≈E-refl E₂₁)
+  xs⇒ys E₃ p = here ≈E-refl ≈E-refl
+
+  xs⇒ys-cong : (x : E) {p p′ : x ∈₀ xs} → p ≋ p′ → xs⇒ys x p ≋ xs⇒ys x p′
+  xs⇒ys-cong E₁ (hereEq px qy x≈z y≈z) = thereEq (hereEq _ _ _ _)
+  xs⇒ys-cong E₁ (thereEq e) = thereEq (thereEq (hereEq _ _ _ _))
+  xs⇒ys-cong E₂ (hereEq px qy x≈z y≈z) = thereEq (thereEq (hereEq _ _ _ _))
+  xs⇒ys-cong E₂ (thereEq e) = thereEq (hereEq _ _ _ _)
+  xs⇒ys-cong E₃ e = hereEq _ _ _ _
+
+  ys⇒xs : (x : E) → x ∈₀ ys → x ∈₀ xs
+  ys⇒xs E₁ (here ≈E-refl ())
+  ys⇒xs E₁ (there (here sm px)) = here sm px
+  ys⇒xs E₁ (there (there e)) = there (here ≈E-refl ≈E-refl)
+  ys⇒xs E₂ (here ≈E-refl ())
+  ys⇒xs E₂ (there (here sm px)) = there (here E₂₁ ≈E-refl)
+  ys⇒xs E₂ (there (there e)) = here ≈E-refl E₂₁
+  ys⇒xs E₃ e = there (there (here ≈E-refl ≈E-refl))
+
+  ys⇒xs-cong : (x : E) {p p′ : x ∈₀ ys} → p ≋ p′ → ys⇒xs x p ≋ ys⇒xs x p′
+  ys⇒xs-cong E₁ (hereEq ≈E-refl ≈E-refl x≈z ())
+  ys⇒xs-cong E₁ (hereEq ≈E-refl E₁₂ x≈z ())
+  ys⇒xs-cong E₁ (hereEq E₁₂ ≈E-refl x≈z ())
+  ys⇒xs-cong E₁ (hereEq E₁₂ E₁₂ x≈z ())
+  ys⇒xs-cong E₁ (thereEq (hereEq px qy x≈z y≈z)) = hereEq px qy x≈z y≈z
+  ys⇒xs-cong E₁ (thereEq (thereEq eq)) = thereEq (hereEq _ _ _ _)
+  ys⇒xs-cong E₂ (hereEq ≈E-refl ≈E-refl x≈z ())
+  ys⇒xs-cong E₂ (hereEq ≈E-refl E₂₁ x≈z ())
+  ys⇒xs-cong E₂ (hereEq E₂₁ ≈E-refl x≈z ())
+  ys⇒xs-cong E₂ (hereEq E₂₁ E₂₁ x≈z ())
+  ys⇒xs-cong E₂ (thereEq (hereEq px qy x≈z y≈z)) = thereEq (hereEq _ _ _ _)
+  ys⇒xs-cong E₂ (thereEq (thereEq eq)) = hereEq _ _ _ _
+  ys⇒xs-cong E₃ _ = thereEq (thereEq (hereEq _ _ _ _))
+
+  leftInv : (e : E) (p : e ∈₀ xs) → ys⇒xs e (xs⇒ys e p) ≋ p
+  leftInv E₁ (here sm px) = hereEq px px sm sm
+  leftInv E₁ (there (here sm px)) = thereEq (hereEq ≈E-refl px ≈E-refl sm)
+  leftInv E₁ (there (there (here ≈E-refl ())))
+  leftInv E₁ (there (there (there ())))
+  leftInv E₂ (here sm px) = hereEq E₂₁ px ≈E-refl sm
+  leftInv E₂ (there (here sm px)) = thereEq (hereEq ≈E-refl px E₂₁ sm)
+  leftInv E₂ (there (there (here ≈E-refl ())))
+  leftInv E₂ (there (there (there ())))
+  leftInv E₃ (here ≈E-refl ())
+  leftInv E₃ (here E₂₁ ())
+  leftInv E₃ (there (here ≈E-refl ()))
+  leftInv E₃ (there (here E₂₁ ()))
+  leftInv E₃ (there (there (here sm px))) = thereEq (thereEq (hereEq ≈E-refl px ≈E-refl sm))
+  leftInv E₃ (there (there (there ())))
+
+  rightInv : (e : E) (p : e ∈₀ ys) → xs⇒ys e (ys⇒xs e p) ≋ p
+  rightInv E₁ (here ≈E-refl ())
+  rightInv E₁ (there (here sm px)) = thereEq (hereEq px px sm sm)
+  rightInv E₁ (there (there (here sm px))) = thereEq (thereEq (hereEq ≈E-refl px ≈E-refl sm))
+  rightInv E₁ (there (there (there ())))
+  rightInv E₂ (here ≈E-refl ())
+  rightInv E₂ (there (here sm px)) = thereEq (hereEq E₂₁ px ≈E-refl sm)
+  rightInv E₂ (there (there (here sm px))) = thereEq (thereEq (hereEq E₂₁ px ≈E-refl sm))
+  rightInv E₂ (there (there (there ())))
+  rightInv E₃ (here sm px) = hereEq ≈E-refl px ≈E-refl sm
+  rightInv E₃ (there (here ≈E-refl ()))
+  rightInv E₃ (there (here E₂₁ ()))
+  rightInv E₃ (there (there (here ≈E-refl ())))
+  rightInv E₃ (there (there (here E₂₁ ())))
+  rightInv E₃ (there (there (there ())))
+
+  xs≊ys : BagEq xs ys
+  xs≊ys {e} = record
+    { to = record { _⟨$⟩_ = xs⇒ys e ; cong = xs⇒ys-cong e }
+    ; from = record { _⟨$⟩_ = ys⇒xs e ; cong = ys⇒xs-cong e }
+    ; inverse-of = record
+      { left-inverse-of = leftInv e
+      ; right-inverse-of = rightInv e
+      }
+    }
+
+  ¬-∈₀-subst₂-cong′  : ({x x′ : E} {xs ys : List E} (xs≅ys : BagEq xs ys)
+                  → x ≈E x′
+                  → {p : x ∈₀ xs} {q : x′ ∈₀ xs}
+                  → p ≋₀ q
+                  → ∈₀-subst₂ xs≅ys p ≋₀ ∈₀-subst₂ xs≅ys q) → ⊥ {lzero}
+  ¬-∈₀-subst₂-cong′ ∈₀-subst₂-cong′ with
+    ∈₀-subst₂-cong′ {E₁} {E₂} {xs} {ys} xs≊ys E₁₂ {here {a = E₁} ≈E-refl ≈E-refl} {here {a = E₂} E₂₁ ≈E-refl} (hereEq _ _ _ _)
+  ¬-∈₀-subst₂-cong′ ∈₀-subst₂-cong′ | Membership.thereEq ()
+
+  ¬-∈₀-subst₁-to : ({a b : E} {zs ws : List E} {a≈b : a ≈E b}
+      → (zs≅ws : BagEq zs ws) (a∈zs : a ∈₀ zs)
+      → ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs) ≋ ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
+      ) → ⊥ {lzero}
+  ¬-∈₀-subst₁-to ∈₀-subst₁-to with
+    ∈₀-subst₁-to {E₁} {E₂} {xs} {ys} {E₁₂} xs≊ys (here {a = E₁} ≈E-refl ≈E-refl)
+  ¬-∈₀-subst₁-to ∈₀-subst₁-to | thereEq ()
+\end{code}
 %}}}
 
 %{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}

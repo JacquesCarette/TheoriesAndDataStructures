@@ -29,8 +29,8 @@ Given two elements of a given Setoid |A|, define a Setoid of equivalences of
 those elements.  We consider all such equivalences to be equivalent.  In other
 words, for |e₁ e₂ : Setoid.Carrier A|, then |e₁ ≈ₛ e₂|, as a type, is contractible.
 \begin{code}
-_≈S_ : ∀ {a ℓa} {A : Setoid a ℓa} → (e₁ e₂ : Setoid.Carrier A) → Setoid ℓa ℓa
-_≈S_ {A = A} e₁ e₂ = let open Setoid A renaming (_≈_ to _≈ₛ_) in
+_≈S_ : ∀ {ℓs ℓS ℓp} {S : Setoid ℓs ℓS} → (e₁ e₂ : Setoid.Carrier S) → Setoid ℓS ℓp
+_≈S_ {S = S} e₁ e₂ = let open Setoid S renaming (_≈_ to _≈ₛ_) in
   record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ _ _ → ⊤
          ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
 \end{code}

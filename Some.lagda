@@ -625,9 +625,9 @@ module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid
 \end{code}
 
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
+module _ {ℓS ℓs ℓP ℓp : Level} {S : Setoid ℓS ℓs} {P : S ⟶ SSetoid ℓP ℓp} where
 
-  ⊥≅Some[] : ⊥⊥ {a ⊔ ℓa} {a ⊔ ℓa} ≅ Some P []
+  ⊥≅Some[] : ⊥⊥ {ℓp ⊔ (ℓS ⊔ ℓs)} {ℓp ⊔ (ℓS ⊔ ℓs)} ≅ Some P []
   ⊥≅Some[] = record
     { to          =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
     ; from        =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
@@ -639,9 +639,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \begin{code}
-map≅ : ∀ {a ℓa} {A B : Setoid a ℓa} {P : B ⟶ SSetoid ℓa ℓa} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
+map≅ : ∀ {ℓS ℓs ℓP ℓp} {A B : Setoid ℓS ℓs} {P : B ⟶ SSetoid ℓP ℓp} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
        Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
-map≅ {a} {ℓa} {A} {B} {P} {f} = record
+map≅ {A = A} {B} {P} {f} = record
   { to = record { _⟨$⟩_ = map⁺ ; cong = map⁺-cong }
   ; from = record { _⟨$⟩_ = map⁻ ; cong = map⁻-cong }
   ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }
@@ -649,7 +649,7 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
   where
   open Setoid
   open Membership using (transport)
-  A₀ = Carrier A
+  A₀ = Setoid.Carrier A
   P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
   open Locations
   _∼_ = _≋_ {S = B} {P₀ = P₀}
@@ -690,7 +690,7 @@ map≅ {a} {ℓa} {A} {B} {P} {f} = record
 \subsection{FindLose}
 
 \begin{code}
-module FindLose {a ℓa : Level} {A : Setoid a ℓa}  (P : A ⟶ SSetoid ℓa ℓa) where
+module FindLose {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs}  (P : A ⟶ SSetoid ℓP ℓp) where
   open Membership A
   open Setoid A
   open Π
@@ -722,23 +722,23 @@ This is an ``unpacked'' version of |Some|, where each piece (see |Support| below
 separated out.  For some equivalences, it seems to work with this representation.
 
 \begin{code}
-module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS} where
+module _ {ℓs ℓS ℓP ℓp : Level} (A : Setoid ℓs ℓS) (P : A ⟶ SSetoid ℓP ℓp) where
   open Membership A
   open Setoid A
   private
     P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
-    squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓs
+    squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓp
     squish _ _ = ⊤
 
   open Locations
 
   -- FIXME : this definition is still not right
-  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set (ℓs ⊔ ℓS)
+  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set ((ℓs ⊔ ℓS) ⊔ ℓp)
   (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =
     Σ (a ≈ b) (λ a≈b → ∈₀-subst₁ a≈b a∈xs ≋ b∈xs × squish Pa Pb)
 
-  Σ-Setoid : (ys : List Carrier) → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
+  Σ-Setoid : (ys : List Carrier) → Setoid ((ℓS ⊔ ℓs) ⊔ ℓp) ((ℓS ⊔ ℓs) ⊔ ℓp)
   Σ-Setoid [] = ⊥⊥
   Σ-Setoid (y ∷ ys) = record
     { Carrier = Support (y ∷ ys)
@@ -790,7 +790,7 @@ module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS
     -- (proj₁ (right-inv (y , y∈ys , Py))) , (thereEq (proj₁ (proj₂ (right-inv (y , y∈ys , Py))))) , {!proj₂ (proj₂ (right-inv!}
 
   Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
-  Σ-Some [] = ≅-sym (⊥≅Some[] {ℓs} {ℓS} {A} {P})
+  Σ-Some [] = ≅-sym (⊥≅Some[] {S = A} {P})
   Σ-Some (x ∷ xs) =  record
     { to = record { _⟨$⟩_ = find ; cong = find-cong }
     ; from = record { _⟨$⟩_ = lose ; cong = forget-cong }
@@ -802,8 +802,8 @@ module _ {ℓs ℓS : Level} {A : Setoid ℓs ℓS} {P : A ⟶ SSetoid ℓS ℓS
 
   Σ-cong : {xs ys : List Carrier} → BagEq xs ys → Σ-Setoid xs ≅ Σ-Setoid ys
   Σ-cong {[]} {[]} iso = ≅-refl
-  Σ-cong {[]} {z ∷ zs} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ z}) ⟨$⟩ (_≅_.from iso ⟨$⟩ here refl refl))
-  Σ-cong {x ∷ xs} {[]} iso = ⊥-elim (_≅_.from (⊥≅Some[] {A = A} {setoid≈ x}) ⟨$⟩ (_≅_.to iso ⟨$⟩ here refl refl))
+  Σ-cong {[]} {z ∷ zs} iso = ⊥-elim (_≅_.from (⊥≅Some[] {S = A} {setoid≈ z}) ⟨$⟩ (_≅_.from iso ⟨$⟩ here refl refl))
+  Σ-cong {x ∷ xs} {[]} iso = ⊥-elim (_≅_.from (⊥≅Some[] {S = A} {setoid≈ x}) ⟨$⟩ (_≅_.to iso ⟨$⟩ here refl refl))
   Σ-cong {x ∷ xs} {y ∷ ys} xs≅ys = record
     { to   = record { _⟨$⟩_ = xs→ys xs≅ys         ; cong = λ {i j} → xs→ys-cong xs≅ys {i} {j} }
     ; from = record { _⟨$⟩_ = xs→ys (≅-sym xs≅ys) ; cong = λ {i j} → xs→ys-cong (≅-sym xs≅ys) {i} {j} }
@@ -841,7 +841,7 @@ depends on |Some|, which depends on |_≋_|. If that now depends on |BagEq|,
 we've got a mutual recursion that seems unecessary.}
 
 \begin{code}
-module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} where
+module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp} where
 
   open Membership A
   open Setoid A
@@ -851,9 +851,9 @@ module _ {a ℓa : Level} {A : Setoid a ℓa} {P : A ⟶ SSetoid ℓa ℓa} wher
             (∀ {x} → (x ∈ xs₁) ≅ (x ∈ xs₂)) →
             Some P xs₁ ≅ Some P xs₂
   Some-cong {xs₁} {xs₂} xs₁≅xs₂ =
-    Some P xs₁             ≅⟨ Σ-Some xs₁ ⟩
-    Σ-Setoid {P = P} xs₁   ≅⟨ Σ-cong xs₁≅xs₂ ⟩
-    Σ-Setoid {P = P} xs₂   ≅⟨ ≅-sym (Σ-Some xs₂) ⟩
+    Some P xs₁         ≅⟨ Σ-Some A P xs₁ ⟩
+    Σ-Setoid A P xs₁   ≅⟨ Σ-cong A P xs₁≅xs₂ ⟩
+    Σ-Setoid A P xs₂   ≅⟨ ≅-sym (Σ-Some A P xs₂) ⟩
     Some P xs₂ ∎
 \end{code}
 

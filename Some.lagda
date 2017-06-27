@@ -7,14 +7,12 @@ module Some where
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
   Reflexive ; Symmetric ; Transitive)
-open import Relation.Binary.PropositionalEquality using ( inspect ; [_] )
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function          using (_$_) renaming (id to id₀; _∘_ to _⊚_)
 open import Function.Equivalence using (Equivalence)
 
 open import Data.List     using (List; []; _++_; _∷_; map)
-open import Data.Product  using (∃)
 open import Data.Nat      using (ℕ; zero; suc)
 
 open import EqualityCombinators
@@ -24,8 +22,12 @@ open import ParComp
 
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
-open import Relation.Binary.Sum
 
+\end{code}
+
+Convenient syntax for |Setoid| equivalence.
+
+\begin{code}
 infix 4 inSetoidEquiv
 inSetoidEquiv : {ℓs ℓS : Level} → (S : Setoid ℓs ℓS) → Setoid.Carrier S → Setoid.Carrier S → Set ℓS
 inSetoidEquiv = Setoid._≈_
@@ -82,6 +84,9 @@ Nevertheless, the 'location' function is straightforward:
    toℕ (there pf) = suc (toℕ pf)
 \end{code}
 
+We need to know when two locations are the same.  We need to be proving the same
+property |P₀|, but we can have different (but equivalent) witnesses.
+
 \begin{code}
 module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} {P₀ : Setoid.Carrier S → Set ℓP} where
    open Setoid S renaming (Carrier to A)
@@ -106,9 +111,6 @@ When we get to defining |BagEq|,
 there will be 6 different ways in which that list, as a Bag, is equivalent to itself.
 
 \begin{code}
-module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} {P₀ : Setoid.Carrier S → Set ℓP} where
-   open Setoid S renaming (Carrier to A)
-   open Locations
    ≋-refl : {xs : List A} {p : Some₀ S P₀ xs} → p ≋ p
    ≋-refl {p = here a≈x px} = hereEq px px a≈x a≈x
    ≋-refl {p = there p} = thereEq ≋-refl
@@ -125,30 +127,33 @@ module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} {P₀ : Setoid.Carrier S → Se
    ≡→≋ : {xs : List A} {p q : Some₀ S P₀ xs} → p ≡ q → p ≋ q
    ≡→≋ ≡.refl = ≋-refl
 
-module _ {ℓS ℓs ℓP ℓp} {A : Setoid ℓS ℓs} (P : A ⟶ SSetoid ℓP ℓp) where
-   open Setoid A
+module _ {ℓS ℓs ℓP ℓp} {S : Setoid ℓS ℓs} (P : S ⟶ SSetoid ℓP ℓp) where
+   open Setoid S
    private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    open Locations
 
    Some : List Carrier → Setoid ((ℓS ⊔ ℓs) ⊔ ℓp) (ℓS ⊔ ℓs)
    Some xs = record
-     { Carrier         =   Some₀ A P₀ xs
+     { Carrier         =   Some₀ S P₀ xs
      ; _≈_             =   _≋_
      ; isEquivalence   = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
      }
 
-≡→Some : {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp}
-         {xs ys : List (Setoid.Carrier A)} → xs ≡ ys → Some P xs ≅ Some P ys
-≡→Some {A = A} ≡.refl = ≅-refl
+   ≡→Some : {xs ys : List (Setoid.Carrier S)} → xs ≡ ys → Some xs ≅ Some ys
+   ≡→Some ≡.refl = ≅-refl
 \end{code}
 %}}}
 
 %{{{ \subsection{Membership module}: setoid≈ ; _∈_ ; _∈₀_
 \subsection{Membership module}
 
+First, define a few convenient combinators for equational reasoning in
+|Setoid|.
+
 \savecolumns
 \begin{code}
 module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+  open Locations
 
   open Setoid S renaming (trans to _⟨≈≈⟩_)
   _⟨≈˘≈⟩_ : {a b c : Carrier} → b ≈ a → b ≈ c → a ≈ c
@@ -157,13 +162,11 @@ module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   _⟨≈≈˘⟩_ = λ a≈b c≈b → a≈b ⟨≈≈⟩ sym c≈b
   _⟨≈˘≈˘⟩_ : {a b c : Carrier} → b ≈ a → c ≈ b → a ≈ c
   _⟨≈˘≈˘⟩_ = λ b≈a c≈b → b≈a ⟨≈˘≈⟩ sym c≈b
-  infix 4 _∈₀_ _∈_
 \end{code}
 
 |setoid≈ x| is actually a mapping from |S| to |SSetoid _ _|; it maps
 elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
-TODO: clean up there levels here.
 \restorecolumns
 \begin{code}
   setoid≈ : Carrier → S ⟶ SSetoid ℓs ℓs
@@ -171,17 +174,17 @@ TODO: clean up there levels here.
     { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {S = S} x y
     ; cong = λ i≈j → record
       { to = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j ; cong = λ _ → tt }
-      ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈⟩ sym i≈j ; cong = λ _ → tt }
+      ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈˘⟩ i≈j ; cong = λ _ → tt }
       }
     }
+
+  infix 4 _∈₀_ _∈_
 
   _∈_ : Carrier → List Carrier → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
   x ∈ xs = Some (setoid≈ x) xs
 
   _∈₀_ : Carrier → List Carrier → Set (ℓS ⊔ ℓs)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
-
-  open Locations
 
   ∈₀-subst₁ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
@@ -215,7 +218,7 @@ TODO: clean up there levels here.
   BagEq xs ys = {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
 
   ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
-  ∈₀-Subst₂ {x} {xs} {ys} xs≅ys = _≅_.to (xs≅ys {x})
+  ∈₀-Subst₂ {x} xs≅ys = _≅_.to (xs≅ys {x})
 
   ∈₀-subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈₀ xs → x ∈₀ ys
   ∈₀-subst₂ xs≅ys x∈xs = ∈₀-Subst₂ xs≅ys ⟨$⟩ x∈xs
@@ -254,27 +257,6 @@ TODO: clean up there levels here.
 \end{code}
 
 \restorecolumns
-\begin{code}
-  infix  3 _□
-  infixr 2 _≋⟨_⟩_
-
-  _≋⟨_⟩_ : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} (X : Some₀ S P₀ xs) {Y Z : Some₀ S P₀ xs}
-        →  X ≋ Y → Y ≋ Z → X ≋ Z
-  X ≋⟨ X≋Y ⟩ Y≋Z = ≋-trans X≋Y Y≋Z
-
-  _□ : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} (X : Some₀ S P₀ xs) → X ≋ X
-  X □ = ≋-refl
-
-  here≋there : {ℓP : Level} {P₀ : Carrier → Set ℓP} {xs : List Carrier} {a x : Carrier} {a≈x : a ≈ x}
-    {Pa : P₀ a} {pf : Some₀ S P₀ xs } →
-    here {x = x} {a} {xs} a≈x Pa ≋ there pf → ⊥ {ℓS}
-  here≋there ()
-
-  private
-    Some[]→⊥ : {ℓP : Level} {P₀ : Carrier → Set ℓP} → Some₀ S P₀ [] → ⊥ {ℓs}
-    Some[]→⊥ ()
-\end{code}
-
 \begin{code}
   infix 3 _≋₀_
   data _≋₀_ : {ys : List Carrier} {y y′ : Carrier} → y ∈₀ ys → y′ ∈₀ ys → Set (ℓS ⊔ ℓs) where

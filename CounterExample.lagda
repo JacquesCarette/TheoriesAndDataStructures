@@ -10,10 +10,12 @@ module CounterExample where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid)
+open import Function.Equality using (Π; _⟨$⟩_)
 
 open import Data.List     using (List ; _∷_ ; [])
 
 open import DataProperties using (⊥)
+open import SetoidEquiv
 open import Some
 
 \end{code}
@@ -30,37 +32,10 @@ module HetEquiv {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (trans to _⟨≈≈⟩_)
   open Membership S
 
-  infix 3 _≋₀_
-
-  data _≋₀_ : {ys : List Carrier} {y y′ : Carrier} → y ∈₀ ys → y′ ∈₀ ys → Set (ℓS ⊔ ℓs) where
-    hereEq : {xs : List Carrier} {x y y′ z z′ : Carrier}
-            → (y≈x : y ≈ x) (z≈y : z ≈ y) (y′≈x : y′ ≈ x) (z′≈y′ : z′ ≈ y′)
-            → _≋₀_ (here {x = x} {y} {xs} y≈x z≈y) (here {x = x} {y′} {xs} y′≈x z′≈y′)
-    thereEq : {xs : List Carrier} {x y y′ : Carrier} {y∈xs : y ∈₀ xs} {y′∈xs : y′ ∈₀ xs}
-             → y∈xs ≋₀ y′∈xs → _≋₀_ (there {x = x} y∈xs) (there {x = x} y′∈xs)
-
-  ≋→≋₀  : {ys : List Carrier} {y : Carrier} {pf pf' : y ∈₀ ys}
-                 →  pf ≋ pf' → pf ≋₀ pf'
-  ≋→≋₀ (hereEq _ _ _ _) = hereEq _ _ _ _
-  ≋→≋₀ (thereEq eq) = thereEq (≋→≋₀ eq)
-
   ≋₀-strengthen  : {ys : List Carrier} {y : Carrier} {pf pf' : y ∈₀ ys}
                  →  pf ≋₀ pf' → pf ≋ pf'
   ≋₀-strengthen (hereEq y≈x z≈y y′≈x z′≈y′) = hereEq z≈y z′≈y′ y≈x y′≈x
   ≋₀-strengthen (thereEq eq) = thereEq (≋₀-strengthen eq)
-
-  ≋₀-refl : {xs : List Carrier} {x : Carrier} {p : x ∈₀ xs} → p ≋₀ p
-  ≋₀-refl {p = here _ _} = hereEq _ _ _ _
-  ≋₀-refl {p = there p} = thereEq ≋₀-refl
-
-  ≋₀-sym : {xs : List Carrier} {x y : Carrier} {p : x ∈₀ xs} {q : y ∈₀ xs} → p ≋₀ q → q ≋₀ p
-  ≋₀-sym (hereEq a≈x b≈x px py) = hereEq px py a≈x b≈x
-  ≋₀-sym (thereEq eq) = thereEq (≋₀-sym eq)
-
-  ≋₀-trans : {xs : List Carrier} {x y z : Carrier} {p : x ∈₀ xs} {q : y ∈₀ xs} {r : z ∈₀ xs}
-          → p ≋₀ q → q ≋₀ r → p ≋₀ r
-  ≋₀-trans (hereEq pa qb a≈x b≈x) (hereEq pc qd c≈y d≈y) = hereEq _ _ _ _
-  ≋₀-trans (thereEq e) (thereEq f) = thereEq (≋₀-trans e f)
 
   infix  3 _□₀
   infixr 2 _≋₀⟨_⟩_
@@ -250,7 +225,10 @@ module NICE where
   rightInv E₃ (there (there (here E₂₁ ())))
   rightInv E₃ (there (there (there ())))
 
-  xs≊ys : BagEq xs ys
+  OldBagEq : (xs ys : List E) → Set
+  OldBagEq xs ys = {x : E} → (x ∈ xs) ≅ (x ∈ ys)
+
+  xs≊ys : OldBagEq xs ys
   xs≊ys {e} = record
     { to = record { _⟨$⟩_ = xs⇒ys e ; cong = xs⇒ys-cong e }
     ; from = record { _⟨$⟩_ = ys⇒xs e ; cong = ys⇒xs-cong e }
@@ -260,18 +238,18 @@ module NICE where
       }
     }
 
-  ¬-∈₀-subst₂-cong′  : ({x x′ : E} {xs ys : List E} (xs≅ys : BagEq xs ys)
+  ¬-∈₀-subst₂-cong′  : ({x x′ : E} {xs ys : List E} (xs≅ys : OldBagEq xs ys)
                   → x ≈E x′
                   → {p : x ∈₀ xs} {q : x′ ∈₀ xs}
                   → p ≋₀ q
-                  → ∈₀-subst₂ xs≅ys p ≋₀ ∈₀-subst₂ xs≅ys q) → ⊥ {lzero}
+                  → _≅_.to xs≅ys ⟨$⟩ p ≋₀ _≅_.to xs≅ys ⟨$⟩ q) → ⊥ {lzero}
   ¬-∈₀-subst₂-cong′ ∈₀-subst₂-cong′ with
     ∈₀-subst₂-cong′ {E₁} {E₂} {xs} {ys} xs≊ys E₁₂ {here {a = E₁} ≈E-refl ≈E-refl} {here {a = E₂} E₂₁ ≈E-refl} (hereEq _ _ _ _)
   ¬-∈₀-subst₂-cong′ ∈₀-subst₂-cong′ | thereEq ()
 
   ¬-∈₀-subst₁-to : ({a b : E} {zs ws : List E} {a≈b : a ≈E b}
-      → (zs≅ws : BagEq zs ws) (a∈zs : a ∈₀ zs)
-      → ∈₀-subst₁ a≈b (∈₀-subst₂ zs≅ws a∈zs) ≋ ∈₀-subst₂ zs≅ws (∈₀-subst₁ a≈b a∈zs)
+      → (zs≅ws : OldBagEq zs ws) (a∈zs : a ∈₀ zs)
+      → ∈₀-subst₁ a≈b (_≅_.to zs≅ws ⟨$⟩ a∈zs) ≋ _≅_.to zs≅ws ⟨$⟩ (∈₀-subst₁ a≈b a∈zs)
       ) → ⊥ {lzero}
   ¬-∈₀-subst₁-to ∈₀-subst₁-to with
     ∈₀-subst₁-to {E₁} {E₂} {xs} {ys} {E₁₂} xs≊ys (here {a = E₁} ≈E-refl ≈E-refl)

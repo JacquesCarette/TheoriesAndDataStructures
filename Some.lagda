@@ -2,7 +2,7 @@
 
 %{{{ Imports
 \begin{code}
-module Some where
+module Some2 where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
@@ -24,8 +24,6 @@ open import TypeEquiv using (swap₊)
 open import SetoidSetoid
 
 \end{code}
-
-Convenient syntax for |Setoid| equivalence.
 
 \begin{code}
 infix 4 inSetoidEquiv
@@ -127,12 +125,11 @@ there will be 6 different ways in which that list, as a Bag, is equivalent to it
    ≡→≋ : {xs : List A} {p q : Some₀ S P₀ xs} → p ≡ q → p ≋ q
    ≡→≋ ≡.refl = ≋-refl
 
-module _ {ℓS ℓs ℓP ℓp} {S : Setoid ℓS ℓs} (P : S ⟶ SSetoid ℓP ℓp) where
+module _ {ℓS ℓs ℓP} {S : Setoid ℓS ℓs} (P₀ : Setoid.Carrier S → Set ℓP) where
    open Setoid S
-   private P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
    open Locations
 
-   Some : List Carrier → Setoid ((ℓS ⊔ ℓs) ⊔ ℓp) (ℓS ⊔ ℓs)
+   Some : List Carrier → Setoid ((ℓS ⊔ ℓs) ⊔ ℓP) (ℓS ⊔ ℓs)
    Some xs = record
      { Carrier         =   Some₀ S P₀ xs
      ; _≈_             =   _≋_
@@ -169,19 +166,18 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 
 \restorecolumns
 \begin{code}
-  setoid≈ : Carrier → S ⟶ SSetoid ℓs ℓs
+  -- the levels might be off
+  setoid≈ : Carrier → (S ⟶ ProofSetoid ℓs ℓs)
   setoid≈ x = record
-    { _⟨$⟩_ = λ (y : Carrier) → _≈S_ {S = S} x y
+    { _⟨$⟩_ = λ s → _≈S_ {S = S} x s
     ; cong = λ i≈j → record
-      { to = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j ; cong = λ _ → tt }
-      ; from = record { _⟨$⟩_ = λ x≈j → x≈j ⟨≈≈˘⟩ i≈j ; cong = λ _ → tt }
-      }
-    }
+      { to   = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈⟩ i≈j  ; cong = λ _ → tt }
+      ; from = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈˘⟩ i≈j ; cong = λ _ → tt } } }
 
   infix 4 _∈₀_ _∈_
 
   _∈_ : Carrier → List Carrier → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
-  x ∈ xs = Some (setoid≈ x) xs
+  x ∈ xs = Some {S = S} (_≈_ x) xs
 
   _∈₀_ : Carrier → List Carrier → Set (ℓS ⊔ ℓs)
   x ∈₀ xs = Setoid.Carrier (x ∈ xs)
@@ -274,7 +270,7 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
                   → ∈₀-subst₂ xs≅ys p ≋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
-  transport : {ℓQ ℓq : Level} → (Q : S ⟶ SSetoid ℓQ ℓq) →
+  transport : {ℓQ ℓq : Level} → (Q : S ⟶ ProofSetoid ℓQ ℓq) →
     let Q₀ = λ e → Setoid.Carrier (Q ⟨$⟩ e) in
     {a x : Carrier} (p : Q₀ a) (a≈x : a ≈ x) → Q₀ x
   transport Q p a≈x = Equivalence.to (Π.cong Q a≈x) ⟨$⟩ p
@@ -304,8 +300,8 @@ elements |y| of |Carrier S| to the setoid of "|x ≈ₛ y|".
 %{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
 \begin{code}
-module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp} where
-  ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)
+module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} {P₀ : Setoid.Carrier A → Set ℓP} where
+  ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P₀ xs ⊎⊎ Some P₀ ys) ≅ Some P₀ (xs ++ ys)
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs }
@@ -316,7 +312,6 @@ module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid
     }
     where
       open Setoid A
-      private P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
       open Locations
 
       _∽_ = _≋_ ; ∽-refl = ≋-refl {S = A} {P₀}
@@ -403,9 +398,9 @@ module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid
 \end{code}
 
 \begin{code}
-module _ {ℓS ℓs ℓP ℓp : Level} {S : Setoid ℓS ℓs} {P : S ⟶ SSetoid ℓP ℓp} where
+module _ {ℓS ℓs ℓP ℓp : Level} {S : Setoid ℓS ℓs} {P : S ⟶ ProofSetoid ℓP ℓp} where
 
-  ⊥≅Some[] : ⊥⊥ {ℓp ⊔ (ℓS ⊔ ℓs)} {ℓp ⊔ (ℓS ⊔ ℓs)} ≅ Some P []
+  ⊥≅Some[] : ⊥⊥ {(ℓS ⊔ ℓs) ⊔ ℓP} {(ℓS ⊔ ℓs) ⊔ ℓp} ≅ Some {S = S} (λ e → Setoid.Carrier (P ⟨$⟩ e)) []
   ⊥≅Some[] = record
     { to          =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
     ; from        =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
@@ -417,8 +412,10 @@ module _ {ℓS ℓs ℓP ℓp : Level} {S : Setoid ℓS ℓs} {P : S ⟶ SSetoid
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \begin{code}
-map≅ : ∀ {ℓS ℓs ℓP ℓp} {A B : Setoid ℓS ℓs} {P : B ⟶ SSetoid ℓP ℓp} {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
-       Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)
+map≅ : {ℓS ℓs ℓP ℓp : Level} {A B : Setoid ℓS ℓs} {P : B ⟶ ProofSetoid ℓP ℓp} →
+         let P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e) in
+         {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
+       Some {S = A} (P₀ ⊚ (_⟨$⟩_ f)) xs ≅ Some {S = B} P₀ (map (_⟨$⟩_ f) xs)
 map≅ {A = A} {B} {P} {f} = record
   { to = record { _⟨$⟩_ = map⁺ ; cong = map⁺-cong }
   ; from = record { _⟨$⟩_ = map⁻ ; cong = map⁻-cong }
@@ -428,9 +425,9 @@ map≅ {A = A} {B} {P} {f} = record
   open Setoid
   open Membership using (transport)
   A₀ = Setoid.Carrier A
-  P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
   open Locations
-  _∼_ = _≋_ {S = B} {P₀ = P₀}
+  _∼_ = _≋_ {S = B}
+  P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
 
   map⁺ : {xs : List A₀} → Some₀ A (P₀ ⊚ _⟨$⟩_ f) xs → Some₀ B P₀ (map (_⟨$⟩_ f) xs)
   map⁺ (here a≈x p)  = here (Π.cong f a≈x) p
@@ -468,14 +465,14 @@ map≅ {A = A} {B} {P} {f} = record
 \subsection{FindLose}
 
 \begin{code}
-module FindLose {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs}  (P : A ⟶ SSetoid ℓP ℓp) where
+module FindLose {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs}  (P : A ⟶ ProofSetoid ℓP ℓp) where
   open Membership A
   open Setoid A
   open Π
   open _≅_
   open Locations
   private
-    P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
 
   find : {ys : List Carrier} → Some₀ A P₀ ys → Support ys
@@ -500,11 +497,13 @@ This is an ``unpacked'' version of |Some|, where each piece (see |Support| below
 separated out.  For some equivalences, it seems to work with this representation.
 
 \begin{code}
-module _ {ℓs ℓS ℓP ℓp : Level} (A : Setoid ℓs ℓS) (P : A ⟶ SSetoid ℓP ℓp) where
+module _ {ℓS ℓs ℓP ℓp : Level} (A : Setoid ℓS ℓs) (P : A ⟶ ProofSetoid ℓP ℓp) where
   open Membership A
   open Setoid A
   private
-    P₀ = λ e → Setoid.Carrier (Π._⟨$⟩_ P e)
+    P₀ : (e : Carrier) → Set ℓP
+    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
+    Support : (ys : List Carrier) → Set (ℓS ⊔ (ℓs ⊔ ℓP))
     Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
     squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓp
     squish _ _ = ⊤
@@ -517,8 +516,8 @@ module _ {ℓs ℓS ℓP ℓp : Level} (A : Setoid ℓs ℓS) (P : A ⟶ SSetoid
   (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =
     Σ (a ≈ b) (λ a≈b → a∈xs ≋₀ b∈xs × squish Pa Pb)
 
-  Σ-Setoid : (ys : List Carrier) → Setoid ((ℓS ⊔ ℓs) ⊔ ℓp) ((ℓS ⊔ ℓs) ⊔ ℓp)
-  Σ-Setoid [] = ⊥⊥
+  Σ-Setoid : (ys : List Carrier) → Setoid ((ℓS ⊔ ℓs) ⊔ ℓP) ((ℓS ⊔ ℓs) ⊔ ℓp)
+  Σ-Setoid [] = ⊥⊥ {ℓP ⊔ (ℓS ⊔ ℓs)}
   Σ-Setoid (y ∷ ys) = record
     { Carrier = Support (y ∷ ys)
     ; _≈_ = _∻_
@@ -567,8 +566,8 @@ module _ {ℓs ℓS ℓP ℓp : Level} (A : Setoid ℓs ℓS) (P : A ⟶ SSetoid
     let (α₁ , α₂ , α₃) = right-inv (y , y∈ys , Py) in
     (α₁ , thereEq α₂ , α₃)
 
-  Σ-Some : (xs : List Carrier) → Some P xs ≅ Σ-Setoid xs
-  Σ-Some [] = ≅-sym (⊥≅Some[] {S = A} {P})
+  Σ-Some : (xs : List Carrier) → Some {S = A} P₀ xs ≅ Σ-Setoid xs
+  Σ-Some [] =  ≅-sym (⊥≅Some[] {S = A} {P})
   Σ-Some (x ∷ xs) =  record
     { to = record { _⟨$⟩_ = find ; cong = find-cong }
     ; from = record { _⟨$⟩_ = lose ; cong = forget-cong }
@@ -619,20 +618,21 @@ depends on |Some|, which depends on |_≋_|. If that now depends on |BagEq|,
 we've got a mutual recursion that seems unecessary.}
 
 \begin{code}
-module _ {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs} {P : A ⟶ SSetoid ℓP ℓp} where
+module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} {P : A ⟶ ProofSetoid ℓP ℓs} where
 
   open Membership A
   open Setoid A
-  private P₀ = λ e → (Π._⟨$⟩_ P e)
+  private
+    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
 
   Some-cong : {xs₁ xs₂ : List Carrier} →
             BagEq xs₁ xs₂ →
-            Some P xs₁ ≅ Some P xs₂
+            Some P₀ xs₁ ≅ Some P₀ xs₂
   Some-cong {xs₁} {xs₂} xs₁≅xs₂ =
-    Some P xs₁         ≅⟨ Σ-Some A P xs₁ ⟩
+    Some P₀ xs₁        ≅⟨ Σ-Some A P xs₁ ⟩
     Σ-Setoid A P xs₁   ≅⟨ Σ-cong A P xs₁≅xs₂ ⟩
     Σ-Setoid A P xs₂   ≅⟨ ≅-sym (Σ-Some A P xs₂) ⟩
-    Some P xs₂ ∎
+    Some P₀ xs₂ ∎
 \end{code}
 
 %}}}

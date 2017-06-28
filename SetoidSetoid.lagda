@@ -14,12 +14,13 @@ open import SetoidEquiv
 \end{code}
 %}}}
 
-%{{{ _≈S_ ; SSetoid
-Setoid of setoids |SSetoid|, and ``setoid'' of equality proofs.
+%{{{ _≈S_ ; ProofSetoid
+Setoid of proofs |ProofSetoid| (up to |Equivalence|), and Setoid of
+equality proofs in a given setoid.
 \begin{code}
-SSetoid : (o ℓ : Level) → Setoid (lsuc ℓ ⊍ lsuc o) (ℓ ⊍ o)
-SSetoid o ℓ = record
-  { Carrier = Setoid ℓ o
+ProofSetoid : (ℓP ℓp : Level) → Setoid (lsuc ℓP ⊍ lsuc ℓp) (ℓP ⊍ ℓp)
+ProofSetoid ℓP ℓp = record
+  { Carrier = Setoid ℓP ℓp
   ; _≈_ = Equivalence
   ; isEquivalence = record
     { refl = id ; sym = sym ; trans = flip _∘_ } }
@@ -29,7 +30,7 @@ Given two elements of a given Setoid |A|, define a Setoid of equivalences of
 those elements.  We consider all such equivalences to be equivalent.  In other
 words, for |e₁ e₂ : Setoid.Carrier A|, then |e₁ ≈ₛ e₂|, as a type, is contractible.
 \begin{code}
-_≈S_ : ∀ {ℓs ℓS ℓp} {S : Setoid ℓs ℓS} → (e₁ e₂ : Setoid.Carrier S) → Setoid ℓS ℓp
+_≈S_ : ∀ {ℓs ℓS ℓp} {S : Setoid ℓS ℓs} → (e₁ e₂ : Setoid.Carrier S) → Setoid ℓs ℓp
 _≈S_ {S = S} e₁ e₂ = let open Setoid S renaming (_≈_ to _≈ₛ_) in
   record { Carrier = e₁ ≈ₛ e₂ ; _≈_ = λ _ _ → ⊤
          ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }

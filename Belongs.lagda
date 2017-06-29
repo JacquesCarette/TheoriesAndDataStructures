@@ -162,8 +162,8 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
   infix 4 _∈_
 
   open Setoid S
-  open Locations S public
-  open LocEquiv S public
+  open Locations S
+  open LocEquiv S
 
   _∈_ : Carrier → List Carrier → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
   x ∈ xs = record
@@ -276,11 +276,6 @@ and this is independent of the representative.
                   → ∈₀-subst₂ xs≅ys p ≋ ∈₀-subst₂ xs≅ys q
   ∈₀-subst₂-cong xs≅ys = cong (∈₀-Subst₂ xs≅ys)
 
-  transport : {ℓQ ℓq : Level} → (Q : S ⟶ ProofSetoid ℓQ ℓq) →
-    let Q₀ = λ e → Setoid.Carrier (Q ⟨$⟩ e) in
-    {a x : Carrier} (p : Q₀ a) (a≈x : a ≈ x) → Q₀ x
-  transport Q p a≈x = Equivalence.to (Π.cong Q a≈x) ⟨$⟩ p
-
   ∈₀-subst₁-elim : {x : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) →
     ∈₀-subst₁ refl x∈xs ≋ x∈xs
   ∈₀-subst₁-elim (here sm px) = hereEq (refl ⟨≈˘≈⟩ px) px sm sm
@@ -304,11 +299,16 @@ and this is independent of the representative.
 \end{spec}
 %}}}
 
-%{{{ \subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
-\subsection{|++≅ : ⋯ → (Some P xs ⊎⊎ Some P ys) ≅ Some P (xs ++ ys)|}
-\begin{spec}
-module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} (P₀ : Setoid.Carrier A → Set ℓP) where
-  ++≅ : {xs ys : List (Setoid.Carrier A) } → (Some P₀ xs ⊎⊎ Some P₀ ys) ≅ Some P₀ (xs ++ ys)
+%{{{ \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
+\subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
+\begin{code}
+module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+  open Setoid S renaming (Carrier to A)
+  open LocEquiv S
+  open Locations S
+  open Membership S
+
+  ++≅ : {xs ys : List A } {x : A} → (x ∈ xs ⊎⊎ x ∈ ys) ≅ (x ∈ (xs ++ ys))
   ++≅ {xs} {ys} = record
     { to = record { _⟨$⟩_ = ⊎→++ ; cong =  ⊎→++-cong  }
     ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = new-cong xs }
@@ -318,65 +318,56 @@ module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} (P₀ : Setoid.Carrier 
       }
     }
     where
-      open Setoid A
-      open Locations
-
-      _∽_ = _≋_ ; ∽-refl = ≋-refl {S = A} {P₀}
-
       -- ``ealier''
-      ⊎→ˡ : ∀ {ws zs} → Some₀ A P₀ ws → Some₀ A P₀ (ws ++ zs)
-      ⊎→ˡ (here p a≈x) = here p a≈x
+      ⊎→ˡ : {ws zs : List A} {x : A} → x ∈₀ ws → x ∈₀ (ws ++ zs)
+      ⊎→ˡ (here a≈x) = here a≈x
       ⊎→ˡ (there p) = there (⊎→ˡ p)
 
-      yo : {xs : List Carrier} {x y : Some₀ A P₀ xs} → x ∽ y   →   ⊎→ˡ x  ∽  ⊎→ˡ y
-      yo (hereEq px py _ _) = hereEq px py _ _
+      yo : {ws zs : List A} {z : A} {a b : z ∈₀ ws} → a ≋ b   →   ⊎→ˡ {ws} {zs} a  ≋  ⊎→ˡ b
+      yo (hereEq _ _) = hereEq _ _
       yo (thereEq pf) = thereEq (yo pf)
 
       -- ``later''
-      ⊎→ʳ : ∀ xs {ys} → Some₀ A P₀ ys → Some₀ A P₀ (xs ++ ys)
+      ⊎→ʳ : ∀ {x} xs {ys} → x ∈₀ ys → x ∈₀ (xs ++ ys)
       ⊎→ʳ []       p = p
       ⊎→ʳ (x ∷ xs) p = there (⊎→ʳ xs p)
 
-      oy : (xs : List Carrier) {x y : Some₀ A P₀ ys} → x ∽ y   →   ⊎→ʳ xs x  ∽  ⊎→ʳ xs y
+      oy : {z : A} (xs : List A) {x y : z ∈₀ ys} → x ≋ y   →   ⊎→ʳ xs x  ≋  ⊎→ʳ xs y
       oy [] pf = pf
       oy (x ∷ xs) pf = thereEq (oy xs pf)
 
-      -- |Some₀| is |++→⊎|-homomorphic, in the second argument.
-
-      ⊎→++ : ∀ {zs ws} → (Some₀ A P₀ zs ⊎ Some₀ A P₀ ws) → Some₀ A P₀ (zs ++ ws)
+      ⊎→++ : ∀ {zs ws z} → (z ∈₀ zs ⊎ z ∈₀ ws) → z ∈₀ (zs ++ ws)
       ⊎→++      (inj₁ x) = ⊎→ˡ x
       ⊎→++ {zs} (inj₂ y) = ⊎→ʳ zs y
 
-      ++→⊎ : ∀ xs {ys} → Some₀ A P₀ (xs ++ ys) → Some₀ A P₀ xs ⊎ Some₀ A P₀ ys
+      ++→⊎ : ∀ xs {ys} {z} → z ∈₀ (xs ++ ys) → z ∈₀ xs ⊎ z ∈₀ ys
       ++→⊎ []             p    = inj₂ p
-      ++→⊎ (x ∷ l) (here  p _) = inj₁ (here p _)
+      ++→⊎ (x ∷ l) (here  _) = inj₁ (here _)
       ++→⊎ (x ∷ l) (there p)   = (there ⊎₁ id₀) (++→⊎ l p)
 
-      -- all of the following may need to change
-
-      ⊎→++-cong : {a b : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys} → (_∽_ ∥ _∽_) a b → ⊎→++ a ∽ ⊎→++ b
+      ⊎→++-cong : {x : A} {a b : x ∈₀ xs ⊎ x ∈₀ ys} → (_≋_ ∥ _≋_) a b → ⊎→++ a ≋ ⊎→++ b
       ⊎→++-cong (left  x₁∼x₂)  =  yo x₁∼x₂
       ⊎→++-cong (right y₁∼y₂)  =  oy xs y₁∼y₂
 
-      ∽∥∽-cong   :  {xs ys us vs : List Carrier}
-                    (F : Some₀ A P₀ xs → Some₀ A P₀ us)
-                    (F-cong : {p q : Some₀ A P₀ xs} → p ∽ q → F p ∽ F q)
-                    (G : Some₀ A P₀ ys → Some₀ A P₀ vs)
-                    (G-cong : {p q : Some₀ A P₀ ys} → p ∽ q → G p ∽ G q)
-                    → {pf pf' : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys}
-                    → (_∽_ ∥ _∽_) pf pf' → (_∽_ ∥ _∽_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
+      ∽∥∽-cong   :  {x : A} {xs ys us vs : List A}
+                    (F : x ∈₀ xs → x ∈₀ us)
+                    (F-cong : {p q : x ∈₀ xs} → p ≋ q → F p ≋ F q)
+                    (G : x ∈₀ ys → x ∈₀ vs)
+                    (G-cong : {p q : x ∈₀ ys} → p ≋ q → G p ≋ G q)
+                    → {pf pf' : x ∈₀ xs ⊎ x ∈₀ ys}
+                    → (_≋_ ∥ _≋_) pf pf' → (_≋_ ∥ _≋_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
       ∽∥∽-cong F F-cong G G-cong (left x~₁y) = left (F-cong x~₁y)
       ∽∥∽-cong F F-cong G G-cong (right x~₂y) = right (G-cong x~₂y)
 
-      new-cong : (xs : List Carrier) {i j : Some₀ A P₀ (xs ++ ys)} → i ∽ j → (_∽_ ∥ _∽_) (++→⊎ xs i) (++→⊎ xs j)
+      new-cong : {x : A} (xs : List A) {i j : x ∈₀ (xs ++ ys)} → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ xs i) (++→⊎ xs j)
       new-cong [] pf = right pf
-      new-cong (x ∷ xs) (hereEq px py _ _) = left (hereEq px py _ _)
+      new-cong (x ∷ xs) (hereEq _ _) = left (hereEq _ _)
       new-cong (x ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (new-cong xs pf)
 
-      lefty : (xs {ys} : List Carrier) (p : Some₀ A P₀ xs ⊎ Some₀ A P₀ ys) → (_∽_ ∥ _∽_) (++→⊎ xs (⊎→++ p)) p
+      lefty : {x : A} (xs {ys} : List A) (p : x ∈₀ xs ⊎ x ∈₀ ys) → (_≋_ ∥ _≋_) (++→⊎ xs (⊎→++ p)) p
       lefty [] (inj₁ ())
       lefty [] (inj₂ p) = right ≋-refl
-      lefty (x ∷ xs) (inj₁ (here px _)) = left ∽-refl
+      lefty (x ∷ xs) (inj₁ (here _)) = left ≋-refl
       lefty (x ∷ xs) {ys} (inj₁ (there p)) with ++→⊎ xs {ys} (⊎→++ (inj₁ p)) | lefty xs {ys} (inj₁ p)
       ... | inj₁ _ | (left x~₁y) = left (thereEq x~₁y)
       ... | inj₂ _ | ()
@@ -384,13 +375,13 @@ module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} (P₀ : Setoid.Carrier 
       ... | inj₁ x | ()
       ... | inj₂ y | (right x~₂y) = right x~₂y
 
-      righty : (zs {ws} : List Carrier) (p : Some₀ A P₀ (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ∽ p
-      righty [] {ws} p = ∽-refl
-      righty (x ∷ zs) {ws} (here px _) = ∽-refl
+      righty : {x : A} (zs {ws} : List A) (p : x ∈₀ (zs ++ ws)) → (⊎→++ (++→⊎ zs p)) ≋ p
+      righty []       {ws} p        = ≋-refl
+      righty (x ∷ zs) {ws} (here _) = ≋-refl
       righty (x ∷ zs) {ws} (there p) with ++→⊎ zs p | righty zs p
-      ... | inj₁ _  | res = thereEq res
-      ... | inj₂ _  | res = thereEq res
-\end{spec}
+      ... | inj₁ _  | res           = thereEq res
+      ... | inj₂ _  | res           = thereEq res
+\end{code}
 %}}}
 
 %{{{ \subsection{Bottom as a setoid} ⊥⊥ ; ⊥≅Some[] : ⊥⊥ ≅ Some P []

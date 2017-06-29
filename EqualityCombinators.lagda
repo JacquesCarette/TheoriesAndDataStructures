@@ -126,6 +126,38 @@ module _ {c l : Level} {S : Setoid c l} where
 A host of similar such combinators can be found within the RATH-Agda library.
 %}}}
 
+%{{{ _⟨≈⁺≈⁺⟩_
+\subsection{More Equational Reasoning for |Setoid|}
+
+A few convenient combinators for equational reasoning in |Setoid|.
+
+\savecolumns
+\begin{code}
+module SetoidCombinators {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+  open Setoid S renaming (trans to _⟨≈≈⟩_)
+  _⟨≈˘≈⟩_ : {a b c : Carrier} → b ≈ a → b ≈ c → a ≈ c
+  _⟨≈˘≈⟩_ = λ b≈a b≈c → sym b≈a ⟨≈≈⟩ b≈c
+  _⟨≈≈˘⟩_ : {a b c : Carrier} → a ≈ b → c ≈ b → a ≈ c
+  _⟨≈≈˘⟩_ = λ a≈b c≈b → a≈b ⟨≈≈⟩ sym c≈b
+  _⟨≈˘≈˘⟩_ : {a b c : Carrier} → b ≈ a → c ≈ b → a ≈ c
+  _⟨≈˘≈˘⟩_ = λ b≈a c≈b → b≈a ⟨≈˘≈⟩ sym c≈b
+\end{code}
+%}}}
+
+%{{{ inSetoidEquiv ; x ≈⌊ S ⌋ y
+\subsection{Localising Equality}
+Convenient syntax for when we need to specify which |Setoid|'s equality we are
+talking about.
+
+\begin{code}
+infix 4 inSetoidEquiv
+inSetoidEquiv : {ℓS ℓs : Level} → (S : Setoid ℓS ℓs) → (x y : Setoid.Carrier S) → Set ℓs
+inSetoidEquiv = Setoid._≈_
+
+syntax inSetoidEquiv S x y = x ≈⌊ S ⌋ y
+\end{code}
+%}}}
+
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

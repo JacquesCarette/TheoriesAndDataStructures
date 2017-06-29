@@ -2,7 +2,7 @@
 
 %{{{ Imports
 \begin{code}
-module Some2 where
+module Some where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
@@ -22,16 +22,8 @@ open import ParComp
 
 open import TypeEquiv using (swap₊)
 open import SetoidSetoid
-
 \end{code}
 
-\begin{code}
-infix 4 inSetoidEquiv
-inSetoidEquiv : {ℓs ℓS : Level} → (S : Setoid ℓs ℓS) → Setoid.Carrier S → Setoid.Carrier S → Set ℓS
-inSetoidEquiv = Setoid._≈_
-
-syntax inSetoidEquiv S x y = x ≈⌊ S ⌋ y
-\end{code}
 %}}}
 
 The goal of this section is to capture a notion that we have a proof
@@ -152,13 +144,8 @@ First, define a few convenient combinators for equational reasoning in
 module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Locations
 
+  open SetoidCombinators S public
   open Setoid S renaming (trans to _⟨≈≈⟩_)
-  _⟨≈˘≈⟩_ : {a b c : Carrier} → b ≈ a → b ≈ c → a ≈ c
-  _⟨≈˘≈⟩_ = λ b≈a b≈c → sym b≈a ⟨≈≈⟩ b≈c
-  _⟨≈≈˘⟩_ : {a b c : Carrier} → a ≈ b → c ≈ b → a ≈ c
-  _⟨≈≈˘⟩_ = λ a≈b c≈b → a≈b ⟨≈≈⟩ sym c≈b
-  _⟨≈˘≈˘⟩_ : {a b c : Carrier} → b ≈ a → c ≈ b → a ≈ c
-  _⟨≈˘≈˘⟩_ = λ b≈a c≈b → b≈a ⟨≈˘≈⟩ sym c≈b
 \end{code}
 
 |setoid≈ x| is actually a mapping from |S| to |SSetoid _ _|; it maps

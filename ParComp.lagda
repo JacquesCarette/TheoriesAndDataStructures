@@ -1,13 +1,13 @@
-\section{Some}
+\section{Parallel Composition}
 
 %{{{ Imports
 \begin{code}
 module ParComp where
 
 open import Level
-open import Relation.Binary using (Setoid)
-open import Function using (_∘_)
-open import Function.Equality using (Π; _⟨$⟩_; cong)
+open import Relation.Binary    using  (Setoid)
+open import Function           using  (_∘_)
+open import Function.Equality  using  (Π; _⟨$⟩_; cong)
 
 open import DataProperties
 open import SetoidEquiv
@@ -43,6 +43,20 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
 [ F ∥ G ] (left  x~y) = F x~y
 [ F ∥ G ] (right x~y) = G x~y
 
+-- non-dependent eliminator
+[_∥_]′ : {a₁ b₁ c₁ a₂ b₂ c₂ ℓ : Level}
+        {A₁ : Set a₁} {B₁ : Set b₁} {_~₁_ : A₁ → B₁ → Set c₁}
+        {A₂ : Set a₂} {B₂ : Set b₂} {_~₂_ : A₂ → B₂ → Set c₂}
+     →
+        {Z : (a : A₁ ⊎ A₂) (b : B₁ ⊎ B₂) → Set ℓ}
+        (F : {a : A₁} {b : B₁} (a~b : a ~₁ b) → Z (inj₁ a) (inj₁ b))
+        (G : {a : A₂} {b : B₂} (a~b : a ~₂ b) → Z (inj₂ a) (inj₂ b))
+     →
+        {x : A₁ ⊎ A₂} {y : B₁ ⊎ B₂}
+     → (_~₁_ ∥ _~₂_) x y  → Z x y
+[ F ∥ G ]′ (left  x~y) = F x~y
+[ F ∥ G ]′ (right x~y) = G x~y
+
 -- If the argument relations are symmetric then so is their parallel composition.
 ∥-sym : {a a′ c c′ : Level} {A : Set a} {_~_ : A → A → Set c}
   {A′ : Set a′} {_~′_ : A′ → A′ → Set c′}
@@ -53,17 +67,17 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
 ∥-sym sym₁ sym₂ (left x~y )  =  left  (sym₁ x~y)
 ∥-sym sym₁ sym₂ (right x~y)  =  right (sym₂ x~y)
 --
--- ought to be just: |[ left ∘ sym₁ ∥ right ∘ sym₂ ]|
----
+--
 -- Instead, I can use, with much distasteful yellow,
--- |∥-sym sym₁ sym₂ = [ (λ pf → left (sym₁ pf)) ∥ (λ pf → right (sym₂ pf)) ] |
+-- |∥-sym sym₁ sym₂ = [ left ∘ sym₁ ∥ right ∘ sym₂ ]′|
 
+-- Motivation for introducing parallel composition:
 infix 3 _⊎⊎_
 _⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
 A ⊎⊎ B = record
-  { Carrier = A₀ ⊎ B₀
-  ; _≈_ = ≈₁ ∥ ≈₂
-  ; isEquivalence = record
+  { Carrier         =   A₀ ⊎ B₀
+  ; _≈_             =   ≈₁ ∥ ≈₂
+  ; isEquivalence   =   record
     { refl   =  λ{ {inj₁ x} → left refl₁ ; {inj₂ x} → right refl₂ }
     ; sym    =  λ{ (left eq) → left (sym₁ eq) ; (right eq) → right (sym₂ eq)}
                 -- ought to be writable as [ left ∘ sym₁ ∥ right ∘ sym₂ ]
@@ -92,7 +106,7 @@ A ⊎⊎ B = record
     open Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁)
     open Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂)
 
-    swap-on-∥ : {i j : A₀ ⊎ B₀} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)
+    swap-on-∥ : {i j : A₀ ⊎ B₀} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)    
     swap-on-∥ (left  x∼₁y)  =  right x∼₁y
     swap-on-∥ (right x∼₂y)  =  left  x∼₂y
 
@@ -119,43 +133,45 @@ A ⊎⊎ B = record
 \begin{code}
 _⊎⊎₁_ : {a b c d aℓ bℓ cℓ dℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} {C : Setoid c cℓ}
   {D : Setoid d dℓ} → A ≅ C → B ≅ D → (A ⊎⊎ B) ≅ (C ⊎⊎ D)
-_⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D =
-  let A→C = _⟨$⟩_ (to   A≅C) in let B→D = _⟨$⟩_ (to   B≅D) in
-  let C→A = _⟨$⟩_ (from A≅C) in let D→B = _⟨$⟩_ (from B≅D) in
-  record
-  { to = record   { _⟨$⟩_ = A→C   ⊎₁ B→D
-                  ; cong = cong-AB }
-  ; from = record { _⟨$⟩_ = _⟨$⟩_ (from A≅C) ⊎₁ _⟨$⟩_ (from B≅D)
-                  ; cong = cong-CD }
-  ; inverse-of = record
-    { left-inverse-of  = left-inv
-    ; right-inverse-of = right-inv }
+_⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D = record
+  { to           =   record { _⟨$⟩_ = A→C   ⊎₁ B→D ; cong = cong-AB }
+  ; from         =   record { _⟨$⟩_ = _⟨$⟩_ (from A≅C) ⊎₁ _⟨$⟩_ (from B≅D) ; cong = cong-CD }
+  ; inverse-of   =   record { left-inverse-of  = left-inv ; right-inverse-of = right-inv }
   }
   where
+  
     open _≅_
+    
     A→C = _⟨$⟩_ (to A≅C)
     B→D = _⟨$⟩_ (to B≅D)
     C→A = _⟨$⟩_ (from A≅C)
     D→B = _⟨$⟩_ (from B≅D)
+    
     open Setoid A renaming (Carrier to AA; _≈_ to _≈₁_)
     open Setoid B renaming (Carrier to BB; _≈_ to _≈₂_)
     open Setoid C renaming (Carrier to CC; _≈_ to _≈₃_)
     open Setoid D renaming (Carrier to DD; _≈_ to _≈₄_)
-    cong-AB : {i j : AA ⊎ BB} → (_≈₁_ ∥ _≈₂_) i j → (_≈₃_ ∥ _≈₄_) ((A→C ⊎₁ B→D) i) ((A→C ⊎₁ B→D) j)
+
+    _≈∥≈₁₂_  =  _≈₁_ ∥ _≈₂_
+    _≈∥≈₃₄_  =  _≈₃_ ∥ _≈₄_
+
+    cong-AB : {i j : AA ⊎ BB} → i ≈∥≈₁₂ j → (A→C ⊎₁ B→D) i  ≈∥≈₃₄  (A→C ⊎₁ B→D) j
     cong-AB (left x~₁y) = left   (cong (to A≅C) x~₁y)
     cong-AB (right x~₂y) = right (cong (to B≅D) x~₂y)
 
-    cong-CD : {i j : CC ⊎ DD} → (_≈₃_ ∥ _≈₄_) i j → (_≈₁_ ∥ _≈₂_) ((C→A ⊎₁ D→B) i) ((C→A ⊎₁ D→B) j)
+    cong-CD : {i j : CC ⊎ DD} → i ≈∥≈₃₄ j → (C→A ⊎₁ D→B) i  ≈∥≈₁₂  (C→A ⊎₁ D→B) j
     cong-CD (left x~₁y) = left   (cong (from A≅C) x~₁y)
     cong-CD (right x~₂y) = right (cong (from B≅D) x~₂y)
 
-    left-inv : (x : AA ⊎ BB) → (_≈₁_ ∥ _≈₂_) ((C→A ⊎₁ D→B) ((A→C ⊎₁ B→D) x)) x
+    left-inv : (x : AA ⊎ BB) → (C→A ⊎₁ D→B) ((A→C ⊎₁ B→D) x)  ≈∥≈₁₂  x
     left-inv (inj₁ x) = left  (left-inverse-of A≅C x)
     left-inv (inj₂ y) = right (left-inverse-of B≅D y)
 
-    right-inv : (x : CC ⊎ DD) → (_≈₃_ ∥ _≈₄_) ((A→C ⊎₁ B→D) ((C→A ⊎₁ D→B) x)) x
+    right-inv : (x : CC ⊎ DD) → (A→C ⊎₁ B→D) ((C→A ⊎₁ D→B) x)  ≈∥≈₃₄  x
     right-inv (inj₁ x) = left  (right-inverse-of A≅C x)
     right-inv (inj₂ y) = right (right-inverse-of B≅D y)
+
+    -- \edcomm{MA}{Ideally the eliminator would work and we'd use it to simplify the above inv-proofs.}
 \end{code}
 %}}}
 

@@ -1,3 +1,5 @@
+\section{Structures.CommMonoid}
+
 %{{{ Imports
 \begin{code}
 module Structures.CommMonoid where
@@ -15,7 +17,7 @@ open import Function2         using (_$ᵢ)
 open import Function          using () renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
-open import Relation.Binary.Sum -- using (_⊎-setoid_)
+open import Relation.Binary.Sum
 
 open import Forget
 open import EqualityCombinators
@@ -23,11 +25,11 @@ open import DataProperties
 open import SetoidEquiv
 open import ParComp
 open import Some
-
 \end{code}
 %}}}
 
 %{{{ CommMonoid ; Hom
+\subsection{Definitions}
 \begin{code}
 record CommMonoid {ℓ} {o} : Set (lsuc ℓ ⊍ lsuc o) where
   constructor MkCommMon
@@ -70,6 +72,7 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 %}}}
 
 %{{{ MonoidCat ; Forget
+\subsection{Category and Forgetful Functor}
 \begin{code}
 MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (ℓ ⊍ o)
 MonoidCat ℓ o = record
@@ -109,7 +112,7 @@ Forget ℓ o = record
 %}}}
 
 %{{{ Multiset
-
+\subsection{Multiset}
 A “multiset on type X” is a commutative monoid with a map to it from |X|.
 \edcomm{WK}{Misnomer!}
 For now, we make no constraints on the map, however it may be that
@@ -140,6 +143,7 @@ open MultisetHom
 %}}}
 
 %{{{ ListMS
+\subsection{ListMS}
 \begin{code}
 abstract
   ListMS : {ℓ o : Level} (X : Setoid ℓ o) → Multiset X
@@ -152,14 +156,14 @@ abstract
         ; right-unit = λ {xs} → ≡→BE (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→BE (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} → BE (λ {z} →
-          z ∈ xs ++ ys        ≅⟨ ≅-sym (++≅ {P = setoid≈ z}) ⟩
+          z ∈ xs ++ ys         ≅⟨ {!!} ⟩ -- |≅⟨ ≅-sym (++≅ {P = setoid≈ z}) ⟩|
           (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎⊎-comm ⟩
-          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ ++≅ {P = setoid≈ z}⟩
+          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- |≅⟨ ++≅ {P = setoid≈ z}⟩|
           z ∈ ys ++ xs  ∎) {!!} {!!}
         ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w → BE (λ {t} →
-           t ∈ x ++ z        ≅⟨ ≅-sym (++≅ {P = setoid≈ t}) ⟩
+           t ∈ x ++ z        ≅⟨ {!!} ⟩ -- |≅-sym (++≅ {P = setoid≈ t}) |
           (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ (permut x≈y) ⊎⊎₁ (permut z≈w) ⟩
-          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ ++≅ {P = setoid≈ t}⟩
+          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ {!!} ⟩ -- |++≅ {P = setoid≈ t} |
            t ∈ y ++ w ∎) {!!} {!!}
         }
     ; singleton = λ x → x ∷ []
@@ -193,8 +197,8 @@ abstract
       { _⟨$⟩_ = mapL g
       ; cong = λ {xs} {ys} xs≈ys → BE (λ {y} →
       y ∈ mapL g xs           ≅⟨ ≅-sym (map≅ {P = setoid≈ y} {F}) ⟩
-      Some (setoid≈ y ∘ F) xs ≅⟨ Some-cong {P = setoid≈ y ∘ F} xs≈ys ⟩
-      Some (setoid≈ y ∘ F) ys ≅⟨ map≅ {P = setoid≈ y} {F} ⟩
+      {! Some (setoid≈ y ∘ F) xs !} ≅⟨ {!!} ⟩ -- |Some-cong {P = setoid≈ y ∘ F} xs≈ys |
+      {! Some (setoid≈ y ∘ F) ys !} ≅⟨ map≅ {P = setoid≈ y} {F} ⟩
       y ∈ mapL g ys ∎) {!!} {!!}
       }
     ; pres-e = BE (λ {z} →
@@ -205,9 +209,9 @@ abstract
       -- in the proof below, *₀ and *₁ are both ++
     ; pres-* = λ {x} {y} → BE (λ {z} → let g = Π._⟨$⟩_ F in
       z ∈ mapL g (x *₀ y)                              ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {F}) ⟩
-      Some (setoid≈ z ∘ F) (x *₀ y)                    ≅⟨ ≅-sym (++≅ {P = setoid≈ z ∘ F}) ⟩
-      Some (setoid≈ z ∘ F) x ⊎⊎ Some (setoid≈ z ∘ F) y ≅⟨ (map≅ {P = setoid≈ z} {F}) ⊎⊎₁ (map≅ {P = setoid≈ z} {F})⟩
-      z ∈ mapL g x ⊎⊎ z ∈ mapL g y                     ≅⟨ ++≅ {P = setoid≈ z} ⟩
+      {! Some (setoid≈ z ∘ F) (x *₀ y) !}                    ≅⟨ {!!} ⟩ -- |≅-sym (++≅ {P = setoid≈ z ∘ F}) |
+      {! Some (setoid≈ z ∘ F) x ⊎⊎ Some (setoid≈ z ∘ F) y !} ≅⟨ (map≅ {P = setoid≈ z} {F}) ⊎⊎₁ (map≅ {P = setoid≈ z} {F})⟩
+      z ∈ mapL g x ⊎⊎ z ∈ mapL g y                     ≅⟨ {!!} ⟩ -- | ++≅ {P = setoid≈ z} |
       z ∈ mapL g x *₁ mapL g y ∎) {!!} {!!}
     })
     where
@@ -218,7 +222,7 @@ abstract
   id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
     (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)
   id-pres {X = X} x = BE (λ {z} →
-    -- z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩
+    -- | z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩ |
     z ∈ mapL id₀ x                       ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {f = id}) ⟩
     z ∈ x ∎) {!!} {!!}
     where
@@ -232,9 +236,9 @@ abstract
       gg Hom.⟨$⟩ (ff Hom.⟨$⟩ x) ∶ commMonoid (ListMS Z)
   homMS {Z = Z} {f} {g} xs = BE (λ {x} →
     x ∈ mapL (_⟨$⟩_ (g ∘ f)) xs              ≅⟨ ≅-sym (map≅ {P = setoid≈ x} {g ∘ f}) ⟩
-    Some (setoid≈ x ∘ (g ∘ f)) xs           ≅⟨ ≅-refl ⟩ -- associativity of ∘ is "free"
-    Some ((setoid≈ x ∘ g) ∘ f) xs           ≅⟨ map≅ {P = setoid≈ x ∘ g} {f} ⟩
-    Some (setoid≈ x ∘ g) (mapL (_⟨$⟩_ f) xs) ≅⟨ map≅ {P = setoid≈ x} {g} ⟩
+    {! Some (setoid≈ x ∘ (g ∘ f)) xs           !} ≅⟨ ≅-refl ⟩ -- associativity of |∘| is "free"
+    {! Some ((setoid≈ x ∘ g) ∘ f) xs           !} ≅⟨ map≅ {P = setoid≈ x ∘ g} {f} ⟩
+    {! Some (setoid≈ x ∘ g) (mapL (_⟨$⟩_ f) xs !} ≅⟨ map≅ {P = setoid≈ x} {g} ⟩
     x ∈ mapL (_⟨$⟩_ g) (mapL (_⟨$⟩_ f) xs) ∎) {!!} {!!}
     where open Membership Z; open Π
 

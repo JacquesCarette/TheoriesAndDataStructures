@@ -1,7 +1,7 @@
 \section{CounterExample}
 
 This code used to be part of |Some|.  It shows the reason why |BagEq xs ys |
-is not just |{x} → x ∈ xs ≅ x ∈ ys| : this is insufficiently representation
+is not just |{x} → x ∈ xs ≅ x ∈ ys| : This is insufficiently representation
 independent.
 
 %{{{ Imports
@@ -9,20 +9,17 @@ independent.
 module CounterExample where
 
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
-open import Relation.Binary using (Setoid)
-open import Function.Equality using (Π; _⟨$⟩_)
-
-open import Data.List     using (List ; _∷_ ; [])
-
-open import DataProperties using (⊥)
+open import Relation.Binary    using  (Setoid)
+open import Function.Equality  using  (Π; _⟨$⟩_)
+open import Data.List          using  (List ; _∷_ ; [])
+open import DataProperties     using  (⊥)
 open import SetoidEquiv
 open import Some
-
 \end{code}
 %}}}
 
 %{{{ Definition of _≋₀_ and some kit around it.
-
+\subsection{Preliminaries}
 Define a kind of heterogeneous version of |_≋₀_|, and some normal `kit' to go with it.
 
 \restorecolumns
@@ -62,7 +59,10 @@ module HetEquiv {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ∈₀-subst₁-cong′ x≈y (hereEq px qy x≈z y≈z) = hereEq _ _ _ _ -- (sym x≈y ⟨≈≈⟩ px ) (sym x≈y ⟨≈≈⟩ qy) x≈z y≈z
   ∈₀-subst₁-cong′ x≈y (thereEq i≋j) = thereEq (∈₀-subst₁-cong′ x≈y i≋j)
 \end{code}
+%}}}
 
+%{{{ Trying
+\subsection{Unfinished}
 \edcomm{WK}{Trying --- unfinished --- |∈₀-subst₁-elim″| would be sufficient for |∈₀-subst₂-cong′| --- commented out:
 \restorecolumns
 \begin{spec}
@@ -109,6 +109,7 @@ module HetEquiv {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 %}}}
 
 %{{{ |module NICE|: |∈₀-subst₂-cong′| and |∈₀-subst₁-to| do not hold
+\subsection{module NICE}
 |∈₀-subst₂-cong′| and |∈₀-subst₁-to| actually do not hold ---
 the following module serves to provide a counterexample:
 

@@ -91,7 +91,7 @@ open import Equiv public using (_≃_; id≃; sym≃; trans≃; qinv)
 infix  3 _◻
 infixr 2 _≃⟨_⟩_
 
-_≃⟨_⟩_ : {x y z : Level} (X : Set x) {Y : Set y} {Z : Set z} 
+_≃⟨_⟩_ : {x y z : Level} (X : Set x) {Y : Set y} {Z : Set z}
       →  X ≃ Y → Y ≃ Z → X ≃ Z
 X ≃⟨ X≃Y ⟩ Y≃Z = trans≃ X≃Y Y≃Z
 
@@ -134,7 +134,8 @@ A few convenient combinators for equational reasoning in |Setoid|.
 \savecolumns
 \begin{code}
 module SetoidCombinators {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
-  open Setoid S renaming (trans to _⟨≈≈⟩_)
+  open Setoid S
+  _⟨≈≈⟩_ = trans
   _⟨≈˘≈⟩_ : {a b c : Carrier} → b ≈ a → b ≈ c → a ≈ c
   _⟨≈˘≈⟩_ = λ b≈a b≈c → sym b≈a ⟨≈≈⟩ b≈c
   _⟨≈≈˘⟩_ : {a b c : Carrier} → a ≈ b → c ≈ b → a ≈ c

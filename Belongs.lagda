@@ -11,12 +11,13 @@ module Belongs where
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
   Reflexive ; Symmetric ; Transitive)
+import Relation.Binary.Indexed as I
 
 open import Function.Equality    using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function             using (_$_) renaming (id to id₀; _∘_ to _⊚_)
 open import Function.Equivalence using (Equivalence)
 
-open import Data.List     using (List; []; _++_; _∷_; map)
+open import Data.List     using (List; []; _++_; _∷_; map; reverse)
 open import Data.Nat      using (ℕ; zero; suc)
 
 open import EqualityCombinators
@@ -63,6 +64,7 @@ module Locations {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ∈₀-Setoid = _∈₀_
   syntax ∈₀-Setoid S x xs = x ∈[ S ] xs
   -- \edcomm{MA}{This tool is currently unused.}
+
 \end{code}
 
 One instinct is go go with natural numbers directly; while this
@@ -138,7 +140,7 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
 
   open Setoid S
   open Locations S
-  open LocEquiv S
+  open LocEquiv S using (_≋_; ≋-refl; ≋-sym; ≋-trans; hereEq; thereEq)
 
   infix 4 _∈_
   _∈_ : Carrier → List Carrier → Setoid (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
@@ -150,6 +152,32 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
 
   ≡→∈ : {x : Carrier} {xs ys : List Carrier} → xs ≡ ys → (x ∈ xs) ≅ (x ∈ ys)
   ≡→∈ ≡.refl = ≅-refl
+\end{code}
+
+But perhaps an even better way is to flip things around, and go for an Indexed
+Setoid.
+\begin{code}
+  ≋₁-sym : {l : List Carrier} {x y : Carrier} {x∈l : x ∈₀ l} {y∈l : y ∈₀ l} → x∈l ≋ y∈l → y∈l ≋ x∈l
+  ≋₁-sym (hereEq x≈z y≈z) = hereEq _ _
+  ≋₁-sym (thereEq pf) = thereEq (≋₁-sym pf)
+
+  ≋₁-trans : {l : List Carrier} {x y z : Carrier} {x∈l : x ∈₀ l} {y∈l : y ∈₀ l} {z∈l : z ∈₀ l}
+    → x∈l ≋ y∈l → y∈l ≋ z∈l → x∈l ≋ z∈l
+  ≋₁-trans (hereEq x≈z y≈z) (hereEq .y≈z y≈z₁) = hereEq x≈z y≈z₁
+  ≋₁-trans (thereEq pp) (thereEq qq) = thereEq (≋₁-trans pp qq)
+
+  elem-of : List Carrier → I.Setoid Carrier (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
+  elem-of l = record
+    { Carrier = λ x → x ∈₀ l
+    ; _≈_ = _≋_
+    ; isEquivalence = record { refl = ≋-refl ; sym = ≋₁-sym ; trans = ≋₁-trans } }
+
+  -- actually more general than P =[ f ]⇒ Q.
+  IInverse : {i₁ i₂ f₁ f₂ t₁ t₂ : Level} {Index : Setoid i₁ i₂}
+         (From : I.Setoid (Setoid.Carrier Index) f₁ f₂)
+         (To : I.Setoid (Setoid.Carrier Index) t₁ t₂) →
+         Set (i₁ ⊔ i₂ ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂)
+  IInverse {Index = I} From To = {x y : Setoid.Carrier I} → x ≈⌊ I ⌋ y → (From I.at x) ≅ (To I.at y)
 \end{code}
 %}}}
 
@@ -173,21 +201,24 @@ with respect to propositional equality.
       ; from = record { _⟨$⟩_ = λ x≈i → x≈i ⟨≈≈˘⟩ i≈j ; cong = λ _ → tt } } }
 \end{spec}
 
-\begin{spec}
+\begin{code}
 module MembershipUtils {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S
-  open Locations S ; open Loc S
-
+  open Locations S
+  open LocEquiv S
+  open SetoidCombinators S
 
   ∈₀-subst₁ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
-  ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x px) = here a≈x (sym x≈y ⟨≈≈⟩ px)
+  ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
   ∈₀-subst₁ {x} {y} {.(_ ∷ _)} x≈y (there x∈xs) = there (∈₀-subst₁ x≈y x∈xs)
 
   ∈₀-subst₁-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
                   {i j : x ∈₀ xs} → i ≋ j → ∈₀-subst₁ x≈y i ≋ ∈₀-subst₁ x≈y j
-  ∈₀-subst₁-cong x≈y (hereEq px qy x≈z y≈z) = hereEq (sym x≈y ⟨≈≈⟩ px ) (sym x≈y ⟨≈≈⟩ qy) x≈z y≈z
+  ∈₀-subst₁-cong x≈y (hereEq x≈z y≈z) = hereEq (x≈y ⟨≈˘≈⟩ x≈z) (x≈y ⟨≈˘≈⟩ y≈z)
   ∈₀-subst₁-cong x≈y (thereEq i≋j) = thereEq (∈₀-subst₁-cong x≈y i≋j)
+\end{code}
 
+\begin{spec}
   ∈₀-subst₁-equiv  : {x y : Carrier} {xs : List Carrier} → x ≈ y → (x ∈ xs) ≅ (y ∈ xs)
   ∈₀-subst₁-equiv {x} {y} {xs} x≈y = record
     { to = record { _⟨$⟩_ = ∈₀-subst₁ x≈y ; cong = ∈₀-subst₁-cong x≈y }
@@ -217,6 +248,13 @@ if and only if there exists a permutation between their |Setoid| of positions,
 and this is independent of the representative.
 
 \begin{code}
+module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
+  open Setoid S
+  open Locations S
+  open LocEquiv S using (_≋_; ≋-refl; ≋-sym; ≋-trans; hereEq; thereEq)
+  open Membership S
+  open MembershipUtils S
+
   record BagEq (xs ys : List Carrier) : Set (ℓS ⊔ ℓs) where
     constructor MkBagEq
     field permut : {x : Carrier} → (x ∈ xs) ≅ (x ∈ ys)
@@ -248,6 +286,18 @@ and this is independent of the representative.
     MkBagEq (≅-trans p₀ p₁) (to₁ ⊚ to₀) (fr₀ ⊚ fr₁)
 \end{code}
 
+And the indexed way.
+\begin{code}
+  BagEq' : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
+  BagEq' xs ys = IInverse {Index = S} (elem-of xs) (elem-of ys)
+
+  BE-refl' : {xs : List Carrier} → BagEq' xs xs
+  BE-refl' x≈y = record
+    { to = record { _⟨$⟩_ = ∈₀-subst₁ x≈y ; cong = ∈₀-subst₁-cong x≈y }
+    ; from = record { _⟨$⟩_ = ∈₀-subst₁ (sym x≈y) ; cong = ∈₀-subst₁-cong (sym x≈y) }
+    ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} } }
+
+\end{code}
 \begin{spec}
   ∈₀-Subst₂ : {x : Carrier} {xs ys : List Carrier} → BagEq xs ys → x ∈ xs ⟶ x ∈ ys
   ∈₀-Subst₂ {x} xs≅ys = _≅_.to (permut xs≅ys {x})

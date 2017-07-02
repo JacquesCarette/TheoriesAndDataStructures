@@ -145,7 +145,7 @@ module Membership {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Locations
 
   open SetoidCombinators S public
-  open Setoid S renaming (trans to _⟨≈≈⟩_)
+  open Setoid S
 \end{code}
 
 |setoid≈ x| is actually a mapping from |S| to |SSetoid _ _|; it maps

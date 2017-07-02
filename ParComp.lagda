@@ -8,6 +8,7 @@ open import Level
 open import Relation.Binary    using  (Setoid)
 open import Function           using  (_∘_)
 open import Function.Equality  using  (Π; _⟨$⟩_; cong)
+import Relation.Binary.Indexed as I
 
 open import DataProperties
 open import SetoidEquiv
@@ -73,28 +74,28 @@ data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
 
 -- Motivation for introducing parallel composition:
 infix 3 _⊎⊎_
-_⊎⊎_ : {i₁ i₂ k₁ k₂ : Level} → Setoid i₁ k₁ → Setoid i₂ k₂ → Setoid (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
+_⊎⊎_ : {s₁ i₁ i₂ k₁ k₂ : Level} {S : Set s₁}
+  → I.Setoid S i₁ k₁ → I.Setoid S i₂ k₂ → I.Setoid S (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
 A ⊎⊎ B = record
-  { Carrier         =   A₀ ⊎ B₀
+  { Carrier         =   λ s → A₀ s ⊎ B₀ s
   ; _≈_             =   ≈₁ ∥ ≈₂
   ; isEquivalence   =   record
-    { refl   =  λ{ {inj₁ x} → left refl₁ ; {inj₂ x} → right refl₂ }
+    { refl   =  λ { {_} {inj₁ x} → left refl₁ ; {_} {inj₂ y} → right refl₂}
     ; sym    =  λ{ (left eq) → left (sym₁ eq) ; (right eq) → right (sym₂ eq)}
-                -- ought to be writable as [ left ∘ sym₁ ∥ right ∘ sym₂ ]
     ; trans  =  λ{  (left  eq) (left  eqq) → left  (trans₁ eq eqq)
-                  ; (right eq) (right eqq) → right (trans₂ eq eqq)
-                  }
+                 ; (right eq) (right eqq) → right (trans₂ eq eqq)
+                 }
     }
   }
   where
-    open Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁ ; sym to sym₁ ; trans to trans₁)
-    open Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂ ; sym to sym₂ ; trans to trans₂)
+    open I.Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁ ; sym to sym₁ ; trans to trans₁)
+    open I.Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂ ; sym to sym₂ ; trans to trans₂)
 \end{code}
 %}}}
 
 %{{{ \subsection{|⊎⊎-comm|}
 \subsection{|⊎⊎-comm|}
-\begin{code}
+\begin{spec}
 ⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B)  ≅  (B ⊎⊎ A)
 ⊎⊎-comm {A = A} {B} = record
   { to           =  record { _⟨$⟩_ = swap₊ ; cong = swap-on-∥   }
@@ -106,7 +107,7 @@ A ⊎⊎ B = record
     open Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁)
     open Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂)
 
-    swap-on-∥ : {i j : A₀ ⊎ B₀} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)    
+    swap-on-∥ : {i j : A₀ ⊎ B₀} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)
     swap-on-∥ (left  x∼₁y)  =  right x∼₁y
     swap-on-∥ (right x∼₂y)  =  left  x∼₂y
 
@@ -125,12 +126,12 @@ A ⊎⊎ B = record
     swap²≈∥≈id′ : (z : B₀ ⊎ A₀) → (≈₂ ∥ ≈₁) (swap₊ (swap₊ z)) z
     swap²≈∥≈id′ (inj₁ _)  =  left  refl₂
     swap²≈∥≈id′ (inj₂ _)  =  right refl₁
-\end{code}
+\end{spec}
 %}}}
 
 %{{{ \subsection{|⊎⊎₁|}
 \subsection{|⊎⊎₁| - parallel composition of equivalences}
-\begin{code}
+\begin{spec}
 _⊎⊎₁_ : {a b c d aℓ bℓ cℓ dℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} {C : Setoid c cℓ}
   {D : Setoid d dℓ} → A ≅ C → B ≅ D → (A ⊎⊎ B) ≅ (C ⊎⊎ D)
 _⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D = record
@@ -139,14 +140,14 @@ _⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D = record
   ; inverse-of   =   record { left-inverse-of  = left-inv ; right-inverse-of = right-inv }
   }
   where
-  
+
     open _≅_
-    
+
     A→C = _⟨$⟩_ (to A≅C)
     B→D = _⟨$⟩_ (to B≅D)
     C→A = _⟨$⟩_ (from A≅C)
     D→B = _⟨$⟩_ (from B≅D)
-    
+
     open Setoid A renaming (Carrier to AA; _≈_ to _≈₁_)
     open Setoid B renaming (Carrier to BB; _≈_ to _≈₂_)
     open Setoid C renaming (Carrier to CC; _≈_ to _≈₃_)
@@ -172,7 +173,7 @@ _⊎⊎₁_ {A = A} {B} {C} {D} A≅C B≅D = record
     right-inv (inj₂ y) = right (right-inverse-of B≅D y)
 
     -- \edcomm{MA}{Ideally the eliminator would work and we'd use it to simplify the above inv-proofs.}
-\end{code}
+\end{spec}
 %}}}
 
 % Quick Folding Instructions:

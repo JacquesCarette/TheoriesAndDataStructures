@@ -184,7 +184,7 @@ abstract
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _⇔_
-        ; isEquivalence = record { refl = ⇔-refl ; sym = ⇔-sym ; trans = {! ⇔-trans !} }
+        ; isEquivalence = record { refl = ⇔-refl ; sym = ⇔-sym ; trans =  ⇔-trans }
         }
 
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)

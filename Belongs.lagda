@@ -14,7 +14,7 @@ open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
 import Relation.Binary.Indexed as I
 
 open import Function.Equality    using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
-open import Function             using (_$_) renaming (id to id₀; _∘_ to _⊚_)
+open import Function             using (_$_; flip) renaming (id to id₀; _∘_ to _⊚_)
 
 open import Data.List     using (List; []; _++_; _∷_; map; reverse)
 open import Data.Nat      using (ℕ; zero; suc)
@@ -191,6 +191,8 @@ if and only if there exists a permutation between their |Setoid| of positions,
 and this is independent of the representative.  The best way to succinctly
 express this is via |_♯_|.
 
+It is very important to note that |_♯_| isn't reflective 'for free', i.e.
+the proof does not involve just |id|.
 \begin{code}
 module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   open Setoid S
@@ -220,9 +222,33 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
       ; cong = cong (xs⇔ys $→ sym x≈y) }
     ; inverse-of = record
       { left-inverse-of = _≅_.right-inverse-of (xs⇔ys (sym x≈y))
-      ; right-inverse-of = _≅_.left-inverse-of (xs⇔ys (sym x≈y)) } }
+      ; right-inverse-of = _≅_.left-inverse-of (xs⇔ys (sym x≈y)) }
+    }
     where
       open ISE-Combinators S (elem-of xs) (elem-of ys)
+
+  ⇔-trans : {xs ys zs : List Carrier} → xs ⇔ ys → ys ⇔ zs → xs ⇔ zs
+  ⇔-trans {xs} {ys} {zs} xs⇔ys ys⇔zs {a} {b} a≈b = record
+    { to = record
+      { _⟨$⟩_ = (ap-⇒₂ ys⇔zs a≈b) ⊚ (ap-⇒₁ xs⇔ys refl)
+      ; cong = cong (ys⇔zs $→₂ a≈b) ⊚ (cong (xs⇔ys $→₁ refl)) }
+    ; from = record
+      { _⟨$⟩_ = ap-⇐₁ xs⇔ys refl ⊚ ap-⇐₂ ys⇔zs a≈b
+      ; cong = cong (xs⇔ys $←₁ refl) ⊚ cong (ys⇔zs $←₂ a≈b) }
+    ; inverse-of = record
+      { left-inverse-of = λ a∈xs → ≋-trans
+        (cong (xs⇔ys $←₁ refl) (_≅_.left-inverse-of (ys⇔zs a≈b) (ap-⇒₁ xs⇔ys refl a∈xs)))
+        (_≅_.left-inverse-of (xs⇔ys refl) a∈xs)
+      ; right-inverse-of = λ b∈zs → ≋-trans
+        (cong (ys⇔zs $→₂ a≈b) (_≅_.right-inverse-of (xs⇔ys refl) (ap-⇐₂ ys⇔zs a≈b b∈zs)))
+        (_≅_.right-inverse-of (ys⇔zs a≈b) b∈zs) }
+    }
+    where
+      open ISE-Combinators S (elem-of xs) (elem-of ys)
+        renaming (ap-⇐ to ap-⇐₁; ap-⇒ to ap-⇒₁; _$→_ to _$→₁_; _$←_ to _$←₁_)
+      open ISE-Combinators S (elem-of ys) (elem-of zs)
+        renaming (ap-⇐ to ap-⇐₂; ap-⇒ to ap-⇒₂; _$→_ to _$→₂_; _$←_ to _$←₂_)
+
 \end{code}
 %}}}
 

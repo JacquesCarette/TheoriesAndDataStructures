@@ -145,6 +145,49 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
          (To : I.Setoid (Setoid.Carrier S) t₁ t₂) →
          Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂)
   From ♯ To = IndexedSetoidEquivalence S From To
+
+  ♯-sym : {f₁ f₂ t₁ t₂ : Level}
+         {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
+         {To : I.Setoid (Setoid.Carrier S) t₁ t₂} →
+         From ♯ To → To ♯ From
+  ♯-sym {From = From} {To} = ISE-sym where open ISE-Combinators S From To
+
+  infixr 2 _♯⟨_⟩_
+  infixr 2 _♯⟨_&_&_⟩_
+
+  infix  4 _Is♯To_
+  infix  1 begin_
+
+  -- This seemingly unnecessary type is used to make it possible to
+  -- infer arguments even if the underlying equality evaluates.
+
+  data _Is♯To_ {f₁ f₂ t₁ t₂ : Level}
+         (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
+         (To : I.Setoid (Setoid.Carrier S) t₁ t₂) : Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂) where
+    relTo : (x♯y : From ♯ To) → From Is♯To To
+
+  begin_ : {f₁ f₂ t₁ t₂ : Level}
+         {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
+         {To : I.Setoid (Setoid.Carrier S) t₁ t₂}
+         → From Is♯To To → From ♯ To
+  begin relTo x♯y = x♯y
+
+  _♯⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
+    (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
+    {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
+    {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
+        →  A ♯ B → B Is♯To C → A Is♯To C
+  _♯⟨_⟩_ A {B} {C} A♯B (relTo B♯C) = relTo (ISE-trans A♯B B♯C)
+    where open ISE-Trans S A B C
+
+  -- and for when inference does not work:
+  _♯⟨_&_&_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
+    (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
+    (B : I.Setoid (Setoid.Carrier S) b₁ b₂)
+    (C : I.Setoid (Setoid.Carrier S) c₁ c₂)
+        →  A ♯ B → B ♯ C → A ♯ C
+  _♯⟨_&_&_⟩_ A B C A♯B B♯C = ISE-trans A♯B B♯C
+    where open ISE-Trans S A B C
 \end{code}
 %}}}
 
@@ -206,49 +249,27 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ♯ elem-of ys
 
-  ⇔-refl : {xs : List Carrier} → xs ⇔ xs
-  ⇔-refl x≈y = record
+  ⇔-Liftable : {xs : List Carrier} → Liftable S (elem-of xs)
+  ⇔-Liftable x≈y = record
     { to = record   { _⟨$⟩_ = ap-∈₀ x≈y       ; cong = ap-∈₀-cong x≈y }
     ; from = record { _⟨$⟩_ = ap-∈₀ (sym x≈y) ; cong = ap-∈₀-cong (sym x≈y) }
     ; inverse-of = record { left-inverse-of = ap-∈₀-linv x≈y ; right-inverse-of = ap-∈₀-rinv x≈y } }
 
+  ⇔-refl : {xs : List Carrier} → xs ⇔ xs
+  ⇔-refl {xs} = ISE-refl {S = S} {X = elem-of xs} ⇔-Liftable
+
   ⇔-sym : {xs ys : List Carrier} → xs ⇔ ys → ys ⇔ xs
-  ⇔-sym {xs} {ys} xs⇔ys {x} {y} x≈y = record
-    { to = record
-      { _⟨$⟩_ = ap-⇐ xs⇔ys (sym x≈y)
-      ; cong = cong (xs⇔ys $← (sym x≈y)) }
-    ; from = record
-      { _⟨$⟩_ = ap-⇒ xs⇔ys (sym x≈y)
-      ; cong = cong (xs⇔ys $→ sym x≈y) }
-    ; inverse-of = record
-      { left-inverse-of = _≅_.right-inverse-of (xs⇔ys (sym x≈y))
-      ; right-inverse-of = _≅_.left-inverse-of (xs⇔ys (sym x≈y)) }
-    }
-    where
-      open ISE-Combinators S (elem-of xs) (elem-of ys)
+  ⇔-sym {xs} {ys} = ISE-sym
+    where open ISE-Combinators S (elem-of xs) (elem-of ys)
 
   ⇔-trans : {xs ys zs : List Carrier} → xs ⇔ ys → ys ⇔ zs → xs ⇔ zs
-  ⇔-trans {xs} {ys} {zs} xs⇔ys ys⇔zs {a} {b} a≈b = record
-    { to = record
-      { _⟨$⟩_ = (ap-⇒₂ ys⇔zs a≈b) ⊚ (ap-⇒₁ xs⇔ys refl)
-      ; cong = cong (ys⇔zs $→₂ a≈b) ⊚ (cong (xs⇔ys $→₁ refl)) }
-    ; from = record
-      { _⟨$⟩_ = ap-⇐₁ xs⇔ys refl ⊚ ap-⇐₂ ys⇔zs a≈b
-      ; cong = cong (xs⇔ys $←₁ refl) ⊚ cong (ys⇔zs $←₂ a≈b) }
-    ; inverse-of = record
-      { left-inverse-of = λ a∈xs → ≋-trans
-        (cong (xs⇔ys $←₁ refl) (_≅_.left-inverse-of (ys⇔zs a≈b) (ap-⇒₁ xs⇔ys refl a∈xs)))
-        (_≅_.left-inverse-of (xs⇔ys refl) a∈xs)
-      ; right-inverse-of = λ b∈zs → ≋-trans
-        (cong (ys⇔zs $→₂ a≈b) (_≅_.right-inverse-of (xs⇔ys refl) (ap-⇐₂ ys⇔zs a≈b b∈zs)))
-        (_≅_.right-inverse-of (ys⇔zs a≈b) b∈zs) }
-    }
-    where
-      open ISE-Combinators S (elem-of xs) (elem-of ys)
-        renaming (ap-⇐ to ap-⇐₁; ap-⇒ to ap-⇒₁; _$→_ to _$→₁_; _$←_ to _$←₁_)
-      open ISE-Combinators S (elem-of ys) (elem-of zs)
-        renaming (ap-⇐ to ap-⇐₂; ap-⇒ to ap-⇒₂; _$→_ to _$→₂_; _$←_ to _$←₂_)
+  ⇔-trans {xs} {ys} {zs} = ISE-trans
+    where open ISE-Trans S (elem-of xs) (elem-of ys) (elem-of zs)
 
+  infix 3 _▣
+
+  _▣ : (X : I.Setoid Carrier (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)) → {xs : List Carrier} → elem-of xs Is♯To elem-of xs
+  X ▣ = relTo ⇔-refl
 \end{code}
 %}}}
 
@@ -342,27 +363,28 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 
 \subsection{Following sections are inactive code}
 
-%{{{ \subsection{Bottom as a setoid} ⊥⊥ ; ⊥≅Some[] : ⊥⊥ ≅ Some P []
-\subsection{Bottom as a setoid}
-\begin{spec}
-⊥⊥ : ∀ {ℓS ℓs} → Setoid ℓS ℓs
-⊥⊥ = record
-  { Carrier = ⊥
+%{{{ \subsection{Bottom as an indexed setoid} ⊥⊥ ; ⊥⊥♯elem-of-[] : ⊥⊥ ≅ elem-of []
+\subsection{Bottom as an indexed setoid}
+\begin{code}
+⊥⊥ : ∀ {ℓS ℓs ℓI} (S : Set ℓI) → I.Setoid S ℓS ℓs
+⊥⊥ I = record
+  { Carrier = λ _ → ⊥
   ; _≈_ = λ _ _ → ⊤
   ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt }
   }
-\end{spec}
+\end{code}
 
-\begin{spec}
-module _ {ℓS ℓs ℓP ℓp : Level} {S : Setoid ℓS ℓs} {P : S ⟶ ProofSetoid ℓP ℓp} where
+\begin{code}
+module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+  open Membership S
 
-  ⊥≅Some[] : ⊥⊥ {(ℓS ⊔ ℓs) ⊔ ℓP} {(ℓS ⊔ ℓs) ⊔ ℓp} ≅ Some {S = S} (λ e → Setoid.Carrier (P ⟨$⟩ e)) []
-  ⊥≅Some[] = record
-    { to          =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
-    ; from        =   record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
-    ; inverse-of  =   record { left-inverse-of = λ _ → tt ; right-inverse-of = λ {()} }
+  ⊥⊥≅elem-of-[] : ⊥⊥ {ℓS} {ℓs} {ℓS} (Setoid.Carrier S) ♯ elem-of []
+  ⊥⊥≅elem-of-[] x≈y = record
+    { to = record { _⟨$⟩_ = λ{()} ; cong = λ { {()} } }
+    ; from = record { _⟨$⟩_ = λ{()} ; cong = λ { {()} } }
+    ; inverse-of = record { left-inverse-of = λ _ → tt ; right-inverse-of = λ {()} }
     }
-\end{spec}
+\end{code}
 %}}}
 
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}

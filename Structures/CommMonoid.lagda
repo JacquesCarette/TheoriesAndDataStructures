@@ -21,7 +21,7 @@ open import Relation.Binary.Sum
 
 open import Forget
 open import EqualityCombinators
-open import DataProperties
+open import DataProperties hiding (_,_; ⟨_,_⟩)
 open import SetoidEquiv
 open import ParComp
 open import Belongs
@@ -155,11 +155,15 @@ abstract
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {xs} → ≡→⇔ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→⇔ (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} → {! BE (λ {z} →
+        ; comm       =  λ {xs} {ys} → begin
+          elem-of (xs ++ ys)         ♯⟨ {!!} ⟩
+          elem-of xs ⊎⊎ elem-of ys   ♯⟨ {!!} ⟩
+          elem-of ys ⊎⊎ elem-of xs   ♯⟨ ++≅ ⟩
+          elem-of (ys ++ xs) ▣ {- {! BE (λ {z} →
           z ∈ xs ++ ys         ≅⟨ {!!} ⟩ -- |≅⟨ ≅-sym (++≅ {P = setoid≈ z}) ⟩|
           (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎⊎-comm ⟩
           (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- |≅⟨ ++≅ {P = setoid≈ z}⟩|
-          z ∈ ys ++ xs  ∎) {!!} {!!} !}
+          z ∈ ys ++ xs  ∎) {!!} {!!} !} -}
         ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w → {! BE (λ {t} →
            t ∈ x ++ z        ≅⟨ {!!} ⟩ -- |≅-sym (++≅ {P = setoid≈ t}) |
           (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ (permut x≈y) ⊎⊎₁ (permut z≈w) ⟩
@@ -174,6 +178,7 @@ abstract
       module ++ = Monoid (monoid (Setoid.Carrier X))
       open Membership X
       open BagEq X
+      open ConcatTo⊎⊎ X
 
       X₀ = Setoid.Carrier X
 
@@ -188,7 +193,7 @@ abstract
         }
 
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
-  ListCMHom X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
+  ListCMHom {ℓ} {o} X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
       ; cong = λ {xs} {ys} xs≈ys → {! BE (λ {y} →
@@ -197,10 +202,10 @@ abstract
       {! Some (setoid≈ y ∘ F) ys !} ≅⟨ map≅ {P = setoid≈ y} {F} ⟩
       y ∈ mapL g ys ∎) {!!} {!!} !}
       }
-    ; pres-e = {! BE (λ {z} →
-      z ∈ []     ≅⟨ ≅-sym (⊥≅Some[] {P = setoid≈ z}) ⟩
-      ⊥⊥         ≅⟨ ⊥≅Some[] {P = setoid≈ z} ⟩
-      (z ∈ e₁) ∎) {!!} {!!} !}
+    ; pres-e = begin
+         elem-of []             ♯⟨ ISE-sym (⊥⊥≅elem-of-[] Y) ⟩
+         ⊥⊥ (Setoid.Carrier Y)  ♯⟨ ⊥⊥≅elem-of-[] Y ⟩
+         (elem-of e₁) ▣
 
       -- in the proof below, *₀ and *₁ are both ++
     ; pres-* = λ {x} {y} → {! BE (λ {z} → let g = Π._⟨$⟩_ F in
@@ -214,6 +219,9 @@ abstract
       open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀  ; _*_ to _*₀_)
       open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y
+      open BagEq Y using (_▣)
+      import ISEquiv
+      open ISEquiv.ISE-Combinators Y (⊥⊥ (Setoid.Carrier Y)) (elem-of [])
 
   id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
     (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)

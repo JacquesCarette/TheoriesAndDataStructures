@@ -152,8 +152,7 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
          From ♯ To → To ♯ From
   ♯-sym {From = From} {To} = ISE-sym where open ISE-Combinators S From To
 
-  infixr 2 _♯⟨_⟩_
-  infixr 2 _♯⟨_&_&_⟩_
+  infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
 
   infix  4 _Is♯To_
   infix  1 begin_
@@ -180,14 +179,14 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
   _♯⟨_⟩_ A {B} {C} A♯B (relTo B♯C) = relTo (ISE-trans A♯B B♯C)
     where open ISE-Trans S A B C
 
-  -- and for when inference does not work:
-  _♯⟨_&_&_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
+  _♯˘⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
     (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-    (B : I.Setoid (Setoid.Carrier S) b₁ b₂)
-    (C : I.Setoid (Setoid.Carrier S) c₁ c₂)
-        →  A ♯ B → B ♯ C → A ♯ C
-  _♯⟨_&_&_⟩_ A B C A♯B B♯C = ISE-trans A♯B B♯C
-    where open ISE-Trans S A B C
+    {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
+    {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
+        →  B ♯ A → B Is♯To C → A Is♯To C
+  _♯˘⟨_⟩_ A {B} {C} B♯A (relTo B♯C) = relTo (ISE-trans (ISE-sym B♯A) B♯C)
+    where open ISE-Trans S A B C; open ISE-Combinators S B A
+
 \end{code}
 %}}}
 

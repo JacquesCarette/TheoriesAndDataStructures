@@ -156,7 +156,7 @@ abstract
         ; right-unit = λ {xs} → ≡→⇔ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→⇔ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} → begin
-          elem-of (xs ++ ys)         ♯⟨ {!!} ⟩
+          elem-of (xs ++ ys)         ♯˘⟨ ++≅ ⟩
           elem-of xs ⊎⊎ elem-of ys   ♯⟨ {!!} ⟩
           elem-of ys ⊎⊎ elem-of xs   ♯⟨ ++≅ ⟩
           elem-of (ys ++ xs) ▣ {- {! BE (λ {z} →
@@ -203,7 +203,7 @@ abstract
       y ∈ mapL g ys ∎) {!!} {!!} !}
       }
     ; pres-e = begin
-         elem-of []             ♯⟨ ISE-sym (⊥⊥≅elem-of-[] Y) ⟩
+         elem-of []             ♯˘⟨ ⊥⊥≅elem-of-[] Y ⟩
          ⊥⊥ (Setoid.Carrier Y)  ♯⟨ ⊥⊥≅elem-of-[] Y ⟩
          (elem-of e₁) ▣
 

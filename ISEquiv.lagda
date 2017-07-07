@@ -4,96 +4,119 @@
 \begin{code}
 module ISEquiv where
 
-open import Level using (Level; _⊔_)
+open import Level using (Level; suc; _⊔_)
 open import Relation.Binary using (Setoid)
-import Relation.Binary.Indexed as I
 
-open import Function using () renaming (_∘_ to _⊚_)
-open import Function.Inverse using () renaming (Inverse to _≅_; id to ≅-refl)
-open import Function.Equality using (_⟨$⟩_; _⟶_; Π)
+open import Function.Inverse using (_InverseOf_) renaming (Inverse to _≅_; id to ≅-refl)
+open import Function.Equality using (_⟨$⟩_; _⟶_; Π; id; _∘_)
 \end{code}
 %}}}
 
 \begin{code}
-IndexedSetoidEquivalence : {s₁ s₂ f₁ f₂ t₁ t₂ : Level}
-    (S : Setoid s₁ s₂)
-    (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
-    (To : I.Setoid (Setoid.Carrier S) t₁ t₂) →
-    Set (s₁ ⊔ s₂ ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂)
-IndexedSetoidEquivalence S From To = {x y : Setoid.Carrier S} → Setoid._≈_ S x y → (From I.at x) ≅ (To I.at y)
+record SetoidFamily {ℓS ℓs : Level} (S : Setoid ℓS ℓs) (ℓA ℓa : Level) : Set (ℓS ⊔ ℓs ⊔ suc (ℓA ⊔ ℓa)) where
+  open Setoid using () renaming (Carrier to ∣_∣ )
+  open Setoid S using (_≈_; refl; sym; trans)
+  field
+    index : ∣ S ∣ → Setoid ℓA ℓa
+    reindex : {x y : ∣ S ∣ } → x ≈ y → index x ⟶ index y
+    id-coh : {a : ∣ S ∣ } {b : ∣ index a ∣ } → Setoid._≈_ (index a) (reindex refl ⟨$⟩ b) b
+    sym-iso : {x y : ∣ S ∣} → (p : x ≈ y) → reindex (sym p) InverseOf reindex p
+    trans-coh : {x y z : ∣ S ∣} {b : ∣ index x ∣} → (p : x ≈ y) → (q : y ≈ z) →
+      Setoid._≈_ (index z) (reindex (trans p q) ⟨$⟩ b)
+                           (reindex q ∘ reindex p ⟨$⟩ b)
 
-Liftable : {s₁ s₂ f₁ f₂ : Level}
-    (S : Setoid s₁ s₂)
-    (X : I.Setoid (Setoid.Carrier S) f₁ f₂) → Set (s₁ ⊔ s₂ ⊔ f₁ ⊔ f₂)
-Liftable S X = IndexedSetoidEquivalence S X X
+record _⇛_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ (B : SetoidFamily S ℓA ℓa ) (B' : SetoidFamily S' ℓA' ℓa') :
+   Set (ℓS ⊔ ℓA ⊔ ℓS' ⊔ ℓA' ⊔ ℓa' ⊔ ℓs ⊔ ℓs' ⊔ ℓa) where
+ constructor FArr
+ open SetoidFamily
+ open Setoid using () renaming (Carrier to ∣_∣ )
+ open Setoid S using (_≈_)
+ field
+   map : S ⟶ S'
+   transport : (x : ∣ S ∣ ) → index B x ⟶ index B' (map ⟨$⟩ x)
+   transport-coh : {y x : ∣ S ∣ } {By : ∣ index B y ∣ } → (p : y ≈ x) →
+        Setoid._≈_ (index B' (map ⟨$⟩ x))
+          (transport x ⟨$⟩ (reindex B p ⟨$⟩ By))
+          (reindex B' (Π.cong map p) ⟨$⟩ (transport y ⟨$⟩ By))
 
-ISE-refl : {s₁ s₂ ℓx₁ ℓx₂ : Level} {S : Setoid s₁ s₂} {X : I.Setoid (Setoid.Carrier S) ℓx₁ ℓx₂}
-  (L : Liftable S X) → IndexedSetoidEquivalence S X X
-ISE-refl L = L
+record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+  {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
+  (F : B ⇛ B') (G : B ⇛ B') : Set (ℓs ⊔ ℓs' ⊔ ℓS ⊔ ℓS' ⊔ ℓA ⊔ ℓa') where
+   open Setoid using () renaming (Carrier to ∣_∣ )
+   open Setoid S using () renaming (_≈_ to _≈₁_)
+   open Setoid S' using () renaming (_≈_ to _≈₂_)
+   open SetoidFamily
+   open _⇛_
+   field
+     ext : (x : ∣ S ∣ ) → map G ⟨$⟩ x ≈₂ map F ⟨$⟩ x
+     transport-ext-coh : (x : ∣ S ∣ ) (Bx : ∣ index B x ∣ ) →
+       Setoid._≈_ (index B' (map F ⟨$⟩ x))
+         (reindex B' (ext x) ⟨$⟩ (transport G x ⟨$⟩ Bx))
+         (transport F x ⟨$⟩ Bx)
 
-module ISE-Combinators {s₁ s₂ f₁ f₂ t₁ t₂ : Level}
-    (S : Setoid s₁ s₂)
-    (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
-    (To : I.Setoid (Setoid.Carrier S) t₁ t₂) where
+≈≈-refl : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs} {B : SetoidFamily S ℓA ℓa}
+  (F : B ⇛ B) → F ≈≈ F
+≈≈-refl {S = S} {B} F = record
+  { ext = λ _ → refl ; transport-ext-coh = λ x Bx → id-coh {map F ⟨$⟩ x} {transport F x ⟨$⟩ Bx} }
+  where open Setoid S; open SetoidFamily B; open _⇛_
 
-  open Setoid S
+≈≈-sym : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+  {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
+  {F : B ⇛ B'} {G : B ⇛ B'} → F ≈≈ G → G ≈≈ F
+≈≈-sym {S = S} {S'} {B} {B'} {F} {G} record { ext = ext ; transport-ext-coh = tec } = record
+  { ext = λ x → sym (ext x)
+  ; transport-ext-coh = λ x Bx → Setoid.trans (index (map G ⟨$⟩ x))
+     (Setoid.sym (index (map G ⟨$⟩ x)) (Π.cong (reindex (sym (ext x))) (tec x Bx)))
+    ((left-inverse-of (sym-iso (ext x)) (transport G x ⟨$⟩ Bx))) }
+  where
+   open SetoidFamily B'
+   open _InverseOf_
+   open Setoid S'
+   open _⇛_
 
-  _$→_ : IndexedSetoidEquivalence S From To → {x y : Carrier} (x≈y : x ≈ y) → From I.at x ⟶ To I.at y
-  eq $→ x≈y = _≅_.to (eq x≈y)
+≈≈-trans : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' ℓS'' ℓs'' ℓA'' ℓa'' : Level}
+  {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+  {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
+  {F : B ⇛ B'} {G : B ⇛ B'} {H : B ⇛ B'} → F ≈≈ G → G ≈≈ H → F ≈≈ H
+≈≈-trans {S' = S'} {B} {B'} {F} {G} {H} F≈G G≈H = record
+  { ext = λ x → trans (G=H.ext x) (F=G.ext x)
+  ; transport-ext-coh = λ x Bx →
+    let open Setoid (index B' (_⇛_.map F ⟨$⟩ x)) renaming (trans to _⟨≈≈⟩_) in
+    (SetoidFamily.trans-coh B' (G=H.ext x) (F=G.ext x) ⟨≈≈⟩
+    (Π.cong (reindex B' (F=G.ext x)) (G=H.transport-ext-coh x Bx))) ⟨≈≈⟩
+    (F=G.transport-ext-coh x Bx)
+  }
+  where
+    open Setoid S'
+    open SetoidFamily
+    module F=G = _≈≈_ F≈G
+    module G=H = _≈≈_ G≈H
 
-  _$←_ : IndexedSetoidEquivalence S From To → {x y : Carrier} (y≈x : y ≈ x) → To I.at x ⟶ From I.at y
-  eq $← y≈x = _≅_.from (eq y≈x)
-
-  ap-⇒ : IndexedSetoidEquivalence S From To → {x y : Carrier} (x≈y : x ≈ y) →
-      Setoid.Carrier (From I.at x) → Setoid.Carrier (To I.at y)
-  ap-⇒ eq x≈y xx = eq $→ x≈y ⟨$⟩ xx
-
-  ap-⇐ : IndexedSetoidEquivalence S From To → {x y : Carrier} (y≈x : y ≈ x) →
-      Setoid.Carrier (To I.at x) → Setoid.Carrier (From I.at y)
-  ap-⇐ eq y≈x xx = eq $← y≈x ⟨$⟩ xx
-
-
-  ISE-sym : IndexedSetoidEquivalence S From To → IndexedSetoidEquivalence S To From
-  ISE-sym From≅To {x} {y} x≈y = record
-    { to = record
-      { _⟨$⟩_ = ap-⇐ From≅To (sym x≈y)
-      ; cong = Π.cong (From≅To $← (sym x≈y)) }
-    ; from = record
-      { _⟨$⟩_ = ap-⇒ From≅To (sym x≈y)
-      ; cong = Π.cong (From≅To $→ sym x≈y) }
-    ; inverse-of = record
-      { left-inverse-of = _≅_.right-inverse-of (From≅To (sym x≈y))
-      ; right-inverse-of = _≅_.left-inverse-of (From≅To (sym x≈y)) }
-    }
-
-module ISE-Trans {s₁ s₂ a₁ a₂ b₁ b₂ c₁ c₂ : Level}
-    (S : Setoid s₁ s₂)
-    (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-    (B : I.Setoid (Setoid.Carrier S) b₁ b₂)
-    (C : I.Setoid (Setoid.Carrier S) c₁ c₂) where
-
-  ISE-trans : IndexedSetoidEquivalence S A B → IndexedSetoidEquivalence S B C → IndexedSetoidEquivalence S A C
-  ISE-trans A≅B B≅C {x} {y} x≈y = record
-    { to = record
-      { _⟨$⟩_ = (ap-⇒₂ B≅C x≈y) ⊚ (ap-⇒₁ A≅B refl)
-      ; cong = Π.cong (B≅C $→₂ x≈y) ⊚ (Π.cong (A≅B $→₁ refl)) }
-    ; from = record
-      { _⟨$⟩_ = ap-⇐₁ A≅B refl ⊚ ap-⇐₂ B≅C x≈y
-      ; cong = Π.cong (A≅B $←₁ refl) ⊚ Π.cong (B≅C $←₂ x≈y) }
-    ; inverse-of = record
-      { left-inverse-of = λ aa → I.Setoid.trans A
-        (Π.cong (A≅B $←₁ refl) (_≅_.left-inverse-of (B≅C x≈y) (ap-⇒₁ A≅B refl aa)))
-        (_≅_.left-inverse-of (A≅B refl) aa)
-      ; right-inverse-of = λ cc → I.Setoid.trans C
-        (Π.cong (B≅C $→₂ x≈y) (_≅_.right-inverse-of (A≅B refl) (ap-⇐₂ B≅C x≈y cc)))
-        (_≅_.right-inverse-of (B≅C x≈y) cc) }
-    }
+id⇛ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {B : SetoidFamily S ℓA ℓa} → B ⇛ B
+id⇛ {S = S} {_} {B} =
+  FArr id (λ _ → reindex refl)
+      (λ {y} {x} {By} y≈x → Setoid.trans (index x)
+        id-coh
+        (Π.cong (reindex y≈x) (Setoid.sym (index y) (id-coh {y} {By}))))
     where
+      open SetoidFamily B
       open Setoid S
-      open ISE-Combinators S A B
-        renaming (ap-⇐ to ap-⇐₁; ap-⇒ to ap-⇒₁; _$→_ to _$→₁_; _$←_ to _$←₁_)
-      open ISE-Combinators S B C
-        renaming (ap-⇐ to ap-⇐₂; ap-⇒ to ap-⇒₂; _$→_ to _$→₂_; _$←_ to _$←₂_)
+
+_∘⇛_ : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
+ {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc} →
+ (A ⇛ B) → (B ⇛ C) → (A ⇛ C)
+_∘⇛_ {A = A} {B} {C} A⇛B B⇛C = FArr (G.map ∘ F.map) (λ x → G.transport (F.map ⟨$⟩ x) ∘ F.transport x)
+  (λ {y} {x} {By} y≈x →
+  let open Setoid (index C (G.map ∘ F.map ⟨$⟩ x)) renaming (trans to _⟨≈≈⟩_) in
+  Π.cong (G.transport (F.map ⟨$⟩ x)) (F.transport-coh {By = By} y≈x) ⟨≈≈⟩
+  G.transport-coh (Π.cong F.map y≈x))
+  where
+    module F = _⇛_ A⇛B
+    module G = _⇛_ B⇛C
+    open SetoidFamily
 \end{code}
 %}}}
 

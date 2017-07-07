@@ -12,6 +12,9 @@ open import Function.Equality using (_⟨$⟩_; _⟶_; Π; id; _∘_)
 \end{code}
 %}}}
 
+A |SetoidFamily| (over a |Setoid| S), is a family of |Setoid|s indexed by the carrier of S,
+along with a way to ``reindex'' between equivalent members of S.  |reindex| works as expected
+with respect to the the equivalences of S.
 \begin{code}
 record SetoidFamily {ℓS ℓs : Level} (S : Setoid ℓS ℓs) (ℓA ℓa : Level) : Set (ℓS ⊔ ℓs ⊔ suc (ℓA ⊔ ℓa)) where
   open Setoid using () renaming (Carrier to ∣_∣ )
@@ -24,7 +27,14 @@ record SetoidFamily {ℓS ℓs : Level} (S : Setoid ℓS ℓs) (ℓA ℓa : Leve
     trans-coh : {x y z : ∣ S ∣} {b : ∣ index x ∣} → (p : x ≈ y) → (q : y ≈ z) →
       Setoid._≈_ (index z) (reindex (trans p q) ⟨$⟩ b)
                            (reindex q ∘ reindex p ⟨$⟩ b)
+\end{code}
 
+A map |_⇛_| of |SetoidFamily| is a map (aka |_⟶_|) of the underlying setoids,
+and |transport|, a method of mapping from |index B x| to the setoid obtained
+by shifting from one |Setoid| to another, i.e. |index B' (map ⟨$⟩ x)|.  Lastly,
+|transport| and |reindex| obey a commuting law.
+
+\begin{code}
 record _⇛_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
  (B : SetoidFamily S ℓA ℓa ) (B' : SetoidFamily S' ℓA' ℓa') :
    Set (ℓS ⊔ ℓA ⊔ ℓS' ⊔ ℓA' ⊔ ℓa' ⊔ ℓs ⊔ ℓs' ⊔ ℓa) where
@@ -39,10 +49,18 @@ record _⇛_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid �
         Setoid._≈_ (index B' (map ⟨$⟩ x))
           (transport x ⟨$⟩ (reindex B p ⟨$⟩ By))
           (reindex B' (Π.cong map p) ⟨$⟩ (transport y ⟨$⟩ By))
+\end{code}
+
+We say that two maps F and G are equivalent (written |F ≈≈ G|) if
+there is an (extensional) equivalence between the underlying |Setoid| maps,
+and a certain coherence law.
+
+\begin{code}
+infix 3 _≈≈_
 
 record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
   {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
-  (F : B ⇛ B') (G : B ⇛ B') : Set (ℓs ⊔ ℓs' ⊔ ℓS ⊔ ℓS' ⊔ ℓA ⊔ ℓa') where
+  (F : B ⇛ B') (G : B ⇛ B') : Set (ℓA ⊔ ℓS ⊔ ℓs' ⊔ ℓa') where
    open Setoid using () renaming (Carrier to ∣_∣ )
    open Setoid S using () renaming (_≈_ to _≈₁_)
    open Setoid S' using () renaming (_≈_ to _≈₂_)
@@ -54,7 +72,11 @@ record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoi
        Setoid._≈_ (index B' (map F ⟨$⟩ x))
          (reindex B' (ext x) ⟨$⟩ (transport G x ⟨$⟩ Bx))
          (transport F x ⟨$⟩ Bx)
+\end{code}
 
+|_≈≈_| is an equivalence relation.
+
+\begin{code}
 ≈≈-refl : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs} {B : SetoidFamily S ℓA ℓa}
   (F : B ⇛ B) → F ≈≈ F
 ≈≈-refl {S = S} {B} F = record
@@ -92,10 +114,17 @@ record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoi
     open SetoidFamily
     module F=G = _≈≈_ F≈G
     module G=H = _≈≈_ G≈H
+\end{code}
 
-id⇛ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+If |⇛| is going to be a proper notion of mapping, it should at least have an
+identity map as well as composition.  [We might expect more, that it can all be
+packaged as a |Category|.  It can, but we don't need it, so we do just the parts
+that are needed.
+
+\begin{code}
+id⇛ : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs}
  {B : SetoidFamily S ℓA ℓa} → B ⇛ B
-id⇛ {S = S} {_} {B} =
+id⇛ {S = S} {B} =
   FArr id (λ _ → reindex refl)
       (λ {y} {x} {By} y≈x → Setoid.trans (index x)
         id-coh
@@ -103,6 +132,8 @@ id⇛ {S = S} {_} {B} =
     where
       open SetoidFamily B
       open Setoid S
+
+infixr 9 _∘⇛_
 
 _∘⇛_ : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc : Level}
  {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
@@ -118,6 +149,65 @@ _∘⇛_ {A = A} {B} {C} A⇛B B⇛C = FArr (G.map ∘ F.map) (λ x → G.transp
     module G = _⇛_ B⇛C
     open SetoidFamily
 \end{code}
+
+Lastly, we need to know when two |SetoidFamily| are equivalent.  In fact, we'll use
+a quasi-equivalence (we have no need for it to be a proposition).  So we'll
+need two maps back and forth, and show that they compose to the identity, up to
+equivalence of maps.
+
+\begin{code}
+infix 3 _♯_
+
+record _♯_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ (From : SetoidFamily S ℓA ℓa ) (To : SetoidFamily S' ℓA' ℓa')
+ : Set (ℓS ⊔ ℓA ⊔ ℓS' ⊔ ℓs ⊔ ℓa ⊔ ℓA' ⊔ ℓs' ⊔ ℓa') where
+ field
+    to         : From ⇛ To
+    from       : To ⇛ From
+    left-inv   : from ∘⇛ to ≈≈ id⇛ {B = To}
+    right-inv  : to ∘⇛ from ≈≈ id⇛ {B = From}
+\end{code}
+
+We need to show that |_♯_| is also an equivalence relation too.
+Luckily, all the hard work has been done already.
+
+{-
+infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
+
+infix  4 _Is♯To_
+infix  1 begin_
+
+-- This seemingly unnecessary type is used to make it possible to
+-- infer arguments even if the underlying equality evaluates.
+
+data _Is♯To_ {f₁ f₂ t₁ t₂ : Level}
+       (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
+       (To : I.Setoid (Setoid.Carrier S) t₁ t₂) : Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂) where
+  relTo : (x♯y : From ♯ To) → From Is♯To To
+
+begin_ : {f₁ f₂ t₁ t₂ : Level}
+       {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
+       {To : I.Setoid (Setoid.Carrier S) t₁ t₂}
+       → From Is♯To To → From ♯ To
+begin relTo x♯y = x♯y
+
+_♯⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
+  (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
+  {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
+  {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
+      →  A ♯ B → B Is♯To C → A Is♯To C
+_♯⟨_⟩_ A {B} {C} A♯B (relTo B♯C) = relTo (ISE-trans A♯B B♯C)
+  where open ISE-Trans S A B C
+
+_♯˘⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
+  (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
+  {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
+  {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
+      →  B ♯ A → B Is♯To C → A Is♯To C
+_♯˘⟨_⟩_ A {B} {C} B♯A (relTo B♯C) = relTo (ISE-trans (ISE-sym B♯A) B♯C)
+  where open ISE-Trans S A B C; open ISE-Combinators S B A
+-}
+
 %}}}
 
 % Quick Folding Instructions:

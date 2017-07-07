@@ -5,13 +5,14 @@
 module ParComp where
 
 open import Level
-open import Relation.Binary    using  (Setoid)
+open import Relation.Binary    using  (Setoid; REL; Rel)
 open import Function           using  (_∘_)
 open import Function.Equality  using  (Π; _⟨$⟩_; cong)
-import Relation.Binary.Indexed as I
+open import Function.Inverse   using  () renaming (_InverseOf_ to Inv)
 
 open import DataProperties
 open import SetoidEquiv
+open import ISEquiv
 
 open import TypeEquiv using (swap₊)
 \end{code}
@@ -24,94 +25,100 @@ Parallel composition of heterogeneous relations.
 
 \begin{code}
 data _∥_ {a₁ b₁ c₁ a₂ b₂ c₂ : Level}
-  {A₁ : Set a₁} {B₁ : Set b₁} (_~₁_ : A₁ → B₁ → Set c₁)
-  {A₂ : Set a₂} {B₂ : Set b₂} (_~₂_ : A₂ → B₂ → Set c₂)
-  : A₁ ⊎ A₂ → B₁ ⊎ B₂ → Set (a₁ ⊔ b₁ ⊔ c₁ ⊔ a₂ ⊔ b₂ ⊔ c₂) where
-  left  : {x : A₁} {y : B₁} (x~₁y : x ~₁ y) → (_~₁_ ∥ _~₂_) (inj₁ x) (inj₁ y)
-  right : {x : A₂} {y : B₂} (x~₂y : x ~₂ y) → (_~₁_ ∥ _~₂_) (inj₂ x) (inj₂ y)
+  {A₁ : Set a₁} {B₁ : Set b₁} {A₂ : Set a₂} {B₂ : Set b₂}
+  (R₁ : REL A₁ B₁ c₁) (R₂ : REL A₂ B₂ c₂)
+  : REL (A₁ ⊎ A₂) (B₁ ⊎ B₂) (c₁ ⊔ c₂) where
+  left  : {x : A₁} {y : B₁} (r₁ : R₁ x y) → (R₁ ∥ R₂) (inj₁ x) (inj₁ y)
+  right : {x : A₂} {y : B₂} (r₂ : R₂ x y) → (R₁ ∥ R₂) (inj₂ x) (inj₂ y)
 
--- Non-working ``eliminator'' for this type.
-[_∥_] : {a₁ b₁ c₁ a₂ b₂ c₂ ℓ : Level}
-        {A₁ : Set a₁} {B₁ : Set b₁} {_~₁_ : A₁ → B₁ → Set c₁}
-        {A₂ : Set a₂} {B₂ : Set b₂} {_~₂_ : A₂ → B₂ → Set c₂}
-     →
-        {Z : {a : A₁ ⊎ A₂} {b : B₁ ⊎ B₂} → (_~₁_ ∥ _~₂_) a b → Set ℓ}
-        (F : {a : A₁} {b : B₁} (a~b : a ~₁ b) → Z (left a~b))
-        (G : {a : A₂} {b : B₂} (a~b : a ~₂ b) → Z (right a~b))
-     →
-        {x : A₁ ⊎ A₂} {y : B₁ ⊎ B₂}
-     → (x∥y : (_~₁_ ∥ _~₂_) x y)  → Z x∥y
-[ F ∥ G ] (left  x~y) = F x~y
-[ F ∥ G ] (right x~y) = G x~y
-
--- non-dependent eliminator
-[_∥_]′ : {a₁ b₁ c₁ a₂ b₂ c₂ ℓ : Level}
-        {A₁ : Set a₁} {B₁ : Set b₁} {_~₁_ : A₁ → B₁ → Set c₁}
-        {A₂ : Set a₂} {B₂ : Set b₂} {_~₂_ : A₂ → B₂ → Set c₂}
-     →
-        {Z : (a : A₁ ⊎ A₂) (b : B₁ ⊎ B₂) → Set ℓ}
-        (F : {a : A₁} {b : B₁} (a~b : a ~₁ b) → Z (inj₁ a) (inj₁ b))
-        (G : {a : A₂} {b : B₂} (a~b : a ~₂ b) → Z (inj₂ a) (inj₂ b))
-     →
-        {x : A₁ ⊎ A₂} {y : B₁ ⊎ B₂}
-     → (_~₁_ ∥ _~₂_) x y  → Z x y
-[ F ∥ G ]′ (left  x~y) = F x~y
-[ F ∥ G ]′ (right x~y) = G x~y
+elim : {a₁ b₁ a₂ b₂ c₁ c₂ : Level}
+  {A₁ : Set a₁} {B₁ : Set b₁} {A₂ : Set a₂} {B₂ : Set b₂}
+  {R₁ : REL A₁ B₁ c₁} {R₂ : REL A₂ B₂ c₂}
+  (P : {a : A₁ ⊎ A₂} {b : B₁ ⊎ B₂} (pf : (R₁ ∥ R₂) a b) → Set (c₁ ⊔ c₂))
+  (F : {a : A₁} {b : B₁} → (f : R₁ a b) → P (left f))
+  (G : {a : A₂} {b : B₂} → (g : R₂ a b) → P (right g))
+  {a : A₁ ⊎ A₂} {b : B₁ ⊎ B₂} → (x : (R₁ ∥ R₂) a b) → P x
+elim P F G (left r₁) = F r₁
+elim P F G (right r₂) = G r₂
 
 -- If the argument relations are symmetric then so is their parallel composition.
-∥-sym : {a a′ c c′ : Level} {A : Set a} {_~_ : A → A → Set c}
-  {A′ : Set a′} {_~′_ : A′ → A′ → Set c′}
-  (sym₁ : {x y : A} → x ~ y → y ~ x) (sym₂ : {x y : A′} → x ~′ y → y ~′ x)
+∥-sym : {a a′ c c′ : Level} {A : Set a} {R₁ : Rel A c}
+  {A′ : Set a′} {R₂ : Rel A′ c′}
+  (sym₁ : {x y : A} → R₁ x y → R₁ y x) (sym₂ : {x y : A′} → R₂ x y → R₂ y x)
   {x y : A ⊎ A′}
-  →
-    (_~_ ∥ _~′_) x y → (_~_ ∥ _~′_) y x
-∥-sym sym₁ sym₂ (left x~y )  =  left  (sym₁ x~y)
-∥-sym sym₁ sym₂ (right x~y)  =  right (sym₂ x~y)
---
---
--- Instead, I can use, with much distasteful yellow,
--- |∥-sym sym₁ sym₂ = [ left ∘ sym₁ ∥ right ∘ sym₂ ]′|
+  → (R₁ ∥ R₂) x y → (R₁ ∥ R₂) y x
+∥-sym {R₁ = R₁} {R₂ = R₂} sym₁ sym₂ pf =
+  elim (λ {a b} (x : (R₁ ∥ R₂) a b) → (R₁ ∥ R₂) b a) (left ∘ sym₁) (right ∘ sym₂) pf
 
 -- Motivation for introducing parallel composition:
-infix 3 _⊎⊎_
-_⊎⊎_ : {s₁ i₁ i₂ k₁ k₂ : Level} {S : Set s₁}
-  → I.Setoid S i₁ k₁ → I.Setoid S i₂ k₂ → I.Setoid S (i₁ ⊔ i₂) (i₁ ⊔ i₂ ⊔ k₁ ⊔ k₂)
-A ⊎⊎ B = record
-  { Carrier         =   λ s → A₀ s ⊎ B₀ s
-  ; _≈_             =   ≈₁ ∥ ≈₂
-  ; isEquivalence   =   record
-    { refl   =  λ { {_} {inj₁ x} → left refl₁ ; {_} {inj₂ y} → right refl₂}
-    ; sym    =  λ{ (left eq) → left (sym₁ eq) ; (right eq) → right (sym₂ eq)}
-    ; trans  =  λ{  (left  eq) (left  eqq) → left  (trans₁ eq eqq)
-                 ; (right eq) (right eqq) → right (trans₂ eq eqq)
-                 }
+infix 3 _⊎⊎_ _⊎S_
+_⊎S_ : {ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} → Setoid ℓA₁ ℓa₁ → Setoid ℓA₂ ℓa₂ → Setoid (ℓA₁ ⊔ ℓA₂) (ℓa₁ ⊔ ℓa₂)
+S₁ ⊎S S₂ = record
+  { Carrier = s₁ ⊎ s₂
+  ; _≈_ = _≈₁_ ∥ _≈₂_
+  ; isEquivalence = record
+    { refl = λ { {inj₁ x} → left refl₁ ; {inj₂ y} → right refl₂ }
+    ; sym = ∥-sym sym₁ sym₂
+    ; trans = λ {i j k} → λ { (left r₁) (left r₂) → left (trans₁ r₁ r₂)
+                            ; (right r₂) (right r₃) → right (trans₂ r₂ r₃) }
     }
   }
   where
-    open I.Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁ ; sym to sym₁ ; trans to trans₁)
-    open I.Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂ ; sym to sym₂ ; trans to trans₂)
+    open Setoid S₁ renaming (Carrier to s₁; _≈_ to _≈₁_; refl to refl₁; sym to sym₁; trans to trans₁)
+    open Setoid S₂ renaming (Carrier to s₂; _≈_ to _≈₂_; refl to refl₂; sym to sym₂; trans to trans₂)
+    R = λ x y → (_≈₁_ ∥ _≈₂_) x y
+
+_⊎⊎_ : {ℓS ℓs ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} {S : Setoid ℓS ℓs}
+  → SetoidFamily S ℓA₁ ℓa₁ → SetoidFamily S ℓA₂ ℓa₂ → SetoidFamily S _ _
+X ⊎⊎ Y = record
+  { index = λ s → A.index s ⊎S B.index s
+  ; reindex = λ x≈y → record
+    { _⟨$⟩_ = λ { (inj₁ x) → inj₁ (A.reindex x≈y ⟨$⟩ x) ; (inj₂ x) → inj₂ (B.reindex x≈y ⟨$⟩ x) }
+    ; cong = λ { {.(inj₁ _)} {.(inj₁ _)} (left r₁) → left (Π.cong (A.reindex x≈y) r₁)
+               ; {.(inj₂ _)} {.(inj₂ _)} (right r₂) → right (Π.cong (B.reindex x≈y) r₂) }
+    }
+  ; id-coh = λ { {a} {inj₁ x} → left A.id-coh ; {a} {inj₂ y} → right B.id-coh}
+  ; sym-iso = λ x≈y → record
+    { left-inverse-of = λ { (inj₁ x) → left (Inv.left-inverse-of (A.sym-iso x≈y) x)
+                          ; (inj₂ y) → right (Inv.left-inverse-of (B.sym-iso x≈y) y)}
+    ; right-inverse-of = λ { (inj₁ x) → left (Inv.right-inverse-of (A.sym-iso x≈y) x)
+                           ; (inj₂ y) → right (Inv.right-inverse-of (B.sym-iso x≈y) y) }
+    }
+  ; trans-coh = λ { {b = inj₁ x₁} a≈b b≈c → left (A.trans-coh a≈b b≈c )
+                  ; {b = inj₂ y₁} x≈y y≈z → right (B.trans-coh x≈y y≈z) }
+  }
+    where
+      module A = SetoidFamily X
+      module B = SetoidFamily Y
 \end{code}
 %}}}
 
 %{{{ \subsection{|⊎⊎-comm|}
 \subsection{|⊎⊎-comm|}
 \begin{spec}
-⊎⊎-comm : {a b aℓ bℓ : Level} {A : Setoid a aℓ} {B : Setoid b bℓ} → (A ⊎⊎ B)  ≅  (B ⊎⊎ A)
-⊎⊎-comm {A = A} {B} = record
+⊎⊎-comm : {ℓS ℓs ℓA ℓB ℓa ℓb : Level} {S : Setoid ℓS ℓs} →
+  let s = Setoid.Carrier S in
+  {A : I.Setoid s ℓA ℓa} {B : I.Setoid s ℓB ℓb} → IndexedSetoidEquivalence S (A ⊎⊎ B) (B ⊎⊎ A)
+⊎⊎-comm {S = S} {A} {B} {x} {y} x≈y = record
+  { to = record { _⟨$⟩_ = [ inj₂ ∘ {!!} , {!!} ] ; cong = {!!} }
+  ; from = record { _⟨$⟩_ = {!!} ; cong = {!!} }
+  ; inverse-of = record { left-inverse-of = {!!} ; right-inverse-of = {!!} }
+  }
+  {- record
   { to           =  record { _⟨$⟩_ = swap₊ ; cong = swap-on-∥   }
   ; from         =  record { _⟨$⟩_ = swap₊ ; cong = swap-on-∥′ }
   ; inverse-of   =  record { left-inverse-of = swap²≈∥≈id ; right-inverse-of = swap²≈∥≈id′ }
-  }
+  -}
   where
 
-    open Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁)
-    open Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂)
+    open I.Setoid A renaming (Carrier to A₀ ; _≈_ to ≈₁ ; refl to refl₁)
+    open I.Setoid B renaming (Carrier to B₀ ; _≈_ to ≈₂ ; refl to refl₂)
 
-    swap-on-∥ : {i j : A₀ ⊎ B₀} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)
+    swap-on-∥ : {i j : A₀ x ⊎ B₀ x} → (≈₁ ∥ ≈₂) i j → (≈₂ ∥ ≈₁) (swap₊ i) (swap₊ j)
     swap-on-∥ (left  x∼₁y)  =  right x∼₁y
     swap-on-∥ (right x∼₂y)  =  left  x∼₂y
 
-    swap²≈∥≈id : (z : A₀ ⊎ B₀) → (≈₁ ∥ ≈₂) (swap₊ (swap₊ z)) z
+    swap²≈∥≈id : (z : A₀ x ⊎ B₀ x) → (≈₁ ∥ ≈₂) (swap₊ (swap₊ z)) z
     swap²≈∥≈id (inj₁ _)  =  left  refl₁
     swap²≈∥≈id (inj₂ _)  =  right refl₂
 
@@ -119,11 +126,11 @@ A ⊎⊎ B = record
        Tried to obtain the following via |∥-sym| ...
     -}
 
-    swap-on-∥′ : {i j : B₀ ⊎ A₀} → (≈₂ ∥ ≈₁) i j → (≈₁ ∥ ≈₂) (swap₊ i) (swap₊ j)
+    swap-on-∥′ : {i j : B₀ x ⊎ A₀ x} → (≈₂ ∥ ≈₁) i j → (≈₁ ∥ ≈₂) (swap₊ i) (swap₊ j)
     swap-on-∥′ (left  x~y) = right x~y
     swap-on-∥′ (right x~y) = left  x~y
 
-    swap²≈∥≈id′ : (z : B₀ ⊎ A₀) → (≈₂ ∥ ≈₁) (swap₊ (swap₊ z)) z
+    swap²≈∥≈id′ : (z : B₀ x ⊎ A₀ x) → (≈₂ ∥ ≈₁) (swap₊ (swap₊ z)) z
     swap²≈∥≈id′ (inj₁ _)  =  left  refl₂
     swap²≈∥≈id′ (inj₂ _)  =  right refl₁
 \end{spec}

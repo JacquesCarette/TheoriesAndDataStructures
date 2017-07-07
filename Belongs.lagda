@@ -11,7 +11,6 @@ module Belongs where
 open import Level renaming (zero to lzero; suc to lsuc) hiding (lift)
 open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
   Reflexive ; Symmetric ; Transitive)
-import Relation.Binary.Indexed as I
 
 open import Function.Equality    using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function             using (_$_; flip) renaming (id to id₀; _∘_ to _⊚_)
@@ -105,6 +104,50 @@ Furthermore, it is important to notice that we have an injectivity property:
 \end{code}
 %}}}
 
+%{{{ \subsection{Substitution}
+\subsection{Substitution}
+
+Given |x ≈ y|, we have a substitution-like operator that maps from
+|x ∈₀ xs| to |y ∈₀ xs|.  Here, choose the HoTT-inspired name,
+|ap-∈₀|.  We will see later that these are the essential ingredients
+for showing that |♯| (at |∈₀|) is reflexive.
+\begin{code}
+module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+  open Setoid S
+  open Locations S
+  open LocEquiv S
+  open SetoidCombinators S
+
+  ap-∈₀ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
+  ap-∈₀ x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
+  ap-∈₀ x≈y (there x∈xs) = there (ap-∈₀ x≈y x∈xs)
+
+  ap-∈₀-refl : {x : Carrier} {xs : List Carrier} → (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
+  ap-∈₀-refl (Locations.here sm) = hereEq (refl ⟨≈˘≈⟩ sm) sm
+  ap-∈₀-refl (Locations.there xx) = thereEq (ap-∈₀-refl xx)
+
+  ap-∈₀-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
+                  {i j : x ∈₀ xs} → i ≋ j → ap-∈₀ x≈y i ≋ ap-∈₀ x≈y j
+  ap-∈₀-cong x≈y (hereEq x≈z y≈z) = hereEq (x≈y ⟨≈˘≈⟩ x≈z) (x≈y ⟨≈˘≈⟩ y≈z)
+  ap-∈₀-cong x≈y (thereEq i≋j) = thereEq (ap-∈₀-cong x≈y i≋j)
+
+  ap-∈₀-linv : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
+    (x∈xs : x ∈₀ xs) → ap-∈₀ (sym x≈y) (ap-∈₀ x≈y x∈xs) ≋ x∈xs
+  ap-∈₀-linv x≈y (here sm) = hereEq ((sym x≈y) ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm)) sm
+  ap-∈₀-linv x≈y (there x∈xs) = thereEq (ap-∈₀-linv x≈y x∈xs)
+
+  ap-∈₀-rinv : {x y : Carrier} {ys : List Carrier} (x≈y : x ≈ y)
+    (y∈ys : y ∈₀ ys) → ap-∈₀ x≈y (ap-∈₀ (sym x≈y) y∈ys) ≋ y∈ys
+  ap-∈₀-rinv x≈y (here sm) = hereEq (x≈y ⟨≈˘≈⟩ (sym x≈y ⟨≈˘≈⟩ sm)) sm
+  ap-∈₀-rinv x≈y (there y∈ys) = thereEq (ap-∈₀-rinv x≈y y∈ys)
+
+  ap-∈₀-trans : {x y z : Carrier} {xs : List Carrier} {x∈xs : x ∈₀ xs}
+    (x≈y : x ≈ y) (y≈z : y ≈ z) → ap-∈₀ (trans x≈y y≈z) x∈xs ≋ ap-∈₀ y≈z (ap-∈₀ x≈y x∈xs)
+  ap-∈₀-trans {x∈xs = here sm} x≈y y≈z = hereEq (trans x≈y y≈z ⟨≈˘≈⟩ sm) (y≈z ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm))
+  ap-∈₀-trans {x∈xs = there x∈xs} x≈y y≈z = thereEq (ap-∈₀-trans x≈y y≈z)
+\end{code}
+%}}}
+
 %{{{ \subsection{Membership module}: _∈_
 \subsection{Membership module}
 
@@ -112,11 +155,12 @@ We now have all the ingredients to show that locations (|_∈₀_|) form a |Seto
 we will go one step further and show that it forms an |IndexedSetoid|.
 \begin{code}
 module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
-  infix 3 _♯_
+  -- infix 3 _♯_
 
   open Setoid S
   open Locations S
   open LocEquiv S
+  open Substitution S
 
   ≋-refl : {x : Carrier} {xs : List Carrier} {p : x ∈₀ xs} → p ≋ p
   ≋-refl {p = here a≈x}   =   hereEq a≈x a≈x
@@ -134,24 +178,21 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
   ≡→≋ : {x : Carrier} {xs : List Carrier} {p q : x ∈₀ xs} → p ≡ q → p ≋ q
   ≡→≋ ≡.refl = ≋-refl
 
-  elem-of : List Carrier → I.Setoid Carrier (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
+  elem-of : List Carrier → SetoidFamily S (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
   elem-of l = record
-    { Carrier = λ x → x ∈₀ l
-    ; _≈_ = _≋_
-    ; isEquivalence = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans } }
-
-  _♯_ : {f₁ f₂ t₁ t₂ : Level}
-         (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
-         (To : I.Setoid (Setoid.Carrier S) t₁ t₂) →
-         Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂)
-  From ♯ To = IndexedSetoidEquivalence S From To
-
-  ♯-sym : {f₁ f₂ t₁ t₂ : Level}
-         {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
-         {To : I.Setoid (Setoid.Carrier S) t₁ t₂} →
-         From ♯ To → To ♯ From
-  ♯-sym {From = From} {To} = ISE-sym where open ISE-Combinators S From To
-
+    { index = λ x → record
+      { Carrier = x ∈₀ l
+      ; _≈_ = _≋_
+      ; isEquivalence = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans } }
+    ; reindex = λ x≈y → record { _⟨$⟩_ = ap-∈₀ x≈y ; cong = ap-∈₀-cong x≈y }
+    ; id-coh = λ {_} {a∈l} → ap-∈₀-refl a∈l
+    ; sym-iso = λ x≈y → record
+      { left-inverse-of  = ap-∈₀-linv x≈y
+      ; right-inverse-of = ap-∈₀-rinv x≈y
+      }
+    ; trans-coh = ap-∈₀-trans
+    }
+  {-
   infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
 
   infix  4 _Is♯To_
@@ -186,42 +227,7 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
         →  B ♯ A → B Is♯To C → A Is♯To C
   _♯˘⟨_⟩_ A {B} {C} B♯A (relTo B♯C) = relTo (ISE-trans (ISE-sym B♯A) B♯C)
     where open ISE-Trans S A B C; open ISE-Combinators S B A
-
-\end{code}
-%}}}
-
-%{{{ \subsection{Substitution}
-\subsection{Substitution}
-
-Given |x ≈ y|, we have a substitution-like operator that maps from
-|x ∈₀ xs| to |y ∈₀ xs|.  Here, choose the HoTT-inspired name,
-|ap-∈₀|.  We will see later that these are the essential ingredients
-for showing that |♯| (at |∈₀|) is reflexive.
-\begin{code}
-module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
-  open Setoid S
-  open Locations S
-  open LocEquiv S
-  open SetoidCombinators S
-
-  ap-∈₀ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
-  ap-∈₀ x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
-  ap-∈₀ x≈y (there x∈xs) = there (ap-∈₀ x≈y x∈xs)
-
-  ap-∈₀-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
-                  {i j : x ∈₀ xs} → i ≋ j → ap-∈₀ x≈y i ≋ ap-∈₀ x≈y j
-  ap-∈₀-cong x≈y (hereEq x≈z y≈z) = hereEq (x≈y ⟨≈˘≈⟩ x≈z) (x≈y ⟨≈˘≈⟩ y≈z)
-  ap-∈₀-cong x≈y (thereEq i≋j) = thereEq (ap-∈₀-cong x≈y i≋j)
-
-  ap-∈₀-linv : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
-    (x∈xs : x ∈₀ xs) → ap-∈₀ (sym x≈y) (ap-∈₀ x≈y x∈xs) ≋ x∈xs
-  ap-∈₀-linv x≈y (here sm) = hereEq ((sym x≈y) ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm)) sm
-  ap-∈₀-linv x≈y (there x∈xs) = thereEq (ap-∈₀-linv x≈y x∈xs)
-
-  ap-∈₀-rinv : {x y : Carrier} {ys : List Carrier} (x≈y : x ≈ y)
-    (y∈ys : y ∈₀ ys) → ap-∈₀ x≈y (ap-∈₀ (sym x≈y) y∈ys) ≋ y∈ys
-  ap-∈₀-rinv x≈y (here sm) = hereEq (x≈y ⟨≈˘≈⟩ (sym x≈y ⟨≈˘≈⟩ sm)) sm
-  ap-∈₀-rinv x≈y (there y∈ys) = thereEq (ap-∈₀-rinv x≈y y∈ys)
+  -}
 \end{code}
 %}}}
 
@@ -235,7 +241,7 @@ express this is via |_♯_|.
 
 It is very important to note that |_♯_| isn't reflective 'for free', i.e.
 the proof does not involve just |id|.
-\begin{code}
+\begin{spec}
 module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   open Setoid S
   open Locations S
@@ -248,33 +254,12 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ♯ elem-of ys
 
-  ⇔-Liftable : {xs : List Carrier} → Liftable S (elem-of xs)
-  ⇔-Liftable x≈y = record
-    { to = record   { _⟨$⟩_ = ap-∈₀ x≈y       ; cong = ap-∈₀-cong x≈y }
-    ; from = record { _⟨$⟩_ = ap-∈₀ (sym x≈y) ; cong = ap-∈₀-cong (sym x≈y) }
-    ; inverse-of = record { left-inverse-of = ap-∈₀-linv x≈y ; right-inverse-of = ap-∈₀-rinv x≈y } }
-
-  ⇔-refl : {xs : List Carrier} → xs ⇔ xs
-  ⇔-refl {xs} = ISE-refl {S = S} {X = elem-of xs} ⇔-Liftable
-
-  ⇔-sym : {xs ys : List Carrier} → xs ⇔ ys → ys ⇔ xs
-  ⇔-sym {xs} {ys} = ISE-sym
-    where open ISE-Combinators S (elem-of xs) (elem-of ys)
-
-  ⇔-trans : {xs ys zs : List Carrier} → xs ⇔ ys → ys ⇔ zs → xs ⇔ zs
-  ⇔-trans {xs} {ys} {zs} = ISE-trans
-    where open ISE-Trans S (elem-of xs) (elem-of ys) (elem-of zs)
-
-  infix 3 _▣
-
-  _▣ : (X : I.Setoid Carrier (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)) → {xs : List Carrier} → elem-of xs Is♯To elem-of xs
-  X ▣ = relTo ⇔-refl
-\end{code}
+\end{spec}
 %}}}
 
 %{{{ \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
 \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
-\begin{code}
+\begin{spec}
 module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (Carrier to A)
   open SetoidCombinators S
@@ -357,7 +342,7 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
       righty x≈y (_ ∷ zs) (there p) with ++→⊎ zs (sym x≈y) p | righty x≈y zs p
       ... | inj₁ _  | res           = thereEq res
       ... | inj₂ _  | res           = thereEq res
-\end{code}
+\end{spec}
 %}}}
 
 \subsection{Following sections are inactive code}
@@ -365,15 +350,21 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 %{{{ \subsection{Bottom as an indexed setoid} ⊥⊥ ; ⊥⊥♯elem-of-[] : ⊥⊥ ≅ elem-of []
 \subsection{Bottom as an indexed setoid}
 \begin{code}
-⊥⊥ : ∀ {ℓS ℓs ℓI} (S : Set ℓI) → I.Setoid S ℓS ℓs
+⊥⊥ : ∀ {ℓS ℓs ℓI ℓi} (S : Setoid ℓI ℓi) → SetoidFamily S ℓS ℓs
 ⊥⊥ I = record
-  { Carrier = λ _ → ⊥
-  ; _≈_ = λ _ _ → ⊤
-  ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt }
+  { index = λ i → record
+    { Carrier = ⊥
+    ; _≈_ = λ _ _ → ⊤
+    ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
+  ; reindex = λ x≈y → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
+  ; id-coh = tt
+  ; sym-iso = λ x≈y → record
+    { left-inverse-of = λ _ → tt
+    ; right-inverse-of = λ _ → tt }
   }
 \end{code}
 
-\begin{code}
+\begin{spec}
 module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
 
@@ -383,7 +374,7 @@ module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
     ; from = record { _⟨$⟩_ = λ{()} ; cong = λ { {()} } }
     ; inverse-of = record { left-inverse-of = λ _ → tt ; right-inverse-of = λ {()} }
     }
-\end{code}
+\end{spec}
 %}}}
 
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}

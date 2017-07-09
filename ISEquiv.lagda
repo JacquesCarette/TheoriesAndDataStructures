@@ -57,6 +57,7 @@ and a certain coherence law.
 
 \begin{code}
 infix 3 _≈≈_
+infixr 3 _⟨≈≈⟩_
 
 record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
   {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
@@ -77,11 +78,12 @@ record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoi
 |_≈≈_| is an equivalence relation.
 
 \begin{code}
-≈≈-refl : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs} {B : SetoidFamily S ℓA ℓa}
-  (F : B ⇛ B) → F ≈≈ F
-≈≈-refl {S = S} {B} F = record
+≈≈-refl : {ℓS ℓs ℓT ℓt ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt}
+  {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb}
+  (F : A ⇛ B) → F ≈≈ F
+≈≈-refl {T = T} {B = B} F = record
   { ext = λ _ → refl ; transport-ext-coh = λ x Bx → id-coh {map F ⟨$⟩ x} {transport F x ⟨$⟩ Bx} }
-  where open Setoid S; open SetoidFamily B; open _⇛_
+  where open Setoid T; open SetoidFamily B; open _⇛_
 
 ≈≈-sym : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
   {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
@@ -97,16 +99,16 @@ record _≈≈_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoi
    open Setoid S'
    open _⇛_
 
-≈≈-trans : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' ℓS'' ℓs'' ℓA'' ℓa'' : Level}
+_⟨≈≈⟩_ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level}
   {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
   {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
   {F : B ⇛ B'} {G : B ⇛ B'} {H : B ⇛ B'} → F ≈≈ G → G ≈≈ H → F ≈≈ H
-≈≈-trans {S' = S'} {B} {B'} {F} {G} {H} F≈G G≈H = record
+_⟨≈≈⟩_ {S' = S'} {B} {B'} {F} {G} {H} F≈G G≈H = record
   { ext = λ x → trans (G=H.ext x) (F=G.ext x)
   ; transport-ext-coh = λ x Bx →
-    let open Setoid (index B' (_⇛_.map F ⟨$⟩ x)) renaming (trans to _⟨≈≈⟩_) in
-    (SetoidFamily.trans-coh B' (G=H.ext x) (F=G.ext x) ⟨≈≈⟩
-    (Π.cong (reindex B' (F=G.ext x)) (G=H.transport-ext-coh x Bx))) ⟨≈≈⟩
+    let open Setoid (index B' (_⇛_.map F ⟨$⟩ x)) renaming (trans to _⟨≈⟩_) in
+    (SetoidFamily.trans-coh B' (G=H.ext x) (F=G.ext x) ⟨≈⟩
+    (Π.cong (reindex B' (F=G.ext x)) (G=H.transport-ext-coh x Bx))) ⟨≈⟩
     (F=G.transport-ext-coh x Bx)
   }
   where
@@ -141,8 +143,8 @@ _∘⇛_ : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc : Level}
  (A ⇛ B) → (B ⇛ C) → (A ⇛ C)
 _∘⇛_ {A = A} {B} {C} A⇛B B⇛C = FArr (G.map ∘ F.map) (λ x → G.transport (F.map ⟨$⟩ x) ∘ F.transport x)
   (λ {y} {x} {By} y≈x →
-  let open Setoid (index C (G.map ∘ F.map ⟨$⟩ x)) renaming (trans to _⟨≈≈⟩_) in
-  Π.cong (G.transport (F.map ⟨$⟩ x)) (F.transport-coh {By = By} y≈x) ⟨≈≈⟩
+  let open Setoid (index C (G.map ∘ F.map ⟨$⟩ x)) renaming (trans to _⟨≈⟩_) in
+  Π.cong (G.transport (F.map ⟨$⟩ x)) (F.transport-coh {By = By} y≈x) ⟨≈⟩
   G.transport-coh (Π.cong F.map y≈x))
   where
     module F = _⇛_ A⇛B
@@ -168,46 +170,129 @@ record _♯_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid �
     right-inv  : to ∘⇛ from ≈≈ id⇛ {B = From}
 \end{code}
 
-We need to show that |_♯_| is also an equivalence relation too.
-Luckily, all the hard work has been done already.
+We need to show that |_♯_| is also an equivalence relation too.  This relies
+on some properties of |∘⇛| and |id⇛|, so we prove these first.  We could prove
+less general versions of left-unital and right-unital, but these are easy enough.
 
-{-
+We'll also need that |∘⇛| is associative and a congruence.  For associativity,
+giving the arguments helps inference; not sure how crucial this is, but as it is
+not too painful, let's see.
+
+\begin{code}
+unitˡ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'} (F : B ⇛ B') →
+ id⇛ ∘⇛ F ≈≈ F
+unitˡ {S = S} {S'} {B} {B'} F = record
+  { ext = λ _ → Setoid.refl S'
+  ; transport-ext-coh = λ x Bx →
+    let T = index B' (_⇛_.map F ⟨$⟩ x) in
+    let open Setoid T renaming (refl to reflT; sym to symT; trans to _⟨≈⟩_) in
+    id-coh B' ⟨≈⟩ symT (Π.cong (_⇛_.transport F x) (id-coh B)) }
+  where open SetoidFamily
+
+unitʳ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'} (F : B ⇛ B') →
+ F ∘⇛ id⇛ ≈≈ F
+unitʳ {S = S} {S'} {B} {B'} F = record
+  { ext = λ _ → Setoid.refl S'
+  ; transport-ext-coh = λ x Bx →
+    let T = index B' (_⇛_.map F ⟨$⟩ x) in
+    let open Setoid T renaming (trans to _⟨≈⟩_) in
+    id-coh B' ⟨≈⟩ sym (id-coh B') }
+  where open SetoidFamily
+
+assocˡ : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc ℓV ℓv ℓD ℓd : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu} {V : Setoid ℓV ℓv}
+ {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc} {D : SetoidFamily V ℓD ℓd}
+ (F : A ⇛ B) (G : B ⇛ C) (H : C ⇛ D) → F ∘⇛ (G ∘⇛ H) ≈≈ (F ∘⇛ G) ∘⇛ H
+assocˡ {V = V} {_} {_} {_} {D} F G H = record
+  { ext = λ _ → Setoid.refl V ; transport-ext-coh = λ _ _ → SetoidFamily.id-coh D }
+
+assocʳ : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc ℓV ℓv ℓD ℓd : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu} {V : Setoid ℓV ℓv}
+ {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc} {D : SetoidFamily V ℓD ℓd}
+ (F : A ⇛ B) (G : B ⇛ C) (H : C ⇛ D) → (F ∘⇛ G) ∘⇛ H ≈≈ F ∘⇛ (G ∘⇛ H)
+assocʳ F G H = ≈≈-sym (assocˡ F G H)
+
+∘⇛-cong : {ℓS ℓs ℓT ℓt ℓU ℓu ℓA ℓa ℓB ℓb ℓC ℓc : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
+ {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
+  {F : A ⇛ B} {G : B ⇛ C} {H : A ⇛ B} {I : B ⇛ C}
+  → F ≈≈ H → G ≈≈ I → F ∘⇛ G ≈≈ H ∘⇛ I
+∘⇛-cong {U = U} {_} {_} {C} {F} {G} {H} {I} F≈H G≈I = record
+  { ext = λ x → G=I.ext (_⇛_.map H ⟨$⟩ x) ⟨≈⟩ Π.cong (_⇛_.map G) (F=H.ext x)
+  ; transport-ext-coh = λ x Bx → {!!} }
+  where
+    module F=H = _≈≈_ F≈H; module G=I = _≈≈_ G≈I; open Setoid U renaming (trans to _⟨≈⟩_)
+    open SetoidFamily C
+\end{code}
+
+And now we are in a good position to show that |♯| is an equivalence relation.
+
+\begin{code}
+♯-refl : {ℓS ℓs ℓA ℓa ℓS' ℓs' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {B : SetoidFamily S ℓA ℓa} → B ♯ B
+♯-refl = record { to = id⇛ ; from = id⇛ ; left-inv = unitˡ id⇛ ; right-inv = unitʳ id⇛ }
+
+♯-sym : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {B : SetoidFamily S ℓA ℓa} {B' : SetoidFamily S' ℓA' ℓa'}
+ → B ♯ B' → B' ♯ B
+♯-sym B♯B' = record { to = eq.from ; from = eq.to ; left-inv = eq.right-inv ; right-inv = eq.left-inv }
+  where module eq = _♯_ B♯B'
+
+♯-trans : {ℓS ℓs ℓA ℓa ℓT ℓt ℓB ℓb ℓU ℓu ℓC ℓc : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
+ {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
+ → A ♯ B → B ♯ C → A ♯ C
+♯-trans A♯B B♯C = record
+  { to = AB.to ∘⇛ BC.to
+  ; from = BC.from ∘⇛ AB.from
+  ; left-inv =
+     assocˡ (BC.from ∘⇛ AB.from) AB.to BC.to ⟨≈≈⟩
+     (∘⇛-cong (assocʳ BC.from AB.from AB.to ⟨≈≈⟩
+               ∘⇛-cong (≈≈-refl BC.from) AB.left-inv ⟨≈≈⟩
+               unitʳ BC.from) (≈≈-refl BC.to) ⟨≈≈⟩
+     BC.left-inv)
+  ; right-inv =
+    assocˡ (AB.to ∘⇛ BC.to) BC.from AB.from ⟨≈≈⟩
+    ∘⇛-cong (assocʳ AB.to BC.to BC.from ⟨≈≈⟩
+            ∘⇛-cong (≈≈-refl _) BC.right-inv ⟨≈≈⟩
+            unitʳ AB.to) (≈≈-refl AB.from) ⟨≈≈⟩
+    AB.right-inv }
+  where module AB = _♯_ A♯B; module BC = _♯_ B♯C
+\end{code}
+
+As with |Setoid|-reasoning, we introduce what looks like a
+seemingly unnecessary type is used to make it possible to
+infer arguments even if the underlying equality evaluates.
+
+\begin{code}
 infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
 
 infix  4 _Is♯To_
 infix  1 begin_
 
--- This seemingly unnecessary type is used to make it possible to
--- infer arguments even if the underlying equality evaluates.
-
-data _Is♯To_ {f₁ f₂ t₁ t₂ : Level}
-       (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
-       (To : I.Setoid (Setoid.Carrier S) t₁ t₂) : Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂) where
+data _Is♯To_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ (From : SetoidFamily S ℓA ℓa) (To : SetoidFamily S' ℓA' ℓa')
+ : Set (ℓS ⊔ ℓA ⊔ ℓS' ⊔ ℓs ⊔ ℓa ⊔ ℓA' ⊔ ℓs' ⊔ ℓa') where
   relTo : (x♯y : From ♯ To) → From Is♯To To
 
-begin_ : {f₁ f₂ t₁ t₂ : Level}
-       {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
-       {To : I.Setoid (Setoid.Carrier S) t₁ t₂}
-       → From Is♯To To → From ♯ To
+begin_ : {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+ {From : SetoidFamily S ℓA ℓa} {To : SetoidFamily S' ℓA' ℓa'} → From Is♯To To → From ♯ To
 begin relTo x♯y = x♯y
 
-_♯⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
-  (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-  {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
-  {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
+_♯⟨_⟩_ : {ℓS ℓs ℓA ℓa ℓT ℓt ℓB ℓb ℓU ℓu ℓC ℓc : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
+ (A : SetoidFamily S ℓA ℓa) {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
       →  A ♯ B → B Is♯To C → A Is♯To C
-_♯⟨_⟩_ A {B} {C} A♯B (relTo B♯C) = relTo (ISE-trans A♯B B♯C)
-  where open ISE-Trans S A B C
+A ♯⟨ A♯B ⟩ (relTo B♯C) = relTo (♯-trans A♯B B♯C)
 
-_♯˘⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
-  (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-  {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
-  {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
-      →  B ♯ A → B Is♯To C → A Is♯To C
-_♯˘⟨_⟩_ A {B} {C} B♯A (relTo B♯C) = relTo (ISE-trans (ISE-sym B♯A) B♯C)
-  where open ISE-Trans S A B C; open ISE-Combinators S B A
--}
-
+_♯˘⟨_⟩_ : {ℓS ℓs ℓA ℓa ℓT ℓt ℓB ℓb ℓU ℓu ℓC ℓc : Level}
+ {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt} {U : Setoid ℓU ℓu}
+ (A : SetoidFamily S ℓA ℓa) {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
+  →  B ♯ A → B Is♯To C → A Is♯To C
+A ♯˘⟨ B♯A ⟩ (relTo B♯C) = relTo (♯-trans (♯-sym B♯A) B♯C)
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

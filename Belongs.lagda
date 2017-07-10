@@ -192,42 +192,6 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
       }
     ; trans-coh = ap-∈₀-trans
     }
-  {-
-  infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
-
-  infix  4 _Is♯To_
-  infix  1 begin_
-
-  -- This seemingly unnecessary type is used to make it possible to
-  -- infer arguments even if the underlying equality evaluates.
-
-  data _Is♯To_ {f₁ f₂ t₁ t₂ : Level}
-         (From : I.Setoid (Setoid.Carrier S) f₁ f₂)
-         (To : I.Setoid (Setoid.Carrier S) t₁ t₂) : Set (ℓS ⊔ ℓs ⊔ f₁ ⊔ f₂ ⊔ t₁ ⊔ t₂) where
-    relTo : (x♯y : From ♯ To) → From Is♯To To
-
-  begin_ : {f₁ f₂ t₁ t₂ : Level}
-         {From : I.Setoid (Setoid.Carrier S) f₁ f₂}
-         {To : I.Setoid (Setoid.Carrier S) t₁ t₂}
-         → From Is♯To To → From ♯ To
-  begin relTo x♯y = x♯y
-
-  _♯⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
-    (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-    {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
-    {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
-        →  A ♯ B → B Is♯To C → A Is♯To C
-  _♯⟨_⟩_ A {B} {C} A♯B (relTo B♯C) = relTo (ISE-trans A♯B B♯C)
-    where open ISE-Trans S A B C
-
-  _♯˘⟨_⟩_ : {a₁ a₂ b₁ b₂ c₁ c₂ : Level}
-    (A : I.Setoid (Setoid.Carrier S) a₁ a₂)
-    {B : I.Setoid (Setoid.Carrier S) b₁ b₂}
-    {C : I.Setoid (Setoid.Carrier S) c₁ c₂}
-        →  B ♯ A → B Is♯To C → A Is♯To C
-  _♯˘⟨_⟩_ A {B} {C} B♯A (relTo B♯C) = relTo (ISE-trans (ISE-sym B♯A) B♯C)
-    where open ISE-Trans S A B C; open ISE-Combinators S B A
-  -}
 \end{code}
 %}}}
 
@@ -241,7 +205,7 @@ express this is via |_♯_|.
 
 It is very important to note that |_♯_| isn't reflective 'for free', i.e.
 the proof does not involve just |id|.
-\begin{spec}
+\begin{code}
 module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   open Setoid S
   open Locations S
@@ -254,7 +218,7 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ♯ elem-of ys
 
-\end{spec}
+\end{code}
 %}}}
 
 %{{{ \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
@@ -364,17 +328,18 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   }
 \end{code}
 
-\begin{spec}
+\begin{code}
 module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
 
-  ⊥⊥≅elem-of-[] : ⊥⊥ {ℓS} {ℓs} {ℓS} (Setoid.Carrier S) ♯ elem-of []
-  ⊥⊥≅elem-of-[] x≈y = record
-    { to = record { _⟨$⟩_ = λ{()} ; cong = λ { {()} } }
-    ; from = record { _⟨$⟩_ = λ{()} ; cong = λ { {()} } }
-    ; inverse-of = record { left-inverse-of = λ _ → tt ; right-inverse-of = λ {()} }
-    }
-\end{spec}
+  ⊥⊥♯elem-of-[] : ⊥⊥ {ℓS} {ℓs} {ℓS} S ♯ elem-of []
+  ⊥⊥♯elem-of-[] = record
+    { to = FArr id (λ _ → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }) (λ { {By = ()} })
+    ; from = FArr id (λ x → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }) (λ { {By = ()} })
+    ; left-inv = record { ext = λ _ → refl ; transport-ext-coh = λ { _ () } }
+    ; right-inv = record { ext = λ _ → refl ; transport-ext-coh = λ { _ () } } }
+    where open Setoid S
+\end{code}
 %}}}
 
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}

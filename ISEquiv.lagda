@@ -219,13 +219,25 @@ assocʳ F G H = ≈≈-sym (assocˡ F G H)
  {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
   {F : A ⇛ B} {G : B ⇛ C} {H : A ⇛ B} {I : B ⇛ C}
   → F ≈≈ H → G ≈≈ I → F ∘⇛ G ≈≈ H ∘⇛ I
-∘⇛-cong {U = U} {_} {_} {C} {F} {G} {H} {I} F≈H G≈I = record
-  { ext = λ x → G=I.ext (_⇛_.map H ⟨$⟩ x) ⟨≈⟩ Π.cong (_⇛_.map G) (F=H.ext x)
-  ; transport-ext-coh = λ x Bx → {!!} }
+∘⇛-cong {U = U} {A} {B} {C} {F} {G} {H} {I} F≈H G≈I = record
+  { ext =
+    let open Setoid U renaming (trans to _⟨≈⟩_) in
+    λ x → G=I.ext (map H ⟨$⟩ x) ⟨≈⟩ Π.cong (map G) (F=H.ext x)
+  ; transport-ext-coh = λ x Bx →
+    let V = index (map (F ∘⇛ G) ⟨$⟩ x) in let open Setoid V renaming (trans to _⟨≈⟩_) in
+     -- (Π.cong (reindex (Π.cong (map G) (F=H.ext x))) (G=I.transport-ext-coh (map H ⟨$⟩ x) (transport H x ⟨$⟩ Bx)) ⟨≈⟩
+    trans-coh (G=I.ext (map H ⟨$⟩ x)) (Π.cong (map G) (F=H.ext x)) ⟨≈⟩
+      (Π.cong (reindex (Π.cong (map G) (F=H.ext x))) (G=I.transport-ext-coh (map H ⟨$⟩ x) (transport H x ⟨$⟩ Bx)) ⟨≈⟩
+      (sym (transport-coh G (F=H.ext x)) ⟨≈⟩
+      Π.cong (transport G (map F ⟨$⟩ x)) (F=H.transport-ext-coh x Bx) ))
+  }
   where
-    module F=H = _≈≈_ F≈H; module G=I = _≈≈_ G≈I; open Setoid U renaming (trans to _⟨≈⟩_)
-    open SetoidFamily C
+    module F=H = _≈≈_ F≈H; module G=I = _≈≈_ G≈I
+    open SetoidFamily C; open _⇛_
 \end{code}
+    (SetoidFamily.trans-coh B' (G=H.ext x) (F=G.ext x) ⟨≈⟩
+    (Π.cong (reindex B' (F=G.ext x)) (G=H.transport-ext-coh x Bx))) ⟨≈⟩
+    (F=G.transport-ext-coh x Bx)
 
 And now we are in a good position to show that |♯| is an equivalence relation.
 

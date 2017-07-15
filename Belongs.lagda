@@ -25,6 +25,7 @@ open import ParComp
 open import ISEquiv
 
 open import TypeEquiv using (swap₊)
+open import Relation.Binary.PropositionalEquality using (inspect; [_])
 \end{code}
 %}}}
 
@@ -121,6 +122,10 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ap-∈₀ : {x y : Carrier} {xs : List Carrier} → x ≈ y → x ∈₀ xs → y ∈₀ xs
   ap-∈₀ x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
   ap-∈₀ x≈y (there x∈xs) = there (ap-∈₀ x≈y x∈xs)
+
+  ap-∈₀-eq : {x y : Carrier} {xs : List Carrier} → (p : x ≈ y) → (x∈xs : x ∈₀ xs) → x∈xs ≋ ap-∈₀ p x∈xs
+  ap-∈₀-eq p (here sm) = hereEq sm (p ⟨≈˘≈⟩ sm)
+  ap-∈₀-eq p (there x∈xs) = thereEq (ap-∈₀-eq p x∈xs)
 
   ap-∈₀-refl : {x : Carrier} {xs : List Carrier} → (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
   ap-∈₀-refl (Locations.here sm) = hereEq (refl ⟨≈˘≈⟩ sm) sm
@@ -223,7 +228,7 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
 
 %{{{ \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
 \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
-\begin{spec}
+\begin{code}
 module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (Carrier to A)
   open SetoidCombinators S
@@ -233,80 +238,122 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Substitution S
 
   ++≅ : {xs ys : List A } → (elem-of xs ⊎⊎ elem-of ys) ♯ (elem-of (xs ++ ys))
-  ++≅ {xs} {ys} {x} {y} x≈y = record
-    { to = record { _⟨$⟩_ = ⊎→++ x≈y            ; cong = ⊎→++-cong x≈y  }
-    ; from = record { _⟨$⟩_ = ++→⊎ xs (sym x≈y) ; cong = ++→⊎-cong (sym x≈y) xs }
-    ; inverse-of = record
-      { left-inverse-of = lefty x≈y {xs}
-      ; right-inverse-of = righty x≈y xs
-      }
+  ++≅ {xs} {ys} = record
+    { to   = FArr id (λ a → record { _⟨$⟩_ = ⊎→++    ; cong = ⊎→++-cong })
+                     (λ { {x} {y} {By} p → ⊎→++-transp {xs} {ys} {x} {y} {By} p })
+    ; from = FArr id (λ a → record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }) (++→⊎-transp {xs} {ys})
+    ; left-inv = record
+      { ext = λ _ → refl
+      ; transport-ext-coh = λ x Bx → ≋-trans (ap-∈₀-refl (ap-∈₀ refl Bx)) (≋-trans (ap-∈₀-refl Bx) (lefty {xs} {ys} x Bx)) }
+    ; right-inv = record
+      { ext = λ _ → refl
+      ; transport-ext-coh = righty }
     }
     where
-      -- ``ealier''
-      ⊎→ˡ : {ws zs : List A} {x y : A} → x ≈ y → x ∈₀ ws → y ∈₀ (ws ++ zs)
-      ⊎→ˡ x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
-      ⊎→ˡ x≈y (there p) = there (⊎→ˡ x≈y p)
+      open SetoidFamily
 
-      yo : {ws zs : List A} {z w : A} {a b : z ∈₀ ws} → (z≈w : z ≈ w) → a ≋ b → ⊎→ˡ {ws} {zs} z≈w a ≋ ⊎→ˡ z≈w b
-      yo z≈w (hereEq _ _) = hereEq _ _
-      yo z≈w (thereEq pf) = thereEq (yo z≈w pf)
+      ⊎ˡ : ∀ {zs ws} {a : A} → a ∈₀ zs → a ∈₀ zs ++ ws
+      ⊎ˡ (here sm) = here sm
+      ⊎ˡ (there pf) = there (⊎ˡ pf)
 
-      -- ``later''
-      ⊎→ʳ : ∀ {x y} xs {ys} → x ≈ y → x ∈₀ ys → y ∈₀ (xs ++ ys)
-      ⊎→ʳ []       x≈y p = ap-∈₀ x≈y p
-      ⊎→ʳ (x ∷ xs) x≈y p = there (⊎→ʳ xs x≈y p)
+      ⊎ʳ : (zs : List A) {ws : List A} {a : A} → a ∈₀ ws → a ∈₀ zs ++ ws
+      ⊎ʳ []      p = p
+      ⊎ʳ (x ∷ l) p = there (⊎ʳ l p)
 
-      oy : {z w : A} (xs : List A) {x y : z ∈₀ ys} → (z≈w : z ≈ w) → x ≋ y → ⊎→ʳ xs z≈w x ≋ ⊎→ʳ xs z≈w y
-      oy []       z≈w pf = ap-∈₀-cong z≈w pf
-      oy (x ∷ xs) z≈w pf = thereEq (oy xs z≈w pf)
+      ⊎→++ : ∀ {zs ws} {a : A} → (a ∈₀ zs ⊎ a ∈₀ ws) → a ∈₀ (zs ++ ws)
+      ⊎→++      (inj₁ x) = ⊎ˡ x
+      ⊎→++ {zs} (inj₂ y) = ⊎ʳ zs y
 
-      ⊎→++ : ∀ {zs ws z₁ z₂} → z₁ ≈ z₂ → (z₁ ∈₀ zs ⊎ z₁ ∈₀ ws) → z₂ ∈₀ (zs ++ ws)
-      ⊎→++      z₁≈z₂ (inj₁ x) = ⊎→ˡ z₁≈z₂ x
-      ⊎→++ {zs} z₁≈z₂ (inj₂ y) = ⊎→ʳ zs z₁≈z₂ y
+      ⊎ˡ-cong : {zs ws : List A} {a : A} {x y : a ∈₀ zs} → x ≋ y → ⊎ˡ {zs} {ws} x ≋ ⊎ˡ y
+      ⊎ˡ-cong (hereEq x≈z y≈z) = hereEq x≈z y≈z
+      ⊎ˡ-cong (thereEq x≋y) = thereEq (⊎ˡ-cong x≋y)
 
-      ++→⊎ : ∀ xs {ys} {z} {w} → z ≈ w → z ∈₀ (xs ++ ys) → w ∈₀ xs ⊎ w ∈₀ ys
-      ++→⊎ []      z≈w         p  = inj₂ (ap-∈₀ z≈w p)
-      ++→⊎ (x ∷ l) z≈w (here  p) = inj₁ (here (z≈w ⟨≈˘≈⟩ p))
-      ++→⊎ (x ∷ l) z≈w (there p) = (there ⊎₁ id₀) (++→⊎ l z≈w p)
+      ⊎ʳ-cong : (zs : List A) {ws : List A} {a : A} {x y : a ∈₀ ws} → x ≋ y → ⊎ʳ zs x ≋ ⊎ʳ zs y
+      ⊎ʳ-cong [] pf = pf
+      ⊎ʳ-cong (x ∷ l) pf =  thereEq (⊎ʳ-cong l pf)
 
-      ⊎→++-cong : {x y : A} {a b : x ∈₀ xs ⊎ x ∈₀ ys}
-        → (x≈y : x ≈ y) → (_≋_ ∥ _≋_) a b → ⊎→++ x≈y a ≋ ⊎→++ x≈y b
-      ⊎→++-cong x≈y (left  x₁∼x₂)  =  yo x≈y x₁∼x₂
-      ⊎→++-cong x≈y (right y₁∼y₂)  =  oy xs x≈y y₁∼y₂
+      ⊎→++-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ⊎ y ∈₀ ws} (p : y ≈ x) →
+        ⊎→++ (reindex (elem-of zs ⊎⊎ elem-of ws) p ⟨$⟩ By) ≋ ap-∈₀ p (⊎→++ By)
+      ⊎→++-transp          {By = inj₁ (here sm)} p = hereEq (p ⟨≈˘≈⟩ sm) (p ⟨≈˘≈⟩ sm)
+      ⊎→++-transp          {By = inj₁ (there x₂)} p = thereEq (⊎→++-transp {By = inj₁ x₂} p)
+      ⊎→++-transp {[]}     {By = inj₂ y₁} p = ≋-refl
+      ⊎→++-transp {x ∷ zs} {By = inj₂ y₁} p = thereEq (⊎→++-transp {zs} {By = inj₂ y₁} p)
 
-      ∽∥∽-cong   :  {x : A} {xs ys us vs : List A}
-                    (F : x ∈₀ xs → x ∈₀ us)
-                    (F-cong : {p q : x ∈₀ xs} → p ≋ q → F p ≋ F q)
-                    (G : x ∈₀ ys → x ∈₀ vs)
-                    (G-cong : {p q : x ∈₀ ys} → p ≋ q → G p ≋ G q)
-                    → {pf pf' : x ∈₀ xs ⊎ x ∈₀ ys}
+      ⊎→++-cong : {zs ws : List A} {a : A} {i j : a ∈₀ zs ⊎ a ∈₀ ws}
+        → (_≋_ ∥ _≋_) i j → ⊎→++ i ≋ ⊎→++ j
+      ⊎→++-cong      (left  x₁∼x₂)  =  ⊎ˡ-cong x₁∼x₂
+      ⊎→++-cong {zs} (right y₁∼y₂)  =  ⊎ʳ-cong zs y₁∼y₂
+
+      ∽∥∽-cong   :  {xs ys us vs : List A}
+                    (F : {z : A} → z ∈₀ xs → z ∈₀ us)
+                    (F-cong : {z w : A} {p : z ∈₀ xs} {q : w ∈₀ xs} → p ≋ q → F p ≋ F q)
+                    (G : {z : A} → z ∈₀ ys → z ∈₀ vs)
+                    (G-cong : {z w : A} {p : z ∈₀ ys} {q : w ∈₀ ys} → p ≋ q → G p ≋ G q)
+                    {x y : A}
+                    → {pf : x ∈₀ xs ⊎ x ∈₀ ys} {pf' : y ∈₀ xs ⊎ y ∈₀ ys}
                     → (_≋_ ∥ _≋_) pf pf' → (_≋_ ∥ _≋_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
       ∽∥∽-cong F F-cong G G-cong (left x~₁y) = left (F-cong x~₁y)
       ∽∥∽-cong F F-cong G G-cong (right x~₂y) = right (G-cong x~₂y)
 
-      ++→⊎-cong : {x y : A} (x≈y : x ≈ y) (xs : List A) {i j : x ∈₀ (xs ++ ys)} → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ xs x≈y i) (++→⊎ xs x≈y j)
-      ++→⊎-cong x≈y []        pf          = right (ap-∈₀-cong x≈y pf)
-      ++→⊎-cong x≈y (_ ∷ xs) (hereEq _ _) = left (hereEq _ _)
-      ++→⊎-cong x≈y (_ ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (++→⊎-cong x≈y xs pf)
+      ++→⊎ : ∀ xs {ys} {a} → a ∈₀ (xs ++ ys) → a ∈₀ xs ⊎ a ∈₀ ys
+      ++→⊎ []              p  = inj₂ p
+      ++→⊎ (x ∷ l) (here  p) = inj₁ (here p)
+      ++→⊎ (x ∷ l) (there p) = (there ⊎₁ id₀) (++→⊎ l p)
 
-      lefty : {x y : A} (x≈y : x ≈ y) {xs ys : List A} (p : x ∈₀ xs ⊎ x ∈₀ ys) → (_≋_ ∥ _≋_) (++→⊎ xs (sym x≈y) (⊎→++ x≈y p)) p
-      lefty x≈y {[]} (inj₁ ())
-      lefty x≈y {[]} (inj₂ p) = right (ap-∈₀-linv x≈y p)
-      lefty x≈y {_ ∷ _} (inj₁ (here _)) = left (hereEq _ _)
-      lefty x≈y {_ ∷ xs} {ys} (inj₁ (there p)) with ++→⊎ xs {ys} (sym x≈y) (⊎→++ x≈y (inj₁ p)) | lefty x≈y {xs} {ys} (inj₁ p)
-      ... | inj₁ _ | (left x~₁y) = left (thereEq x~₁y)
-      ... | inj₂ _ | ()
-      lefty x≈y {z ∷ zs} (inj₂ p) with ++→⊎ zs (sym x≈y) (⊎→++ {zs} x≈y (inj₂ p)) | lefty x≈y {zs} (inj₂ p)
-      ... | inj₁ x | ()
-      ... | inj₂ y | (right x~₂y) = right x~₂y
+      ++→⊎-cong : {x : A} (zs : List A) {ws : List A} {i j : x ∈₀ (zs ++ ws)} → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ zs i) (++→⊎ zs j)
+      ++→⊎-cong []        i≋j         = right i≋j
+      ++→⊎-cong (_ ∷ xs) (hereEq _ _) = left (hereEq _ _)
+      ++→⊎-cong (_ ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (++→⊎-cong xs pf)
 
-      righty : {x y : A} (x≈y : x ≈ y) (zs {ws} : List A) (p : y ∈₀ (zs ++ ws)) → (⊎→++ x≈y (++→⊎ zs (sym x≈y) p)) ≋ p
-      righty x≈y []       p        = ap-∈₀-rinv x≈y p
-      righty x≈y (_ ∷ zs) (here _) = hereEq _ _
-      righty x≈y (_ ∷ zs) (there p) with ++→⊎ zs (sym x≈y) p | righty x≈y zs p
-      ... | inj₁ _  | res           = thereEq res
-      ... | inj₂ _  | res           = thereEq res
-\end{spec}
+      ++→⊎-cong' : {x y : A} (p : x ≈ y) (zs : List A) {ws : List A} {i : x ∈₀ (zs ++ ws)} {j : y ∈₀ zs ++ ws}
+        → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ zs i) (++→⊎ zs j)
+      ++→⊎-cong' p []        i≋j         = right i≋j
+      ++→⊎-cong' p (_ ∷ xs) (hereEq _ _) = left (hereEq _ _)
+      ++→⊎-cong' p (_ ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (++→⊎-cong' p xs pf)
+
+      ++→⊎-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ++ ws} (p : y ≈ x) →
+        (_≋_ ∥ _≋_) (++→⊎ zs (reindex (elem-of (zs ++ ws)) p ⟨$⟩ By))
+                    (reindex (elem-of zs ⊎⊎ elem-of ws) p ⟨$⟩ ++→⊎ zs By)
+      ++→⊎-transp {[]} {By = here sm} p = right ≋-refl
+      ++→⊎-transp {[]} {By = there By} p = right ≋-refl
+      ++→⊎-transp {z ∷ zs}              {By = here sm} p = left ≋-refl
+      ++→⊎-transp {z ∷ zs} {ws} {y} {x} {By = there By} p = ∥-trans (index (elem-of (z ∷ zs)) x) (index (elem-of ws) x)
+        (∽∥∽-cong there thereEq id₀ id₀ (++→⊎-transp p))
+        (split (++→⊎ zs By))
+        where
+          split : {as bs : List A} {a y₁ x₁ : A} {p : y₁ ≈ x₁} (y-in : y₁ ∈₀ as ⊎ y₁ ∈₀ bs) →
+            (Setoid._≈_ (index (elem-of (a ∷ as)) x₁) ∥ Setoid._≈_ (index (elem-of bs) x₁))
+              ((there ⊎₁ id₀) (reindex (elem-of as ⊎⊎ elem-of bs) p ⟨$⟩ y-in))
+              (reindex (elem-of (a ∷ as) ⊎⊎ elem-of bs) p ⟨$⟩ (there ⊎₁ id₀) y-in)
+          split (inj₁ x₂) = left (thereEq ≋-refl)
+          split (inj₂ y₂) = right ≋-refl
+
+      lefty : {xs ys : List A} (x : A) (Bx : x ∈₀ xs ++ ys) → Bx ≋ ⊎→++ (++→⊎ xs Bx)
+      lefty {[]} x Bx = ≋-refl
+      lefty {x ∷ xs₁} x₁ (here sm) = hereEq sm sm
+      lefty {x ∷ xs₁} x₁ (there Bx) with ++→⊎ xs₁ Bx | lefty {xs₁} x₁ Bx
+      ... | inj₁ x₁∈xs₁ | ans = thereEq ans
+      ... | inj₂ x₁∈ys  | ans = thereEq ans
+
+      righty : {xs ys : List A} (x : A) (Bx : x ∈₀ xs ⊎ x ∈₀ ys) →
+        (_≋_ ∥ _≋_) ( (ap-∈₀ refl ⊎₁ ap-∈₀ refl) ((ap-∈₀ refl ⊎₁ ap-∈₀ refl) Bx) ) (++→⊎ xs (⊎→++ Bx))
+      righty {[]} _ (inj₁ ())
+      righty {[]} _ (inj₂ y) = right (≋-trans (ap-∈₀-refl _) (ap-∈₀-refl y))
+      righty {_ ∷ _} _ (inj₁ (here sm)) = left (≋-trans (ap-∈₀-refl _) (≋-trans (ap-∈₀-refl _) (hereEq sm sm)))
+      righty {_ ∷ xs₁} {ys} x (inj₁ (there Bx)) with ++→⊎ xs₁ {ys} (⊎ˡ Bx)
+                                                  | righty {ys = ys} x (inj₁ Bx)
+      ... | inj₁ res | left ans = left (thereEq ans)
+      ... | inj₂ res | ()
+      righty {x₂ ∷ xs₂} {ys} x (inj₂ (here sm)) with ++→⊎ xs₂ (⊎ʳ xs₂ {ys} (here sm))
+                                                  | righty {xs₂} {ys} x (inj₂ (here sm))
+      ... | inj₁ res | ()
+      ... | inj₂ res | right ans = right ans
+      righty {x₂ ∷ xs₂} {ys} x (inj₂ (there Bx)) with ++→⊎ xs₂ (⊎ʳ xs₂ {ys} (there Bx))
+                                                  | righty {xs₂} {ys} x (inj₂ (there Bx))
+      ... | inj₁ res | ()
+      ... | inj₂ res | right ans = right ans
+
+\end{code}
 %}}}
 
 \subsection{Following sections are inactive code}

@@ -225,7 +225,6 @@ assocʳ F G H = ≈≈-sym (assocˡ F G H)
     λ x → G=I.ext (map H ⟨$⟩ x) ⟨≈⟩ Π.cong (map G) (F=H.ext x)
   ; transport-ext-coh = λ x Bx →
     let V = index (map (F ∘⇛ G) ⟨$⟩ x) in let open Setoid V renaming (trans to _⟨≈⟩_) in
-     -- (Π.cong (reindex (Π.cong (map G) (F=H.ext x))) (G=I.transport-ext-coh (map H ⟨$⟩ x) (transport H x ⟨$⟩ Bx)) ⟨≈⟩
     trans-coh (G=I.ext (map H ⟨$⟩ x)) (Π.cong (map G) (F=H.ext x)) ⟨≈⟩
       (Π.cong (reindex (Π.cong (map G) (F=H.ext x))) (G=I.transport-ext-coh (map H ⟨$⟩ x) (transport H x ⟨$⟩ Bx)) ⟨≈⟩
       (sym (transport-coh G (F=H.ext x)) ⟨≈⟩

@@ -50,6 +50,13 @@ elim P F G (right r₂) = G r₂
 ∥-sym {R₁ = R₁} {R₂ = R₂} sym₁ sym₂ pf =
   elim (λ {a b} (x : (R₁ ∥ R₂) a b) → (R₁ ∥ R₂) b a) (left ∘ sym₁) (right ∘ sym₂) pf
 
+∥-trans : {a a′ ℓ ℓ′ : Level} (A : Setoid a ℓ) (A′ : Setoid a′ ℓ′)
+  {x y z : Setoid.Carrier A ⊎ Setoid.Carrier A′} →
+  let R₁ = Setoid._≈_ A in let R₂ = Setoid._≈_ A′ in
+  (R₁ ∥ R₂) x y → (R₁ ∥ R₂) y z → (R₁ ∥ R₂) x z
+∥-trans A A′ {inj₁ x} (left r₁) (left r₂) = left (Setoid.trans A r₁ r₂)
+∥-trans A A′ {inj₂ y₂} (right r₂) (right r₃) = right (Setoid.trans A′ r₂ r₃)
+
 -- Motivation for introducing parallel composition:
 infix 3 _⊎⊎_ _⊎S_
 _⊎S_ : {ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} → Setoid ℓA₁ ℓa₁ → Setoid ℓA₂ ℓa₂ → Setoid (ℓA₁ ⊔ ℓA₂) (ℓa₁ ⊔ ℓa₂)
@@ -59,8 +66,7 @@ S₁ ⊎S S₂ = record
   ; isEquivalence = record
     { refl = λ { {inj₁ x} → left refl₁ ; {inj₂ y} → right refl₂ }
     ; sym = ∥-sym sym₁ sym₂
-    ; trans = λ {i j k} → λ { (left r₁) (left r₂) → left (trans₁ r₁ r₂)
-                            ; (right r₂) (right r₃) → right (trans₂ r₂ r₃) }
+    ; trans = ∥-trans S₁ S₂
     }
   }
   where
@@ -73,19 +79,19 @@ _⊎⊎_ : {ℓS ℓs ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} {S : Setoid ℓS 
 X ⊎⊎ Y = record
   { index = λ s → A.index s ⊎S B.index s
   ; reindex = λ x≈y → record
-    { _⟨$⟩_ = λ { (inj₁ x) → inj₁ (A.reindex x≈y ⟨$⟩ x) ; (inj₂ x) → inj₂ (B.reindex x≈y ⟨$⟩ x) }
-    ; cong = λ { {.(inj₁ _)} {.(inj₁ _)} (left r₁) → left (Π.cong (A.reindex x≈y) r₁)
-               ; {.(inj₂ _)} {.(inj₂ _)} (right r₂) → right (Π.cong (B.reindex x≈y) r₂) }
+    { _⟨$⟩_ = (λ y → A.reindex x≈y ⟨$⟩ y) ⊎₁ (λ y → B.reindex x≈y ⟨$⟩ y)
+    ; cong = λ { (left r₁) → left (Π.cong (A.reindex x≈y) r₁)
+               ; (right r₂) → right (Π.cong (B.reindex x≈y) r₂) }
     }
   ; id-coh = λ { {a} {inj₁ x} → left A.id-coh ; {a} {inj₂ y} → right B.id-coh}
   ; sym-iso = λ x≈y → record
-    { left-inverse-of = λ { (inj₁ x) → left (Inv.left-inverse-of (A.sym-iso x≈y) x)
-                          ; (inj₂ y) → right (Inv.left-inverse-of (B.sym-iso x≈y) y)}
-    ; right-inverse-of = λ { (inj₁ x) → left (Inv.right-inverse-of (A.sym-iso x≈y) x)
-                           ; (inj₂ y) → right (Inv.right-inverse-of (B.sym-iso x≈y) y) }
+    { left-inverse-of = [ (λ x → left (Inv.left-inverse-of (A.sym-iso x≈y) x)) ,
+                          (λ x → right (Inv.left-inverse-of (B.sym-iso x≈y) x)) ]
+    ; right-inverse-of = [ (λ x → left (Inv.right-inverse-of (A.sym-iso x≈y) x)) ,
+                           (λ y → right (Inv.right-inverse-of (B.sym-iso x≈y) y)) ]
     }
-  ; trans-coh = λ { {b = inj₁ x₁} a≈b b≈c → left (A.trans-coh a≈b b≈c )
-                  ; {b = inj₂ y₁} x≈y y≈z → right (B.trans-coh x≈y y≈z) }
+  ; trans-coh = λ { {b = inj₁ _} a≈b b≈c → left (A.trans-coh a≈b b≈c )
+                  ; {b = inj₂ _} x≈y y≈z → right (B.trans-coh x≈y y≈z) }
   }
     where
       module A = SetoidFamily X

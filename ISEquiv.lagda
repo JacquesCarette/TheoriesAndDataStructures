@@ -241,7 +241,7 @@ assocʳ F G H = ≈≈-sym (assocˡ F G H)
 And now we are in a good position to show that |♯| is an equivalence relation.
 
 \begin{code}
-♯-refl : {ℓS ℓs ℓA ℓa ℓS' ℓs' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
+♯-refl : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs}
  {B : SetoidFamily S ℓA ℓa} → B ♯ B
 ♯-refl = record { to = id⇛ ; from = id⇛ ; left-inv = unitˡ id⇛ ; right-inv = unitʳ id⇛ }
 
@@ -282,6 +282,7 @@ infixr 2 _♯⟨_⟩_ _♯˘⟨_⟩_
 
 infix  4 _Is♯To_
 infix  1 begin_
+infix  3 _□
 
 data _Is♯To_ {ℓS ℓs ℓA ℓa ℓS' ℓs' ℓA' ℓa' : Level} {S : Setoid ℓS ℓs} {S' : Setoid ℓS' ℓs'}
  (From : SetoidFamily S ℓA ℓa) (To : SetoidFamily S' ℓA' ℓa')
@@ -303,6 +304,11 @@ _♯˘⟨_⟩_ : {ℓS ℓs ℓA ℓa ℓT ℓt ℓB ℓb ℓU ℓu ℓC ℓc : 
  (A : SetoidFamily S ℓA ℓa) {B : SetoidFamily T ℓB ℓb} {C : SetoidFamily U ℓC ℓc}
   →  B ♯ A → B Is♯To C → A Is♯To C
 A ♯˘⟨ B♯A ⟩ (relTo B♯C) = relTo (♯-trans (♯-sym B♯A) B♯C)
+
+_□ : {ℓS ℓs ℓA ℓa : Level} {S : Setoid ℓS ℓs}
+ (B : SetoidFamily S ℓA ℓa) → B Is♯To B
+B □ = relTo (♯-refl {B = B})
+
 \end{code}
 %}}}
 

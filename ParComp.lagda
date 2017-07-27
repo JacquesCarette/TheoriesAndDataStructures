@@ -308,7 +308,7 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
 \begin{spec}
 ⊔⊔-is-coproduct : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   (A B : SetoidFamily S ℓA ℓa) → Coproduct (FSSF-Cat S) A B
-⊔⊔-is-coproduct A B = record
+⊔⊔-is-coproduct {S = S} A B = record
   { A+B = A ⊔⊔ B
   ; i₁ = record
     { map = id
@@ -320,13 +320,24 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
     ; transport = λ s → record { _⟨$⟩_ = inj₂ ; cong = right }
     ; transport-coh = λ {_} {x} _ → right (refl (index B x))
     }
-  ; [_,_] = λ {C} A⇛C B⇛C →
-    record
+  ; [_,_] = λ {C} A⇛C B⇛C → let
+      C⇛B : C ⇛ B  -- putative inverses to |A⇛C| and |B⇛C|
+      C⇛B = {!!}
+      C⇛A : C ⇛ A
+      C⇛A = {!!}
+    in record
     { map = map A⇛C
-    ; transport = λ s → record { _⟨$⟩_ = λ { (inj₁ x) → transport A⇛C s ⟨$⟩ x
-                                             ; (inj₂ y) → {!transport B⇛C s ⟨$⟩ y!}}
-                          ; cong = λ { (left r₁) → cong (transport A⇛C s) r₁
-                                     ; (right r₂) → cong (transport {!!} s) r₂ } }
+    ; transport = λ sA → let  -- |sA| is thought of as an index for |A|.
+         sB : Carrier S
+         sB = map C⇛B ⟨$⟩ (map A⇛C ⟨$⟩ sA)
+       in record
+       { _⟨$⟩_ = λ  { (inj₁ x) → transport A⇛C sA ⟨$⟩ x
+                    ; (inj₂ y) → {!transport B⇛C sB ⟨$⟩ y!}
+                    }
+       ; cong = λ   { (left r₁) → cong (transport A⇛C sA) r₁
+                    ; (right r₂) → {! cong (transport {!!} sA) r₂ !}
+                    }
+       }
     ; transport-coh = λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}}
     }
   ; commute₁ = record { ext = {!!} ; transport-ext-coh = {!!} }

@@ -160,8 +160,6 @@ We now have all the ingredients to show that locations (|_∈₀_|) form a |Seto
 we will go one step further and show that it forms an |IndexedSetoid|.
 \begin{code}
 module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
-  -- infix 3 _♯_
-
   open Setoid S
   open Locations S
   open LocEquiv S
@@ -226,8 +224,8 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
 \end{code}
 %}}}
 
-%{{{ \subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
-\subsection{|++≅ : ⋯ → (x ∈ xs ⊎⊎ x ∈ ys) ≅ x ∈ (xs ++ ys)|}
+%{{{ \subsection{|++♯⊔⊔ : ⋯ → (elem-of xs ⊔⊔ elem-of ys) ≅ elem-of (xs ++ ys)|}
+\subsection{|++♯⊔⊔ : ⋯ → (elem-of xs ⊔⊔ elem-of ys) ♯ elem-of (xs ++ ys)|}
 \begin{code}
 module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (Carrier to A)
@@ -237,21 +235,23 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
   open Substitution S
 
-  ++≅ : {xs ys : List A } → (elem-of xs ⊎⊎ elem-of ys) ♯ (elem-of (xs ++ ys))
-  ++≅ {xs} {ys} = record
-    { to   = FArr id (λ a → record { _⟨$⟩_ = ⊎→++    ; cong = ⊎→++-cong })
-                     (λ { {x} {y} {By} p → ⊎→++-transp {xs} {ys} {x} {y} {By} p })
-    ; from = FArr id (λ a → record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }) (++→⊎-transp {xs} {ys})
+  ⊔⊔♯++ : {xs ys : List A } → (elem-of xs ⊔⊔ elem-of ys) ♯ (elem-of (xs ++ ys))
+  ⊔⊔♯++ {xs} {ys} = record
+    { to = FArr
+      (record { _⟨$⟩_ = id₀ ; cong = id₀ })
+      (λ s → record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong } )
+      (λ {_} {_} {By} p → ⊎→++-transp {By = By} p)
+    ; from = FArr id (λ a → record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs })
+                      ++→⊎-transp
     ; left-inv = record
-      { ext = λ _ → refl
-      ; transport-ext-coh = λ x Bx → ≋-trans (ap-∈₀-refl (ap-∈₀ refl Bx)) (≋-trans (ap-∈₀-refl Bx) (lefty {xs} {ys} x Bx)) }
+       { ext = λ _ → refl
+       ; transport-ext-coh = λ x Bx → ≋-trans (ap-∈₀-refl (ap-∈₀ refl Bx)) (≋-trans (ap-∈₀-refl Bx) (lefty {xs} {ys} x Bx)) }
     ; right-inv = record
       { ext = λ _ → refl
-      ; transport-ext-coh = righty }
-    }
+      ; transport-ext-coh = λ { x (inj₁ x₁) → righty x (inj₁ x₁)
+                              ; x (inj₂ y) → righty x (inj₂ y) } } }
     where
       open SetoidFamily
-
       ⊎ˡ : ∀ {zs ws} {a : A} → a ∈₀ zs → a ∈₀ zs ++ ws
       ⊎ˡ (here sm) = here sm
       ⊎ˡ (there pf) = there (⊎ˡ pf)
@@ -273,7 +273,7 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
       ⊎ʳ-cong (x ∷ l) pf =  thereEq (⊎ʳ-cong l pf)
 
       ⊎→++-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ⊎ y ∈₀ ws} (p : y ≈ x) →
-        ⊎→++ (reindex (elem-of zs ⊎⊎ elem-of ws) p ⟨$⟩ By) ≋ ap-∈₀ p (⊎→++ By)
+        ⊎→++ (reindex (elem-of zs ⊔⊔ elem-of ws) p ⟨$⟩ By) ≋ ap-∈₀ p (⊎→++ By)
       ⊎→++-transp          {By = inj₁ (here sm)} p = hereEq (p ⟨≈˘≈⟩ sm) (p ⟨≈˘≈⟩ sm)
       ⊎→++-transp          {By = inj₁ (there x₂)} p = thereEq (⊎→++-transp {By = inj₁ x₂} p)
       ⊎→++-transp {[]}     {By = inj₂ y₁} p = ≋-refl
@@ -313,7 +313,7 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 
       ++→⊎-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ++ ws} (p : y ≈ x) →
         (_≋_ ∥ _≋_) (++→⊎ zs (reindex (elem-of (zs ++ ws)) p ⟨$⟩ By))
-                    (reindex (elem-of zs ⊎⊎ elem-of ws) p ⟨$⟩ ++→⊎ zs By)
+                    (reindex (elem-of zs ⊔⊔ elem-of ws) p ⟨$⟩ ++→⊎ zs By)
       ++→⊎-transp {[]} {By = here sm} p = right ≋-refl
       ++→⊎-transp {[]} {By = there By} p = right ≋-refl
       ++→⊎-transp {z ∷ zs}              {By = here sm} p = left ≋-refl
@@ -323,8 +323,8 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
         where
           split : {as bs : List A} {a y₁ x₁ : A} {p : y₁ ≈ x₁} (y-in : y₁ ∈₀ as ⊎ y₁ ∈₀ bs) →
             (Setoid._≈_ (index (elem-of (a ∷ as)) x₁) ∥ Setoid._≈_ (index (elem-of bs) x₁))
-              ((there ⊎₁ id₀) (reindex (elem-of as ⊎⊎ elem-of bs) p ⟨$⟩ y-in))
-              (reindex (elem-of (a ∷ as) ⊎⊎ elem-of bs) p ⟨$⟩ (there ⊎₁ id₀) y-in)
+              ((there ⊎₁ id₀) (reindex (elem-of as ⊔⊔ elem-of bs) p ⟨$⟩ y-in))
+              (reindex (elem-of (a ∷ as) ⊔⊔ elem-of bs) p ⟨$⟩ (there ⊎₁ id₀) y-in)
           split (inj₁ x₂) = left (thereEq ≋-refl)
           split (inj₂ y₂) = right ≋-refl
 
@@ -354,9 +354,10 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
       ... | inj₂ res | right ans = right ans
 
 \end{code}
+Note: it looks like |elem-of xs ⊎⊎ elem-of ys ♯ elem-of (xs ++ ys)| is
+not provable in the current setting.  [It looks like it needs decidable
+equality?]
 %}}}
-
-\subsection{Following sections are inactive code}
 
 %{{{ \subsection{Bottom as an indexed setoid} ⊥⊥ ; ⊥⊥♯elem-of-[] : ⊥⊥ ≅ elem-of []
 \subsection{Bottom as an indexed setoid}
@@ -388,6 +389,8 @@ module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
     where open Setoid S
 \end{code}
 %}}}
+
+\subsection{The following sections are inactive code}
 
 %{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
 \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}

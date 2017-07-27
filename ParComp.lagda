@@ -314,14 +314,14 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
                  (λ {_} {x} _ → left (refl (index A x)))
   ; i₂ = FArr id (λ s → record { _⟨$⟩_ = inj₂ ; cong = right })
                  (λ {_} {x} _ → right (refl (index B x)))
-  ; [_,_] = λ A⇛C B⇛C →
+  ; [_,_] = λ {C} A⇛C B⇛C →
     FArr (map A⇛C) (λ s → record { _⟨$⟩_ = λ { (inj₁ x) → transport A⇛C s ⟨$⟩ x
-                                             ; (inj₂ y) → transport A⇛C s ⟨$⟩ {!!}}
-                          ; cong = λ { (left r₁) → refl (index _ (map A⇛C ⟨$⟩ s))
-                                     ; (right r₂) → refl (index _ (map A⇛C ⟨$⟩ s)) } })
-            {!!}
-  ; commute₁ = {!!}
-  ; commute₂ = {!!}
+                                             ; (inj₂ y) → {!!}}
+                          ; cong = λ { (left r₁) → cong (transport A⇛C s) r₁
+                                     ; (right r₂) → cong (transport {!!} s) r₂ } })
+            (λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}})
+  ; commute₁ = record { ext = {!!} ; transport-ext-coh = {!!} }
+  ; commute₂ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; universal = {!!}
   }
   where

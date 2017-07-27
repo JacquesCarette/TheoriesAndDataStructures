@@ -8,7 +8,7 @@ open import DataProperties
 open import Algebra using (CommutativeSemiring)
 open import Algebra.Structures
   using (IsSemigroup; IsCommutativeMonoid; IsCommutativeSemiring)
-  
+
 open import Function renaming (_∘_ to _○_)
 open import Relation.Binary.PropositionalEquality using (refl)
 
@@ -43,7 +43,7 @@ unite₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊥ {ℓ′} ⊎ A → A
 unite₊ (inj₁ ())
 unite₊ (inj₂ y) = y
 
-uniti₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → A → ⊥ {ℓ′} ⊎ A 
+uniti₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → A → ⊥ {ℓ′} ⊎ A
 uniti₊ a = inj₂ a
 
 abstract
@@ -129,13 +129,13 @@ uniti⋆′equiv = sym≃ unite⋆′equiv
 
 -- swap⋆
 
-swap⋆ : {A B : Set} → A × B → B × A
+swap⋆ : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → A × B → B × A
 swap⋆ (a , b) = (b , a)
 
 abstract
 
   swapswap⋆ : {A B : Set} → swap⋆ ○ swap⋆ ≐ id {A = A × B}
-  swapswap⋆ (a , b) = refl 
+  swapswap⋆ (a , b) = refl
 
 swap⋆equiv : {A B : Set} → (A × B) ≃ (B × A)
 swap⋆equiv = swap⋆ , qinv swap⋆ swapswap⋆ swapswap⋆
@@ -195,7 +195,7 @@ abstract
   assocr⋆∘assocl⋆ = ≐-refl
 
 assocl⋆equiv : {A B C : Set} → (A × (B × C)) ≃ ((A × B) × C)
-assocl⋆equiv = 
+assocl⋆equiv =
   assocl⋆ , qinv assocr⋆ assocl⋆∘assocr⋆ assocr⋆∘assocl⋆
 
 assocr⋆equiv : {A B C : Set} → ((A × B) × C) ≃ (A × (B × C))
@@ -218,7 +218,7 @@ abstract
   factorz∘distz (() , proj₂)
 
 distzequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → (⊥ × A) ≃ ⊥ {ℓ′}
-distzequiv {A = A} = 
+distzequiv {A = A} =
   distz , qinv factorz (distz∘factorz {_} {_} {A}) factorz∘distz
 
 factorzequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → ⊥ {ℓ′} ≃ (⊥ × A)
@@ -241,7 +241,7 @@ abstract
   factorzr∘distzr (_ , ())
 
 distzrequiv : {ℓ ℓ′ : Level} {A : Set ℓ} → (A × ⊥) ≃ ⊥ {ℓ′}
-distzrequiv {_} {_} {A} = 
+distzrequiv {_} {_} {A} =
   distzr , qinv factorzr (distzr∘factorzr {_} {_} {A}) factorzr∘distzr
 
 factorzrequiv : ∀ {ℓ ℓ′} {A : Set ℓ} → ⊥ {ℓ′} ≃ (A × ⊥)
@@ -334,7 +334,7 @@ typesIsCSR : IsCommutativeSemiring _≃_ _⊎_ _×_ ⊥ ⊤
 typesIsCSR = record {
   +-isCommutativeMonoid = typesPlusIsCM ;
   *-isCommutativeMonoid = typesTimesIsCM ;
-  distribʳ = λ t₁ t₂ t₃ → distequiv {t₂} {t₃} {t₁} ; 
+  distribʳ = λ t₁ t₂ t₃ → distequiv {t₂} {t₃} {t₁} ;
   zeroˡ = λ t → distzequiv {_} {_} {t}
   }
 

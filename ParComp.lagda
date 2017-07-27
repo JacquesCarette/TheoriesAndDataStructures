@@ -184,7 +184,7 @@ things are rather more complex.
 
 \begin{code}
 _⊔⊔_ : {ℓS ℓs ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} {S : Setoid ℓS ℓs}
-  → SetoidFamily S ℓA₁ ℓa₁ → SetoidFamily S ℓA₂ ℓa₂ → SetoidFamily S _ _
+  → SetoidFamily S ℓA₁ ℓa₁ → SetoidFamily S ℓA₂ ℓa₂ → SetoidFamily S (ℓA₁ ⊔ ℓA₂) (ℓa₁ ⊔ ℓa₂)
 X ⊔⊔ Y = record
   { index = λ s → A.index s ⊎S B.index s
   ; reindex = λ x≈y → record
@@ -210,7 +210,7 @@ X ⊔⊔ Y = record
 
 \end{code}
 
-And it is commutative too
+And it is commutative too:
 \begin{code}
 ⊔⊔-comm : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   {A₁ : SetoidFamily S ℓA ℓa} {A₂ : SetoidFamily S ℓB ℓb}
@@ -326,7 +326,6 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
   }
   where
     open Setoid; open SetoidFamily; open _⇛_
-
 \end{code}
 However, to make |_⊔⊔₁_| ``work'', the underlying |map|s in
 |A ♯ C| and |B ♯ D| must be coherent in some way.
@@ -357,7 +356,6 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
     module B→D = _⇛_ (to B♯D)
     module C→A = _⇛_ (from A♯C)
     module D→B = _⇛_ (from B♯D)
-
 \end{spec}
 
 We can do product too.
@@ -383,10 +381,9 @@ X ×× Y = record
     where
       module A = SetoidFamily X
       module B = SetoidFamily Y
-
 \end{code}
 
-And it is commutative too
+And it is commutative too:
 \begin{code}
 ××-comm : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   {A₁ : SetoidFamily S ℓA ℓa} {A₂ : SetoidFamily S ℓB ℓb}

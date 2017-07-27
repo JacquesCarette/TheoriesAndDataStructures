@@ -305,31 +305,40 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
 
 |_⊔⊔_| is? a coproduct for |FSSF-Cat|.
 
-\begin{code}
+\begin{spec}
 ⊔⊔-is-coproduct : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   (A B : SetoidFamily S ℓA ℓa) → Coproduct (FSSF-Cat S) A B
 ⊔⊔-is-coproduct A B = record
   { A+B = A ⊔⊔ B
-  ; i₁ = FArr id (λ s → record { _⟨$⟩_ = inj₁ ; cong = left })
-                 (λ {_} {x} _ → left (refl (index A x)))
-  ; i₂ = FArr id (λ s → record { _⟨$⟩_ = inj₂ ; cong = right })
-                 (λ {_} {x} _ → right (refl (index B x)))
+  ; i₁ = record
+    { map = id
+    ; transport = λ s → record { _⟨$⟩_ = inj₁ ; cong = left }
+    ; transport-coh = λ {_} {x} _ → left (refl (index A x))
+    }
+  ; i₂ = record
+    { map = id
+    ; transport = λ s → record { _⟨$⟩_ = inj₂ ; cong = right }
+    ; transport-coh = λ {_} {x} _ → right (refl (index B x))
+    }
   ; [_,_] = λ {C} A⇛C B⇛C →
-    FArr (map A⇛C) (λ s → record { _⟨$⟩_ = λ { (inj₁ x) → transport A⇛C s ⟨$⟩ x
-                                             ; (inj₂ y) → {!!}}
+    record
+    { map = map A⇛C
+    ; transport = λ s → record { _⟨$⟩_ = λ { (inj₁ x) → transport A⇛C s ⟨$⟩ x
+                                             ; (inj₂ y) → {!transport B⇛C s ⟨$⟩ y!}}
                           ; cong = λ { (left r₁) → cong (transport A⇛C s) r₁
-                                     ; (right r₂) → cong (transport {!!} s) r₂ } })
-            (λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}})
+                                     ; (right r₂) → cong (transport {!!} s) r₂ } }
+    ; transport-coh = λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}}
+    }
   ; commute₁ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; commute₂ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; universal = {!!}
   }
   where
     open Setoid; open SetoidFamily; open _⇛_
-\end{code}
+\end{spec}
 However, to make |_⊔⊔₁_| ``work'', the underlying |map|s in
 |A ♯ C| and |B ♯ D| must be coherent in some way.
-\begin{spec}
+\begin{code}
 _⊔⊔₁_ : {ℓS ℓs ℓT ℓt ℓA ℓa ℓC ℓc : Level}
   {S : Setoid ℓS ℓs} {T : Setoid ℓT ℓt}
   {A : SetoidFamily S ℓA ℓa} {B : SetoidFamily S ℓA ℓa}
@@ -340,8 +349,9 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
       (λ x → record
         { _⟨$⟩_ = λ { (inj₁ Ax) → inj₁ (A→C.transport x ⟨$⟩ Ax)
                    ; (inj₂ Bx) → inj₂ (
-                     -- reindex D (Setoid.sym T (_≈≈_.ext (left-inv B♯D) (A→C.map ⟨$⟩ x))) ∘ (B→D.transport (D→B.map ⟨$⟩ (A→C.map ⟨$⟩ x))) ⟨$⟩ {!!}
-                    {!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!} ) }
+                     reindex D (Setoid.sym T (_≈≈_.ext (left-inv B♯D) (A→C.map ⟨$⟩ x))) ∘ (B→D.transport (D→B.map ⟨$⟩ {!A→C.map ⟨$⟩ x!})) ⟨$⟩ {!!}
+                    -- {!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!}
+                     ) }
         ; cong = {!!} })
       {!!}
   ; from = FArr {!!} {!!} {!!}
@@ -356,7 +366,7 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
     module B→D = _⇛_ (to B♯D)
     module C→A = _⇛_ (from A♯C)
     module D→B = _⇛_ (from B♯D)
-\end{spec}
+\end{code}
 
 We can do product too.
 \begin{code}

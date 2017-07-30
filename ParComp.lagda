@@ -287,47 +287,52 @@ _⊎⊎₁_ {A = A} {B} {C} {D} A♯C B♯D = record
 
 We can make a |Category| out of a |SetoidFamily| over a
 single |Setoid|. FSSF = Fixed Setoid SetoidFamily.
-\begin{code}
+We also fix it so that |_⇛_| only contains |id|-like things.
+
+\begin{spec}
 FSSF-Cat : {ℓS ℓs ℓA ℓa : Level} (S : Setoid ℓS ℓs) → Category _ _ _
 FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
   { Obj = SetoidFamily S ℓA ℓa
-  ; _⇒_ = _⇛_
-  ; _≡_ = _≈≈_
-  ; id = id⇛
-  ; _∘_ = flip _∘⇛_
-  ; assoc = λ { {f = f} {g} {h} → assocˡ f g h}
-  ; identityˡ = λ { {f = f} → unitʳ f} -- flipped, because ∘⇛ is.
-  ; identityʳ = λ { {f = f} → unitˡ f}
-  ; equiv = record { refl = λ {f} → ≈≈-refl f ; sym = ≈≈-sym ; trans = _⟨≈≈⟩_ }
-  ; ∘-resp-≡ = λ {A} {B} {C} {f} {h} {g} {i} f≈h g≈i → ∘⇛-cong {S = S} {S} {S} {A} {B} {C} {g} {f} {i} {h} g≈i f≈h
+  ; _⇒_ = λ B B' → Σ (B ⇛ B') (λ arr → ∀ s → _⇛_.map arr ⟨$⟩ s ≈ s)
+  ; _≡_ = λ a₁ a₂ → proj₁ a₁ ≈≈ proj₁ a₂
+  ; id = id⇛ , λ _ → refl
+  ; _∘_ = λ {(B⇛C , refl₁) (A⇛B , refl₂) → A⇛B ∘⇛ B⇛C , (λ s → trans (refl₁ (_⇛_.map A⇛B ⟨$⟩ s)) (refl₂ s))}
+  ; assoc = {!!} -- λ { {f = f} {g} {h} → assocˡ f g h}
+  ; identityˡ = {!!} -- λ { {f = f} → unitʳ f} -- flipped, because ∘⇛ is.
+  ; identityʳ = {!!} -- λ { {f = f} → unitˡ f}
+  ; equiv = {!!} -- record { refl = λ {f} → ≈≈-refl f ; sym = ≈≈-sym ; trans = _⟨≈≈⟩_ }
+  ; ∘-resp-≡ = {!!} -- λ {A} {B} {C} {f} {h} {g} {i} f≈h g≈i → ∘⇛-cong {S = S} {S} {S} {A} {B} {C} {g} {f} {i} {h} g≈i f≈h
   }
-\end{code}
+  where open Setoid S
+\end{spec}
 
 |_⊔⊔_| is? a coproduct for |FSSF-Cat|.
 
-\begin{code}
+\begin{spec}
 ⊔⊔-is-coproduct : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   (A B : SetoidFamily S ℓA ℓa) → Coproduct (FSSF-Cat S) A B
-⊔⊔-is-coproduct A B = record
+⊔⊔-is-coproduct {S = S} A B = record
   { A+B = A ⊔⊔ B
   ; i₁ = FArr id (λ s → record { _⟨$⟩_ = inj₁ ; cong = left })
-                 (λ {_} {x} _ → left (refl (index A x)))
+                 (λ {_} {x} _ → left (refl (index A x))) , (λ s → refl S)
   ; i₂ = FArr id (λ s → record { _⟨$⟩_ = inj₂ ; cong = right })
-                 (λ {_} {x} _ → right (refl (index B x)))
+                 (λ {_} {x} _ → right (refl (index B x))) , (λ _ → refl S)
   ; [_,_] = λ {C} A⇛C B⇛C →
-    FArr (map A⇛C) (λ s → record { _⟨$⟩_ = λ { (inj₁ x) → transport A⇛C s ⟨$⟩ x
-                                             ; (inj₂ y) → {!!}}
-                          ; cong = λ { (left r₁) → cong (transport A⇛C s) r₁
-                                     ; (right r₂) → cong (transport {!!} s) r₂ } })
-            (λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}})
+    (FArr id (λ s → record { _⟨$⟩_ = λ { (inj₁ x) → (reindex C (proj₂ A⇛C s) ∘ transport (proj₁ (A⇛C)) s ) ⟨$⟩ x
+                                      ; (inj₂ y) → (reindex C (proj₂ B⇛C s) ∘ transport (proj₁ (B⇛C)) s) ⟨$⟩ y}
+                           ; cong = λ { (left r₁) → cong (reindex C _ ∘ transport (proj₁ A⇛C) s) r₁
+                                      ; (right r₂) → cong (reindex C _ ∘ transport (proj₁ B⇛C) s) r₂} })
+          (λ { {By = inj₁ x₁} p → {!transport-coh (proj₁ A⇛C) {By = x₁} p!}
+             ; {By = inj₂ y₁} p → {!!}}))
+          , (λ _ → refl S)
   ; commute₁ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; commute₂ = record { ext = {!!} ; transport-ext-coh = {!!} }
-  ; universal = {!!}
+  ; universal = λ x x₁ → record { ext = {!!} ; transport-ext-coh = {!!} }
   }
   where
     open Setoid; open SetoidFamily; open _⇛_
 
-\end{code}
+\end{spec}
 However, to make |_⊔⊔₁_| ``work'', the underlying |map|s in
 |A ♯ C| and |B ♯ D| must be coherent in some way.
 \begin{spec}

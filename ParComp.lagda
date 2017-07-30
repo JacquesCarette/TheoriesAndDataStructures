@@ -184,7 +184,7 @@ things are rather more complex.
 
 \begin{code}
 _⊔⊔_ : {ℓS ℓs ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} {S : Setoid ℓS ℓs}
-  → SetoidFamily S ℓA₁ ℓa₁ → SetoidFamily S ℓA₂ ℓa₂ → SetoidFamily S _ _
+  → SetoidFamily S ℓA₁ ℓa₁ → SetoidFamily S ℓA₂ ℓa₂ → SetoidFamily S (ℓA₁ ⊔ ℓA₂) (ℓa₁ ⊔ ℓa₂)
 X ⊔⊔ Y = record
   { index = λ s → A.index s ⊎S B.index s
   ; reindex = λ x≈y → record
@@ -210,7 +210,7 @@ X ⊔⊔ Y = record
 
 \end{code}
 
-And it is commutative too
+And it is commutative too:
 \begin{code}
 ⊔⊔-comm : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   {A₁ : SetoidFamily S ℓA ℓa} {A₂ : SetoidFamily S ℓB ℓb}
@@ -313,25 +313,42 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
   (A B : SetoidFamily S ℓA ℓa) → Coproduct (FSSF-Cat S) A B
 ⊔⊔-is-coproduct {S = S} A B = record
   { A+B = A ⊔⊔ B
-  ; i₁ = FArr id (λ s → record { _⟨$⟩_ = inj₁ ; cong = left })
-                 (λ {_} {x} _ → left (refl (index A x))) , (λ s → refl S)
-  ; i₂ = FArr id (λ s → record { _⟨$⟩_ = inj₂ ; cong = right })
-                 (λ {_} {x} _ → right (refl (index B x))) , (λ _ → refl S)
-  ; [_,_] = λ {C} A⇛C B⇛C →
-    (FArr id (λ s → record { _⟨$⟩_ = λ { (inj₁ x) → (reindex C (proj₂ A⇛C s) ∘ transport (proj₁ (A⇛C)) s ) ⟨$⟩ x
-                                      ; (inj₂ y) → (reindex C (proj₂ B⇛C s) ∘ transport (proj₁ (B⇛C)) s) ⟨$⟩ y}
-                           ; cong = λ { (left r₁) → cong (reindex C _ ∘ transport (proj₁ A⇛C) s) r₁
-                                      ; (right r₂) → cong (reindex C _ ∘ transport (proj₁ B⇛C) s) r₂} })
-          (λ { {By = inj₁ x₁} p → {!transport-coh (proj₁ A⇛C) {By = x₁} p!}
-             ; {By = inj₂ y₁} p → {!!}}))
-          , (λ _ → refl S)
+  ; i₁ = record
+    { map = id
+    ; transport = λ s → record { _⟨$⟩_ = inj₁ ; cong = left }
+    ; transport-coh = λ {_} {x} _ → left (refl (index A x))
+    }
+  ; i₂ = record
+    { map = id
+    ; transport = λ s → record { _⟨$⟩_ = inj₂ ; cong = right }
+    ; transport-coh = λ {_} {x} _ → right (refl (index B x))
+    }
+  ; [_,_] = λ {C} A⇛C B⇛C → let
+      C⇛B : C ⇛ B  -- putative inverses to |A⇛C| and |B⇛C|
+      C⇛B = {!!}
+      C⇛A : C ⇛ A
+      C⇛A = {!!}
+    in record
+    { map = map A⇛C
+    ; transport = λ sA → let  -- |sA| is thought of as an index for |A|.
+         sB : Carrier S
+         sB = map C⇛B ⟨$⟩ (map A⇛C ⟨$⟩ sA)
+       in record
+       { _⟨$⟩_ = λ  { (inj₁ x) → transport A⇛C sA ⟨$⟩ x
+                    ; (inj₂ y) → {!transport B⇛C sB ⟨$⟩ y!}
+                    }
+       ; cong = λ   { (left r₁) → cong (transport A⇛C sA) r₁
+                    ; (right r₂) → {! cong (transport {!!} sA) r₂ !}
+                    }
+       }
+    ; transport-coh = λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}}
+    }
   ; commute₁ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; commute₂ = record { ext = {!!} ; transport-ext-coh = {!!} }
   ; universal = λ x x₁ → record { ext = {!!} ; transport-ext-coh = {!!} }
   }
   where
     open Setoid; open SetoidFamily; open _⇛_
-
 \end{spec}
 However, to make |_⊔⊔₁_| ``work'', the underlying |map|s in
 |A ♯ C| and |B ♯ D| must be coherent in some way.
@@ -346,8 +363,9 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
       (λ x → record
         { _⟨$⟩_ = λ { (inj₁ Ax) → inj₁ (A→C.transport x ⟨$⟩ Ax)
                    ; (inj₂ Bx) → inj₂ (
-                     -- reindex D (Setoid.sym T (_≈≈_.ext (left-inv B♯D) (A→C.map ⟨$⟩ x))) ∘ (B→D.transport (D→B.map ⟨$⟩ (A→C.map ⟨$⟩ x))) ⟨$⟩ {!!}
-                    {!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!} ) }
+                     reindex D (Setoid.sym T (_≈≈_.ext (left-inv B♯D) (A→C.map ⟨$⟩ x))) ∘ (B→D.transport (D→B.map ⟨$⟩ {!A→C.map ⟨$⟩ x!})) ⟨$⟩ {!!}
+                    -- {!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!}
+                     ) }
         ; cong = {!!} })
       {!!}
   ; from = FArr {!!} {!!} {!!}
@@ -362,7 +380,6 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
     module B→D = _⇛_ (to B♯D)
     module C→A = _⇛_ (from A♯C)
     module D→B = _⇛_ (from B♯D)
-
 \end{spec}
 
 We can do product too.
@@ -388,10 +405,9 @@ X ×× Y = record
     where
       module A = SetoidFamily X
       module B = SetoidFamily Y
-
 \end{code}
 
-And it is commutative too
+And it is commutative too:
 \begin{code}
 ××-comm : {ℓS ℓs ℓA ℓa ℓB ℓb : Level} {S : Setoid ℓS ℓs}
   {A₁ : SetoidFamily S ℓA ℓa} {A₂ : SetoidFamily S ℓB ℓb}

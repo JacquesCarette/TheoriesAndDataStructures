@@ -156,19 +156,15 @@ abstract
         ; right-unit = λ {xs} → ≡→⇔ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→⇔ (++.assoc xs ys zs)
         ; comm       =  λ {xs} {ys} → begin
-          elem-of (xs ++ ys)         ♯˘⟨ ++≅ ⟩
-          elem-of xs ⊎⊎ elem-of ys   ♯⟨ {!!} ⟩
-          elem-of ys ⊎⊎ elem-of xs   ♯⟨ ++≅ ⟩
-          elem-of (ys ++ xs) ▣ {- {! BE (λ {z} →
-          z ∈ xs ++ ys         ≅⟨ {!!} ⟩ -- |≅⟨ ≅-sym (++≅ {P = setoid≈ z}) ⟩|
-          (z ∈ xs ⊎⊎ z ∈ ys)  ≅⟨ ⊎⊎-comm ⟩
-          (z ∈ ys ⊎⊎ z ∈ xs)  ≅⟨ {!!} ⟩ -- |≅⟨ ++≅ {P = setoid≈ z}⟩|
-          z ∈ ys ++ xs  ∎) {!!} {!!} !} -}
-        ; _⟨*⟩_ = λ {x} {y} {z} {w} x≈y z≈w → {! BE (λ {t} →
-           t ∈ x ++ z        ≅⟨ {!!} ⟩ -- |≅-sym (++≅ {P = setoid≈ t}) |
-          (t ∈ x ⊎⊎ t ∈ z)   ≅⟨ (permut x≈y) ⊎⊎₁ (permut z≈w) ⟩
-          (t ∈ y ⊎⊎ t ∈ w)   ≅⟨ {!!} ⟩ -- |++≅ {P = setoid≈ t} |
-           t ∈ y ++ w ∎) {!!} {!!} !}
+          elem-of (xs ++ ys)         ♯˘⟨ ⊔⊔♯++ ⟩
+          elem-of xs ⊔⊔ elem-of ys   ♯⟨ ⊔⊔-comm ⟩
+          elem-of ys ⊔⊔ elem-of xs   ♯⟨ ⊔⊔♯++ ⟩
+          elem-of (ys ++ xs) □
+        ; _⟨*⟩_ = λ {x} {y} {z} {w} x⇔y z⇔w → begin
+           elem-of (x ++ z)          ♯˘⟨ ⊔⊔♯++ ⟩
+           elem-of x ⊔⊔ elem-of z    ♯⟨ {!!} ⟩
+           elem-of y ⊔⊔ elem-of w    ♯⟨ ⊔⊔♯++ ⟩
+           elem-of (y ++ w) □
         }
     ; singleton = λ x → x ∷ []
     }
@@ -179,49 +175,45 @@ abstract
       open Membership X
       open BagEq X
       open ConcatTo⊎⊎ X
+      open import ISEquiv
 
       X₀ = Setoid.Carrier X
 
       ≡→⇔ : {a b : List X₀} → a ≡ b → a ⇔ b
-      ≡→⇔ ≡.refl = ⇔-refl
+      ≡→⇔ ≡.refl = ♯-refl
 
       LM : Setoid ℓ (ℓ ⊍ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _⇔_
-        ; isEquivalence = record { refl = ⇔-refl ; sym = ⇔-sym ; trans =  ⇔-trans }
+        ; isEquivalence = record { refl = ♯-refl ; sym = ♯-sym ; trans =  ♯-trans }
         }
 
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom {ℓ} {o} X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys → {! BE (λ {y} →
-      y ∈ mapL g xs           ≅⟨ ≅-sym (map≅ {P = setoid≈ y} {F}) ⟩
-      {! Some (setoid≈ y ∘ F) xs !} ≅⟨ {!!} ⟩ -- |Some-cong {P = setoid≈ y ∘ F} xs≈ys |
-      {! Some (setoid≈ y ∘ F) ys !} ≅⟨ map≅ {P = setoid≈ y} {F} ⟩
-      y ∈ mapL g ys ∎) {!!} {!!} !}
+      ; cong = λ {xs} {ys} xs≈ys →  begin
+      elem-of (mapL g xs)   ♯⟨ {!!} ⟩
+      elem-of (mapL g ys) □
       }
     ; pres-e = begin
-         elem-of []             ♯˘⟨ ⊥⊥≅elem-of-[] Y ⟩
-         ⊥⊥ (Setoid.Carrier Y)  ♯⟨ ⊥⊥≅elem-of-[] Y ⟩
-         (elem-of e₁) ▣
+         elem-of []     ♯˘⟨ ⊥⊥♯elem-of-[] Y ⟩
+         ⊥⊥ Y           ♯⟨ ⊥⊥♯elem-of-[] Y ⟩
+         (elem-of e₁) □
 
       -- in the proof below, *₀ and *₁ are both ++
-    ; pres-* = λ {x} {y} → {! BE (λ {z} → let g = Π._⟨$⟩_ F in
-      z ∈ mapL g (x *₀ y)                              ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {F}) ⟩
-      {! Some (setoid≈ z ∘ F) (x *₀ y) !}                    ≅⟨ {!!} ⟩ -- |≅-sym (++≅ {P = setoid≈ z ∘ F}) |
-      {! Some (setoid≈ z ∘ F) x ⊎⊎ Some (setoid≈ z ∘ F) y !} ≅⟨ (map≅ {P = setoid≈ z} {F}) ⊎⊎₁ (map≅ {P = setoid≈ z} {F})⟩
-      z ∈ mapL g x ⊎⊎ z ∈ mapL g y                     ≅⟨ {!!} ⟩ -- | ++≅ {P = setoid≈ z} |
-      z ∈ mapL g x *₁ mapL g y ∎) {!!} {!!} !}
+    ; pres-* = λ {x} {y} →  begin
+      elem-of (mapL g (x *₀ y))           ♯⟨ {!!} ⟩
+      elem-of (mapL g x *₁ mapL g y) □
     })
     where
       open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀  ; _*_ to _*₀_)
       open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y
-      open BagEq Y using (_▣)
-      import ISEquiv
-      open ISEquiv.ISE-Combinators Y (⊥⊥ (Setoid.Carrier Y)) (elem-of [])
+      open import ISEquiv
+      open ConcatTo⊎⊎ Y
+
 
   id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
     (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)

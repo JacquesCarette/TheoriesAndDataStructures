@@ -23,11 +23,15 @@ open import Function.Inverse public using () renaming
 ≅-trans = flip Function.Inverse._∘_
 
 infix  3 _∎
-infixr 2 _≅⟨_⟩_
+infixr 2 _≅⟨_⟩_ _≅˘⟨_⟩_
 
 _≅⟨_⟩_ : {x y z ℓx ℓy ℓz : Level} (X : Setoid x ℓx) {Y : Setoid y ℓy} {Z : Setoid z ℓz}
       →  X ≅ Y → Y ≅ Z → X ≅ Z
 X ≅⟨ X≅Y ⟩ Y≅Z = ≅-trans X≅Y Y≅Z
+
+_≅˘⟨_⟩_ : {x y z ℓx ℓy ℓz : Level} (X : Setoid x ℓx) {Y : Setoid y ℓy} {Z : Setoid z ℓz}
+      →  Y ≅ X → Y ≅ Z → X ≅ Z
+X ≅˘⟨ Y≅X ⟩ Y≅Z = ≅-trans (≅-sym Y≅X) Y≅Z
 
 _∎ : {x ℓx : Level} (X : Setoid x ℓx) → X ≅ X
 X ∎ = ≅-refl

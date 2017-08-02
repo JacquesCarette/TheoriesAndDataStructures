@@ -354,8 +354,6 @@ module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 \end{code}
 %}}}
 
-\subsection{The following section is inactive code}
-
 %{{{ \subsection{|elem-of| and |map| properties}
 \subsection{|elem-of| and |map| properties}
 \begin{code}

@@ -23,7 +23,6 @@ open import Categories.Object.Coproduct
 
 open import DataProperties
 open import SetoidEquiv
-open import ISEquiv
 
 open import TypeEquiv using (swap₊; swap⋆)
 \end{code}
@@ -96,6 +95,44 @@ module _ {ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} (S₁ : Setoid ℓA₁ ℓa�
 
   _×S_ : Setoid (ℓA₁ ⊔ ℓA₂) (ℓa₁ ⊔ ℓa₂)
   _×S_ = S₁ ×-setoid S₂
+\end{code}
+%}}}
+
+%{{{ \subsection{Union of |Setoid| is commutative} |⊎S-comm|
+\subsection{Union of |Setoid| is commutative}
+\begin{code}
+module _ {ℓA₁ ℓa₁ ℓA₂ ℓa₂ : Level} (S₁ : Setoid ℓA₁ ℓa₁) (S₂ : Setoid ℓA₂ ℓa₂) where
+  ⊎S-comm : (S₁ ⊎S S₂) ≅ (S₂ ⊎S S₁)
+  ⊎S-comm = record
+    { to = record { _⟨$⟩_ = swap₊ ; cong = λ { (left r₁) → right r₁ ; (right r₂) → left r₂} }
+    ; from = record { _⟨$⟩_ = swap₊ ; cong = λ { (left r₁) → right r₁ ; (right r₂) → left r₂} }
+    ; inverse-of = record
+      { left-inverse-of = λ { (inj₁ x) → left (refl S₁) ; (inj₂ y) → right (refl S₂)}
+      ; right-inverse-of = λ { (inj₁ x) → left (refl S₂) ; (inj₂ y) → right (refl S₁)} }
+    }
+    where open Setoid
+\end{code}
+%}}}
+%{{{ \subsection{|_⊎S_| is a congruence} |_⊎S₁_|
+\subsection{|_⊎S_| is a congruence}
+\begin{code}
+module _ {ℓA₁ ℓa₁ ℓA₂ ℓa₂ ℓA₃ ℓa₃ ℓA₄ ℓa₄ : Level}
+  {S₁ : Setoid ℓA₁ ℓa₁} {S₂ : Setoid ℓA₂ ℓa₂} {S₃ : Setoid ℓA₃ ℓa₃} {S₄ : Setoid ℓA₄ ℓa₄} where
+  _⊎S₁_ : S₁ ≅ S₃ → S₂ ≅ S₄ → (S₁ ⊎S S₂) ≅ (S₃ ⊎S S₄)
+  1≅3 ⊎S₁ 2≅4 = record
+    { to = record
+      { _⟨$⟩_ = λ { (inj₁ x) → inj₁ (to 1≅3 ⟨$⟩ x) ; (inj₂ y) → inj₂ (to 2≅4 ⟨$⟩ y)}
+      ; cong = λ { (left r₁) → left (cong (to 1≅3) r₁) ; (right r₂) → right (cong (to 2≅4) r₂)} }
+    ; from = record
+      { _⟨$⟩_ = λ { (inj₁ x) → inj₁ (from 1≅3 ⟨$⟩ x) ; (inj₂ y) → inj₂ (from 2≅4 ⟨$⟩ y)}
+      ; cong = λ { (left r₁) → left (cong (from 1≅3) r₁) ; (right r₂) → right (cong (from 2≅4) r₂)} }
+    ; inverse-of = record
+      { left-inverse-of = λ { (inj₁ x) → left (left-inverse-of 1≅3 x)
+                            ; (inj₂ y) → right (left-inverse-of 2≅4 y)}
+      ; right-inverse-of = λ { (inj₁ x) → left (right-inverse-of 1≅3 x)
+                             ; (inj₂ y) → right (right-inverse-of 2≅4 y)} }
+    }
+    where open _≅_
 \end{code}
 %}}}
 

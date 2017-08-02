@@ -22,10 +22,8 @@ open import EqualityCombinators
 open import DataProperties
 open import SetoidEquiv
 open import ParComp
-open import ISEquiv
 
 open import TypeEquiv using (swap₊)
-open import Relation.Binary.PropositionalEquality using (inspect; [_])
 \end{code}
 %}}}
 
@@ -156,8 +154,7 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 %{{{ \subsection{Membership module}: _∈_
 \subsection{Membership module}
 
-We now have all the ingredients to show that locations (|_∈₀_|) form a |Setoid|. But
-we will go one step further and show that it forms an |IndexedSetoid|.
+We now have all the ingredients to show that locations (|_∈₀_|) form a |Setoid|.
 \begin{code}
 module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
   open Setoid S
@@ -180,20 +177,33 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
 
   ≡→≋ : {x : Carrier} {xs : List Carrier} {p q : x ∈₀ xs} → p ≡ q → p ≋ q
   ≡→≋ ≡.refl = ≋-refl
+\end{code}
 
-  elem-of : List Carrier → SetoidFamily S (ℓS ⊔ ℓs) (ℓS ⊔ ℓs)
+The type |elements l| is just |∃ Carrier (λ witness → witness ∈₀ l)|, but it is more
+convenient to have a dedicated name (and notation).  For now, no dedicated name will
+be given to the equality.
+
+\begin{code}
+  record elements (l : List Carrier) : Set (ℓS ⊔ ℓs) where
+    constructor El
+    field
+      {witness} : Carrier
+      belongs : witness ∈₀ l
+
+  open elements public
+
+  lift-el : {l₁ l₂ : List Carrier} (f : ∀ {w} → ( w ∈₀ l₁ → w ∈₀ l₂))
+    → elements l₁ → elements l₂
+  lift-el f (El l) = El (f l)
+
+  _⟷_ : {l : List Carrier} → Rel (elements l) (ℓs ⊔ ℓS)
+  (El b₁) ⟷ (El b₂) = b₁ ≋ b₂
+
+  elem-of : List Carrier → Setoid (ℓs ⊔ ℓS) (ℓs ⊔ ℓS)
   elem-of l = record
-    { index = λ x → record
-      { Carrier = x ∈₀ l
-      ; _≈_ = _≋_
-      ; isEquivalence = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans } }
-    ; reindex = λ x≈y → record { _⟨$⟩_ = ap-∈₀ x≈y ; cong = ap-∈₀-cong x≈y }
-    ; id-coh = λ {_} {a∈l} → ap-∈₀-refl a∈l
-    ; sym-iso = λ x≈y → record
-      { left-inverse-of  = ap-∈₀-linv x≈y
-      ; right-inverse-of = ap-∈₀-rinv x≈y
-      }
-    ; trans-coh = ap-∈₀-trans
+    { Carrier = elements l
+    ; _≈_ = _⟷_
+    ; isEquivalence = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
     }
 \end{code}
 %}}}
@@ -204,9 +214,9 @@ module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
 Fundamental definition: two Bags, represented as |List Carrier| are equivalent
 if and only if there exists a permutation between their |Setoid| of positions,
 and this is independent of the representative.  The best way to succinctly
-express this is via |_♯_|.
+express this is via |_⇔_|.
 
-It is very important to note that |_♯_| isn't reflective 'for free', i.e.
+It is very important to note that |_⇔_| isn't reflective 'for free', i.e.
 the proof does not involve just |id|.
 \begin{code}
 module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
@@ -219,13 +229,13 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   infix 3 _⇔_
 
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
-  xs ⇔ ys = elem-of xs ♯ elem-of ys
+  xs ⇔ ys = elem-of xs ≅ elem-of ys
 
 \end{code}
 %}}}
 
-%{{{ \subsection{|++♯⊔⊔ : ⋯ → (elem-of xs ⊔⊔ elem-of ys) ≅ elem-of (xs ++ ys)|}
-\subsection{|++♯⊔⊔ : ⋯ → (elem-of xs ⊔⊔ elem-of ys) ♯ elem-of (xs ++ ys)|}
+%{{{ \subsection{|++♯⊎S : ⋯ → (elem-of xs ⊎S elem-of ys) ≅ elem-of (xs ++ ys)|}
+\subsection{|++♯⊎S : ⋯ → (elem-of xs ⊎S elem-of ys) ≅ elem-of (xs ++ ys)|}
 \begin{code}
 module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (Carrier to A)
@@ -235,23 +245,15 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
   open Substitution S
 
-  ⊔⊔♯++ : {xs ys : List A } → (elem-of xs ⊔⊔ elem-of ys) ♯ (elem-of (xs ++ ys))
-  ⊔⊔♯++ {xs} {ys} = record
-    { to = FArr
-      (record { _⟨$⟩_ = id₀ ; cong = id₀ })
-      (λ s → record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong } )
-      (λ {_} {_} {By} p → ⊎→++-transp {By = By} p)
-    ; from = FArr id (λ a → record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs })
-                      ++→⊎-transp
-    ; left-inv = record
-       { ext = λ _ → refl
-       ; transport-ext-coh = λ x Bx → ≋-trans (ap-∈₀-refl (ap-∈₀ refl Bx)) (≋-trans (ap-∈₀-refl Bx) (lefty {xs} {ys} x Bx)) }
-    ; right-inv = record
-      { ext = λ _ → refl
-      ; transport-ext-coh = λ { x (inj₁ x₁) → righty x (inj₁ x₁)
-                              ; x (inj₂ y) → righty x (inj₂ y) } } }
+  ⊎S≅++ : {xs ys : List A } → (elem-of xs ⊎S elem-of ys) ≅ (elem-of (xs ++ ys))
+  ⊎S≅++ {xs} {ys} = record
+    { to = record { _⟨$⟩_ = ⊎→++ ; cong = ⊎→++-cong }
+    ; from = record { _⟨$⟩_ = ++→⊎ xs ; cong = ++→⊎-cong xs }
+    ; inverse-of = record
+      { left-inverse-of = lefty
+      ; right-inverse-of = righty {xs} }
+    }
     where
-      open SetoidFamily
       ⊎ˡ : ∀ {zs ws} {a : A} → a ∈₀ zs → a ∈₀ zs ++ ws
       ⊎ˡ (here sm) = here sm
       ⊎ˡ (there pf) = there (⊎ˡ pf)
@@ -260,364 +262,209 @@ module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
       ⊎ʳ []      p = p
       ⊎ʳ (x ∷ l) p = there (⊎ʳ l p)
 
-      ⊎→++ : ∀ {zs ws} {a : A} → (a ∈₀ zs ⊎ a ∈₀ ws) → a ∈₀ (zs ++ ws)
-      ⊎→++      (inj₁ x) = ⊎ˡ x
-      ⊎→++ {zs} (inj₂ y) = ⊎ʳ zs y
+      ⊎→++ : ∀ {zs ws} → elements zs ⊎ elements ws → elements (zs ++ ws)
+      ⊎→++      (inj₁ (El w∈zs)) = El (⊎ˡ w∈zs)
+      ⊎→++ {zs} (inj₂ (El w∈ws)) = El (⊎ʳ zs w∈ws)
 
-      ⊎ˡ-cong : {zs ws : List A} {a : A} {x y : a ∈₀ zs} → x ≋ y → ⊎ˡ {zs} {ws} x ≋ ⊎ˡ y
+      ⊎ˡ-cong : {zs ws : List A} {x y : elements zs} → x ⟷ y
+        → ⊎ˡ {zs} {ws} (belongs x) ≋ ⊎ˡ (belongs y)
       ⊎ˡ-cong (hereEq x≈z y≈z) = hereEq x≈z y≈z
       ⊎ˡ-cong (thereEq x≋y) = thereEq (⊎ˡ-cong x≋y)
 
-      ⊎ʳ-cong : (zs : List A) {ws : List A} {a : A} {x y : a ∈₀ ws} → x ≋ y → ⊎ʳ zs x ≋ ⊎ʳ zs y
+      ⊎ʳ-cong : (zs : List A) {ws : List A} {x y : elements ws} → x ⟷ y
+        → ⊎ʳ zs (belongs x) ≋ ⊎ʳ zs (belongs y)
       ⊎ʳ-cong [] pf = pf
       ⊎ʳ-cong (x ∷ l) pf =  thereEq (⊎ʳ-cong l pf)
 
-      ⊎→++-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ⊎ y ∈₀ ws} (p : y ≈ x) →
-        ⊎→++ (reindex (elem-of zs ⊔⊔ elem-of ws) p ⟨$⟩ By) ≋ ap-∈₀ p (⊎→++ By)
-      ⊎→++-transp          {By = inj₁ (here sm)} p = hereEq (p ⟨≈˘≈⟩ sm) (p ⟨≈˘≈⟩ sm)
-      ⊎→++-transp          {By = inj₁ (there x₂)} p = thereEq (⊎→++-transp {By = inj₁ x₂} p)
-      ⊎→++-transp {[]}     {By = inj₂ y₁} p = ≋-refl
-      ⊎→++-transp {x ∷ zs} {By = inj₂ y₁} p = thereEq (⊎→++-transp {zs} {By = inj₂ y₁} p)
-
-      ⊎→++-cong : {zs ws : List A} {a : A} {i j : a ∈₀ zs ⊎ a ∈₀ ws}
-        → (_≋_ ∥ _≋_) i j → ⊎→++ i ≋ ⊎→++ j
-      ⊎→++-cong      (left  x₁∼x₂)  =  ⊎ˡ-cong x₁∼x₂
-      ⊎→++-cong {zs} (right y₁∼y₂)  =  ⊎ʳ-cong zs y₁∼y₂
+      ⊎→++-cong : {zs ws : List A} {i j : elements zs ⊎ elements ws}
+        → ((λ w₁ w₂ → belongs w₁ ≋ belongs w₂) ∥ (λ w₁ w₂ → belongs w₁ ≋ belongs w₂)) i j
+        → belongs (⊎→++ i) ≋ belongs (⊎→++ j)
+      ⊎→++-cong      (left  ∈x≋∈y)  =  ⊎ˡ-cong ∈x≋∈y
+      ⊎→++-cong {zs} (right ∈x≋∈y)  =  ⊎ʳ-cong zs ∈x≋∈y
 
       ∽∥∽-cong   :  {xs ys us vs : List A}
-                    (F : {z : A} → z ∈₀ xs → z ∈₀ us)
-                    (F-cong : {z w : A} {p : z ∈₀ xs} {q : w ∈₀ xs} → p ≋ q → F p ≋ F q)
-                    (G : {z : A} → z ∈₀ ys → z ∈₀ vs)
-                    (G-cong : {z w : A} {p : z ∈₀ ys} {q : w ∈₀ ys} → p ≋ q → G p ≋ G q)
-                    {x y : A}
-                    → {pf : x ∈₀ xs ⊎ x ∈₀ ys} {pf' : y ∈₀ xs ⊎ y ∈₀ ys}
-                    → (_≋_ ∥ _≋_) pf pf' → (_≋_ ∥ _≋_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
+         (F : elements xs → elements us)
+         (F-cong : {p : elements xs} {q : elements xs} → p ⟷ q → F p ⟷ F q)
+         (G : elements ys → elements vs)
+         (G-cong : {p : elements ys} {q : elements ys} → p ⟷ q → G p ⟷ G q)
+         → {pf : elements xs ⊎ elements ys} {pf' : elements xs ⊎ elements ys}
+         → (_⟷_ ∥ _⟷_) pf pf' → (_⟷_ ∥ _⟷_) ( (F ⊎₁ G) pf) ((F ⊎₁ G) pf')
       ∽∥∽-cong F F-cong G G-cong (left x~₁y) = left (F-cong x~₁y)
       ∽∥∽-cong F F-cong G G-cong (right x~₂y) = right (G-cong x~₂y)
 
-      ++→⊎ : ∀ xs {ys} {a} → a ∈₀ (xs ++ ys) → a ∈₀ xs ⊎ a ∈₀ ys
-      ++→⊎ []              p  = inj₂ p
-      ++→⊎ (x ∷ l) (here  p) = inj₁ (here p)
-      ++→⊎ (x ∷ l) (there p) = (there ⊎₁ id₀) (++→⊎ l p)
+      ++→⊎ : ∀ xs {ys} → elements (xs ++ ys) → elements xs ⊎ elements ys
+      ++→⊎ []              p      = inj₂ p
+      ++→⊎ (x ∷ l) (El (here  p)) = inj₁ (El (here p))
+      ++→⊎ (x ∷ l) (El (there p)) = (lift-el there ⊎₁ id₀) (++→⊎ l (El p))
 
-      ++→⊎-cong : {x : A} (zs : List A) {ws : List A} {i j : x ∈₀ (zs ++ ws)} → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ zs i) (++→⊎ zs j)
+      ++→⊎-cong : (zs : List A) {ws : List A}
+        {i j : elements (zs ++ ws)} → i ⟷ j
+        → (_⟷_ ∥ _⟷_) (++→⊎ zs i) (++→⊎ zs j)
       ++→⊎-cong []        i≋j         = right i≋j
       ++→⊎-cong (_ ∷ xs) (hereEq _ _) = left (hereEq _ _)
-      ++→⊎-cong (_ ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (++→⊎-cong xs pf)
+      ++→⊎-cong (_ ∷ xs) (thereEq pf) = ∽∥∽-cong (lift-el there) thereEq id₀ id₀ (++→⊎-cong xs pf)
 
-      ++→⊎-cong' : {x y : A} (p : x ≈ y) (zs : List A) {ws : List A} {i : x ∈₀ (zs ++ ws)} {j : y ∈₀ zs ++ ws}
-        → i ≋ j → (_≋_ ∥ _≋_) (++→⊎ zs i) (++→⊎ zs j)
-      ++→⊎-cong' p []        i≋j         = right i≋j
-      ++→⊎-cong' p (_ ∷ xs) (hereEq _ _) = left (hereEq _ _)
-      ++→⊎-cong' p (_ ∷ xs) (thereEq pf) = ∽∥∽-cong there thereEq id₀ id₀ (++→⊎-cong' p xs pf)
-
-      ++→⊎-transp : {zs ws : List A} {y x : A} {By : y ∈₀ zs ++ ws} (p : y ≈ x) →
-        (_≋_ ∥ _≋_) (++→⊎ zs (reindex (elem-of (zs ++ ws)) p ⟨$⟩ By))
-                    (reindex (elem-of zs ⊔⊔ elem-of ws) p ⟨$⟩ ++→⊎ zs By)
-      ++→⊎-transp {[]} {By = here sm} p = right ≋-refl
-      ++→⊎-transp {[]} {By = there By} p = right ≋-refl
-      ++→⊎-transp {z ∷ zs}              {By = here sm} p = left ≋-refl
-      ++→⊎-transp {z ∷ zs} {ws} {y} {x} {By = there By} p = ∥-trans (index (elem-of (z ∷ zs)) x) (index (elem-of ws) x)
-        (∽∥∽-cong there thereEq id₀ id₀ (++→⊎-transp p))
-        (split (++→⊎ zs By))
-        where
-          split : {as bs : List A} {a y₁ x₁ : A} {p : y₁ ≈ x₁} (y-in : y₁ ∈₀ as ⊎ y₁ ∈₀ bs) →
-            (Setoid._≈_ (index (elem-of (a ∷ as)) x₁) ∥ Setoid._≈_ (index (elem-of bs) x₁))
-              ((there ⊎₁ id₀) (reindex (elem-of as ⊔⊔ elem-of bs) p ⟨$⟩ y-in))
-              (reindex (elem-of (a ∷ as) ⊔⊔ elem-of bs) p ⟨$⟩ (there ⊎₁ id₀) y-in)
-          split (inj₁ x₂) = left (thereEq ≋-refl)
-          split (inj₂ y₂) = right ≋-refl
-
-      lefty : {xs ys : List A} (x : A) (Bx : x ∈₀ xs ++ ys) → Bx ≋ ⊎→++ (++→⊎ xs Bx)
-      lefty {[]} x Bx = ≋-refl
-      lefty {x ∷ xs₁} x₁ (here sm) = hereEq sm sm
-      lefty {x ∷ xs₁} x₁ (there Bx) with ++→⊎ xs₁ Bx | lefty {xs₁} x₁ Bx
+      righty : {xs ys : List A} (x : elements (xs ++ ys)) → ⊎→++ (++→⊎ xs x) ⟷ x
+      righty {[]} x = ≋-refl
+      righty {x ∷ xs₁} (El (here sm)) = hereEq sm sm
+      righty {_ ∷ xs₁} (El (there x)) with ++→⊎ xs₁ (El x) | righty {xs₁} (El x)
       ... | inj₁ x₁∈xs₁ | ans = thereEq ans
       ... | inj₂ x₁∈ys  | ans = thereEq ans
 
-      righty : {xs ys : List A} (x : A) (Bx : x ∈₀ xs ⊎ x ∈₀ ys) →
-        (_≋_ ∥ _≋_) ( (ap-∈₀ refl ⊎₁ ap-∈₀ refl) ((ap-∈₀ refl ⊎₁ ap-∈₀ refl) Bx) ) (++→⊎ xs (⊎→++ Bx))
-      righty {[]} _ (inj₁ ())
-      righty {[]} _ (inj₂ y) = right (≋-trans (ap-∈₀-refl _) (ap-∈₀-refl y))
-      righty {_ ∷ _} _ (inj₁ (here sm)) = left (≋-trans (ap-∈₀-refl _) (≋-trans (ap-∈₀-refl _) (hereEq sm sm)))
-      righty {_ ∷ xs₁} {ys} x (inj₁ (there Bx)) with ++→⊎ xs₁ {ys} (⊎ˡ Bx)
-                                                  | righty {ys = ys} x (inj₁ Bx)
+      lefty : {xs ys : List A} (x : elements xs ⊎ elements ys) →
+        (_⟷_ ∥ _⟷_) (++→⊎ xs (⊎→++ x)) x
+      lefty {[]} (inj₁ (El ()))
+      lefty {[]} (inj₂ y) = right ≋-refl
+      lefty {_ ∷ _} (inj₁ (El (here sm))) = left (hereEq sm sm)
+      lefty {_ ∷ xs₁} {ys} (inj₁ (El (there x))) with ++→⊎ xs₁ {ys} (El (⊎ˡ x))
+                                                    | lefty {ys = ys} (inj₁ (El x))
       ... | inj₁ res | left ans = left (thereEq ans)
       ... | inj₂ res | ()
-      righty {x₂ ∷ xs₂} {ys} x (inj₂ (here sm)) with ++→⊎ xs₂ (⊎ʳ xs₂ {ys} (here sm))
-                                                  | righty {xs₂} {ys} x (inj₂ (here sm))
+      lefty {x₂ ∷ xs₂} {ys} (inj₂ (El (here sm))) with ++→⊎ xs₂ (El (⊎ʳ xs₂ {ys} (here sm)))
+                                                     | lefty {xs₂} {ys} (inj₂ (El (here sm)))
       ... | inj₁ res | ()
       ... | inj₂ res | right ans = right ans
-      righty {x₂ ∷ xs₂} {ys} x (inj₂ (there Bx)) with ++→⊎ xs₂ (⊎ʳ xs₂ {ys} (there Bx))
-                                                  | righty {xs₂} {ys} x (inj₂ (there Bx))
+      lefty {x₂ ∷ xs₂} {ys} (inj₂ (El (there x))) with ++→⊎ xs₂ (El (⊎ʳ xs₂ {ys} (there x)))
+                                                     | lefty {xs₂} {ys} (inj₂ (El (there x)))
       ... | inj₁ res | ()
       ... | inj₂ res | right ans = right ans
-
 \end{code}
-Note: it looks like |elem-of xs ⊎⊎ elem-of ys ♯ elem-of (xs ++ ys)| is
-not provable in the current setting.  [It looks like it needs decidable
-equality?]
 %}}}
 
-%{{{ \subsection{Bottom as an indexed setoid} ⊥⊥ ; ⊥⊥♯elem-of-[] : ⊥⊥ ≅ elem-of []
-\subsection{Bottom as an indexed setoid}
+%{{{ \subsection{Bottom as a Setoid} ⊥⊥ ; ⊥⊥ ≅ elem-of []
+\subsection{Bottom as a Setoid}
 \begin{code}
-⊥⊥ : ∀ {ℓS ℓs ℓI ℓi} (S : Setoid ℓI ℓi) → SetoidFamily S ℓS ℓs
-⊥⊥ I = record
-  { index = λ i → record
+⊥⊥ : ∀ {ℓI ℓi} → Setoid ℓI ℓi
+⊥⊥ = record
     { Carrier = ⊥
     ; _≈_ = λ _ _ → ⊤
-    ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt } }
-  ; reindex = λ x≈y → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
-  ; id-coh = tt
-  ; sym-iso = λ x≈y → record
-    { left-inverse-of = λ _ → tt
-    ; right-inverse-of = λ _ → tt }
-  }
+    ; isEquivalence = record { refl = tt ; sym = λ _ → tt ; trans = λ _ _ → tt }
+    }
 \end{code}
 
 \begin{code}
 module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
 
-  ⊥⊥♯elem-of-[] : ⊥⊥ {ℓS} {ℓs} {ℓS} S ♯ elem-of []
-  ⊥⊥♯elem-of-[] = record
-    { to = FArr id (λ _ → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }) (λ { {By = ()} })
-    ; from = FArr id (λ x → record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }) (λ { {By = ()} })
-    ; left-inv = record { ext = λ _ → refl ; transport-ext-coh = λ { _ () } }
-    ; right-inv = record { ext = λ _ → refl ; transport-ext-coh = λ { _ () } } }
-    where open Setoid S
+  ⊥⊥≅elem-of-[] : ⊥⊥ {ℓS} {ℓs} ≅ (elem-of [])
+  ⊥⊥≅elem-of-[] = record
+    { to = record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
+    ; from = record { _⟨$⟩_ = λ {(El ())} ; cong = λ { {El ()}} }
+    ; inverse-of = record { left-inverse-of = λ {()} ; right-inverse-of = λ { (El ()) } } }
 \end{code}
 %}}}
 
-\subsection{The following sections are inactive code}
+\subsection{The following section is inactive code}
 
-%{{{ \subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
-\subsection{|map≅ : ⋯→ Some (P ∘ f) xs ≅ Some P (map (_⟨$⟩_ f) xs)|}
-\begin{spec}
-map≅ : {ℓS ℓs ℓP ℓp : Level} {A B : Setoid ℓS ℓs} {P : B ⟶ ProofSetoid ℓP ℓp} →
-         let P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e) in
-         {f : A ⟶ B} {xs : List (Setoid.Carrier A)} →
-       Some {S = A} (P₀ ⊚ (_⟨$⟩_ f)) xs ≅ Some {S = B} P₀ (map (_⟨$⟩_ f) xs)
-map≅ {A = A} {B} {P} {f} = record
-  { to = record { _⟨$⟩_ = map⁺ ; cong = map⁺-cong }
-  ; from = record { _⟨$⟩_ = map⁻ ; cong = map⁻-cong }
-  ; inverse-of = record { left-inverse-of = map⁻∘map⁺ ; right-inverse-of = map⁺∘map⁻ }
-  }
-  where
-  open Setoid
-  open Membership using (transport)
-  A₀ = Setoid.Carrier A
-  open Locations
-  _∼_ = _≋_ {S = B}
-  P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
-
-  map⁺ : {xs : List A₀} → Some₀ A (P₀ ⊚ _⟨$⟩_ f) xs → Some₀ B P₀ (map (_⟨$⟩_ f) xs)
-  map⁺ (here a≈x p)  = here (Π.cong f a≈x) p
-  map⁺ (there p) = there $ map⁺ p
-
-  map⁻ : {xs : List A₀} → Some₀ B P₀ (map (_⟨$⟩_ f) xs) → Some₀ A (P₀ ⊚ (_⟨$⟩_ f)) xs
-  map⁻ {[]} ()
-  map⁻ {x ∷ xs} (here {b} b≈x p) = here (refl A) (Equivalence.to (Π.cong P b≈x) ⟨$⟩ p)
-  map⁻ {x ∷ xs} (there p) = there (map⁻ {xs = xs} p)
-
-  map⁺∘map⁻ : {xs : List A₀ } → (p : Some₀ B P₀ (map (_⟨$⟩_ f) xs)) → map⁺ (map⁻ p) ∼ p
-  map⁺∘map⁻ {[]} ()
-  map⁺∘map⁻ {x ∷ xs} (here b≈x p) = hereEq (transport B P p b≈x) p (Π.cong f (refl A)) b≈x
-  map⁺∘map⁻ {x ∷ xs} (there p) = thereEq (map⁺∘map⁻ p)
-
-  map⁻∘map⁺ : {xs : List A₀} → (p : Some₀ A (P₀ ⊚ (_⟨$⟩_ f)) xs)
-            → let _∼₂_ = _≋_ {P₀ = P₀ ⊚ (_⟨$⟩_ f)} in map⁻ (map⁺ p) ∼₂ p
-  map⁻∘map⁺ {[]} ()
-  map⁻∘map⁺ {x ∷ xs} (here a≈x p) = hereEq (transport A (P ∘ f) p a≈x) p (refl A) a≈x
-  map⁻∘map⁺ {x ∷ xs} (there p) = thereEq (map⁻∘map⁺ p)
-
-  map⁺-cong : {ys : List A₀} {i j : Some₀ A (P₀ ⊚ _⟨$⟩_ f) ys} →  _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} i j → map⁺ i ∼ map⁺ j
-  map⁺-cong (hereEq px py x≈z y≈z) = hereEq px py (Π.cong f x≈z) (Π.cong f y≈z)
-  map⁺-cong (thereEq i∼j) = thereEq (map⁺-cong i∼j)
-
-  map⁻-cong : {ys : List A₀} {i j : Some₀ B P₀ (map (_⟨$⟩_ f) ys)} → i ∼ j → _≋_ {P₀ = P₀ ⊚ _⟨$⟩_ f} (map⁻ i) (map⁻ j)
-  map⁻-cong {[]} ()
-  map⁻-cong {z ∷ zs} (hereEq {x = x} {y} px py x≈z y≈z) =
-    hereEq (transport B P px x≈z) (transport B P py y≈z) (refl A) (refl A)
-  map⁻-cong {z ∷ zs} (thereEq i∼j) = thereEq (map⁻-cong i∼j)
-\end{spec}
-%}}}
-
-%{{{ \subsection{FindLose}
-\subsection{FindLose}
-
-\begin{spec}
-module FindLose {ℓS ℓs ℓP ℓp : Level} {A : Setoid ℓS ℓs}  (P : A ⟶ ProofSetoid ℓP ℓp) where
-  open Membership A
-  open Setoid A
-  open Π
+%{{{ \subsection{|elem-of| and |map| properties}
+\subsection{|elem-of| and |map| properties}
+\begin{code}
+module _ {ℓS ℓs : Level} {S T : Setoid ℓS ℓs} where
+  open Setoid hiding (_≈_)
+  open BagEq S
+  open Membership T using (lift-el; elem-of; ≋-refl; ≋-sym; ≋-trans)
+  open Membership S using (El; belongs; elements; _⟷_) renaming (elem-of to elem-ofₛ)
   open _≅_
-  open Locations
-  private
-    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
-    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
+  open LocEquiv T using (_≋_)
+  open LocEquiv S renaming (_≋_ to _≋ₛ_)
+  open Locations T using (_∈₀_)
+  open Locations S renaming (here to hereₛ; there to thereₛ) hiding (_∈₀_)
 
-  find : {ys : List Carrier} → Some₀ A P₀ ys → Support ys
-  find {y ∷ ys} (here {a} a≈y p) = a , here a≈y (sym a≈y) , transport P p a≈y
-  find {y ∷ ys} (there p) =  let (a , a∈ys , Pa) = find p
-                             in a , there a∈ys , Pa
+  copy-func : {l : List (Carrier S)} (F : S ⟶ T) → (e : elements l) → (F ⟨$⟩ Membership.witness e ∈₀ map (_⟨$⟩_ F) l)
+  copy-func F (El (hereₛ sm)) = Locations.here (cong F sm)
+  copy-func F (El (thereₛ belongs₁)) = Locations.there (copy-func F (El belongs₁))
 
-  lose : {ys : List Carrier} → Support ys → Some₀ A P₀ ys
-  lose (y , here b≈y py , Py)  = here b≈y (Equivalence.to (Π.cong P py) Π.⟨$⟩ Py)
-  lose (y , there {b} y∈ys , Py)   = there (lose (y , y∈ys , Py))
-\end{spec}
-%}}}
+  record shifted-elements (F : S ⟶ T) (l : List (Carrier S)) : Set (ℓS ⊔ ℓs) where
+    constructor SE
+    open Setoid T using (_≈_)
+    field
+      elem : Membership.elements S l
+      {shift-witness} : Carrier T
+      sw-good : shift-witness ≈ F ⟨$⟩ Membership.witness elem
 
-%{{{ \subsection{Σ-Setoid}
-\subsection{Σ-Setoid}
+  open shifted-elements
 
-\edcomm{WK}{Abstruse name!}
-\edcomm{JC}{Feel free to rename.  I agree that it is not a good name.  I was more
-concerned with the semantics, and then could come back to clean up once it worked.}
+  copy-func-cong : {l : List (Carrier S)} (F : S ⟶ T) {i j : shifted-elements F l}
+    → Membership.belongs (elem i) ≋ₛ Membership.belongs (elem j)
+    → copy-func F (elem i) ≋ copy-func F (elem j)
+  copy-func-cong F (LocEquiv.hereEq x≈z y≈z) = LocEquiv.hereEq (cong F x≈z) (cong F y≈z)
+  copy-func-cong {_ ∷ _} F {SE (El (Locations.there el₁)) g₁} {SE (El (Locations.there el₂)) g₂}
+    (LocEquiv.thereEq eq) = LocEquiv.thereEq (copy-func-cong F {SE (El el₁) g₁} {SE (El el₂) g₂} eq)
 
-This is an ``unpacked'' version of |Some|, where each piece (see |Support| below) is
-separated out.  For some equivalences, it seems to work with this representation.
+  copy-unfunc : {l : List (Carrier S)} (F : S ⟶ T) {w : Carrier T} → w ∈₀ map (_⟨$⟩_ F) l → shifted-elements F l
+  copy-unfunc {[]} F {w} ()
+  copy-unfunc {x ∷ l} F {w} (Locations.here sm) = record
+    { elem = Membership.El {witness = x} (Locations.here (refl S))
+    ; sw-good = sm }
+  copy-unfunc {x ∷ l} F {w} (Locations.there kk) =
+    let se = copy-unfunc {l} F {w} kk in
+    record { elem = Membership.El (Locations.there (belongs (elem se))) ; sw-good = sw-good se }
 
-\begin{spec}
-module _ {ℓS ℓs ℓP ℓp : Level} (A : Setoid ℓS ℓs) (P : A ⟶ ProofSetoid ℓP ℓp) where
-  open Membership A
-  open Setoid A
-  private
-    P₀ : (e : Carrier) → Set ℓP
-    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
-    Support : (ys : List Carrier) → Set (ℓS ⊔ (ℓs ⊔ ℓP))
-    Support = λ ys → Σ y ∶ Carrier • y ∈₀ ys × P₀ y
-    squish : {x y : Setoid.Carrier A} → P₀ x → P₀ y → Set ℓp
-    squish _ _ = ⊤
+  copy-unfunc-cong : {l : List (Carrier S)} (F : S ⟶ T) {w₁ w₂  : Carrier T}
+    → {b₁ : w₁ ∈₀ map (_⟨$⟩_ F) l} → {b₂ : w₂ ∈₀ map (_⟨$⟩_ F) l} → b₁ ≋ b₂
+    → belongs (elem (copy-unfunc F b₁)) ≋ₛ belongs (elem (copy-unfunc F b₂))
+  copy-unfunc-cong {[]} F ()
+  copy-unfunc-cong {x ∷ l} F (LocEquiv.hereEq x≈z y≈z) = LocEquiv.hereEq (refl S) (refl S)
+  copy-unfunc-cong {x ∷ l} F (LocEquiv.thereEq b₁≋b₂) = LocEquiv.thereEq (copy-unfunc-cong {l} F b₁≋b₂)
 
-  open Locations
-  open BagEq
+  left-inv : {l : List (Carrier S)} {F : S ⟶ T} (x : Membership.elements T (map (_⟨$⟩_ F) l)) →
+    copy-func F (elem (copy-unfunc F (Membership.belongs x))) ≋ Membership.belongs x
+  left-inv {[]} (Membership.El ())
+  left-inv {x ∷ l} {F} (Membership.El (Locations.here sm)) = LocEquiv.hereEq (cong F (refl S)) sm
+  left-inv {x ∷ l} {F} (Membership.El (Locations.there belongs₁)) = LocEquiv.thereEq (left-inv (Membership.El belongs₁))
 
-  -- FIXME : this definition is still not right. ≋₀ or ≋ + ∈₀-subst₁ ?
-  _∻_ : {ys : List Carrier} → Support ys → Support ys → Set ((ℓs ⊔ ℓS) ⊔ ℓp)
-  (a , a∈xs , Pa) ∻ (b , b∈xs , Pb) =
-    Σ (a ≈ b) (λ a≈b → a∈xs ≋₀ b∈xs × squish Pa Pb)
+  right-inv : {l : List (Carrier S)} {F : S ⟶ T} (se : shifted-elements F l)
+    → Membership.belongs (elem (copy-unfunc F (copy-func F (elem se)))) ≋ₛ Membership.belongs (elem se)
+  right-inv {[]} {F} (SE (Membership.El ()) _)
+  right-inv {x ∷ l} {F} (SE (Membership.El (Locations.here sm)) sw-good₁) = LocEquiv.hereEq (refl S) sm
+  right-inv {x ∷ l} {F} (SE (Membership.El (Locations.there belongs₁)) sw-good₁) = thereEq (right-inv (SE (El belongs₁) sw-good₁))
 
-  Σ-Setoid : (ys : List Carrier) → Setoid ((ℓS ⊔ ℓs) ⊔ ℓP) ((ℓS ⊔ ℓs) ⊔ ℓp)
-  Σ-Setoid [] = ⊥⊥ {ℓP ⊔ (ℓS ⊔ ℓs)}
-  Σ-Setoid (y ∷ ys) = record
-    { Carrier = Support (y ∷ ys)
-    ; _≈_ = _∻_
+  shifted : (S ⟶ T) → List (Carrier S) → Setoid (ℓS ⊔ ℓs) _
+  shifted F l = record
+    { Carrier = shifted-elements F l
+    ; _≈_ = λ a b → elem a ⟷ elem b
     ; isEquivalence = record
-      { refl = λ {s} → Refl {s}
-      ; sym = λ {s} {t} eq → Sym {s} {t} eq
-      ; trans = λ {s} {t} {u} a b → Trans {s} {t} {u} a b
+      { refl = Membership.≋-refl S
+      ; sym = Membership.≋-sym S
+      ; trans = Membership.≋-trans S
       }
     }
-    where
-      Refl : Reflexive _∻_
-      Refl {a₁ , here sm px , Pa} = refl , hereEq sm px sm px , tt
-      Refl {a₁ , there a∈xs , Pa} = refl , thereEq ≋₀-refl , tt
 
-      Sym  : Symmetric _∻_
-      Sym (a≈b , a∈xs≋b∈xs , Pa≈Pb) = sym a≈b , ≋₀-sym a∈xs≋b∈xs , tt
-
-      Trans : Transitive _∻_
-      Trans (a≈b , a∈xs≋b∈xs , Pa≈Pb) (b≈c , b∈xs≋c∈xs , Pb≈Pc) = trans a≈b b≈c , ≋₀-trans a∈xs≋b∈xs b∈xs≋c∈xs , tt
-
-  module ∻ {ys} where open Setoid (Σ-Setoid ys) public
-
-  open FindLose P
-
-  find-cong : {xs : List Carrier} {p q : Some₀ A P₀ xs} → p ≋ q → find p ∻ find q
-  find-cong {p = .(here x≈z px)} {.(here y≈z qy)} (hereEq px qy x≈z y≈z) =
-    refl , hereEq x≈z (sym x≈z) y≈z (sym y≈z) , tt
-  find-cong {p = .(there _)} {.(there _)} (thereEq p≋q) =
-    proj₁ (find-cong p≋q) , thereEq (proj₁ (proj₂ (find-cong p≋q))) , proj₂ (proj₂ (find-cong p≋q))
-
-  forget-cong : {xs : List Carrier} {i j : Support xs } → i ∻ j → lose i ≋ lose j
-  forget-cong {i = a₁ , here sm px , Pa} {b , here sm₁ px₁ , Pb} (i≈j , a∈xs≋b∈xs) =
-    hereEq (transport P Pa px) (transport P Pb px₁) sm sm₁
-  forget-cong {i = a₁ , here sm px , Pa} {b , there b∈xs , Pb} (i≈j , () , _)
-  forget-cong {i = a₁ , there a∈xs , Pa} {b , here sm px , Pb} (i≈j , () , _)
-  forget-cong {i = a₁ , there a∈xs , Pa} {b , there b∈xs , Pb} (i≈j , thereEq pf , Pa≈Pb) =
-    thereEq (forget-cong (i≈j , pf , Pa≈Pb))
-
-  left-inv : {zs : List Carrier} (x∈zs : Some₀ A P₀ zs) → lose (find x∈zs) ≋ x∈zs
-  left-inv (here {a} {x} a≈x px) = hereEq (transport P (transport P px a≈x) (sym a≈x)) px a≈x a≈x
-  left-inv (there x∈ys) = thereEq (left-inv x∈ys)
-
-  right-inv : {ys : List Carrier} (pf : Σ y ∶ Carrier • y ∈₀ ys × P₀ y) → find (lose pf) ∻ pf
-  right-inv (y , here a≈x px , Py) = trans (sym a≈x) (sym px) , hereEq a≈x (sym a≈x) a≈x px , tt
-  right-inv (y , there y∈ys , Py) =
-    let (α₁ , α₂ , α₃) = right-inv (y , y∈ys , Py) in
-    (α₁ , thereEq α₂ , α₃)
-
-  Σ-Some : (xs : List Carrier) → Some {S = A} P₀ xs ≅ Σ-Setoid xs
-  Σ-Some [] =  ≅-sym (⊥≅Some[] {S = A} {P})
-  Σ-Some (x ∷ xs) =  record
-    { to = record { _⟨$⟩_ = find ; cong = find-cong }
-    ; from = record { _⟨$⟩_ = lose ; cong = forget-cong }
+  shift-map : (F : S ⟶ T) (l : List (Carrier S)) → elem-of (map (_⟨$⟩_ F) l) ≅ shifted F l
+  shift-map F l = record
+    { to = record
+      { _⟨$⟩_ = λ { (El belongs₁) → copy-unfunc F belongs₁}
+      ; cong = copy-unfunc-cong F }
+    ; from = record
+      { _⟨$⟩_ = λ {x → Membership.El (copy-func F (elem x))}
+      ; cong = λ {i} {j} i≈j → copy-func-cong F {i} {j} i≈j } -- need to eta expand
     ; inverse-of = record
       { left-inverse-of = left-inv
-      ; right-inverse-of = right-inv
-      }
+      ; right-inverse-of = right-inv }
     }
 
-  Σ-cong : {xs ys : List Carrier} → BagEq xs ys → Σ-Setoid xs ≅ Σ-Setoid ys
-  Σ-cong {[]} {[]} iso = ≅-refl
-  Σ-cong {[]} {z ∷ zs} iso = ⊥-elim (_≅_.from (⊥≅Some[] {S = A} {≈to z}) ⟨$⟩ (_≅_.from (permut iso) ⟨$⟩ here refl refl))
-  Σ-cong {x ∷ xs} {[]} iso = ⊥-elim (_≅_.from (⊥≅Some[] {S = A} {≈to x}) ⟨$⟩ (_≅_.to (permut iso) ⟨$⟩ here refl refl))
-  Σ-cong {x ∷ xs} {y ∷ ys} xs≅ys = record
-    { to   = record { _⟨$⟩_ = xs→ys xs≅ys         ; cong = λ {i j} → xs→ys-cong xs≅ys {i} {j} }
-    ; from = record { _⟨$⟩_ = xs→ys (BE-sym xs≅ys) ; cong = λ {i j} → xs→ys-cong (BE-sym xs≅ys) {i} {j} }
+  shifted-cong : (F : S ⟶ T) {xs ys : List (Carrier S)} (xs≈ys : xs ⇔ ys) → shifted F xs ≅ shifted F ys
+  shifted-cong F xs≈ys = record
+    { to = record
+      { _⟨$⟩_ = λ sh → record
+        { elem = Membership.El (belongs (to xs≈ys ⟨$⟩ (elem sh)))
+        ; shift-witness = F ⟨$⟩ Membership.witness (to xs≈ys ⟨$⟩ elem sh)
+        ; sw-good = refl T
+        }
+      ; cong = cong (to xs≈ys) }
+    ; from = record
+      { _⟨$⟩_ = λ sh → record
+        { elem = Membership.El (belongs (from xs≈ys ⟨$⟩ elem sh))
+        ; sw-good = refl T
+        }
+      ; cong = cong (from xs≈ys) }
     ; inverse-of = record
-      { left-inverse-of = λ { (z , z∈xs , Pz) → refl , ≋→≋₀ (left-inverse-of (permut xs≅ys) z∈xs) , tt }
-      ; right-inverse-of = λ { (z , z∈ys , Pz) → refl , ≋→≋₀ (right-inverse-of (permut xs≅ys) z∈ys) , tt }
+      { left-inverse-of = λ sh → left-inverse-of xs≈ys (elem sh)
+      ; right-inverse-of = λ sh → right-inverse-of xs≈ys (elem sh)
       }
     }
-    where
-      open _≅_
-      xs→ys : {zs ws : List Carrier} → BagEq zs ws → Support zs → Support ws
-      xs→ys eq (a , a∈xs , Pa) = (a , ∈₀-subst₂ eq a∈xs , Pa)
 
-      --  ∈₀-subst₁-equiv  : x ≈ y → (x ∈ xs) ≅ (y ∈ xs)
-      xs→ys-cong : {zs ws : List Carrier} (eq : BagEq zs ws) {i j : Support zs} →
-        i ∻ j → xs→ys eq i ∻ xs→ys eq j
-      xs→ys-cong eq {_ , a∈zs , _} {_ , b∈zs , _} (a≈b , pf , Pa≈Pb) =
-        a≈b , repr-indep-to eq a≈b pf , tt
-\end{spec}
-%}}}
-
-%{{{ \subsection{Some-cong} (∀ {x} → x ∈ xs₁ ≅ x ∈ xs₂) → Some P xs₁ ≅ Some P xs₂
-\subsection{Some-cong}
-This isn't quite the full-powered cong, but is all we need.
-
-\edcomm{WK}{It has position preservation neither in the assumption (|list-rel|),
-nor in the conclusion. Why did you bother with position preservation for |_≋_|?}
-\edcomm{JC}{Because |_≋_| is about showing that two positions \emph{in the same
-list} are equivalent.  And |list-rel| is a permutation between two lists.
-I agree that |_≋_| could be ``loosened'' to be up to
-permutation of elements which are |_≈_| to a given one.
-
-But if our notion of permutation is |BagEq|, which depends on |_∈_|, which
-depends on |Some|, which depends on |_≋_|. If that now depends on |BagEq|,
-we've got a mutual recursion that seems unecessary.}
-
-\begin{spec}
-module _ {ℓS ℓs ℓP : Level} {A : Setoid ℓS ℓs} {P : A ⟶ ProofSetoid ℓP ℓs} where
-
-  open Membership A
-  open Setoid A
-  private
-    P₀ = λ e → Setoid.Carrier (P ⟨$⟩ e)
-
-  Some-cong : {xs₁ xs₂ : List Carrier} →
-            BagEq xs₁ xs₂ →
-            Some P₀ xs₁ ≅ Some P₀ xs₂
-  Some-cong {xs₁} {xs₂} xs₁≅xs₂ =
-    Some P₀ xs₁        ≅⟨ Σ-Some A P xs₁ ⟩
-    Σ-Setoid A P xs₁   ≅⟨ Σ-cong A P xs₁≅xs₂ ⟩
-    Σ-Setoid A P xs₂   ≅⟨ ≅-sym (Σ-Some A P xs₂) ⟩
-    Some P₀ xs₂ ∎
-\end{spec}
-
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

@@ -155,16 +155,16 @@ abstract
         ; left-unit  =  Setoid.refl LM
         ; right-unit = λ {xs} → ≡→⇔ (proj₂ ++.identity xs)
         ; assoc      =  λ {xs} {ys} {zs} → ≡→⇔ (++.assoc xs ys zs)
-        ; comm       =  λ {xs} {ys} → begin
-          elem-of (xs ++ ys)         ♯˘⟨ ⊔⊔♯++ ⟩
-          elem-of xs ⊔⊔ elem-of ys   ♯⟨ ⊔⊔-comm ⟩
-          elem-of ys ⊔⊔ elem-of xs   ♯⟨ ⊔⊔♯++ ⟩
-          elem-of (ys ++ xs) □
-        ; _⟨*⟩_ = λ {x} {y} {z} {w} x⇔y z⇔w → begin
-           elem-of (x ++ z)          ♯˘⟨ ⊔⊔♯++ ⟩
-           elem-of x ⊔⊔ elem-of z    ♯⟨ {!!} ⟩
-           elem-of y ⊔⊔ elem-of w    ♯⟨ ⊔⊔♯++ ⟩
-           elem-of (y ++ w) □
+        ; comm       =  λ {xs} {ys} →
+          elem-of (xs ++ ys)         ≅˘⟨ ⊎S≅++ ⟩
+          elem-of xs ⊎S elem-of ys   ≅⟨ ⊎S-comm _ _ ⟩
+          elem-of ys ⊎S elem-of xs   ≅⟨ ⊎S≅++ ⟩
+          elem-of (ys ++ xs) ∎
+        ; _⟨*⟩_ = λ {x} {y} {z} {w} x⇔y z⇔w →
+           elem-of (x ++ z)          ≅˘⟨ ⊎S≅++ ⟩
+           elem-of x ⊎S elem-of z    ≅⟨ x⇔y ⊎S₁ z⇔w ⟩
+           elem-of y ⊎S elem-of w    ≅⟨ ⊎S≅++ ⟩
+           elem-of (y ++ w) ∎
         }
     ; singleton = λ x → x ∷ []
     }
@@ -175,52 +175,51 @@ abstract
       open Membership X
       open BagEq X
       open ConcatTo⊎⊎ X
-      open import ISEquiv
 
       X₀ = Setoid.Carrier X
 
       ≡→⇔ : {a b : List X₀} → a ≡ b → a ⇔ b
-      ≡→⇔ ≡.refl = ♯-refl
+      ≡→⇔ ≡.refl = ≅-refl
 
       LM : Setoid ℓ (ℓ ⊍ o)
       LM = record
         { Carrier = List (Setoid.Carrier X)
         ; _≈_ = _⇔_
-        ; isEquivalence = record { refl = ♯-refl ; sym = ♯-sym ; trans =  ♯-trans }
+        ; isEquivalence = record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans }
         }
 
   ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ListMS X) (ListMS Y)
   ListCMHom {ℓ} {o} X Y = MKMSHom (λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
       { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys →  begin
-      elem-of (mapL g xs)   ♯⟨ {!!} ⟩
-      elem-of (mapL g ys) □
+      ; cong = λ {xs} {ys} xs≈ys →
+      elem-of (mapL g xs)   ≅⟨ shift-map F xs ⟩
+      shifted F xs          ≅⟨ shifted-cong F xs≈ys ⟩
+      shifted F ys          ≅˘⟨ shift-map F ys ⟩
+      elem-of (mapL g ys) ∎
       }
-    ; pres-e = begin
-         elem-of []     ♯˘⟨ ⊥⊥♯elem-of-[] Y ⟩
-         ⊥⊥ Y           ♯⟨ ⊥⊥♯elem-of-[] Y ⟩
-         (elem-of e₁) □
+    ; pres-e =
+         elem-of []     ≅˘⟨ ⊥⊥≅elem-of-[] Y ⟩
+         ⊥⊥             ≅⟨ ⊥⊥≅elem-of-[] Y ⟩
+         (elem-of e₁) ∎
 
       -- in the proof below, *₀ and *₁ are both ++
-    ; pres-* = λ {x} {y} →  begin
-      elem-of (mapL g (x *₀ y))           ♯⟨ {!!} ⟩
-      elem-of (mapL g x *₁ mapL g y) □
+    ; pres-* = λ {x} {y} →
+      elem-of (mapL g (x *₀ y))           ≅⟨ {!!} ⟩
+      elem-of (mapL g x *₁ mapL g y) ∎
     })
     where
       open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀  ; _*_ to _*₀_)
       open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y
-      open import ISEquiv
       open ConcatTo⊎⊎ Y
 
 
   id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : Carrier (ListMS X)) →
     (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ commMonoid (ListMS X)
-  id-pres {X = X} x = {! BE (λ {z} →
-    -- | z ∈ lift (ListCMHom X X) id Hom.⟨$⟩ x ≅⟨ ≅-refl ⟩ |
-    z ∈ mapL id₀ x                       ≅⟨ ≅-sym (map≅ {P = setoid≈ z} {f = id}) ⟩
-    z ∈ x ∎) {!!} {!!} !}
+  id-pres {X = X} x =
+    elem-of (mapL id₀ x)   ≅⟨ {!≡→⇔ ?!} ⟩
+    elem-of x ∎
     where
       open Membership X
       open Setoid X

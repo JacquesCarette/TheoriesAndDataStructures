@@ -254,10 +254,10 @@ module Build (MS : ∀ {ℓ o} (X : Setoid ℓ o) → Multiset X)
                                        ; cong = cong-singleton (MS X) }
                     ; commute = λ {X} {Y} → singleton-commute (MSH X Y) }
     ; counit = record
-      { η = λ { cm →
-            MkHom (record { _⟨$⟩_ = fold (MS (setoid cm)) cm
-                          ; cong = fold-cong (MS (setoid cm)) })
-                  {!!} {!!} }
+      { η = λ { cm → let M = MS (setoid cm) in
+            MkHom (record { _⟨$⟩_ = fold M cm
+                          ; cong = fold-cong M })
+                  ( fold-empty M {cm}) {!!} }
       ; commute = {!!}
       }
     ; zig = λ {X} {l} → {!!}

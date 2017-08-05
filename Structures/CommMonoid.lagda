@@ -156,15 +156,17 @@ quite misleading.
 record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   open Setoid X renaming (Carrier to X₀)
   open IsCtrEquivalence
+  open CommMonoid hiding (_≈_)
   field
     Ctr : Set ℓ → Set ℓ
     Ctr-equiv : IsCtrEquivalence o Ctr
+    Ctr-empty : (Y : Set ℓ) → Ctr Y
   LIST : Set ℓ
   LIST = Ctr X₀
   _↔_ = equiv Ctr-equiv X
   ↔isEquiv = equivIsEquiv Ctr-equiv X
+  empty = Ctr-empty X₀
   field
-    empty : LIST
     _+_ : LIST → LIST → LIST
     MSisCommMonoid : IsCommutativeMonoid _↔_ _+_ empty
 
@@ -184,6 +186,9 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) w
       {i j : Ctr Y}
       → equiv Ctr-equiv YS i j
       → Setoid._≈_ YS (fold CM i) (fold CM j)
+    fold-empty : {CM : CommMonoid {ℓ} {o}} →
+      let YS = setoid CM in let Y = Carrier CM in
+      Setoid._≈_ YS (fold CM (Ctr-empty Y)) (e CM)
 \end{code}
 
 A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers
@@ -250,8 +255,9 @@ module Build (MS : ∀ {ℓ o} (X : Setoid ℓ o) → Multiset X)
                     ; commute = λ {X} {Y} → singleton-commute (MSH X Y) }
     ; counit = record
       { η = λ { cm →
-            MkHom (record { _⟨$⟩_ =  fold (MS (CommMonoid.setoid cm)) cm
-                          ; cong = {!!} }) {!!} {!!} }
+            MkHom (record { _⟨$⟩_ = fold (MS (setoid cm)) cm
+                          ; cong = fold-cong (MS (setoid cm)) })
+                  {!!} {!!} }
       ; commute = {!!}
       }
     ; zig = λ {X} {l} → {!!}
@@ -283,7 +289,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
       { equiv = λ Y → let open BagEq Y in _⇔_
       ; equivIsEquiv = λ _ → record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans }
       }
-    ; empty          =  []
+    ; Ctr-empty  =  λ _ → []
     ; _+_        =  _++_
     ; MSisCommMonoid = record
       { left-unit  =  λ _ → ≅-refl
@@ -307,6 +313,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
         elem-of (j ∷ []) ∎
     ; fold = λ { (MkCommMon _ e _+_ _) → foldr _+_ e }
     ; fold-cong = λ { {CM} i⇔j → {!!}}
+    ; fold-empty = λ {CM} → Setoid.refl (CommMonoid.setoid CM)
     }
 
 ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)

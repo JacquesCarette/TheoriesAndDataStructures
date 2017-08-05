@@ -257,11 +257,11 @@ module Build (MS : ∀ {ℓ o} (X : Setoid ℓ o) → Multiset X)
       { η = λ { cm → let M = MS (setoid cm) in
             MkHom (record { _⟨$⟩_ = fold M cm
                           ; cong = fold-cong M })
-                  ( fold-empty M {cm}) {!!} }
+                  (fold-empty M {cm}) {!!} }
       ; commute = {!!}
       }
     ; zig = λ {X} {l} → {!!}
-    ; zag = λ {X} {l} → {!!}
+    ; zag = λ {CM} {m} → {!!}
     }
     where
       open Multiset
@@ -337,7 +337,7 @@ ListCMHom {ℓ} {o} X Y = record
       elem-of (mapL g (x *₀ y))           ≅⟨ ≡→⇔ (map-++-commute g x y) ⟩
       elem-of (mapL g x *₁ mapL g y) ∎
     }
-  ; singleton-commute = {!!}
+  ; singleton-commute = λ f {x} → ≅-refl
   }
     where
       open ImplementationViaList

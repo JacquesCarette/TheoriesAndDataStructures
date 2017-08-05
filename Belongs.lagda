@@ -231,6 +231,8 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ≅ elem-of ys
 
+  ≡→⇔ : {a b : List Carrier} → a ≡ b → a ⇔ b
+  ≡→⇔ ≡.refl = ≅-refl
 \end{code}
 %}}}
 

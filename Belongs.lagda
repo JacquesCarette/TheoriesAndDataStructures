@@ -22,6 +22,7 @@ open import EqualityCombinators
 open import DataProperties
 open import SetoidEquiv
 open import ParComp
+open import Structures.CommMonoid
 
 open import TypeEquiv using (swap₊)
 \end{code}
@@ -345,21 +346,24 @@ module ConcatTo⊎S {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 \end{code}
 
 \begin{code}
-module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+module ElemOf[] {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Membership S
+
+  elem-of-[] : Setoid.Carrier (elem-of []) → ⊥ {ℓS}
+  elem-of-[] (El ())
 
   ⊥⊥≅elem-of-[] : ⊥⊥ {ℓS} {ℓs} ≅ (elem-of [])
   ⊥⊥≅elem-of-[] = record
     { to = record { _⟨$⟩_ = λ {()} ; cong = λ { {()} } }
-    ; from = record { _⟨$⟩_ = λ {(El ())} ; cong = λ { {El ()}} }
-    ; inverse-of = record { left-inverse-of = λ {()} ; right-inverse-of = λ { (El ()) } } }
+    ; from = record { _⟨$⟩_ = elem-of-[] ; cong = λ { {El ()}} }
+    ; inverse-of = record { left-inverse-of = λ {()} ; right-inverse-of = λ { (El () )} } }
 \end{code}
 %}}}
 
 %{{{ \subsection{|elem-of| |map| properties}
 \subsection{|elem-of| |map| properties}
 \begin{code}
-module _ {ℓS ℓs : Level} {S T : Setoid ℓS ℓs} where
+module ElemOfMap {ℓS ℓs : Level} {S T : Setoid ℓS ℓs} where
   open Setoid hiding (_≈_)
   open BagEq S
   open Membership T using (lift-el; elem-of; ≋-refl; ≋-sym; ≋-trans)
@@ -501,6 +505,30 @@ module ElemOfSing {ℓS ℓs} (X : Setoid ℓS ℓs) where
       inv a≈b b≈a (El (here sm)) = LocEquiv.hereEq ((sm ⟨≈≈⟩ a≈b) ⟨≈≈⟩ b≈a) sm
       inv a≈b b≈a (El (there ()))
 \end{code}
+%}}}
+
+%{{{ \subsection{Properties of fold over list}
+\subsection{Properties of fold over list}
+\begin{spec}
+module ElemOfFold {ℓS ℓs} (X : Setoid ℓS ℓs) where
+  open Setoid X renaming (Carrier to X₀)
+  open BagEq X
+  open Membership X
+  open Locations X
+  open LocEquiv X
+  open import Data.List
+  open CommMonoid
+  open ElemOf[] X
+  open _≅_
+
+  fold-cong : {CM : CommMonoid X} {i j : List X₀} → i ⇔ j
+    → foldr (_*_ CM) (e CM) i ≈ foldr (_*_ CM) (e CM) j
+  fold-cong {CM} {[]} {[]} i⇔j = refl
+  fold-cong {CM} {[]} {x ∷ j} i⇔j = ⊥-elim (elem-of-[] (from i⇔j ⟨$⟩ (El (here refl))))
+  fold-cong {CM} {x ∷ i} {[]} i⇔j = ⊥-elim (elem-of-[] (to i⇔j ⟨$⟩ (El (here refl))))
+  fold-cong {CM} {x ∷ i} {y ∷ j} i⇔j with (to i⇔j ⟨$⟩ (El (here refl)))
+  ... | El pos = {!!}
+\end{spec}
 %}}}
 
 % Quick Folding Instructions:

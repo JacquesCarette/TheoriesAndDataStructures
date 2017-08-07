@@ -243,9 +243,9 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
     ; singleton = λ x → x ∷ []
     ; cong-singleton = singleton-≈
     ; fold = λ { (MkCommMon e _+_ _) → foldr _+_ e }
-    ; fold-cong = λ { {CM} i⇔j → {!!}}
-    ; fold-empty = λ { {X} → Setoid.refl X}
-    ; fold-+ = λ {X} {CM} {lx} {ly} → {!!}
+    ; fold-cong = λ { {Y} {CM} {i} {j} i⇔j → {!!}}
+    ; fold-empty = λ { {Y} → Setoid.refl Y}
+    ; fold-+ = λ {Y} {CM} {lx} {ly} → {!!}
     ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
     }
     where open CommMonoid
@@ -263,8 +263,8 @@ ListCMHom {ℓ} {o} X Y = record
         elem-of (mapL g ys) ∎
       }
     ; pres-e =
-         elem-of []     ≅˘⟨ ⊥⊥≅elem-of-[] Y ⟩
-         ⊥⊥             ≅⟨ ⊥⊥≅elem-of-[] Y ⟩
+         elem-of []     ≅˘⟨ ⊥⊥≅elem-of-[] ⟩
+         ⊥⊥             ≅⟨ ⊥⊥≅elem-of-[] ⟩
          (elem-of e₁) ∎
 
       -- in the proof below, *₀ and *₁ are both ++
@@ -281,6 +281,8 @@ ListCMHom {ℓ} {o} X Y = record
       open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
       open Membership Y using (elem-of)
       open BagEq Y using (≡→⇔)
+      open ElemOfMap
+      open ElemOf[] Y
 
 module BuildProperties where
   open ImplementationViaList

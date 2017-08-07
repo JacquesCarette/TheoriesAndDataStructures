@@ -52,7 +52,7 @@ module Locations {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 
   infix 4 _∈₀_
   data _∈₀_  : Carrier → List Carrier → Set (ℓS ⊔ ℓs) where
-    here  : {x a : Carrier} {xs : List Carrier} (sm : a ≈ x)       →   a ∈₀ (x ∷ xs)
+    here  : {x a : Carrier} {xs : List Carrier} (sm : a ≈ x)      →   a ∈₀ (x ∷ xs)
     there : {x a : Carrier} {xs : List Carrier} (pxs : a ∈₀ xs)   →   a ∈₀ (x ∷ xs)
 
   open _∈₀_ public
@@ -80,7 +80,7 @@ module LocEquiv {ℓS ℓs} (S : Setoid ℓS ℓs) where
     hereEq : {xs : List Carrier} {x y z : Carrier} (x≈z : x ≈ z) (y≈z : y ≈ z)
            → here {x = z} {x} {xs} x≈z  ≋  here {x = z} {y} {xs} y≈z
     thereEq : {xs : List Carrier} {x x' z : Carrier} {loc : x ∈₀ xs} {loc' : x' ∈₀ xs}
-            → loc ≋ loc' → there {x = z} loc  ≋  there {x = z} loc'
+           → loc ≋ loc' → there {x = z} loc  ≋  there {x = z} loc'
   open _≋_ public
 \end{code}
 
@@ -98,7 +98,7 @@ Furthermore, it is important to notice that we have an injectivity property:
 \begin{code}
   ≋→≈ : {x y : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) (y∈xs : y ∈₀ xs)
        → x∈xs ≋ y∈xs → x ≈ y
-  ≋→≈ (here x≈z   ) .(here y≈z) (hereEq .x≈z y≈z)                   =  x≈z ⟨≈≈˘⟩ y≈z
+  ≋→≈ (here x≈z   ) .(here y≈z) (hereEq .x≈z y≈z)                 =  x≈z ⟨≈≈˘⟩ y≈z
   ≋→≈ (there x∈xs) .(there _ ) (thereEq {loc' = loc'} x∈xs≋loc')  =  ≋→≈ x∈xs loc' x∈xs≋loc'
 \end{code}
 %}}}
@@ -239,7 +239,7 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
 %{{{ \subsection{|++♯⊎S : ⋯ → (elem-of xs ⊎S elem-of ys) ≅ elem-of (xs ++ ys)|}
 \subsection{|++♯⊎S : ⋯ → (elem-of xs ⊎S elem-of ys) ≅ elem-of (xs ++ ys)|}
 \begin{code}
-module ConcatTo⊎⊎ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
+module ConcatTo⊎S {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   open Setoid S renaming (Carrier to A)
   open SetoidCombinators S
   open LocEquiv S
@@ -356,8 +356,8 @@ module _ {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 \end{code}
 %}}}
 
-%{{{ \subsection{|elem-of| and |map| properties}
-\subsection{|elem-of| and |map| properties}
+%{{{ \subsection{|elem-of| |map| properties}
+\subsection{|elem-of| |map| properties}
 \begin{code}
 module _ {ℓS ℓs : Level} {S T : Setoid ℓS ℓs} where
   open Setoid hiding (_≈_)
@@ -464,6 +464,42 @@ module _ {ℓS ℓs : Level} {S T : Setoid ℓS ℓs} where
       }
     }
 
+\end{code}
+%}}}
+
+%{{{ \subsection{Properties of singleton lists}
+\subsection{Properties of singleton lists}
+\begin{code}
+module ElemOfSing {ℓS ℓs} (X : Setoid ℓS ℓs) where
+  open Setoid X renaming (Carrier to X₀)
+  open BagEq X
+  open Membership X
+  open Locations X
+  open LocEquiv X
+  open SetoidCombinators X
+
+  singleton-≈ : {i j : X₀} (i≈j : i ≈ j) → (i ∷ []) ⇔ (j ∷ [])
+  singleton-≈ {i} {j} i≈j = record
+    { to = record { _⟨$⟩_ = ∈a→∈b i≈j ; cong = cong-to i≈j }
+    ; from = record { _⟨$⟩_ = ∈a→∈b (sym i≈j) ; cong = cong-to (sym i≈j) }
+    ; inverse-of = record
+      { left-inverse-of = inv i≈j (sym i≈j)
+      ; right-inverse-of = inv (sym i≈j) i≈j }
+    }
+    where
+      ∈a→∈b : {a b : X₀} → a ≈ b → elements (a ∷ []) → elements (b ∷ [])
+      ∈a→∈b a≈b (Membership.El (Locations.here sm)) = El (here (sm ⟨≈≈⟩ a≈b))
+      ∈a→∈b _   (Membership.El (Locations.there ()))
+
+      cong-to : {a b : X₀} → (a≈b : a ≈ b) → {∈a₁ ∈a₂ : elements (a ∷ [])}
+        → belongs ∈a₁ ≋ belongs ∈a₂ → belongs (∈a→∈b a≈b ∈a₁) ≋ belongs (∈a→∈b a≈b ∈a₂)
+      cong-to a≈b (LocEquiv.hereEq x≈z y≈z) = LocEquiv.hereEq (x≈z ⟨≈≈⟩ a≈b) (y≈z ⟨≈≈⟩ a≈b)
+      cong-to _   (LocEquiv.thereEq ())
+
+      inv : {a b : X₀} (a≈b : a ≈ b) (b≈a : b ≈ a) (x : elements (a ∷ [])) →
+        belongs (∈a→∈b b≈a (∈a→∈b a≈b x)) ≋ belongs x
+      inv a≈b b≈a (El (here sm)) = LocEquiv.hereEq ((sm ⟨≈≈⟩ a≈b) ⟨≈≈⟩ b≈a) sm
+      inv a≈b b≈a (El (there ()))
 \end{code}
 %}}}
 

@@ -15,7 +15,7 @@ open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 
-open import DataProperties hiding (_,_; ⟨_,_⟩)
+open import DataProperties hiding (⟨_,_⟩)
 open import SetoidEquiv
 open import ParComp
 open import Belongs
@@ -54,45 +54,50 @@ quite misleading.
 record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   open Setoid X renaming (Carrier to X₀)
   open IsCtrEquivalence
-  open CommMonoid hiding (_≈_)
+  open CommMonoid
   field
     Ctr : Set ℓ → Set ℓ
     Ctr-equiv : IsCtrEquivalence o Ctr
     Ctr-empty : (Y : Set ℓ) → Ctr Y
     Ctr-append : (Y : Set ℓ) → Ctr Y → Ctr Y → Ctr Y
-  LIST : Set ℓ
-  LIST = Ctr X₀
-  _↔_ = equiv Ctr-equiv X
-  ↔isEquiv = equivIsEquiv Ctr-equiv X
+
+  LIST-Ctr : Setoid ℓ (ℓ ⊍ o)
+  LIST-Ctr = record
+    { Carrier = Ctr X₀
+    ; _≈_ = equiv Ctr-equiv X
+    ; isEquivalence = equivIsEquiv Ctr-equiv X
+    }
+
   empty = Ctr-empty X₀
   _+_ = Ctr-append X₀
   field
-    MSisCommMonoid : IsCommutativeMonoid _↔_ _+_ empty
+    MSisCommMonoid : IsCommutativeMonoid (equiv Ctr-equiv X) _+_ empty
 
-  commMonoid : CommMonoid {ℓ} {ℓ ⊍ o}
+  commMonoid : CommMonoid LIST-Ctr
   commMonoid = record
-    { setoid = record { Carrier = LIST ; _≈_ = _↔_ ; isEquivalence = ↔isEquiv }
-    ; e = empty
+    { e = empty
     ; _*_ = _+_
     ; isCommMonoid = MSisCommMonoid
     }
   field
-    singleton : X₀ → LIST
+    singleton : X₀ → Ctr X₀
     cong-singleton : {i j : X₀} → (i ≈ j) → singleton i ≈ singleton j ∶ commMonoid
-    fold : (CM : CommMonoid {ℓ} {o}) → let B = CommMonoid.Carrier CM in Ctr B → B
-    fold-cong : {CM : CommMonoid {ℓ} {o}} →
-      let Y = CommMonoid.Carrier CM in let YS = CommMonoid.setoid CM in
+    fold : {X : Setoid ℓ o} (CM : CommMonoid X) → let B = Setoid.Carrier X in Ctr B → B
+    fold-cong : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
+      let Y = Setoid.Carrier YS in
       {i j : Ctr Y}
       → equiv Ctr-equiv YS i j
       → Setoid._≈_ YS (fold CM i) (fold CM j)
-    fold-empty : {CM : CommMonoid {ℓ} {o}} →
-      let YS = setoid CM in let Y = Carrier CM in
+    fold-empty : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
+      let Y = Setoid.Carrier YS in
       Setoid._≈_ YS (fold CM (Ctr-empty Y)) (e CM)
-    fold-+ : {CM : CommMonoid {ℓ} {o}} →
-      let YS = setoid CM in let Y = Carrier CM in
+    fold-+ : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
+      let Y = Setoid.Carrier YS in
       let _**_ = _*_ CM in
       {lx ly : Ctr Y} →
       Setoid._≈_ YS (fold CM (Ctr-append Y lx ly)) ((fold CM lx) ** (fold CM ly))
+    fold-singleton : {CM : CommMonoid X} → (m : X₀) →
+      m ≈ fold CM (singleton m)
 \end{code}
 
 A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers
@@ -100,35 +105,57 @@ to be homomorphisms on the underlying commutative monoid structure, as well as a
 compatibility laws.
 
 \begin{code}
-record MultisetHom {ℓ} {o} {X Y : Setoid ℓ o} (A : Multiset X) (B : Multiset Y) : Set (ℓ ⊍ o) where
+record MultisetHom {ℓ} {o} {X Y : Setoid ℓ (ℓ ⊍ o)} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc o) where
   open Multiset
+  X₀ = Setoid.Carrier X
   field
-    lift : (X ⟶ Y) → Hom (commMonoid A) (commMonoid B)
-    singleton-commute : (f : X ⟶ Y) {x : Setoid.Carrier X} → singleton B (f Π.⟨$⟩ x) ≈
+    lift : (X ⟶ Y) → Hom (LIST-Ctr A , commMonoid A) (LIST-Ctr B , commMonoid B)
+    singleton-commute : (f : X ⟶ Y) {x : X₀} → singleton B (f Π.⟨$⟩ x) ≈
       (Hom.mor (lift f) Π.⟨$⟩ singleton A x) ∶ commMonoid B
-{-    fold-commute : {W Z : CommMonoid {ℓ} {o}} (f : Hom W Z) {lx : Ctr (setoid W)} →
-      Setoid._≈_ (setoid Z) (fold -}
-open MultisetHom
+    fold-commute : {W : CommMonoid X} {Z : CommMonoid Y} (f : Hom (X , W) (Y , Z))
+      {lx : Ctr A X₀} →
+      Setoid._≈_ Y (fold B Z (lift (Hom.mor f) Hom.⟨$⟩ lx))
+                   (Hom.mor f Π.⟨$⟩ (fold A W lx))
 
-record FunctorialMSH {ℓ} {o} (MS : (X : Setoid ℓ o) → Multiset X)
-    (MSH : (X Y : Setoid ℓ o) → MultisetHom (MS X) (MS Y))
+open MultisetHom
+\end{code}
+
+And now something somewhat different: to express that we have the right
+functoriality properties (and ``zap''), we need to assume that we have
+\emph{constructors} of |Multiset| and |MultisetHom|.  With these in hand,
+we can then phrase what extra properties must hold.  Because these properties
+hold at ``different types'' than the ones for the underlying ones, these
+cannot go into the above.
+\begin{code}
+record FunctorialMSH {ℓ} {o} (MS : (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X)
+    (MSH : (X Y : Setoid ℓ (ℓ ⊍ o)) → MultisetHom {ℓ} {o} {X} {Y} (MS X) (MS Y))
     : Set (lsuc ℓ ⊍ lsuc o) where
-  open Multiset using (commMonoid; LIST)
+  open Multiset using (Ctr; commMonoid; Ctr-equiv; fold; singleton; cong-singleton; LIST-Ctr)
   open Hom using (mor; _⟨$⟩_)
   open MultisetHom
   field
-    id-pres : {X : Setoid ℓ o}
-      {x : LIST (MS X)} → (lift (MSH X X) id) ⟨$⟩ x ≈ x ∶ commMonoid (MS X)
+    id-pres : {X : Setoid ℓ (ℓ ⊍ o)} {x : Ctr (MS X) (Setoid.Carrier X)}
+      → (lift (MSH X X) id) ⟨$⟩ x ≈ x ∶ commMonoid (MS X)
 
-    ∘-pres : {X Y Z : Setoid ℓ o} {f : X ⟶ Y} {g : Y ⟶ Z} {x : LIST (MS X)} →
+    ∘-pres : {X Y Z : Setoid ℓ (ℓ ⊍ o)} {f : X ⟶ Y} {g : Y ⟶ Z}
+      {x : Ctr (MS X) (Setoid.Carrier X)} →
       let gg = lift (MSH Y Z) g in
       let ff = lift (MSH X Y) f in
       mor (lift (MSH X Z) (g ∘ f)) Π.⟨$⟩ x ≈ gg ⟨$⟩ (ff ⟨$⟩ x) ∶ commMonoid (MS Z)
 
-    resp-≈ : {A B : Setoid ℓ o} {F G : A ⟶ B}
+    resp-≈ : {A B : Setoid ℓ (ℓ ⊍ o)} {F G : A ⟶ B}
       (F≈G : {x : Setoid.Carrier A} → (Setoid._≈_ B (F Π.⟨$⟩ x) (G Π.⟨$⟩ x))) →
-      {x : LIST (MS A)} →
+      {x : Ctr (MS A) (Setoid.Carrier A)} →
       Hom.mor (lift (MSH A B) F) Π.⟨$⟩ x ≈ Hom.mor (lift (MSH A B) G) Π.⟨$⟩ x ∶ commMonoid (MS B)
+
+    fold-lift-singleton : {X : Setoid ℓ (ℓ ⊍ o)} →
+      let ms = MS X in
+      let Singleton = record { _⟨$⟩_ = singleton ms ; cong = cong-singleton ms } in
+      {l : Ctr ms (Setoid.Carrier X)} →
+      IsCtrEquivalence.equiv (Ctr-equiv ms) X l
+      (fold (MS (LIST-Ctr ms)) (commMonoid ms)
+            (Hom.mor (lift (MSH X (LIST-Ctr ms)) Singleton) Π.⟨$⟩ l))
+
 \end{code}
 %}}}
 
@@ -136,37 +163,37 @@ Given an implementation of a |Multiset| as well as of |MultisetHom| over that,
 build a Free Functor which is left adjoint to the forgetful functor.
 
 \begin{code}
-module Build (MS : ∀ {ℓ o} (X : Setoid ℓ o) → Multiset X)
-  (MSH : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (MS X) (MS Y))
+module BuildLeftAdjoint (MS : ∀ {ℓ o} (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X)
+  (MSH : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o)) → MultisetHom {ℓ} {o} (MS X) (MS {o = o} Y))
   (Func : ∀ {ℓ o} → FunctorialMSH {ℓ} {o} MS MSH ) where
 
   open Multiset
   open MultisetHom
   open FunctorialMSH
 
-  MultisetF : (ℓO ℓ≡ : Level) → Functor (Setoids ℓO (ℓO ⊍ ℓ≡)) (MonoidCat ℓO (ℓO ⊍ ℓ≡))
-  MultisetF ℓO ℓ≡ = record
-    { F₀ = λ S → commMonoid (MS S)
-    ; F₁ = λ {X} {Y} f → record { Hom (lift (MSH X Y) f) }
+  Free : (ℓO ℓ≡ : Level) → Functor (Setoids ℓO (ℓO ⊍ ℓ≡)) (MonoidCat ℓO (ℓO ⊍ ℓ≡))
+  Free ℓO ℓ≡ = record
+    { F₀ = λ S → LIST-Ctr (MS S) , commMonoid (MS S)
+    ; F₁ = λ {X} {Y} f → record { Hom (lift {o = ℓ≡} (MSH X Y) f) }
     ; identity = id-pres Func
     ; homomorphism = ∘-pres Func
     ; F-resp-≡ = resp-≈ Func
     }
 
-  MultisetLeft : {ℓ o : Level} → Adjunction (MultisetF ℓ o) (Forget ℓ (ℓ ⊍ o))
-  MultisetLeft = record
+  LeftAdjoint : {ℓ o : Level} → Adjunction (Free ℓ o) (Forget ℓ (ℓ ⊍ o))
+  LeftAdjoint = record
     { unit = record { η = λ X → record { _⟨$⟩_ = singleton (MS X)
                                        ; cong = cong-singleton (MS X) }
                     ; commute = λ {X} {Y} → singleton-commute (MSH X Y) }
     ; counit = record
-      { η = λ { cm → let M = MS (setoid cm) in
+      { η = λ { (X , cm) → let M = MS X in
             MkHom (record { _⟨$⟩_ = fold M cm
                           ; cong = fold-cong M })
-                  (fold-empty M {cm}) (fold-+ M {cm}) }
-      ; commute = {!!}
+                  (fold-empty M {X} {cm}) (fold-+ M {X} {cm}) }
+      ; commute = λ { {X , _} {Y , _} f → fold-commute (MSH X Y) f}
       }
-    ; zig = λ {X} {l} → {!!}
-    ; zag = λ {CM} {m} → {!!}
+    ; zig = fold-lift-singleton Func
+    ; zag = λ { {X , CM} {m} → fold-singleton (MS X) m}
     }
     where
       open Multiset
@@ -180,12 +207,13 @@ module Build (MS : ∀ {ℓ o} (X : Setoid ℓ o) → Multiset X)
 module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
   open Setoid X hiding (refl) renaming (Carrier to X₀)
   open BagEq X using (≡→⇔)
+  open ElemOfSing X
 
   open import Algebra using (Monoid)
   open import Data.List using (monoid)
   module ++ = Monoid (monoid (Setoid.Carrier X))
   open Membership X using (elem-of)
-  open ConcatTo⊎⊎ X using (⊎S≅++)
+  open ConcatTo⊎S X using (⊎S≅++)
 
   ListMS : Multiset X
   ListMS = record
@@ -213,16 +241,17 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
       }
 
     ; singleton = λ x → x ∷ []
-    ; cong-singleton = λ {i} {j} i≈j →
-        elem-of (i ∷ []) ≅⟨ {!!} ⟩
-        elem-of (j ∷ []) ∎
-    ; fold = λ { (MkCommMon _ e _+_ _) → foldr _+_ e }
+    ; cong-singleton = singleton-≈
+    ; fold = λ { (MkCommMon e _+_ _) → foldr _+_ e }
     ; fold-cong = λ { {CM} i⇔j → {!!}}
-    ; fold-empty = λ {CM} → Setoid.refl (CommMonoid.setoid CM)
-    ; fold-+ = λ {CM} {lx} {ly} → {!!}
+    ; fold-empty = λ { {X} → Setoid.refl X}
+    ; fold-+ = λ {X} {CM} {lx} {ly} → {!!}
+    ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
     }
+    where open CommMonoid
 
-ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ o) → MultisetHom (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)
+ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o))
+  → MultisetHom {o = o} (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)
 ListCMHom {ℓ} {o} X Y = record
   { lift = λ F → let g = Π._⟨$⟩_ F in record
     { mor = record
@@ -244,6 +273,7 @@ ListCMHom {ℓ} {o} X Y = record
       elem-of (mapL g x *₁ mapL g y) ∎
     }
   ; singleton-commute = λ f {x} → ≅-refl
+  ; fold-commute = λ { {W} {Z} (MkHom f pres-e pres-*) {lx} → {!!} }
   }
     where
       open ImplementationViaList
@@ -252,29 +282,23 @@ ListCMHom {ℓ} {o} X Y = record
       open Membership Y using (elem-of)
       open BagEq Y using (≡→⇔)
 
-module _ where
+module BuildProperties where
   open ImplementationViaList
-{-
-  id-pres : ∀ {ℓ o} {X : Setoid ℓ o} (x : List (Setoid.Carrier X)) →
-    (lift (ListCMHom X X) id) Hom.⟨$⟩ x ≈ x ∶ Multiset.commMonoid (ListMS X)
-  id-pres {X = X} x =
-    elem-of (mapL id₀ x)   ≅⟨ ≡→⇔ (map-id x) ⟩
-    elem-of x ∎
-    where
-      open Membership X
-      open BagEq X
-
-  homMS : ∀ {ℓ o} {X Y Z : Setoid ℓ o} {f : X ⟶ Y} {g : Y ⟶ Z} (x : List (Setoid.Carrier X)) →
-    let gg = lift (ListCMHom Y Z) g in
-    let ff = lift (ListCMHom X Y) f in
-    Hom.mor (lift (ListCMHom X Z) (g ∘ f)) Π.⟨$⟩ x ≈
-      gg Hom.⟨$⟩ (ff Hom.⟨$⟩ x) ∶ Multiset.commMonoid (ListMS Z)
-  homMS {Z = Z} {f} {g} xs = ≡→⇔ (map-compose xs)
-    where open BagEq Z
--}
+  functoriality : {ℓ o : Level} → FunctorialMSH {ℓ} {o} ListMS ListCMHom
+  functoriality = record
+    { id-pres = λ {X} {x} → BagEq.≡→⇔ X (map-id x)
+    ; ∘-pres = λ {_} {_} {Z} {f} {g} {x} → BagEq.≡→⇔ Z (map-compose x)
+    ; resp-≈ = λ {A} {B} {F} {G} F≈G {l} → {!!}
+    ; fold-lift-singleton = λ {X} {l} → {!!}
+    }
 \end{code}
 
-Last but not least: actually call |Build|.
+Last but not least, build the left adjoint:
+
+\begin{code}
+module FreeCommMonoid = BuildLeftAdjoint ImplementationViaList.ListMS ListCMHom
+  BuildProperties.functoriality
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

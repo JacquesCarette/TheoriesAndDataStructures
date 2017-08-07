@@ -13,18 +13,12 @@ open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Agda       using (Setoids)
 
+open import Data.Product      using (Σ; proj₁; proj₂; _,_)
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 
 open import Relation.Binary.Sum
 import Algebra.FunctionProperties as AFP
 open AFP using (Op₂)
-
--- open import Forget
--- open import EqualityCombinators
--- open import DataProperties hiding (_,_; ⟨_,_⟩)
--- open import SetoidEquiv
--- open import ParComp
--- open import Belongs
 \end{code}
 %}}}
 
@@ -34,6 +28,9 @@ open AFP using (Op₂)
 Some of this is borrowed from the standard library's |Algebra.Structures|
 and |Algebra|.  But un-nested and made direct.
 
+Splitting off the properties is useful when defining structures which
+are commutative-monoid-like, but differ in other ways.  The core
+properties can be re-used.
 \begin{code}
 record IsCommutativeMonoid {a ℓ} {A : Set a} (_≈_ : Rel A ℓ)
                            (_∙_ : Op₂ A) (ε : A) : Set (a ⊍ ℓ) where
@@ -44,34 +41,46 @@ record IsCommutativeMonoid {a ℓ} {A : Set a} (_≈_ : Rel A ℓ)
     assoc       : Associative _∙_
     comm        : Commutative _∙_
     _⟨∙⟩_        : Congruent₂ _∙_
+\end{code}
 
-record CommMonoid {ℓ} {o} : Set (lsuc ℓ ⊍ lsuc o) where
+There are many equivalent ways of defining a |CommMonoid|.  But it
+boils down to this: Agda's dependent records are \textbf{telescopes}.
+Sometimes, one wants to identify a particular initial sub-telescope
+that should be shared between two instances.  This is hard (impossible?)
+to do with holistic records.  But if split, via |Σ|, this becomes
+easy.
+
+For our purposes, it is very convenient to split the |Setoid|
+part of the definition.
+
+\begin{code}
+record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   constructor MkCommMon
-  field setoid : Setoid ℓ o
-  open Setoid setoid public
+  open Setoid X renaming (Carrier to X₀)
 
   field
-    e            : Carrier
-    _*_          : Carrier → Carrier → Carrier
+    e            : X₀
+    _*_          : X₀ → X₀ → X₀
     isCommMonoid : IsCommutativeMonoid _≈_ _*_ e
-  module ≈ = Setoid setoid
+  module ≈ = Setoid X
   _⟨≈⟩_ = trans
 
 infix -666 eq-in
-eq-in = CommMonoid._≈_
+eq-in = CommMonoid.≈._≈_
 syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
-record Hom {ℓ} {o} (A B : CommMonoid {ℓ} {o}) : Set (ℓ ⊍ o) where
+record Hom {ℓ} {o} (A B : Σ (Setoid ℓ o) CommMonoid) : Set (ℓ ⊍ o) where
   constructor MkHom
-  open CommMonoid using (setoid; Carrier)
-  open CommMonoid A using () renaming (e to e₁; _*_ to _*₁_; _≈_ to _≈₁_)
-  open CommMonoid B using () renaming (e to e₂; _*_ to _*₂_; _≈_ to _≈₂_)
+  open Setoid (proj₁ A) using () renaming (_≈_ to _≈₁_; Carrier to A₀)
+  open Setoid (proj₁ B) using () renaming (_≈_ to _≈₂_)
+  open CommMonoid (proj₂ A) using () renaming (e to e₁; _*_ to _*₁_)
+  open CommMonoid (proj₂ B) using () renaming (e to e₂; _*_ to _*₂_)
 
-  field mor    : setoid A ⟶ setoid B
+  field mor    : proj₁ A ⟶ proj₁ B
   private mor₀ = Π._⟨$⟩_ mor
   field
     pres-e : mor₀ e₁ ≈₂ e₂
-    pres-* : {x y : Carrier A} → mor₀ (x *₁ y)  ≈₂  mor₀ x *₂ mor₀ y
+    pres-* : {x y : A₀} → mor₀ (x *₁ y)  ≈₂  mor₀ x *₂ mor₀ y
 
   open Π mor public
 \end{code}
@@ -86,35 +95,35 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 \begin{code}
 MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
 MonoidCat ℓ o = record
-  { Obj = CommMonoid {ℓ} {o}
+  { Obj = Σ (Setoid ℓ o) CommMonoid
   ; _⇒_ = Hom
-  ; _≡_ = λ {A} {B} F G → ∀ {x} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B
-  ; id  = λ {A} → let open CommMonoid A in MkHom id refl refl
-  ; _∘_ = λ { {C = C} F G → let open CommMonoid C in record
+  ; _≡_ = λ { {_} {_ , B} F G → ∀ {x} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B }
+  ; id  = λ { {A , _} → MkHom id (refl A) (refl A) }
+  ; _∘_ = λ { {C = _ , C} F G → let open CommMonoid C in record
     { mor      =  mor F ∘ mor G
     ; pres-e   =  (cong F (pres-e G)) ⟨≈⟩ (pres-e F)
     ; pres-*   =  (cong F (pres-* G)) ⟨≈⟩ (pres-* F)
     } }
-  ; assoc     = λ { {D = D} → CommMonoid.refl D}
-  ; identityˡ = λ {_} {B} → CommMonoid.refl B
-  ; identityʳ = λ {_} {B} → CommMonoid.refl B
-  ; equiv     = λ {_} {B} → record
-    { refl  = CommMonoid.refl B
-    ; sym   = λ F≈G → CommMonoid.sym B F≈G
-    ; trans = λ F≈G G≈H → CommMonoid.trans B F≈G G≈H
+  ; assoc     = λ { {D = D , _} → refl D}
+  ; identityˡ = λ { {_} {B , _} → refl B }
+  ; identityʳ = λ { {_} {B , _} → refl B }
+  ; equiv     = λ { {_} {B , _} → record
+    { refl  = refl B
+    ; sym   = λ F≈G → sym B F≈G
+    ; trans = λ F≈G G≈H → trans B F≈G G≈H }
     }
-  ; ∘-resp-≡ = λ { {C = C} {f = F} F≈F' G≈G' → CommMonoid.trans C (cong F G≈G') F≈F' }
+  ; ∘-resp-≡ = λ { {C = C , _} {f = F} F≈F' G≈G' → trans C (cong F G≈G') F≈F' }
   }
-  where open Hom
+  where open Hom; open Setoid
 \end{code}
 
 \begin{code}
 Forget : (ℓ o : Level) → Functor (MonoidCat ℓ o) (Setoids ℓ o)
 Forget ℓ o = record
-  { F₀             =   λ C → record { CommMonoid C }
+  { F₀             =   λ C → record { Setoid (proj₁ C) }
   ; F₁             =   λ F → record { Hom F }
-  ; identity       =   λ {A} → ≈.refl A
-  ; homomorphism   =   λ {A} {B} {C} → ≈.refl C
+  ; identity       =   λ {A} → ≈.refl (proj₂ A)
+  ; homomorphism   =   λ {_} {_} {C} → ≈.refl (proj₂ C)
   ; F-resp-≡      =   λ F≈G {x} → F≈G {x}
   }
   where open CommMonoid using (module ≈)

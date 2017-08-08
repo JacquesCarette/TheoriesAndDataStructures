@@ -303,12 +303,64 @@ ListCMHom {ℓ} {o} X Y = record
 module BuildProperties where
   open ImplementationViaList
   functoriality : {ℓ o : Level} → FunctorialMSH {ℓ} {o} ListMS ListCMHom
-  functoriality = record
+  functoriality {ℓ} {o} = record
     { id-pres = λ {X} {x} → BagEq.≡→⇔ X (map-id x)
     ; ∘-pres = λ {_} {_} {Z} {f} {g} {x} → BagEq.≡→⇔ Z (map-compose x)
-    ; resp-≈ = λ {A} {B} {F} {G} F≈G {l} → {!!}
+    ; resp-≈ = λ {A} {B} {F} {G} F≈G {l} → respect-≈ {F = F} {G} F≈G l
     ; fold-lift-singleton = λ {X} {l} → {!!}
     }
+    where
+    open Membership
+    open Locations using (here; there)
+    open Setoid using (Carrier; trans; sym)
+    open Multiset using (Ctr; commMonoid)
+    respect-≈ : {A B : Setoid ℓ (o ⊍ ℓ)} {F G : A ⟶ B}
+      (F≈G : {x : Carrier A} → F Π.⟨$⟩ x ≈⌊ B ⌋ G Π.⟨$⟩ x)
+      (lst : Ctr (ListMS A) (Carrier A))
+      → mapL (Π._⟨$⟩_ F) lst ≈ mapL (Π._⟨$⟩_ G) lst ∶ commMonoid (ListMS B)
+    respect-≈                 F≈G [] = ≅-refl
+    respect-≈ {A} {B} {F} {G} F≈G (x ∷ lst) = record
+      { to = record { _⟨$⟩_ = to-G ; cong = cong-to-G }
+      ; from = record { _⟨$⟩_ = from-G ; cong = cong-from-G }
+      ; inverse-of = record { left-inverse-of = left-inv ; right-inverse-of = right-inv } }
+        where
+          open LocEquiv B
+          f = mapL (Π._⟨$⟩_ F)
+          g = mapL (Π._⟨$⟩_ G)
+
+          to-G : {l : List (Carrier A)} → elements B (f l) → elements B (g l)
+          to-G {[]} (El ())
+          to-G {_ ∷ _} (El (here sm)) = El (here (trans B sm F≈G))
+          to-G {_ ∷ _} (El (there belongs)) = lift-el B there (to-G (El belongs))
+
+          cong-to-G : {l : List (Carrier A)} {i j : elements B (f l)} → belongs i ≋ belongs j
+            → belongs (to-G i) ≋ belongs (to-G j)
+          cong-to-G {[]} ()
+          cong-to-G {_ ∷ _} (hereEq x≈z y≈z) = LocEquiv.hereEq (trans B x≈z F≈G) (trans B y≈z F≈G)
+          cong-to-G {_ ∷ _} (thereEq i≋j) = LocEquiv.thereEq (cong-to-G i≋j)
+
+          from-G : {l : List (Carrier A)} → elements B (g l) → elements B (f l)
+          from-G {[]} (El ())
+          from-G {_ ∷ _} (El (here sm)) = El (here (trans B sm (sym B F≈G)))
+          from-G {_ ∷ xs} (El (there x₁)) = lift-el B there (from-G (El x₁))
+
+          cong-from-G : {l : List (Carrier A)} {i j : elements B (g l)} → belongs i ≋ belongs j
+            → belongs (from-G i) ≋ belongs (from-G j)
+          cong-from-G {[]} ()
+          cong-from-G {_ ∷ _} (hereEq x≈z y≈z) = hereEq (trans B x≈z (sym B F≈G)) (trans B y≈z (sym B F≈G))
+          cong-from-G {_ ∷ _} (thereEq loc₁) = thereEq (cong-from-G loc₁)
+
+          left-inv : {l : List (Carrier A)} (y : elements B (mapL (Π._⟨$⟩_ F) l))
+            → belongs (from-G (to-G y)) ≋ belongs y
+          left-inv {[]} (El ())
+          left-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm F≈G) (sym B F≈G)) sm
+          left-inv {_ ∷ _} (El (there belongs₁)) = thereEq (left-inv (El belongs₁))
+
+          right-inv : {l : List (Carrier A)} (y : elements B (mapL (Π._⟨$⟩_ G) l))
+            → belongs (to-G (from-G y)) ≋ belongs y
+          right-inv {[]} (El ())
+          right-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm (sym B F≈G)) F≈G) sm
+          right-inv {_ ∷ _} (El (there belongs₁)) = thereEq (right-inv (El belongs₁))
 \end{code}
 
 Last but not least, build the left adjoint:

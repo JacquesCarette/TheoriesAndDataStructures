@@ -18,6 +18,7 @@ open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 open import DataProperties hiding (⟨_,_⟩)
 open import SetoidEquiv
 open import ParComp
+open import EqualityCombinators
 open import Belongs
 open import Structures.CommMonoid
 \end{code}
@@ -273,7 +274,7 @@ ListCMHom {ℓ} {o} X Y = record
       elem-of (mapL g x *₁ mapL g y) ∎
     }
   ; singleton-commute = λ f {x} → ≅-refl
-  ; fold-commute = λ { {W} {Z} (MkHom f pres-e pres-*) {lx} → {!!} }
+  ; fold-commute = f-comm
   }
     where
       open ImplementationViaList
@@ -283,6 +284,21 @@ ListCMHom {ℓ} {o} X Y = record
       open BagEq Y using (≡→⇔)
       open ElemOfMap
       open ElemOf[] Y
+      f-comm : {W : CommMonoid X} {Z : CommMonoid Y} (f : Hom (X , W) (Y , Z))
+        {lx : List (Setoid.Carrier X)} →
+        Setoid._≈_ Y (foldr (CommMonoid._*_ Z) (CommMonoid.e Z) (mapL (Π._⟨$⟩_ (Hom.mor f)) lx))
+                     (Hom.mor f Π.⟨$⟩ foldr (CommMonoid._*_ W) (CommMonoid.e W) lx)
+      f-comm {MkCommMon e _*_ isCommMonoid₁} {MkCommMon e₂ _*₂_ isCM₂} f {[]} =
+        Setoid.sym Y (Hom.pres-e f)
+      f-comm {MkCommMon e _*_ isCommMonoid₁} {MkCommMon e₂ _*₂_ isCM₂} f {x ∷ lx} =
+        let g = Π._⟨$⟩_ (Hom.mor f) in  begin⟨ Y ⟩
+         ((g x) *₂ (foldr _*₂_ e₂ (mapL g lx)))  ≈⟨ refl ⟨∙⟩ f-comm f {lx} ⟩
+         ((g x) *₂ (g (foldr _*_ e lx)))         ≈⟨ sym (Hom.pres-* f) ⟩
+         (g (x * foldr _*_ e lx)) ■
+        where
+          open Setoid Y
+          open import Relation.Binary.SetoidReasoning using (_≈⟨_⟩_; begin⟨_⟩_) renaming (_∎ to _■)
+          open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
 
 module BuildProperties where
   open ImplementationViaList

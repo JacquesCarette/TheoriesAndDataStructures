@@ -246,10 +246,25 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
     ; fold = λ { (MkCommMon e _+_ _) → foldr _+_ e }
     ; fold-cong = λ { {Y} {CM} {i} {j} i⇔j → {!!}}
     ; fold-empty = λ { {Y} → Setoid.refl Y}
-    ; fold-+ = λ {Y} {CM} {lx} {ly} → {!!}
+    ; fold-+ = λ {Y} {CM} {lx} {ly} → fold-CM-over-++ {Y} {CM} {lx} {ly}
     ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
     }
-    where open CommMonoid
+    where
+      open CommMonoid
+      open IsCommutativeMonoid using (left-unit)
+      fold-CM-over-++ : {Z : Setoid ℓ o} {cm : CommMonoid Z} {lx ly : List (Setoid.Carrier Z)} →
+        let F = foldr (_*_ cm) (e cm) in
+        F (lx ++ ly) ≈⌊ Z ⌋ (_*_ cm (F lx) (F ly))
+      fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {[]} = Setoid.sym Z (left-unit isCM₁ _)
+      fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {lx = x ∷ lx} {ly} =
+        let F = foldr _*₁_ e₁ in begin⟨ Z ⟩
+        x *₁ F (lx ++ ly)    ≈⟨ refl ⟨∙⟩ fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {lx} ⟩
+        x *₁ (F lx *₁ F ly)  ≈⟨ sym-z (assoc x (F lx) (F ly)) ⟩
+         (x *₁ F lx) *₁ F ly ■
+        where
+          open IsCommutativeMonoid isCM₁
+          open import Relation.Binary.SetoidReasoning renaming (_∎ to _■)
+          open Setoid Z renaming (sym to sym-z)
 
 ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o))
   → MultisetHom {o = o} (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)

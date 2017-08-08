@@ -307,7 +307,7 @@ module BuildProperties where
     { id-pres = λ {X} {x} → BagEq.≡→⇔ X (map-id x)
     ; ∘-pres = λ {_} {_} {Z} {f} {g} {x} → BagEq.≡→⇔ Z (map-compose x)
     ; resp-≈ = λ {A} {B} {F} {G} F≈G {l} → respect-≈ {F = F} {G} F≈G l
-    ; fold-lift-singleton = λ {X} {l} → {!!}
+    ; fold-lift-singleton = λ {X} {l} → BagEq.≡→⇔ X (concat-singleton l)
     }
     where
     open Membership
@@ -361,6 +361,10 @@ module BuildProperties where
           right-inv {[]} (El ())
           right-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm (sym B F≈G)) F≈G) sm
           right-inv {_ ∷ _} (El (there belongs₁)) = thereEq (right-inv (El belongs₁))
+    concat-singleton : {X : Set ℓ} (lst : List X)
+      → lst ≡ foldr _++_ [] (mapL (λ x → x ∷ []) lst)
+    concat-singleton [] = ≡.refl
+    concat-singleton (x ∷ lst) = ≡.cong (λ z → x ∷ z) (concat-singleton lst)
 \end{code}
 
 Last but not least, build the left adjoint:

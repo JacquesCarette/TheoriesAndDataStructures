@@ -244,8 +244,8 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
     ; singleton = λ x → x ∷ []
     ; cong-singleton = singleton-≈
     ; fold = λ { (MkCommMon e _+_ _) → foldr _+_ e }
-    ; fold-cong = λ { {Y} {CM} {i} {j} i⇔j → {!!}}
-    ; fold-empty = λ { {Y} → Setoid.refl Y}
+    ; fold-cong = λ {_} {CM} → fold-permute {CM = CM}
+    ; fold-empty = λ {Y} → Setoid.refl Y
     ; fold-+ = λ {Y} {CM} {lx} {ly} → fold-CM-over-++ {Y} {CM} {lx} {ly}
     ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
     }
@@ -265,6 +265,18 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
           open IsCommutativeMonoid isCM₁
           open import Relation.Binary.SetoidReasoning renaming (_∎ to _■)
           open Setoid Z renaming (sym to sym-z)
+      open Locations
+      open Membership using (El)
+      open ElemOf[]
+      fold-permute : {Z : Setoid ℓ o} {CM : CommMonoid Z} {i j : List (Setoid.Carrier Z)} →
+        let open BagEq Z in let open CommMonoid CM renaming (_*_ to _+_; e to e₁) in
+        i ⇔ j → foldr _+_ e₁ i ≈⌊ Z ⌋ foldr _+_ e₁ j
+      fold-permute {Z} {CM} {[]} {[]} i⇔j = Setoid.refl Z
+      fold-permute {Z} {CM} {[]} {x ∷ j} i⇔j =
+        ⊥-elim (elem-of-[] Z (_≅_.from i⇔j Π.⟨$⟩ El (here (Setoid.refl Z))))
+      fold-permute {Z} {CM} {x ∷ i} {[]} i⇔j =
+        ⊥-elim (elem-of-[] Z (_≅_.to i⇔j Π.⟨$⟩ El (here (Setoid.refl Z))))
+      fold-permute {Z} {CM} {x ∷ i} {x₁ ∷ j} i⇔j = {!!}
 
 ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o))
   → MultisetHom {o = o} (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)

@@ -215,7 +215,11 @@ DepProd ℓ = record
   ; homomorphism   =   ≅.refl
   ; F-resp-≡      =   λ{ (F≈G , eq) → ≅.cong₂ _,_ F≈G eq } -- This was the troublesome hole; now filled!
   }
-\end{code}  
+\end{code}
+
+\emph{Begin inactive material}
+
+\begin{spec}
   where helper : {a b : Level} {S T : Dependent a b} {F G : Hom S T}
                → (F≈G : mor F ≐ mor G)
                → {i : Sort S} {f : Carrier S i} 
@@ -254,7 +258,7 @@ Right₂ ℓ = record
   ; zig      =   ≐-refl
   ; zag      =   ≡.refl
   }
-
+\end{spec}
 %}}}
 
 |Note that since Σ encompasses both × and ⊎, it may not be that there is another functor|

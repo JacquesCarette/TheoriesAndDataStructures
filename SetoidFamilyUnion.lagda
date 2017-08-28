@@ -220,6 +220,9 @@ We can make a |Category| out of a |SetoidFamily| over a
 single |Setoid|. FSSF = Fixed Setoid SetoidFamily.
 We also fix it so that |_⇛_| only contains |id|-like things.
 
+%{{{ inactive material
+\emph{Begin inactive material}
+
 \begin{spec}
 FSSF-Cat : {ℓS ℓs ℓA ℓa : Level} (S : Setoid ℓS ℓs) → Category _ _ _
 FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
@@ -228,11 +231,11 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
   ; _≡_ = λ a₁ a₂ → proj₁ a₁ ≈≈ proj₁ a₂
   ; id = id⇛ , λ _ → refl
   ; _∘_ = λ {(B⇛C , refl₁) (A⇛B , refl₂) → A⇛B ∘⇛ B⇛C , (λ s → trans (refl₁ (_⇛_.map A⇛B ⟨$⟩ s)) (refl₂ s))}
-  ; assoc = {!!} -- λ { {f = f} {g} {h} → assocˡ f g h}
-  ; identityˡ = {!!} -- λ { {f = f} → unitʳ f} -- flipped, because ∘⇛ is.
-  ; identityʳ = {!!} -- λ { {f = f} → unitˡ f}
-  ; equiv = {!!} -- record { refl = λ {f} → ≈≈-refl f ; sym = ≈≈-sym ; trans = _⟨≈≈⟩_ }
-  ; ∘-resp-≡ = {!!} -- λ {A} {B} {C} {f} {h} {g} {i} f≈h g≈i → ∘⇛-cong {S = S} {S} {S} {A} {B} {C} {g} {f} {i} {h} g≈i f≈h
+  ; assoc = {!!} -- |λ { {f = f} {g} {h} → assocˡ f g h}|
+  ; identityˡ = {!!} -- |λ { {f = f} → unitʳ f}| -- flipped, because |∘⇛| is.
+  ; identityʳ = {!!} -- |λ { {f = f} → unitˡ f}|
+  ; equiv = {!!} -- |record { refl = λ {f} → ≈≈-refl f ; sym = ≈≈-sym ; trans = _⟨≈≈⟩_ }|
+  ; ∘-resp-≡ = {!!} -- |λ {A} {B} {C} {f} {h} {g} {i} f≈h g≈i → ∘⇛-cong {S = S} {S} {S} {A} {B} {C} {g} {f} {i} {h} g≈i f≈h|
   }
   where open Setoid S
 \end{spec}
@@ -255,7 +258,7 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
     ; transport-coh = λ {_} {x} _ → right (refl (index B x))
     }
   ; [_,_] = λ {C} A⇛C B⇛C → let
-      C⇛B : C ⇛ B  -- putative inverses to |A⇛C| and |B⇛C|
+      C⇛B : C ⇛ B  -- |putative inverses to |A⇛C| and |B⇛C||
       C⇛B = {!!}
       C⇛A : C ⇛ A
       C⇛A = {!!}
@@ -266,10 +269,10 @@ FSSF-Cat {_} {_} {ℓA} {ℓa} S = record
          sB = map C⇛B ⟨$⟩ (map A⇛C ⟨$⟩ sA)
        in record
        { _⟨$⟩_ = λ  { (inj₁ x) → transport A⇛C sA ⟨$⟩ x
-                    ; (inj₂ y) → {!transport B⇛C sB ⟨$⟩ y!}
+                    ; (inj₂ y) → ? -- |{!transport B⇛C sB ⟨$⟩ y!}|
                     }
        ; cong = λ   { (left r₁) → cong (transport A⇛C sA) r₁
-                    ; (right r₂) → {! cong (transport {!!} sA) r₂ !}
+                    ; (right r₂) → ? -- |{! cong (transport {!!} sA) r₂ !}|
                     }
        }
     ; transport-coh = λ { {By = inj₁ x₁} → {!!} ; {By = inj₂ y₁} → {!!}}
@@ -295,7 +298,7 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
         { _⟨$⟩_ = λ { (inj₁ Ax) → inj₁ (A→C.transport x ⟨$⟩ Ax)
                    ; (inj₂ Bx) → inj₂ (
                      reindex D (Setoid.sym T (_≈≈_.ext (left-inv B♯D) (A→C.map ⟨$⟩ x))) ∘ (B→D.transport (D→B.map ⟨$⟩ {!A→C.map ⟨$⟩ x!})) ⟨$⟩ {!!}
-                    -- {!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!}
+                    -- |{!B→D.transport ? ∘ (D→B.transport (A→C.map ⟨$⟩ x))!}|
                      ) }
         ; cong = {!!} })
       {!!}
@@ -312,6 +315,9 @@ _⊔⊔₁_ {S = S} {T} {A} {B} {C} {D} A♯C B♯D = record
     module C→A = _⇛_ (from A♯C)
     module D→B = _⇛_ (from B♯D)
 \end{spec}
+
+\emph{End inactive material}
+%}}}
 
 We can do product too.
 \begin{code}

@@ -1,3 +1,7 @@
+\section{TypeEquiv}
+
+\begin{code}
+
 {-# OPTIONS --without-K #-}
 
 module TypeEquiv where
@@ -22,7 +26,7 @@ open import Equiv
 -- establish an equivalence.  These are all in the 'semantic space' with
 -- respect to Pi combinators.
 
--- swap₊
+-- |swap₊|
 
 swap₊ : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → A ⊎ B → B ⊎ A
 swap₊ (inj₁ a) = inj₂ a
@@ -37,7 +41,7 @@ abstract
 swap₊equiv : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → (A ⊎ B) ≃ (B ⊎ A)
 swap₊equiv = (swap₊ , qinv swap₊ swapswap₊ swapswap₊)
 
--- unite₊ and uniti₊
+-- |unite₊ and uniti₊|
 
 unite₊ : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊥ {ℓ′} ⊎ A → A
 unite₊ (inj₁ ())
@@ -63,7 +67,7 @@ unite₊equiv {ℓ} {ℓ′} = (unite₊ , qinv uniti₊ (unite₊∘uniti₊ {�
 uniti₊equiv : {ℓ ℓ′ : Level} {A : Set ℓ} → A ≃ (⊥ {ℓ′} ⊎ A)
 uniti₊equiv = sym≃ unite₊equiv
 
--- unite₊′ and uniti₊′
+-- |unite₊′ and uniti₊′|
 
 unite₊′ : {ℓ′ ℓ : Level} {A : Set ℓ} → A ⊎ ⊥ {ℓ′} → A
 unite₊′ (inj₁ x) = x
@@ -89,7 +93,7 @@ unite₊′equiv = (unite₊′ , qinv uniti₊′ ≐-refl uniti₊′∘unite�
 uniti₊′equiv : ∀ {ℓ′ ℓ} {A : Set ℓ} → A ≃ (A ⊎ ⊥ {ℓ′})
 uniti₊′equiv = sym≃ unite₊′equiv
 
--- unite⋆ and uniti⋆
+-- |unite⋆ and uniti⋆|
 
 unite⋆ : {ℓ′ ℓ : Level} {A : Set ℓ} → ⊤ {ℓ′} × A → A
 unite⋆ (tt , x) = x
@@ -108,7 +112,7 @@ unite⋆equiv = unite⋆ , qinv uniti⋆ ≐-refl uniti⋆∘unite⋆
 uniti⋆equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → A ≃ (⊤ {ℓ′} × A)
 uniti⋆equiv = sym≃ unite⋆equiv
 
--- unite⋆′ and uniti⋆′
+-- |unite⋆′ and uniti⋆′|
 
 unite⋆′ : ∀ {ℓ ℓ′} {A : Set ℓ} → A × ⊤ {ℓ′} → A
 unite⋆′ (x , tt) = x
@@ -127,7 +131,7 @@ unite⋆′equiv = unite⋆′ , qinv uniti⋆′ ≐-refl uniti⋆′∘unite�
 uniti⋆′equiv : ∀ {ℓ ℓ′} {A : Set ℓ} → A ≃ (A × ⊤ {ℓ′})
 uniti⋆′equiv = sym≃ unite⋆′equiv
 
--- swap⋆
+-- |swap⋆|
 
 swap⋆ : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → A × B → B × A
 swap⋆ (a , b) = (b , a)
@@ -140,7 +144,7 @@ abstract
 swap⋆equiv : {A B : Set} → (A × B) ≃ (B × A)
 swap⋆equiv = swap⋆ , qinv swap⋆ swapswap⋆ swapswap⋆
 
--- assocl₊ and assocr₊
+-- |assocl₊ and assocr₊|
 
 assocl₊ : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃} →
   (A ⊎ (B ⊎ C)) → ((A ⊎ B) ⊎ C)
@@ -178,7 +182,7 @@ assocl₊equiv : ∀ {ℓ₁ ℓ₂ ℓ₃} {A : Set ℓ₁} {B : Set ℓ₂} {C
 assocl₊equiv = sym≃ assocr₊equiv
 
 
--- assocl⋆ and assocr⋆
+-- |assocl⋆ and assocr⋆|
 
 assocl⋆ : {A B C : Set} → (A × (B × C)) → ((A × B) × C)
 assocl⋆ (a , (b , c)) = ((a , b) , c)
@@ -348,5 +352,4 @@ typesCSR = record {
   1# = ⊤ ;
   isCommutativeSemiring = typesIsCSR
   }
-
-------------------------------------------------------------------------------
+\end{code}

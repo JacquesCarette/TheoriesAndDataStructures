@@ -1,3 +1,4 @@
+\section{Indexed Unary Algebras}
 
 %{{{ Necessary Imports
 \begin{code}

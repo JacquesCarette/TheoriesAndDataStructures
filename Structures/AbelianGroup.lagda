@@ -1,3 +1,4 @@
+\section{Structures.AbelianGroup}
 %{{{ Imports
 \begin{code}
 module Structures.AbelianGroup where
@@ -67,7 +68,7 @@ MA: One of our aims is to live in SET; yet the overall design of AbelianGroup,
 in the standard library, is via SETOID. Perhaps it would be prudent to make our
 own SET version? Otherwise, we run into a hybrid of situations such as those
 below regarding cong and expected derivable preservation properties.
-─cf the cong in the injective proof of G2 near the bottom.
+--cf the cong in the injective proof of G2 near the bottom.
 
 \begin{code}
 record Hom {o ℓ} (X Y : AbelianGroup o ℓ) : Set (o ⊔ ℓ) where
@@ -159,7 +160,7 @@ record DirectSum {o : Level} (A : Set o) : Set (lsuc o) where
 open DirectSum
 \end{code}
 
-⁉
+|⁉|
 • f is the injection of the “|A|lphabet” as “words” with possibly ``negative multiplicity''.
 • B is the subset of all words that contains only the reduced words.
 • finite is the proof that our construction has finite support.

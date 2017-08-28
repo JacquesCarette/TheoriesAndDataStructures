@@ -1,3 +1,6 @@
+\section{Equiv}
+
+\begin{code}
 {-# OPTIONS --without-K #-}
 
 module Equiv where
@@ -120,8 +123,6 @@ inj≃ (f , qinv g α β) x y p = trans
 
 -- equivalence is a congruence for plus/times
 
--- ⊕
-
 abstract
   private
     _⊎≐_ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
@@ -175,5 +176,4 @@ abstract
   β×₂ : ∀ {ℓA ℓB ℓC ℓD} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC}  {D : Set ℓD}
     → {f : A ≃ C} → {g : B ≃ D} → gg (f ×≃ g) ≐ Data.Product.map (gg f) (gg g)
   β×₂ _ = refl
-
-------------------------------------------------------------------------------
+\end{code}

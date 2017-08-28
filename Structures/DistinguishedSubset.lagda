@@ -1,3 +1,5 @@
+\section{Distinguished Subset Algebras}
+
 %{{{ Imports
 \begin{code}
 module Structures.DistinguishedSubset where

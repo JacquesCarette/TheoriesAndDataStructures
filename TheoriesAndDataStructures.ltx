@@ -170,11 +170,18 @@
 \DeclareUnicodeCharacter{120008}{\ensuremath{_\mathsf{S}}} % MATHEMATICAL SCRIPT SMALL S
 \DeclareUnicodeCharacter{120001}{\ensuremath{_\mathsf{L}}} % MATHEMATICAL SCRIPT SMALL L
 \DeclareUnicodeCharacter{119997}{\ensuremath{_\mathsf{H}}} % MATHEMATICAL SCRIPT SMALL H
+\DeclareUnicodeCharacter{8348}{\ensuremath{_\mathsf{t}}} % MATHEMATICAL SCRIPT SMALL T
+\DeclareUnicodeCharacter{8339}{\ensuremath{_\mathsf{x}}} % MATHEMATICAL SCRIPT SMALL X
 \DeclareUnicodeCharacter{119925}{\ensuremath{\mathcal{N}}} % MATHEMATICAL BOLD ITALIC CAPITAL N
 \DeclareUnicodeCharacter{119924}{\ensuremath{\mathcal{M}}} % MATHEMATICAL BOLD ITALIC CAPITAL M
 \DeclareUnicodeCharacter{7484}{\ensuremath{\mathsf{O}}} % MODIFIER LETTER CAPITAL O
 \DeclareUnicodeCharacter{9678}{\ensuremath{\mathsf{BULLSEYE}}} % BULLSEYE
-
+\DeclareUnicodeCharacter{8667}{\ensuremath{\Rrightarrow}} % rightwards triple arrow
+\DeclareUnicodeCharacter{8255}{\ensuremath{\smile}} % undertie, subscript-converse
+\DeclareUnicodeCharacter{8265}{\ensuremath{! \! ? }} % exclamation question mark
+\DeclareUnicodeCharacter{9632}{\ensuremath{ \square }} % black square
+\DeclareUnicodeCharacter{9679}{\ensuremath{ \boldsymbol{\cdot} }} % black circle
+\DeclareUnicodeCharacter{9675}{\ensuremath{ \boldsymbol{\circ} }} % white circle
 
 \pagestyle{headings}
 \parskip4pt
@@ -295,40 +302,66 @@ at the following URL:
 %}}}
 %}}}
 
+\part{Helpers}
+
 %include Forget.lagda
 %include EqualityCombinators.lagda
 %include DataProperties.lagda
 %% %include RATH.lagda  %% ‼ This module is not being called from anywhere ‼  June 9, 2017.
 
-%include SetoidSetoid.lagda
+\part{Variations on Sets}
 
 %include Structures/TwoSorted.lagda
 %include Structures/Rel.lagda
-
 %include Structures/Pointed.lagda
-%include Structures/UnaryAlgebra.lagda
-%include Structures/Magma.lagda
-%include Structures/Semigroup.lagda
-%include Structures/Monoid.lagda
-%include Structures/CommMonoid.lagda
-%% %include Structures/CommMonoidTerm.lagda
-%include Structures/InvolutiveAlgebra.lagda
-%% %include Structures/AbelianGroup.lagda
 
-%% %include Structures/DistinguishedSubset.lagda
-%% %include Structures/IndexedUnaryAlgebra.lagda
-%% %include Structures/Dependent.lagda
+%include Structures/Dependent.lagda
 %%
 %% MA: We do not want to include the experiements; perhaps.
 %% 
 %% %include Structures/Experiments/Dependent2.lagda
 %% %include Structures/Experiments/Dependent3.lagda
 
+%include Structures/DistinguishedSubset.lagda
+
+\part{Unary Algebras}
+
+%include Structures/UnaryAlgebra.lagda
+%include Structures/InvolutiveAlgebra.lagda
+%include Structures/IndexedUnaryAlgebra.lagda
+
+\part{Boom Hierarchy}
+
+%include Structures/Magma.lagda
+%include Structures/Semigroup.lagda
+%include Structures/Monoid.lagda
+%include Structures/CommMonoid.lagda
+%include Structures/CommMonoidTerm.lagda
+%include Structures/AbelianGroup.lagda
+%%
+%% %include Structures/BagEquivalence.agda
+%include Structures/Multiset.lagda
+
+\part{Setoids}
+
+%include SetoidEquiv.lagda
+%include SetoidOfIsos.lagda
+%include SetoidSetoid.lagda
+%include SetoidFamilyUnion.lagda
+
+\part{Equiv}
+
+%include Equiv.lagda
+%include ISEquiv.lagda
+%include TypeEquiv.lagda
+
+\part{Misc}
+
+%include Function2.lagda
 %include ParComp.lagda
+%include Belongs.lagda
 %include Some.lagda
 %include CounterExample.lagda
-%include Belongs.lagda
-
 
 %{{{ \section{Conclusion and Outlook}\chaptlabel{Conclusion}
 \section{Conclusion and Outlook}\chaptlabel{Conclusion}

@@ -1,3 +1,5 @@
+\section{Structures.Multiset}
+
 %{{{ Imports
 \begin{code}
 module Structures.Multiset where

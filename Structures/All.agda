@@ -50,11 +50,37 @@ import Structures.IndexedUnaryAlgebra
 
 import Structures.InvolutiveAlgebra
 
+-- import Structures.Multiset  -- has interaction points
+
 -- import Structures.BagEquivalence
 
--- import Structures.CommMonoid
+import Structures.CommMonoid
+import Structures.CommMonoidTerm
 
 import SetoidEquiv
 import SetoidOfIsos
 import SetoidSetoid
+import SetoidFamilyUnion
 import Structures.CommMonoidTerm
+
+-- -------------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------------
+
+import Belongs
+
+-- |⊎⊎| not in scope
+--
+-- import CounterExample  
+-- import Some
+-- import Some-Alt  -- Multiple definitions of inSetoidEquiv
+
+import Equiv
+import ISEquiv -- ought to be a lower-case `s`? As in `IsEquiv'?
+import TypeEquiv
+
+import Function2
+
+import ParComp
+
+

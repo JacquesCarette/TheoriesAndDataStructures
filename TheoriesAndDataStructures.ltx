@@ -347,8 +347,12 @@ at the following URL:
 
 \end{spec}
 
-
-%% Local variables:
-%% folded-file: t
-%% fold-internal-margins: 0
-%% end:
+%{{{ EMACS local variables
+% Local Variables:
+% compile-command: "NAME=TheoriesAndDataStructures ; export TEXINPUTS=.:ltx: ; ln -s $NAME.ltx $NAME.lagda ; lhs2TeX --agda $NAME.lagda > $NAME.tex && time pdflatex $NAME.tex"
+% folded-file: t
+% eval: (fold-set-marks "%{{{ " "%}}}")
+% eval: (fold-whole-buffer)
+% fold-internal-margins: 0
+% end:
+%}}}

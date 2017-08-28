@@ -1,5 +1,9 @@
 module Structures.All where
 
+-- ============================================================================================
+-- Helpers
+-- ============================================================================================
+
 -- Creates forgetful functors from single sorted algebras to |Set|
 -- 
 import Forget
@@ -16,9 +20,9 @@ import DataProperties
 -- import RATH
 -- ‼ This module is not being called from anywhere ‼  June 9, 2017.
 
-import Structures.AbelianGroup
-
-import Structures.Magma        
+-- ============================================================================================
+-- Variations on Sets
+-- ============================================================================================
 
 -- Considers |Set²|, pairs of sets.
 --
@@ -28,16 +32,10 @@ import Structures.TwoSorted
 --
 import Structures.Rel
 
-import Structures.Semigroup    
-
 -- A type along with a value of that type.
 --
 -- import Structures.Pointed
 -- Currently has a hole
-
-import Structures.UnaryAlgebra 
-
-import Structures.Monoid       
 
 -- import Structures.Dependent
 -- unsolved metas
@@ -45,28 +43,50 @@ import Structures.Monoid
 -- import Structures.DistinguishedSubset
 -- constraint issues
 
+-- ============================================================================================
+-- Unary Algebras
+-- ============================================================================================
 
+import Structures.UnaryAlgebra
+import Structures.InvolutiveAlgebra
 import Structures.IndexedUnaryAlgebra
 
-import Structures.InvolutiveAlgebra
+-- ============================================================================================
+-- Algebras with binary operators, Boom Hierarchy
+-- ============================================================================================
 
--- import Structures.Multiset  -- has interaction points
-
--- import Structures.BagEquivalence
-
+import Structures.Magma        
+import Structures.Semigroup
+import Structures.Monoid
 import Structures.CommMonoid
 import Structures.CommMonoidTerm
+-- import Structures.Multiset  -- has interaction points
+-- import Structures.BagEquivalence
+import Structures.AbelianGroup
+
+-- ============================================================================================
+-- Setoids
+-- ============================================================================================
 
 import SetoidEquiv
 import SetoidOfIsos
 import SetoidSetoid
 import SetoidFamilyUnion
-import Structures.CommMonoidTerm
 
--- -------------------------------------------------------------------------------------
--- -------------------------------------------------------------------------------------
--- -------------------------------------------------------------------------------------
+-- ============================================================================================
+-- Equiv
+-- ============================================================================================
 
+import Equiv
+import ISEquiv -- ought to be a lower-case `s`? As in `IsEquiv'?
+import TypeEquiv
+
+-- ============================================================================================
+-- Misc
+-- ============================================================================================
+
+import Function2
+import ParComp
 import Belongs
 
 -- |⊎⊎| not in scope
@@ -74,13 +94,5 @@ import Belongs
 -- import CounterExample  
 -- import Some
 -- import Some-Alt  -- Multiple definitions of inSetoidEquiv
-
-import Equiv
-import ISEquiv -- ought to be a lower-case `s`? As in `IsEquiv'?
-import TypeEquiv
-
-import Function2
-
-import ParComp
 
 

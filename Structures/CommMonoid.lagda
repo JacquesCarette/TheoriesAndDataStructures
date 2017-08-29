@@ -70,7 +70,7 @@ eq-in = CommMonoid.≈._≈_
 syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
 -- Alternative presentation where the setoid is a part of the packaging
-record CommutativeMonoid {ℓ c : Level} : Set (lsuc ℓ ⊍ lsuc c) where
+record CommutativeMonoid (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
   constructor MkCommMon
   field
     setoid : Setoid ℓ c

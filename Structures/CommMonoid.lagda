@@ -107,7 +107,30 @@ record Hom {ℓ} {o} (A B : Σ (Setoid ℓ o) CommMonoid) : Set (ℓ ⊍ o) wher
 
 Notice that the last line in the record, |open Π mor public|, lifts the setoid-homomorphism
 operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
+%}}}
 
+%{{{ CommutativeMonoidArrows
+
+\begin{code}
+record CMArrow {ℓ c ℓ' c' : Level} (Src : CommutativeMonoid ℓ c) (Tgt : CommutativeMonoid ℓ' c')
+  : Set (ℓ ⊍ c ⊍ c' ⊍ ℓ') where
+
+  _₀ : {ll cc : Level} → CommutativeMonoid ll cc → Set ll
+  _₀ CM = Setoid.Carrier (CommutativeMonoid.setoid CM)
+
+  open CommutativeMonoid Src using (eq-in) renaming (e to eₛ ; _*_ to _*ₛ_)
+  open CommutativeMonoid Tgt using () renaming (e to eₜ ; _*_ to _*ₜ_)
+  open CommutativeMonoid
+  open Setoid (setoid Tgt) using (_≈_)
+
+  field
+    mor : setoid Src ⟶ setoid Tgt
+
+  open Π
+  field
+    identity  :  mor ⟨$⟩ eₛ ≈ eₜ
+    homo      :  {x y : Src ₀} → mor ⟨$⟩ (x *ₛ y) ≈ (mor ⟨$⟩ x) *ₜ (mor ⟨$⟩ y)
+\end{code}
 %}}}
 
 %{{{ MonoidCat ; Forget

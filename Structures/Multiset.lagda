@@ -88,32 +88,6 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
 
 %}}}
 
-%{{{ CommutativeMonoidArrows
-
-\begin{code}
--- \edcomm{MA}{Compare with |CommMonoid.Hom|, which does not have the commutativity condition.}
---
-record CMArrow {ℓ c ℓ' c' : Level} (Src : CommutativeMonoid ℓ c) (Tgt : CommutativeMonoid ℓ' c')
-  : Set (ℓ ⊍ c ⊍ c' ⊍ ℓ') where
-
-  _₀ : {ll cc : Level} → CommutativeMonoid ll cc → Set ll
-  _₀ CM = Setoid.Carrier (CommutativeMonoid.setoid CM)
-
-  open CommutativeMonoid Src using (eq-in) renaming (e to eₛ ; _*_ to _*ₛ_)
-  open CommutativeMonoid Tgt using () renaming (e to eₜ ; _*_ to _*ₜ_)
-  open CommutativeMonoid
-  open Setoid (setoid Tgt) using (_≈_)
-
-  field
-    mor : setoid Src ⟶ setoid Tgt
-
-  open Π
-  field
-    identity  :  mor ⟨$⟩ eₛ ≈ eₜ
-    homo      :  {x y : Src ₀} → mor ⟨$⟩ (x *ₛ y) ≈ (mor ⟨$⟩ x) *ₜ (mor ⟨$⟩ y)
-\end{code}
-%}}}
-
 %{{{ Multiset
 \subsection{Multiset}
 A “multiset on type X” is a structure on which one can define

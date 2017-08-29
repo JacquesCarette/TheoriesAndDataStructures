@@ -65,9 +65,9 @@ record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   module ≈ = Setoid X
   _⟨≈⟩_ = trans
 
-infix -666 eq-in
-eq-in = CommMonoid.≈._≈_
-syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
+  infix -666 eq-in
+  eq-in = ≈._≈_
+  syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
 -- Alternative presentation where the setoid is a part of the packaging
 record CommutativeMonoid (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
@@ -82,6 +82,12 @@ record CommutativeMonoid (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     _*_          : X₀ → X₀ → X₀
     isCommMonoid : IsCommutativeMonoid _≈_ _*_ e
 
+  infix -666 eq-in
+  eq-in = Setoid._≈_ setoid
+  syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
+
+asCommutativeMonoid : {ℓ c : Level} {X : Setoid ℓ c} → CommMonoid X → CommutativeMonoid ℓ c
+asCommutativeMonoid {X = X} comm = let open CommMonoid comm in MkCommMon X e _*_ isCommMonoid
 
 record Hom {ℓ} {o} (A B : Σ (Setoid ℓ o) CommMonoid) : Set (ℓ ⊍ o) where
   constructor MkHom
@@ -108,7 +114,7 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 \subsection{Category and Forgetful Functor}
 \begin{code}
 MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
-MonoidCat ℓ o = record
+MonoidCat ℓ o = let open CommMonoid using (eq-in) in record
   { Obj = Σ (Setoid ℓ o) CommMonoid
   ; _⇒_ = Hom
   ; _≡_ = λ { {_} {_ , B} F G → ∀ {x} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B }

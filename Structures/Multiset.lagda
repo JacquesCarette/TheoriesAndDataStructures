@@ -29,17 +29,33 @@ open import Structures.CommMonoid
 %{{{ CtrSetoid
 \subsection{CtrSetoid}
 
-As will be explained below, the kind of ``container'' used for
+As will be explained below, the kind of ``container'' ---|ctr|--- used for
 building a |Multiset| needs to support a |Setoid|-polymorphic
 equivalence relation.
 \begin{code}
 record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
-    : Set (lsuc ℓ ⊍ lsuc o) where
+  : Set (lsuc ℓ ⊍ lsuc o) where
   field
-    equiv : (X : Setoid ℓ o) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
+    equiv        : (X : Setoid ℓ o) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
     equivIsEquiv : (X : Setoid ℓ o) → IsEquivalence (equiv X)
 \end{code}
+
+We have a type transformer |ctr| that furnishes setoids with an equivalence relation |equiv|.
+
+\edcomm{MA}{Since there are no `coherencey' constraints, we might as well say that this
+|IsCtrEquivalence| is nothing more than a setoid transformer: The object component of an endofunctor
+on the category of setoids. Indeed:}
+
+\begin{code}
+  ctrSetoid : (X : Setoid ℓ o) → Setoid ℓ (ℓ ⊍ o)
+  ctrSetoid X = record
+    { Carrier        =  Ctr (Setoid.Carrier X)
+    ; _≈_            =  equiv X
+    ; isEquivalence  =  equivIsEquiv X
+    }
+\end{code}
 %}}}
+
 
 %{{{ Multiset
 \subsection{Multiset}
@@ -59,27 +75,23 @@ record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) w
   open IsCtrEquivalence
   open CommMonoid
   field
-    Ctr : Set ℓ → Set ℓ
-    Ctr-equiv : IsCtrEquivalence o Ctr
-    Ctr-empty : (Y : Set ℓ) → Ctr Y
-    Ctr-append : (Y : Set ℓ) → Ctr Y → Ctr Y → Ctr Y
+    Ctr          :   Set ℓ → Set ℓ
+    Ctr-equiv    :   IsCtrEquivalence o Ctr
+    Ctr-empty    :   (Y : Set ℓ) → Ctr Y
+    Ctr-append   :   (Y : Set ℓ) → Ctr Y → Ctr Y → Ctr Y
 
-  LIST-Ctr : Setoid ℓ (ℓ ⊍ o)
-  LIST-Ctr = record
-    { Carrier = Ctr X₀
-    ; _≈_ = equiv Ctr-equiv X
-    ; isEquivalence = equivIsEquiv Ctr-equiv X
-    }
-
-  empty = Ctr-empty X₀
-  _+_ = Ctr-append X₀
+  empty  = Ctr-empty  X₀
+  _+_    = Ctr-append X₀
   field
     MSisCommMonoid : IsCommutativeMonoid (equiv Ctr-equiv X) _+_ empty
 
+  LIST-Ctr : Setoid ℓ (ℓ ⊍ o)
+  LIST-Ctr = ctrSetoid Ctr-equiv X   
+
   commMonoid : CommMonoid LIST-Ctr
   commMonoid = record
-    { e = empty
-    ; _*_ = _+_
+    { e            = empty
+    ; _*_          = _+_
     ; isCommMonoid = MSisCommMonoid
     }
   field
@@ -162,6 +174,7 @@ record FunctorialMSH {ℓ} {o} (MS : (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X
 \end{code}
 %}}}
 
+%{{{ BuildLeftAdjoint
 Given an implementation of a |Multiset| as well as of |MultisetHom| over that,
 build a Free Functor which is left adjoint to the forgetful functor.
 

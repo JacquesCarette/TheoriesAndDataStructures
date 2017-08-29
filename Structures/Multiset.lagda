@@ -40,8 +40,8 @@ record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
     equivIsEquiv : (X : Setoid ℓ o) → IsEquivalence (equiv X)
 
   -- handy dandy syntactic sugar for |k|ontainer equality
-  infix -666 equiv
-  syntax equiv X s t  =  s ≈ₖ t ∶ X   -- ghost colon
+  -- |infix -666 equiv|
+  -- |syntax equiv X s t  =  s ≈ₖ t ∶ X|   -- ghost colon
 \end{code}
 
 We have a type transformer |ctr| that furnishes setoids with an equivalence relation |equiv|.
@@ -69,7 +69,7 @@ commutative monoids.
 
 \begin{code}
 record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
-  open IsCtrEquivalence
+  open IsCtrEquivalence using (equiv)
   field
     𝒞                    :   Set ℓ → Set ℓ
     isCtrEquivalence     :   IsCtrEquivalence c 𝒞
@@ -77,9 +77,11 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     _⊕_                  :  {X : Set ℓ} → 𝒞 X → 𝒞 X → 𝒞 X
     isCommutativeMonoid  :  {X : Setoid ℓ c} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
 
+  open IsCtrEquivalence isCtrEquivalence             public
+
   commMonoid : (X : Setoid ℓ c) → CommutativeMonoid ℓ (c ⊍ ℓ)
   commMonoid X = record
-    { setoid         =  ctrSetoid isCtrEquivalence X
+    { setoid         =  ctrSetoid X
     ; e              =   ∅
     ; _*_            =   _⊕_
     ; isCommMonoid   =   isCommutativeMonoid
@@ -105,10 +107,9 @@ record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) w
   field
     commutativeContainer : CommutativeContainer ℓ c
 
-  open CommutativeContainer commutativeContainer
+  open CommutativeContainer commutativeContainer     public
   open Setoid X using (_≈_) renaming (Carrier to X₀)
-  open CommutativeMonoid
-  open IsCtrEquivalence isCtrEquivalence
+  open CommutativeMonoid                             
   open Π
 
   field
@@ -123,21 +124,37 @@ A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on t
 to be homomorphisms on the underlying commutative monoid structure, as well as a few
 compatibility laws.
 
-\begin{spec}
-record MultisetHom {ℓ} {o} {X Y : Setoid ℓ (ℓ ⊍ o)} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc o) where
-  open Multiset
+\begin{code}
+record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
+  open Multiset {ℓ} {c}
   X₀ = Setoid.Carrier X
+  open Π
+  open CommutativeMonoid
+
+  fold₀ : {Z : Setoid ℓ c} (C : Multiset Z) (CM : CommMonoid Z) → 𝒞 C (Setoid.Carrier Z)
+        → {!CommutativeMonoid.Carrier ?!}
+  fold₀ C CM z = let open CMArrow (fold C (asCommutativeMonoid CM)) in {!mor!} -- mor ⟨$⟩ z
+
   field
-    lift : (X ⟶ Y) → Hom (LIST-Ctr A , commMonoid A) (LIST-Ctr B , commMonoid B)
-    singleton-commute : (f : X ⟶ Y) {x : X₀} → singleton B (f Π.⟨$⟩ x) ≈
-      (Hom.mor (lift f) Π.⟨$⟩ singleton A x) ∶ commMonoid B
+    lift : (X ⟶ Y) → CMArrow (commMonoid A X) (commMonoid B Y)
+
+    singleton-commute : (f : X ⟶ Y) {x : X₀}
+                      → singleton B (f ⟨$⟩ x) ≈ CMArrow.mor (lift f) ⟨$⟩ singleton A x ∶ commMonoid B Y
+
+    fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (f : Hom (X , CMX) (Y , CMY))
+                 (let morX = CMArrow.mor (fold A (asCommutativeMonoid CMX)))
+                 → {s : 𝒞 A X₀}
+                 → Setoid._≈_ Y
+                 {!fold₀ B CMY ?!}
+                 (Hom.mor f ⟨$⟩ fold₀ A CMX s)
+\end{code}
     fold-commute : {W : CommMonoid X} {Z : CommMonoid Y} (f : Hom (X , W) (Y , Z))
-      {lx : Ctr A X₀} →
+      {lx : 𝒞 A X₀} →
       Setoid._≈_ Y (fold B Z (lift (Hom.mor f) Hom.⟨$⟩ lx))
                    (Hom.mor f Π.⟨$⟩ (fold A W lx))
 
 open MultisetHom
-\end{spec}
+
 
 And now something somewhat different: to express that we have the right
 functoriality properties (and ``zap''), we need to assume that we have

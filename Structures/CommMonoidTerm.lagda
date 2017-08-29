@@ -1,3 +1,5 @@
+\section{Structures.CommMonoidTerm}
+
 %{{{ Imports
 \begin{code}
 module Structures.CommMonoidTerm where

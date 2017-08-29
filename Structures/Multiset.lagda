@@ -38,6 +38,10 @@ record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
   field
     equiv        : (X : Setoid ℓ o) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
     equivIsEquiv : (X : Setoid ℓ o) → IsEquivalence (equiv X)
+
+  -- handy dandy syntactic sugar for |k|ontainer equality
+  infix -666 equiv
+  syntax equiv X s t  =  s ≈ₖ t ∶ X   -- ghost colon
 \end{code}
 
 We have a type transformer |ctr| that furnishes setoids with an equivalence relation |equiv|.
@@ -53,8 +57,6 @@ on the category of setoids. Indeed:}
     ; _≈_            =  equiv X
     ; isEquivalence  =  equivIsEquiv X
     }
-
-open IsCtrEquivalence
 \end{code}
 %}}}
 
@@ -67,6 +69,7 @@ commutative monoids.
 
 \begin{code}
 record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
+  open IsCtrEquivalence
   field
     𝒞                    :   Set ℓ → Set ℓ
     isCtrEquivalence     :   IsCtrEquivalence c 𝒞
@@ -74,14 +77,41 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     _⊕_                  :  {X : Set ℓ} → 𝒞 X → 𝒞 X → 𝒞 X
     isCommutativeMonoid  :  {X : Setoid ℓ c} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
 
-  commMonoid : (X : Setoid ℓ c) → CommMonoid (ctrSetoid isCtrEquivalence X)
+  commMonoid : (X : Setoid ℓ c) → CommutativeMonoid ℓ (c ⊍ ℓ)
   commMonoid X = record
-    { e              =   ∅
+    { setoid         =  ctrSetoid isCtrEquivalence X
+    ; e              =   ∅
     ; _*_            =   _⊕_
     ; isCommMonoid   =   isCommutativeMonoid
     }
 \end{code}
 
+%}}}
+
+%{{{ CommutativeMonoidArrows
+
+\begin{code}
+-- \edcomm{MA}{Compare with |CommMonoid.Hom|, which does not have the commutativity condition.}
+--
+record CMArrow {ℓ c ℓ' c' : Level} (Src : CommutativeMonoid ℓ c) (Tgt : CommutativeMonoid ℓ' c')
+  : Set (ℓ ⊍ c ⊍ c' ⊍ ℓ') where
+
+  _₀ : {ll cc : Level} → CommutativeMonoid ll cc → Set ll
+  _₀ CM = Setoid.Carrier (CommutativeMonoid.setoid CM)
+
+  open CommutativeMonoid Src using (eq-in) renaming (e to eₛ ; _*_ to _*ₛ_)
+  open CommutativeMonoid Tgt using () renaming (e to eₜ ; _*_ to _*ₜ_)
+  open CommutativeMonoid
+  open Setoid (setoid Tgt) using (_≈_)
+
+  field
+    mor : setoid Src ⟶ setoid Tgt
+
+  open Π
+  field
+    identity  :  mor ⟨$⟩ eₛ ≈ eₜ
+    homo      :  {x y : Src ₀} → mor ⟨$⟩ (x *ₛ y) ≈ (mor ⟨$⟩ x) *ₜ (mor ⟨$⟩ y)
+\end{code}
 %}}}
 
 %{{{ Multiset
@@ -97,34 +127,22 @@ quite misleading.
 \end{itemize}
 
 \begin{code}
-record Multiset {ℓ o : Level} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
-  open Setoid X renaming (Carrier to X₀)
-  open IsCtrEquivalence
-  open CommMonoid
+record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) where  
   field
-    commutativeContainer : CommutativeContainer ℓ o
+    commutativeContainer : CommutativeContainer ℓ c
 
   open CommutativeContainer commutativeContainer
-    
+  open Setoid X using (_≈_) renaming (Carrier to X₀)
+  open CommutativeMonoid
+  open IsCtrEquivalence isCtrEquivalence
+  open Π
+
   field
-    singleton : X₀ → 𝒞 X₀
-    cong-singleton : {i j : X₀} → (i ≈ j) → singleton i ≈ singleton j ∶ (commMonoid X)
-    fold : {X : Setoid ℓ o} (CM : CommMonoid X) → let B = Setoid.Carrier X in 𝒞 B → B
-    fold-cong : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
-      let Y = Setoid.Carrier YS in
-      {i j : 𝒞 Y}
-      → equiv isCtrEquivalence YS i j
-      → Setoid._≈_ YS (fold CM i) (fold CM j)
-    fold-empty : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
-      let Y = Setoid.Carrier YS in
-      Setoid._≈_ YS (fold CM ∅) (e CM)
-    fold-+ : {YS : Setoid ℓ o} {CM : CommMonoid YS} →
-      let Y = Setoid.Carrier YS in
-      let _**_ = _*_ CM in
-      {lx ly : 𝒞 Y} →
-      Setoid._≈_ YS (fold CM (lx ⊕ ly)) ((fold CM lx) ** (fold CM ly))
-    fold-singleton : {CM : CommMonoid X} → (m : X₀) →
-      m ≈ fold CM (singleton m)
+    singleton       :  X₀ → 𝒞 X₀
+    singleton-cong  :  {i j : X₀} → i ≈ j → singleton i ≈ singleton j  ∶ commMonoid X
+    fold            :  (Y : CommutativeMonoid ℓ c) → CMArrow (commMonoid (setoid Y)) Y
+    fold-singleton  :  {CM : CommMonoid X} (x : X₀) (open CMArrow (fold (asCommutativeMonoid CM)))
+                   → x ≈ mor ⟨$⟩ (singleton x)
 \end{code}
 
 A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers

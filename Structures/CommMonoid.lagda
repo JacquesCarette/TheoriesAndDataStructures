@@ -69,6 +69,20 @@ infix -666 eq-in
 eq-in = CommMonoid.≈._≈_
 syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
+-- Alternative presentation where the setoid is a part of the packaging
+record CommutativeMonoid {ℓ c : Level} : Set (lsuc ℓ ⊍ lsuc c) where
+  constructor MkCommMon
+  field
+    setoid : Setoid ℓ c
+
+  open Setoid setoid renaming (Carrier to X₀)
+
+  field    
+    e            : X₀
+    _*_          : X₀ → X₀ → X₀
+    isCommMonoid : IsCommutativeMonoid _≈_ _*_ e
+
+
 record Hom {ℓ} {o} (A B : Σ (Setoid ℓ o) CommMonoid) : Set (ℓ ⊍ o) where
   constructor MkHom
   open Setoid (proj₁ A) using () renaming (_≈_ to _≈₁_; Carrier to A₀)

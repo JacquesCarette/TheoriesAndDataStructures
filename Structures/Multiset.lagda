@@ -17,7 +17,7 @@ open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 
-open import DataProperties hiding (⟨_,_⟩ ; _,_)
+open import DataProperties hiding (⟨_,_⟩)
 open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
@@ -102,7 +102,7 @@ quite misleading.
 
 \begin{code}
 open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
-open CMArrow    using (_⟨$⟩_ ; mor)
+open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 open CommMonoid using (eq-in)
 
 record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where  
@@ -140,6 +140,8 @@ record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (A : Multiset 
   field
     lift : (X ⟶ Y) → CMArrow (𝓜 A) (𝓜 B)
 
+    -- This ensures that |singleton| is sufficiently polymorphic; i.e., a natural transformation.
+    -- See the Adjunction below.
     singleton-commute : (F : X ⟶ Y) {x : X₀} → 𝒮 B (F ⟨$⟩₀ x) ≈ lift F ⟨$⟩ (𝒮 A x)  ∶  𝓜 B
 
     fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow CMX CMY)
@@ -195,42 +197,39 @@ Given an implementation of a |Multiset| as well as of |MultisetHom| over that,
 build a Free Functor which is left adjoint to the forgetful functor.
 
 \begin{code}
-module BuildLeftAdjoint (MS : ∀ {ℓ o} (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X)
-  (MSH : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o)) → MultisetHom {ℓ} {o} (MS X) (MS {o = o} Y))
-  (Func : ∀ {ℓ o} → FunctorialMSH {ℓ} {o} MS MSH ) where
+module BuildLeftAdjoint
+  (MS   : {ℓ c : Level} (X : Setoid ℓ (ℓ ⊍ c)) → Multiset X)
+  (MSH  : {ℓ c : Level} {X Y : Setoid ℓ (ℓ ⊍ c)} → MultisetHom {ℓ} {c} (MS X) (MS {c = c} Y))
+  (Func : {ℓ c : Level} → FunctorialMSH {ℓ} {c} MS MSH )
+  where
 
   open Multiset
   open MultisetHom
   open FunctorialMSH
-\end{code}
-  Free : (ℓO ℓ≡ : Level) → Functor (Setoids ℓO (ℓO ⊍ ℓ≡)) (MonoidCat ℓO (ℓO ⊍ ℓ≡))
-  Free ℓO ℓ≡ = record
-    { F₀ = λ S → LIST-Ctr (MS S) , commMonoid (MS S)
-    ; F₁ = λ {X} {Y} f → record { Hom (lift {o = ℓ≡} (MSH X Y) f) }
-    ; identity = id-pres Func
-    ; homomorphism = ∘-pres Func
-    ; F-resp-≡ = resp-≈ Func
+
+  Free : (ℓ c : Level) → Functor (Setoids ℓ (ℓ ⊍ c)) (MonoidCat ℓ (ℓ ⊍ c))
+  Free _ _ = record
+    { F₀             =   λ S → ctrSetoid (MS S) S , commMonoid (MS S) S
+    ; F₁             =   λ F → record { CMArrow (lift MSH F) }
+    ; identity       =   id-pres Func
+    ; homomorphism   =   ∘-pres Func
+    ; F-resp-≡       =   resp-≈ Func
     }
 
   LeftAdjoint : {ℓ o : Level} → Adjunction (Free ℓ o) (Forget ℓ (ℓ ⊍ o))
   LeftAdjoint = record
-    { unit = record { η = λ X → record { _⟨$⟩_ = singleton (MS X)
-                                       ; cong = cong-singleton (MS X) }
-                    ; commute = λ {X} {Y} → singleton-commute (MSH X Y) }
+    { unit = record
+      { η = λ X → singleton (MS X)
+      ; commute = singleton-commute MSH
+      }
     ; counit = record
-      { η = λ { (X , cm) → let M = MS X in
-            MkHom (record { _⟨$⟩_ = fold M cm
-                          ; cong = fold-cong M })
-                  (fold-empty M {X} {cm}) (fold-+ M {X} {cm}) }
-      ; commute = λ { {X , _} {Y , _} f → fold-commute (MSH X Y) f}
+      { η        =  λ { (X , cm) → record { CMArrow (fold (MS X) cm) } }
+      ; commute  =  fold-commute MSH
       }
     ; zig = fold-lift-singleton Func
-    ; zag = λ { {X , CM} {m} → fold-singleton (MS X) m}
+    ; zag = λ { {X , CM} {m} → fold-singleton (MS X) m }
     }
-    where
-      open Multiset
-      open CommMonoid
-
+\end{code}
 %}}}
 
 %{{{ An implementation of |Multiset| using lists with Bag equality

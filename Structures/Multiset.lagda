@@ -161,21 +161,25 @@ record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Mult
   open MultisetHom
   open CommMonoid
   open CMArrow
-  open Setoid
-  private Obj = Setoid ℓ (c ⊍ ℓ)
+  open Setoid   using (Carrier)
+  private
+    Obj = Setoid ℓ (c ⊍ ℓ)
+    𝒞ₘ = λ X → 𝒞 (MS X) (Carrier X)
+    𝓜 = λ X → commMonoid (MS X) X
+    𝑳  = λ {X Y : Obj}  (F   : X ⟶ Y) → lift MSH F
+    _≋_ = λ {X : Obj} (l r : 𝒞ₘ X) → l ≈ r ∶ 𝓜 X
   
   field
-    id-pres : {X : Obj} {x : 𝒞 (MS X) (Carrier X)}
-            → lift MSH id ⟨$⟩ x  ≈  x  ∶  commMonoid (MS X) X
+    -- Lifting the identity yields an identity morphism.
+    id-pres : {X : Obj} {x : 𝒞ₘ X} → 𝑳 id ⟨$⟩ x  ≈  x  ∶  𝓜 X
 
+    -- Lifting preserves composition.
     ∘-pres : {X Y Z : Obj} {F : X ⟶ Y} {G : Y ⟶ Z}
-           → {x : 𝒞 (MS X) (Carrier X)} →
-      mor (lift MSH (G ∘ F)) Π.⟨$⟩ x ≈ lift MSH G ⟨$⟩ (lift MSH F ⟨$⟩ x) ∶ commMonoid (MS Z) Z
+           → {x : 𝒞ₘ X} → (𝑳 (G ∘ F)) ⟨$⟩ x ≈ 𝑳 G ⟨$⟩ (𝑳 F ⟨$⟩ x)  ∶  𝓜 Z
 
-    resp-≈ : {A B : Obj} {F G : A ⟶ B}
-      (F≈G : {x : Carrier A} → (_≈_ B (F Π.⟨$⟩ x) (G Π.⟨$⟩ x))) →
-      {x : 𝒞 (MS A) (Carrier A)} →
-      mor (lift MSH F) Π.⟨$⟩ x ≈ mor (lift MSH G) Π.⟨$⟩ x ∶ commMonoid (MS B) B
+    resp-≈ : {X Y : Obj} {F G : X ⟶ Y} (let open Setoid Y renaming (_≈_ to _≈₀_))
+          → (F≈G : {x : Carrier X} → F Π.⟨$⟩ x ≈₀ G Π.⟨$⟩ x)
+          → {x : 𝒞ₘ X} → 𝑳 F ⟨$⟩ x ≈ 𝑳 G ⟨$⟩ x  ∶  𝓜 Y
 
     fold-lift-singleton : {X : Obj} →
       let ms = MS X in
@@ -183,7 +187,7 @@ record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Mult
       {s : 𝒞 ms (Carrier X)} →
       IsCtrEquivalence.equiv
        (isCtrEquivalence ms) X s
-       (fold (MS (ctrSetoid ms X)) (commMonoid ms X) ⟨$⟩ (lift MSH Singleton ⟨$⟩ s))
+       (fold (MS (ctrSetoid ms X)) (commMonoid ms X) ⟨$⟩ (𝑳 Singleton ⟨$⟩ s))
 \end{code}
 %}}}
 

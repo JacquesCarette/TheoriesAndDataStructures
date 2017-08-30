@@ -89,7 +89,7 @@ record CommutativeMonoid (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
 asCommutativeMonoid : {ℓ c : Level} {X : Setoid ℓ c} → CommMonoid X → CommutativeMonoid ℓ c
 asCommutativeMonoid {X = X} comm = let open CommMonoid comm in MkCommMon X e _*_ isCommMonoid
 
-record Hom {ℓ} {o} (A B : Σ (Setoid ℓ o) CommMonoid) : Set (ℓ ⊍ o) where
+record Hom {ℓ} {o} {b} (A : Σ (Setoid ℓ o) CommMonoid) (B : Σ (Setoid ℓ b) CommMonoid) : Set (ℓ ⊍ o ⊍ b) where
   constructor MkHom
   open Setoid (proj₁ A) using () renaming (_≈_ to _≈₁_; Carrier to A₀)
   open Setoid (proj₁ B) using () renaming (_≈_ to _≈₂_)

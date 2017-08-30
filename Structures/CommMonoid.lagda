@@ -13,7 +13,7 @@ open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Agda       using (Setoids)
 
-open import Data.Product      using (Σ; proj₁; proj₂; _,_)
+open import Data.Product      using (Σ; proj₁; proj₂; _,_ ; ∃)
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 
 open import Relation.Binary.Sum
@@ -69,12 +69,13 @@ record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   eq-in = ≈._≈_
   syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
-record Hom {ℓ} {o} {b} (A : Σ (Setoid ℓ o) CommMonoid) (B : Σ (Setoid ℓ b) CommMonoid) : Set (ℓ ⊍ o ⊍ b) where
+record Hom {ℓ a b : Level} (A : ∃ (CommMonoid {ℓ} {a})) (B : ∃ (CommMonoid {ℓ} {b}))
+  : Set (ℓ ⊍ a ⊍ b) where
   constructor MkHom
-  open Setoid (proj₁ A) using () renaming (_≈_ to _≈₁_; Carrier to A₀)
-  open Setoid (proj₁ B) using () renaming (_≈_ to _≈₂_)
-  open CommMonoid (proj₂ A) using () renaming (e to e₁; _*_ to _*₁_)
-  open CommMonoid (proj₂ B) using () renaming (e to e₂; _*_ to _*₂_)
+  open Setoid     (proj₁ A ) using () renaming (_≈_ to _≈₁_; Carrier to A₀)
+  open Setoid     (proj₁ B ) using () renaming (_≈_ to _≈₂_               )
+  open CommMonoid (proj₂ A ) using () renaming (e to e₁; _*_ to _*₁_      )
+  open CommMonoid (proj₂ B ) using () renaming (e to e₂; _*_ to _*₂_      )
 
   field mor    : proj₁ A ⟶ proj₁ B
   private mor₀ = Π._⟨$⟩_ mor

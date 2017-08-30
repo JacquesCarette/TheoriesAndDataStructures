@@ -234,8 +234,8 @@ module BuildLeftAdjoint
 
 %{{{ An implementation of |Multiset| using lists with Bag equality
 \subsection{An implementation of |Multiset| using lists with Bag equality}
-\begin{spec}
-module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
+\begin{code}
+module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
   open Setoid X hiding (refl) renaming (Carrier to X₀)
   open BagEq X using (≡→⇔)
   open ElemOfSing X
@@ -245,7 +245,41 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
   module ++ = Monoid (monoid (Setoid.Carrier X))
   open Membership X using (elem-of)
   open ConcatTo⊎S X using (⊎S≅++)
+\end{code}
 
+\begin{code}
+  ListMS : Multiset {ℓ} {o} X
+  ListMS = record
+    { commutativeContainer = record
+         { 𝒞                   = List
+         ; isCtrEquivalence    = record
+            { equiv        = λ Y → let open BagEq Y in _⇔_
+            ; equivIsEquiv = λ _ → record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans }
+            }
+         ; ∅                   = []
+         ; _⊕_                 = _++_
+         ; isCommutativeMonoid = {!!}
+         }
+    ; singleton = record { _⟨$⟩_ = λ x → x ∷ [] ; cong = singleton-≈ }
+    ; fold = λ {Y} CMX → let open CommMonoid CMX in record
+         { mor = record { _⟨$⟩_ = foldr _*_ e ; cong = fold-permute {CM = CMX} }
+         ; pres-e = Setoid.refl Y
+         ; pres-* = fold-CM-over-++ CMX
+         }
+    ; fold-singleton = {!!}
+    }
+    where       
+        
+       fold-CM-over-++ : {Z : Setoid ℓ (o ⊍ ℓ)} (cm : CommMonoid Z) {lx ly : List (Setoid.Carrier Z)} →
+        let open CommMonoid cm ; F = foldr _*_ e in
+        F (lx ++ ly) ≈⌊ Z ⌋ (F lx * F ly)
+       fold-CM-over-++ = {!!}
+       
+       fold-permute : {Z : Setoid ℓ (o ⊍ ℓ)} {CM : CommMonoid Z} {i j : List (Setoid.Carrier Z)} →
+        let open BagEq Z in let open CommMonoid CM renaming (_*_ to _+_; e to e₁) in
+        i ⇔ j → foldr _+_ e₁ i ≈⌊ Z ⌋ foldr _+_ e₁ j
+       fold-permute = {!!}
+\end{code}
   ListMS : Multiset X
   ListMS = record
     { Ctr = List
@@ -253,7 +287,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
       { equiv = λ Y → let open BagEq Y in _⇔_
       ; equivIsEquiv = λ _ → record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans }
       }
-    ; Ctr-empty  =  λ _ → []
+    ; Ctr-empty  =  
     ; Ctr-append = λ _ → _++_
     ; MSisCommMonoid = record
       { left-unit  =  λ _ → ≅-refl
@@ -271,11 +305,11 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
          elem-of (y ++ w) ∎
       }
 
-    ; singleton = λ x → x ∷ []
-    ; cong-singleton = singleton-≈
-    ; fold = λ { (MkCommMon e _+_ _) → foldr _+_ e }
-    ; fold-cong = λ {_} {CM} → fold-permute {CM = CM}
-    ; fold-empty = λ {Y} → Setoid.refl Y
+    ; singleton = 
+    ; cong-singleton = 
+    ; fold = 
+    ; fold-cong = 
+    ; fold-empty = 
     ; fold-+ = λ {Y} {CM} {lx} {ly} → fold-CM-over-++ {Y} {CM} {lx} {ly}
     ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
     }
@@ -422,7 +456,7 @@ module BuildProperties where
       → lst ≡ foldr _++_ [] (mapL (λ x → x ∷ []) lst)
     concat-singleton [] = ≡.refl
     concat-singleton (x ∷ lst) = ≡.cong (λ z → x ∷ z) (concat-singleton lst)
-\end{spec}
+
 
 Last but not least, build the left adjoint:
 

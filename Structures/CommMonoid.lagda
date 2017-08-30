@@ -13,7 +13,7 @@ open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Agda       using (Setoids)
 
-open import Data.Product      using (Σ; proj₁; proj₂; _,_ ; ∃)
+open import Data.Product      using (Σ; proj₁; proj₂; _,_)
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 
 open import Relation.Binary.Sum
@@ -69,15 +69,15 @@ record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
   eq-in = ≈._≈_
   syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
 
-record Hom {ℓ a b : Level} (A : ∃ (CommMonoid {ℓ} {a})) (B : ∃ (CommMonoid {ℓ} {b}))
+record Hom {ℓ a b : Level} {X : Setoid ℓ a} {Y : Setoid ℓ b} (CMX : CommMonoid X) (CMY : CommMonoid Y)
   : Set (ℓ ⊍ a ⊍ b) where
   constructor MkHom
-  open Setoid     (proj₁ A ) using () renaming (_≈_ to _≈₁_; Carrier to A₀)
-  open Setoid     (proj₁ B ) using () renaming (_≈_ to _≈₂_               )
-  open CommMonoid (proj₂ A ) using () renaming (e to e₁; _*_ to _*₁_      )
-  open CommMonoid (proj₂ B ) using () renaming (e to e₂; _*_ to _*₂_      )
+  open Setoid        X  using () renaming (_≈_ to _≈₁_; Carrier to A₀)
+  open Setoid        Y  using () renaming (_≈_ to _≈₂_               )
+  open CommMonoid  CMX  using () renaming (e to e₁; _*_ to _*₁_      )
+  open CommMonoid  CMY  using () renaming (e to e₂; _*_ to _*₂_      )
 
-  field mor    : proj₁ A ⟶ proj₁ B
+  field mor    : X ⟶ Y
   private mor₀ = Π._⟨$⟩_ mor
   field
     pres-e : mor₀ e₁ ≈₂ e₂
@@ -96,7 +96,7 @@ operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
 MonoidCat ℓ o = let open CommMonoid using (eq-in) in record
   { Obj = Σ (Setoid ℓ o) CommMonoid
-  ; _⇒_ = Hom
+  ; _⇒_ = λ{ (X , CMX) (Y , CMY) → Hom CMX CMY}
   ; _≡_ = λ { {_} {_ , B} F G → ∀ {x} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B }
   ; id  = λ { {A , _} → MkHom id (refl A) (refl A) }
   ; _∘_ = λ { {C = _ , C} F G → let open CommMonoid C in record

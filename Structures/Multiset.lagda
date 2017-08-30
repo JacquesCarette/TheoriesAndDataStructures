@@ -39,8 +39,8 @@ record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
     equiv        : (X : Setoid ℓ (o ⊍ ℓ)) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
     equivIsEquiv : (X : Setoid ℓ (o ⊍ ℓ)) → IsEquivalence (equiv X)
   -- handy dandy syntactic sugar for |k|ontainer equality
-  -- |infix -666 equiv|
-  -- |syntax equiv X s t  =  s ≈ₖ t ∶ X|   -- ghost colon
+  infix -666 equiv
+  syntax equiv X s t  =  s ≈ₖ t ∶ X   -- ghost colon
 \end{code}
 
 We have a type transformer |ctr| that furnishes setoids with an equivalence relation |equiv|.
@@ -101,20 +101,21 @@ quite misleading.
 \end{itemize}
 
 \begin{code}
+open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
+open CMArrow    using (_⟨$⟩_ ; mor)
+open CommMonoid using (eq-in)
+
 record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where  
   field
     commutativeContainer : CommutativeContainer ℓ c
 
   open CommutativeContainer commutativeContainer     public
-  open Setoid X using (_≈_) renaming (Carrier to X₀)
-  open CommMonoid                             
-  open CMArrow
+  open Setoid X using (_≈_) renaming (Carrier to X₀)  
 
   field
-    singleton       :  X₀ → 𝒞 X₀
-    singleton-cong  :  {i j : X₀} → i ≈ j → singleton i ≈ singleton j  ∶ commMonoid X
+    singleton       :  X ⟶ ctrSetoid X
     fold            :  {Y : Setoid ℓ (c ⊍ ℓ)} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
-    fold-singleton  :  {CM : CommMonoid X} (x : X₀) → x ≈ fold CM ⟨$⟩ (singleton x)
+    fold-singleton  :  {CM : CommMonoid X} (x : X₀) → x ≈ fold CM ⟨$⟩ (singleton ⟨$⟩₀ x)
 \end{code}
 
 A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers
@@ -126,21 +127,22 @@ In the classical contexts of sets and set-functions, the constraints take the fo
 mimics the behaviour of the morphism, or “map”, portion of a functor.
 
 \begin{code}
-record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
+record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (A : Multiset X) (B : Multiset Y)
+  : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset {ℓ} {c}
-  open CommMonoid
   X₀ = Setoid.Carrier X
   open Setoid Y using (_≈_)
 
-  field
-    lift : (X ⟶ Y) → CMArrow (commMonoid A X) (commMonoid B Y)
+  private
+    𝓜 = λ {Z : Setoid ℓ (c ⊍ ℓ)} (CMZ : Multiset Z) → commMonoid CMZ Z
+    𝒮  = λ {Z : Setoid ℓ (c ⊍ ℓ)} (CMZ : Multiset Z) → singleton CMZ ⟨$⟩₀_
 
-    singleton-commute : (F : X ⟶ Y) {x : X₀} (let open Π)
-                      →  singleton B (F ⟨$⟩ x)
-                        ≈ CMArrow.mor (lift F) ⟨$⟩ singleton A x ∶ commMonoid B Y
+  field
+    lift : (X ⟶ Y) → CMArrow (𝓜 A) (𝓜 B)
+
+    singleton-commute : (F : X ⟶ Y) {x : X₀} → 𝒮 B (F ⟨$⟩₀ x) ≈ lift F ⟨$⟩ (𝒮 A x)  ∶  𝓜 B
 
     fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow CMX CMY)
-                    (let open CMArrow)
                  → {s : 𝒞 A X₀}
                  → fold B CMY ⟨$⟩ (lift (mor F) ⟨$⟩ s)  ≈  F ⟨$⟩ (fold A CMX ⟨$⟩ s)
                  
@@ -159,9 +161,8 @@ record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Mult
     : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset
   open MultisetHom
-  open CommMonoid
-  open CMArrow
   open Setoid   using (Carrier)
+  open IsCtrEquivalence hiding (ctrSetoid)
   private
     Obj = Setoid ℓ (c ⊍ ℓ)
     𝒞ₘ = λ X → 𝒞 (MS X) (Carrier X)
@@ -177,17 +178,15 @@ record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Mult
     ∘-pres : {X Y Z : Obj} {F : X ⟶ Y} {G : Y ⟶ Z}
            → {x : 𝒞ₘ X} → (𝑳 (G ∘ F)) ⟨$⟩ x ≈ 𝑳 G ⟨$⟩ (𝑳 F ⟨$⟩ x)  ∶  𝓜 Z
 
+    -- Lifting preserves extensional equality.
     resp-≈ : {X Y : Obj} {F G : X ⟶ Y} (let open Setoid Y renaming (_≈_ to _≈₀_))
-          → (F≈G : {x : Carrier X} → F Π.⟨$⟩ x ≈₀ G Π.⟨$⟩ x)
+          → (F≈G : {x : Carrier X} → F ⟨$⟩₀ x ≈₀ G ⟨$⟩₀ x)
           → {x : 𝒞ₘ X} → 𝑳 F ⟨$⟩ x ≈ 𝑳 G ⟨$⟩ x  ∶  𝓜 Y
 
-    fold-lift-singleton : {X : Obj} →
-      let ms = MS X in
-      let Singleton = record { _⟨$⟩_ = singleton ms ; cong = singleton-cong ms } in
-      {s : 𝒞 ms (Carrier X)} →
-      IsCtrEquivalence.equiv
-       (isCtrEquivalence ms) X s
-       (fold (MS (ctrSetoid ms X)) (commMonoid ms X) ⟨$⟩ (𝑳 Singleton ⟨$⟩ s))
+    -- Lifting the singleton mapping then folding yields the orginal result.
+    -- In particular, the singleton construction is injective --as we'd like.
+    fold-lift-singleton : {X : Obj} (let ms = MS X ; _≈_ = equiv (isCtrEquivalence ms) X)
+      → {s : 𝒞ₘ X} → s ≈ (fold (MS (ctrSetoid ms X)) (𝓜 X) ⟨$⟩ (𝑳 (singleton ms) ⟨$⟩ s))
 \end{code}
 %}}}
 
@@ -195,7 +194,7 @@ record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Mult
 Given an implementation of a |Multiset| as well as of |MultisetHom| over that,
 build a Free Functor which is left adjoint to the forgetful functor.
 
-\begin{spec}
+\begin{code}
 module BuildLeftAdjoint (MS : ∀ {ℓ o} (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X)
   (MSH : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o)) → MultisetHom {ℓ} {o} (MS X) (MS {o = o} Y))
   (Func : ∀ {ℓ o} → FunctorialMSH {ℓ} {o} MS MSH ) where
@@ -203,7 +202,7 @@ module BuildLeftAdjoint (MS : ∀ {ℓ o} (X : Setoid ℓ (ℓ ⊍ o)) → Multi
   open Multiset
   open MultisetHom
   open FunctorialMSH
-
+\end{code}
   Free : (ℓO ℓ≡ : Level) → Functor (Setoids ℓO (ℓO ⊍ ℓ≡)) (MonoidCat ℓO (ℓO ⊍ ℓ≡))
   Free ℓO ℓ≡ = record
     { F₀ = λ S → LIST-Ctr (MS S) , commMonoid (MS S)
@@ -231,7 +230,7 @@ module BuildLeftAdjoint (MS : ∀ {ℓ o} (X : Setoid ℓ (ℓ ⊍ o)) → Multi
     where
       open Multiset
       open CommMonoid
-\end{spec}
+
 %}}}
 
 %{{{ An implementation of |Multiset| using lists with Bag equality

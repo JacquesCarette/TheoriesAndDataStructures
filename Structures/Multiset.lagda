@@ -17,12 +17,12 @@ open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Data.List     using (List; []; _++_; _∷_; foldr)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 
-open import DataProperties hiding (⟨_,_⟩)
+open import DataProperties hiding (⟨_,_⟩ ; _,_)
 open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
 open import Belongs
-open import Structures.CommMonoid hiding (CMArrow) renaming (Hom to CMArrow)
+open import Structures.CommMonoid renaming (Hom to CMArrow)
 \end{code}
 %}}}
 
@@ -114,7 +114,7 @@ record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) w
   field
     singleton       :  X₀ → 𝒞 X₀
     singleton-cong  :  {i j : X₀} → i ≈ j → singleton i ≈ singleton j  ∶ commMonoid X
-    fold            :  {Y : Setoid ℓ c} (CMY : CommMonoid Y) → CMArrow (_ , commMonoid Y) (_ , CMY)
+    fold            :  {Y : Setoid ℓ c} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
     fold-singleton  :  {CM : CommMonoid X} (x : X₀) → x ≈ fold CM ⟨$⟩ (singleton x)
 \end{code}
 
@@ -122,20 +122,24 @@ A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on t
 to be homomorphisms on the underlying commutative monoid structure, as well as a few
 compatibility laws.
 
+In the classical contexts of sets and set-functions, the constraints take the form:
+|{ f x } ≈ lift f { x }| and |fold (lift f s) ≈ f (fold s)|. In particular, the |lift| operation
+mimics the behaviour of the morphism, or “map”, portion of a functor.
+
 \begin{code}
 record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset {ℓ} {c}
   open CommMonoid
   X₀ = Setoid.Carrier X
-  open Setoid Y using (_≈_)  
+  open Setoid Y using (_≈_)
 
   field
-    lift : (X ⟶ Y) → CMArrow (_ , commMonoid A X) (_ , commMonoid B Y)
+    lift : (X ⟶ Y) → CMArrow (commMonoid A X) (commMonoid B Y)
 
     singleton-commute : (F : X ⟶ Y) {x : X₀} (let open Π)
                       → singleton B (F ⟨$⟩ x) ≈ CMArrow.mor (lift F) ⟨$⟩ singleton A x ∶ commMonoid B Y
 
-    fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow (X , CMX) (Y , CMY))
+    fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow CMX CMY)
                     (let open CMArrow)
                  → {s : 𝒞 A X₀}
                  → fold B CMY ⟨$⟩ (lift (mor F) ⟨$⟩ s)  ≈  F ⟨$⟩ (fold A CMX ⟨$⟩ s)

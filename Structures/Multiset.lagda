@@ -36,9 +36,8 @@ equivalence relation.
 record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
   : Set (lsuc ℓ ⊍ lsuc o) where
   field
-    equiv        : (X : Setoid ℓ o) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
-    equivIsEquiv : (X : Setoid ℓ o) → IsEquivalence (equiv X)
-
+    equiv        : (X : Setoid ℓ (o ⊍ ℓ)) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
+    equivIsEquiv : (X : Setoid ℓ (o ⊍ ℓ)) → IsEquivalence (equiv X)
   -- handy dandy syntactic sugar for |k|ontainer equality
   -- |infix -666 equiv|
   -- |syntax equiv X s t  =  s ≈ₖ t ∶ X|   -- ghost colon
@@ -51,7 +50,7 @@ We have a type transformer |ctr| that furnishes setoids with an equivalence rela
 on the category of setoids. Indeed:}
 
 \begin{code}
-  ctrSetoid : (X : Setoid ℓ o) → Setoid ℓ (ℓ ⊍ o)
+  ctrSetoid : (X : Setoid ℓ (o ⊍ ℓ)) → Setoid ℓ (ℓ ⊍ o)
   ctrSetoid X = record
     { Carrier        =  Ctr (Setoid.Carrier X)
     ; _≈_            =  equiv X
@@ -75,11 +74,11 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     isCtrEquivalence     :   IsCtrEquivalence c 𝒞
     ∅                    :  {X : Set ℓ} → 𝒞 X
     _⊕_                  :  {X : Set ℓ} → 𝒞 X → 𝒞 X → 𝒞 X
-    isCommutativeMonoid  :  {X : Setoid ℓ c} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
+    isCommutativeMonoid  :  {X : Setoid ℓ (c ⊍ ℓ)} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
 
   open IsCtrEquivalence isCtrEquivalence             public
 
-  commMonoid : (X : Setoid ℓ c) → CommMonoid (ctrSetoid X)
+  commMonoid : (X : Setoid ℓ (c ⊍ ℓ)) → CommMonoid (ctrSetoid X)
   commMonoid X = record
     { e              =   ∅
     ; _*_            =   _⊕_
@@ -102,7 +101,7 @@ quite misleading.
 \end{itemize}
 
 \begin{code}
-record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) where  
+record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where  
   field
     commutativeContainer : CommutativeContainer ℓ c
 
@@ -114,7 +113,7 @@ record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) w
   field
     singleton       :  X₀ → 𝒞 X₀
     singleton-cong  :  {i j : X₀} → i ≈ j → singleton i ≈ singleton j  ∶ commMonoid X
-    fold            :  {Y : Setoid ℓ c} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
+    fold            :  {Y : Setoid ℓ (c ⊍ ℓ)} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
     fold-singleton  :  {CM : CommMonoid X} (x : X₀) → x ≈ fold CM ⟨$⟩ (singleton x)
 \end{code}
 
@@ -127,7 +126,7 @@ In the classical contexts of sets and set-functions, the constraints take the fo
 mimics the behaviour of the morphism, or “map”, portion of a functor.
 
 \begin{code}
-record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
+record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset {ℓ} {c}
   open CommMonoid
   X₀ = Setoid.Carrier X
@@ -137,7 +136,8 @@ record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (A : Multiset X) (B : Mu
     lift : (X ⟶ Y) → CMArrow (commMonoid A X) (commMonoid B Y)
 
     singleton-commute : (F : X ⟶ Y) {x : X₀} (let open Π)
-                      → singleton B (F ⟨$⟩ x) ≈ CMArrow.mor (lift F) ⟨$⟩ singleton A x ∶ commMonoid B Y
+                      →  singleton B (F ⟨$⟩ x)
+                        ≈ CMArrow.mor (lift F) ⟨$⟩ singleton A x ∶ commMonoid B Y
 
     fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow CMX CMY)
                     (let open CMArrow)
@@ -153,37 +153,38 @@ functoriality properties (and ``zap''), we need to assume that we have
 we can then phrase what extra properties must hold.  Because these properties
 hold at ``different types'' than the ones for the underlying ones, these
 cannot go into the above.
-\begin{spec}
-record FunctorialMSH {ℓ} {o} (MS : (X : Setoid ℓ (ℓ ⊍ o)) → Multiset X)
-    (MSH : (X Y : Setoid ℓ (ℓ ⊍ o)) → MultisetHom {ℓ} {o} {X} {Y} (MS X) (MS Y))
-    : Set (lsuc ℓ ⊍ lsuc o) where
-  open Multiset using (Ctr; commMonoid; Ctr-equiv; fold; singleton; cong-singleton; LIST-Ctr)
-  open Hom using (mor; _⟨$⟩_)
+\begin{code}
+record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Multiset X)
+    (MSH : {X Y : Setoid ℓ (c ⊍ ℓ)} → MultisetHom {ℓ} {c} {X} {Y} (MS X) (MS Y))
+    : Set (lsuc ℓ ⊍ lsuc c) where
+  open Multiset
   open MultisetHom
+  open CommMonoid
+  open CMArrow
+  open Setoid
+  private Obj = Setoid ℓ (c ⊍ ℓ)
+  
   field
-    id-pres : {X : Setoid ℓ (ℓ ⊍ o)} {x : Ctr (MS X) (Setoid.Carrier X)}
-      → (lift (MSH X X) id) ⟨$⟩ x ≈ x ∶ commMonoid (MS X)
+    id-pres : {X : Obj} {x : 𝒞 (MS X) (Carrier X)}
+            → lift MSH id ⟨$⟩ x  ≈  x  ∶  commMonoid (MS X) X
 
-    ∘-pres : {X Y Z : Setoid ℓ (ℓ ⊍ o)} {f : X ⟶ Y} {g : Y ⟶ Z}
-      {x : Ctr (MS X) (Setoid.Carrier X)} →
-      let gg = lift (MSH Y Z) g in
-      let ff = lift (MSH X Y) f in
-      mor (lift (MSH X Z) (g ∘ f)) Π.⟨$⟩ x ≈ gg ⟨$⟩ (ff ⟨$⟩ x) ∶ commMonoid (MS Z)
+    ∘-pres : {X Y Z : Obj} {F : X ⟶ Y} {G : Y ⟶ Z}
+           → {x : 𝒞 (MS X) (Carrier X)} →
+      mor (lift MSH (G ∘ F)) Π.⟨$⟩ x ≈ lift MSH G ⟨$⟩ (lift MSH F ⟨$⟩ x) ∶ commMonoid (MS Z) Z
 
-    resp-≈ : {A B : Setoid ℓ (ℓ ⊍ o)} {F G : A ⟶ B}
-      (F≈G : {x : Setoid.Carrier A} → (Setoid._≈_ B (F Π.⟨$⟩ x) (G Π.⟨$⟩ x))) →
-      {x : Ctr (MS A) (Setoid.Carrier A)} →
-      Hom.mor (lift (MSH A B) F) Π.⟨$⟩ x ≈ Hom.mor (lift (MSH A B) G) Π.⟨$⟩ x ∶ commMonoid (MS B)
+    resp-≈ : {A B : Obj} {F G : A ⟶ B}
+      (F≈G : {x : Carrier A} → (_≈_ B (F Π.⟨$⟩ x) (G Π.⟨$⟩ x))) →
+      {x : 𝒞 (MS A) (Carrier A)} →
+      mor (lift MSH F) Π.⟨$⟩ x ≈ mor (lift MSH G) Π.⟨$⟩ x ∶ commMonoid (MS B) B
 
-    fold-lift-singleton : {X : Setoid ℓ (ℓ ⊍ o)} →
+    fold-lift-singleton : {X : Obj} →
       let ms = MS X in
-      let Singleton = record { _⟨$⟩_ = singleton ms ; cong = cong-singleton ms } in
-      {l : Ctr ms (Setoid.Carrier X)} →
-      IsCtrEquivalence.equiv (Ctr-equiv ms) X l
-      (fold (MS (LIST-Ctr ms)) (commMonoid ms)
-            (Hom.mor (lift (MSH X (LIST-Ctr ms)) Singleton) Π.⟨$⟩ l))
-
-\end{spec}
+      let Singleton = record { _⟨$⟩_ = singleton ms ; cong = singleton-cong ms } in
+      {s : 𝒞 ms (Carrier X)} →
+      IsCtrEquivalence.equiv
+       (isCtrEquivalence ms) X s
+       (fold (MS (ctrSetoid ms X)) (commMonoid ms X) ⟨$⟩ (lift MSH Singleton ⟨$⟩ s))
+\end{code}
 %}}}
 
 %{{{ BuildLeftAdjoint

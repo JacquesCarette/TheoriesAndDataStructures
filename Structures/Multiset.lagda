@@ -22,7 +22,7 @@ open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
 open import Belongs
-open import Structures.CommMonoid
+open import Structures.CommMonoid hiding (CMArrow) renaming (Hom to CMArrow)
 \end{code}
 %}}}
 
@@ -79,10 +79,9 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
 
   open IsCtrEquivalence isCtrEquivalence             public
 
-  commMonoid : (X : Setoid ℓ c) → CommutativeMonoid ℓ (c ⊍ ℓ)
+  commMonoid : (X : Setoid ℓ c) → CommMonoid (ctrSetoid X)
   commMonoid X = record
-    { setoid         =  ctrSetoid X
-    ; e              =   ∅
+    { e              =   ∅
     ; _*_            =   _⊕_
     ; isCommMonoid   =   isCommutativeMonoid
     }
@@ -109,15 +108,14 @@ record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) w
 
   open CommutativeContainer commutativeContainer     public
   open Setoid X using (_≈_) renaming (Carrier to X₀)
-  open CommutativeMonoid                             
-  open Π
+  open CommMonoid                             
+  open CMArrow
 
   field
     singleton       :  X₀ → 𝒞 X₀
     singleton-cong  :  {i j : X₀} → i ≈ j → singleton i ≈ singleton j  ∶ commMonoid X
-    fold            :  (Y : CommutativeMonoid ℓ c) → CMArrow (commMonoid (setoid Y)) Y
-    fold-singleton  :  {CM : CommMonoid X} (x : X₀) (open CMArrow (fold (asCommutativeMonoid CM)))
-                   → x ≈ mor ⟨$⟩ (singleton x)
+    fold            :  {Y : Setoid ℓ c} (CMY : CommMonoid Y) → CMArrow (_ , commMonoid Y) (_ , CMY)
+    fold-singleton  :  {CM : CommMonoid X} (x : X₀) → x ≈ fold CM ⟨$⟩ (singleton x)
 \end{code}
 
 A “multiset homomorphism” is a way to lift arbitrary (setoid) functions on the carriers
@@ -127,34 +125,23 @@ compatibility laws.
 \begin{code}
 record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (A : Multiset X) (B : Multiset Y) : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset {ℓ} {c}
+  open CommMonoid
   X₀ = Setoid.Carrier X
-  open Π
-  open CommutativeMonoid
-
-  fold₀ : {Z : Setoid ℓ c} (C : Multiset Z) (CM : CommMonoid Z) → 𝒞 C (Setoid.Carrier Z)
-        → {!CommutativeMonoid.Carrier ?!}
-  fold₀ C CM z = let open CMArrow (fold C (asCommutativeMonoid CM)) in {!mor!} -- mor ⟨$⟩ z
+  open Setoid Y using (_≈_)  
 
   field
-    lift : (X ⟶ Y) → CMArrow (commMonoid A X) (commMonoid B Y)
+    lift : (X ⟶ Y) → CMArrow (_ , commMonoid A X) (_ , commMonoid B Y)
 
-    singleton-commute : (f : X ⟶ Y) {x : X₀}
-                      → singleton B (f ⟨$⟩ x) ≈ CMArrow.mor (lift f) ⟨$⟩ singleton A x ∶ commMonoid B Y
+    singleton-commute : (F : X ⟶ Y) {x : X₀} (let open Π)
+                      → singleton B (F ⟨$⟩ x) ≈ CMArrow.mor (lift F) ⟨$⟩ singleton A x ∶ commMonoid B Y
 
-    fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (f : Hom (X , CMX) (Y , CMY))
-                 (let morX = CMArrow.mor (fold A (asCommutativeMonoid CMX)))
+    fold-commute : {CMX : CommMonoid X} {CMY : CommMonoid Y} (F : CMArrow (X , CMX) (Y , CMY))
+                    (let open CMArrow)
                  → {s : 𝒞 A X₀}
-                 → Setoid._≈_ Y
-                 {!fold₀ B CMY ?!}
-                 (Hom.mor f ⟨$⟩ fold₀ A CMX s)
-\end{code}
-    fold-commute : {W : CommMonoid X} {Z : CommMonoid Y} (f : Hom (X , W) (Y , Z))
-      {lx : 𝒞 A X₀} →
-      Setoid._≈_ Y (fold B Z (lift (Hom.mor f) Hom.⟨$⟩ lx))
-                   (Hom.mor f Π.⟨$⟩ (fold A W lx))
-
+                 → fold B CMY ⟨$⟩ (lift (mor F) ⟨$⟩ s)  ≈  F ⟨$⟩ (fold A CMX ⟨$⟩ s)
+                 
 open MultisetHom
-
+\end{code}
 
 And now something somewhat different: to express that we have the right
 functoriality properties (and ``zap''), we need to assume that we have

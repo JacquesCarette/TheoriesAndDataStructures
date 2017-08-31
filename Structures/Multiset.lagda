@@ -23,6 +23,9 @@ open import ParComp
 open import EqualityCombinators
 open import Belongs
 open import Structures.CommMonoid renaming (Hom to CMArrow)
+
+open import Algebra   using (Monoid)
+open import Data.List using (monoid)
 \end{code}
 %}}}
 
@@ -103,7 +106,7 @@ quite misleading.
 \begin{code}
 open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
 open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
-open CommMonoid using (eq-in)
+open CommMonoid using (eq-in ; isCommMonoid)
 
 record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where  
   field
@@ -236,15 +239,8 @@ module BuildLeftAdjoint
 \subsection{An implementation of |Multiset| using lists with Bag equality}
 \begin{code}
 module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
-  open Setoid X hiding (refl) renaming (Carrier to X₀)
-  open BagEq X using (≡→⇔)
+  open Setoid  
   open ElemOfSing X
-
-  open import Algebra using (Monoid)
-  open import Data.List using (monoid)
-  module ++ = Monoid (monoid (Setoid.Carrier X))
-  open Membership X using (elem-of)
-  open ConcatTo⊎S X using (⊎S≅++)
 \end{code}
 
 \begin{code}
@@ -258,77 +254,58 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
             }
          ; ∅                   = []
          ; _⊕_                 = _++_
-         ; isCommutativeMonoid = {!!}
+         ; isCommutativeMonoid = λ {Y} →
+           let
+             open BagEq       Y   using   (≡→⇔)
+             open Membership  Y   using   (elem-of)
+             open ConcatTo⊎S  Y   using   (⊎S≅++)
+             module ++ = Monoid (monoid (Carrier Y))
+           in record
+            { left-unit  = λ y → ≅-refl
+            ; right-unit = λ ys → ≡→⇔ (proj₂ ++.identity ys)
+            ; assoc      = λ xs ys zs → ≡→⇔ (++.assoc xs ys zs)
+            ; comm       = λ xs ys → 
+               elem-of (xs ++ ys)         ≅˘⟨ ⊎S≅++ ⟩
+               elem-of xs ⊎S elem-of ys   ≅⟨ ⊎S-comm _ _ ⟩
+               elem-of ys ⊎S elem-of xs   ≅⟨ ⊎S≅++ ⟩
+               elem-of (ys ++ xs)         ∎
+            ; _⟨∙⟩_      = λ {x} {y} {z} {w} x⇔y z⇔w →
+               elem-of (x ++ z)          ≅˘⟨ ⊎S≅++ ⟩
+               elem-of x ⊎S elem-of z    ≅⟨ x⇔y ⊎S₁ z⇔w ⟩
+               elem-of y ⊎S elem-of w    ≅⟨ ⊎S≅++ ⟩
+               elem-of (y ++ w)          ∎
+            }
          }
     ; singleton = record { _⟨$⟩_ = λ x → x ∷ [] ; cong = singleton-≈ }
     ; fold = λ {Y} CMX → let open CommMonoid CMX in record
-         { mor = record { _⟨$⟩_ = foldr _*_ e ; cong = fold-permute {CM = CMX} }
-         ; pres-e = Setoid.refl Y
-         ; pres-* = fold-CM-over-++ CMX
+         { mor      =   record { _⟨$⟩_ = foldr _*_ e ; cong = fold-permute {CM = CMX} }
+         ; pres-e   =   refl Y
+         ; pres-*   =   fold-CM-over-++ CMX
          }
-    ; fold-singleton = {!!}
-    }
-    where       
-        
-       fold-CM-over-++ : {Z : Setoid ℓ (o ⊍ ℓ)} (cm : CommMonoid Z) {lx ly : List (Setoid.Carrier Z)} →
-        let open CommMonoid cm ; F = foldr _*_ e in
-        F (lx ++ ly) ≈⌊ Z ⌋ (F lx * F ly)
-       fold-CM-over-++ = {!!}
-       
-       fold-permute : {Z : Setoid ℓ (o ⊍ ℓ)} {CM : CommMonoid Z} {i j : List (Setoid.Carrier Z)} →
-        let open BagEq Z in let open CommMonoid CM renaming (_*_ to _+_; e to e₁) in
-        i ⇔ j → foldr _+_ e₁ i ≈⌊ Z ⌋ foldr _+_ e₁ j
-       fold-permute = {!!}
-\end{code}
-  ListMS : Multiset X
-  ListMS = record
-    { Ctr = List
-    ; Ctr-equiv = record
-      { equiv = λ Y → let open BagEq Y in _⇔_
-      ; equivIsEquiv = λ _ → record { refl = ≅-refl ; sym = ≅-sym ; trans = ≅-trans }
-      }
-    ; Ctr-empty  =  
-    ; Ctr-append = λ _ → _++_
-    ; MSisCommMonoid = record
-      { left-unit  =  λ _ → ≅-refl
-      ; right-unit = λ xs → ≡→⇔ (proj₂ ++.identity xs)
-      ; assoc      =  λ xs ys zs → ≡→⇔ (++.assoc xs ys zs)
-      ; comm       =  λ xs ys →
-        elem-of (xs ++ ys)         ≅˘⟨ ⊎S≅++ ⟩
-        elem-of xs ⊎S elem-of ys   ≅⟨ ⊎S-comm _ _ ⟩
-        elem-of ys ⊎S elem-of xs   ≅⟨ ⊎S≅++ ⟩
-        elem-of (ys ++ xs) ∎
-      ; _⟨∙⟩_ = λ {x} {y} {z} {w} x⇔y z⇔w →
-         elem-of (x ++ z)          ≅˘⟨ ⊎S≅++ ⟩
-         elem-of x ⊎S elem-of z    ≅⟨ x⇔y ⊎S₁ z⇔w ⟩
-         elem-of y ⊎S elem-of w    ≅⟨ ⊎S≅++ ⟩
-         elem-of (y ++ w) ∎
-      }
-
-    ; singleton = 
-    ; cong-singleton = 
-    ; fold = 
-    ; fold-cong = 
-    ; fold-empty = 
-    ; fold-+ = λ {Y} {CM} {lx} {ly} → fold-CM-over-++ {Y} {CM} {lx} {ly}
-    ; fold-singleton = λ {CM} m → ≈.sym CM (IsCommutativeMonoid.right-unit (isCommMonoid CM) m)
+    ; fold-singleton = λ {CM} x → sym X (right-unit (isCommMonoid CM) x)
     }
     where
-      open CommMonoid
-      open IsCommutativeMonoid using (left-unit)
-      fold-CM-over-++ : {Z : Setoid ℓ o} {cm : CommMonoid Z} {lx ly : List (Setoid.Carrier Z)} →
-        let F = foldr (_*_ cm) (e cm) in
-        F (lx ++ ly) ≈⌊ Z ⌋ (_*_ cm (F lx) (F ly))
-      fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {[]} = Setoid.sym Z (left-unit isCM₁ _)
-      fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {lx = x ∷ lx} {ly} =
-        let F = foldr _*₁_ e₁ in begin⟨ Z ⟩
-        x *₁ F (lx ++ ly)    ≈⟨ refl ⟨∙⟩ fold-CM-over-++ {Z} {MkCommMon e₁ _*₁_ isCM₁} {lx} ⟩
-        x *₁ (F lx *₁ F ly)  ≈⟨ sym-z (assoc x (F lx) (F ly)) ⟩
-         (x *₁ F lx) *₁ F ly ■
-        where
-          open IsCommutativeMonoid isCM₁
-          open import Relation.Binary.SetoidReasoning renaming (_∎ to _■)
-          open Setoid Z renaming (sym to sym-z)
+       open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)
+       open import Relation.Binary.SetoidReasoning renaming (_∎ to _■)
+        
+       fold-CM-over-++ : {Z : Setoid ℓ (o ⊍ ℓ)} (cm : CommMonoid Z) {s t : List (Carrier Z)}
+                       →  let open CommMonoid cm ; F = foldr _*_ e in
+                           F (s ++ t) ≈⌊ Z ⌋ (F s * F t)
+       fold-CM-over-++ {Z} (MkCommMon e _*_ isCommMon) {[]} {t} = sym Z (left-unit isCommMon _)
+       fold-CM-over-++ {Z} CMZ@(MkCommMon e _*_ isCommMon) {x ∷ s} {t} = begin⟨ Z ⟩
+         let F = foldr _*_ e in
+         x * F (s ++ t)  ≈⟨ cong isCommMon (refl Z) (fold-CM-over-++ CMZ ) ⟩
+         x * (F s * F t) ≈⟨ sym Z (assoc isCommMon _ _ _)                  ⟩
+         (x * F s) * F t ■
+       
+       fold-permute : {Z : Setoid ℓ (o ⊍ ℓ)} {CM : CommMonoid Z} {s t : List (Carrier Z)}
+                      (let open BagEq Z ; open CommMonoid CM)
+                    → s ⇔ t
+                    → foldr _*_ e s ≈⌊ Z ⌋ foldr _*_ e t
+       fold-permute {Z} {MkCommMon e _*_ isCommMon} {s} {t} pf = {!!}
+\end{code}
+
+\begin{spec}
       open Locations
       open Membership using (El)
       open ElemOf[]
@@ -456,7 +433,7 @@ module BuildProperties where
       → lst ≡ foldr _++_ [] (mapL (λ x → x ∷ []) lst)
     concat-singleton [] = ≡.refl
     concat-singleton (x ∷ lst) = ≡.cong (λ z → x ∷ z) (concat-singleton lst)
-
+\end{spec}
 
 Last but not least, build the left adjoint:
 

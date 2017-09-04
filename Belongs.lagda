@@ -122,33 +122,34 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ap-∈₀ x≈y (here a≈x) = here (x≈y ⟨≈˘≈⟩ a≈x)
   ap-∈₀ x≈y (there x∈xs) = there (ap-∈₀ x≈y x∈xs)
 
-  ap-∈₀-eq : {x y : Carrier} {xs : List Carrier} → (p : x ≈ y) → (x∈xs : x ∈₀ xs) → x∈xs ≋ ap-∈₀ p x∈xs
-  ap-∈₀-eq p (here sm) = hereEq sm (p ⟨≈˘≈⟩ sm)
-  ap-∈₀-eq p (there x∈xs) = thereEq (ap-∈₀-eq p x∈xs)
+  ap-∈₀-eq : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y) (x∈xs : x ∈₀ xs) → x∈xs ≋ ap-∈₀ x≈y x∈xs
+  ap-∈₀-eq x≈y (here sm)      =  hereEq sm (x≈y ⟨≈˘≈⟩ sm)
+  ap-∈₀-eq x≈y (there x∈xs)  =  thereEq (ap-∈₀-eq x≈y x∈xs)
 
-  ap-∈₀-refl : {x : Carrier} {xs : List Carrier} → (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
+  ap-∈₀-refl : {x : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
   ap-∈₀-refl (Locations.here sm) = hereEq (refl ⟨≈˘≈⟩ sm) sm
   ap-∈₀-refl (Locations.there xx) = thereEq (ap-∈₀-refl xx)
 
   ap-∈₀-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
-                  {i j : x ∈₀ xs} → i ≋ j → ap-∈₀ x≈y i ≋ ap-∈₀ x≈y j
+                {i j : x ∈₀ xs} → i ≋ j → ap-∈₀ x≈y i  ≋  ap-∈₀ x≈y j
   ap-∈₀-cong x≈y (hereEq x≈z y≈z) = hereEq (x≈y ⟨≈˘≈⟩ x≈z) (x≈y ⟨≈˘≈⟩ y≈z)
   ap-∈₀-cong x≈y (thereEq i≋j) = thereEq (ap-∈₀-cong x≈y i≋j)
 
   ap-∈₀-linv : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
-    (x∈xs : x ∈₀ xs) → ap-∈₀ (sym x≈y) (ap-∈₀ x≈y x∈xs) ≋ x∈xs
+                (x∈xs : x ∈₀ xs) → ap-∈₀ (sym x≈y) (ap-∈₀ x≈y x∈xs) ≋ x∈xs
   ap-∈₀-linv x≈y (here sm) = hereEq ((sym x≈y) ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm)) sm
   ap-∈₀-linv x≈y (there x∈xs) = thereEq (ap-∈₀-linv x≈y x∈xs)
 
   ap-∈₀-rinv : {x y : Carrier} {ys : List Carrier} (x≈y : x ≈ y)
-    (y∈ys : y ∈₀ ys) → ap-∈₀ x≈y (ap-∈₀ (sym x≈y) y∈ys) ≋ y∈ys
+                (y∈ys : y ∈₀ ys) → ap-∈₀ x≈y (ap-∈₀ (sym x≈y) y∈ys) ≋ y∈ys
   ap-∈₀-rinv x≈y (here sm) = hereEq (x≈y ⟨≈˘≈⟩ (sym x≈y ⟨≈˘≈⟩ sm)) sm
   ap-∈₀-rinv x≈y (there y∈ys) = thereEq (ap-∈₀-rinv x≈y y∈ys)
 
+  -- functoriality: |trans| becomes composition.
   ap-∈₀-trans : {x y z : Carrier} {xs : List Carrier} {x∈xs : x ∈₀ xs}
-    (x≈y : x ≈ y) (y≈z : y ≈ z) → ap-∈₀ (trans x≈y y≈z) x∈xs ≋ ap-∈₀ y≈z (ap-∈₀ x≈y x∈xs)
-  ap-∈₀-trans {x∈xs = here sm} x≈y y≈z = hereEq (trans x≈y y≈z ⟨≈˘≈⟩ sm) (y≈z ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm))
-  ap-∈₀-trans {x∈xs = there x∈xs} x≈y y≈z = thereEq (ap-∈₀-trans x≈y y≈z)
+    (x≈y : x ≈ y) (y≈z : y ≈ z) → ap-∈₀ (x≈y ⟨≈≈⟩ y≈z) x∈xs ≋ ap-∈₀ y≈z (ap-∈₀ x≈y x∈xs)
+  ap-∈₀-trans {x∈xs = here sm} x≈y y≈z      =  hereEq (trans x≈y y≈z ⟨≈˘≈⟩ sm) (y≈z ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm))
+  ap-∈₀-trans {x∈xs = there x∈xs} x≈y y≈z  =  thereEq (ap-∈₀-trans x≈y y≈z)
 \end{code}
 %}}}
 
@@ -158,23 +159,23 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
 We now have all the ingredients to show that locations (|_∈₀_|) form a |Setoid|.
 \begin{code}
 module Membership {ℓS ℓs} (S : Setoid ℓS ℓs) where
-  open Setoid S
-  open Locations S
-  open LocEquiv S
-  open Substitution S
+  open Setoid        S  
+  open Locations     S  
+  open LocEquiv      S  
+  open Substitution  S  
 
   ≋-refl : {x : Carrier} {xs : List Carrier} {p : x ∈₀ xs} → p ≋ p
   ≋-refl {p = here a≈x}   =   hereEq a≈x a≈x
   ≋-refl {p = there p}    =   thereEq ≋-refl
 
   ≋-sym : {l : List Carrier} {x y : Carrier} {x∈l : x ∈₀ l} {y∈l : y ∈₀ l} → x∈l ≋ y∈l → y∈l ≋ x∈l
-  ≋-sym (hereEq x≈z y≈z) = hereEq _ _
-  ≋-sym (thereEq pf) = thereEq (≋-sym pf)
+  ≋-sym (hereEq x≈z y≈z) = hereEq y≈z x≈z 
+  ≋-sym (thereEq pf)     = thereEq (≋-sym pf)
 
   ≋-trans : {l : List Carrier} {x y z : Carrier} {x∈l : x ∈₀ l} {y∈l : y ∈₀ l} {z∈l : z ∈₀ l}
-    → x∈l ≋ y∈l → y∈l ≋ z∈l → x∈l ≋ z∈l
-  ≋-trans (hereEq x≈z y≈z) (hereEq .y≈z y≈z₁) = hereEq x≈z y≈z₁
-  ≋-trans (thereEq pp) (thereEq qq) = thereEq (≋-trans pp qq)
+          → x∈l ≋ y∈l → y∈l ≋ z∈l → x∈l ≋ z∈l
+  ≋-trans (hereEq x≈z y≈z) (hereEq .y≈z y≈z₁)  =  hereEq x≈z y≈z₁
+  ≋-trans (thereEq pp) (thereEq qq)            =  thereEq (≋-trans pp qq)
 
   ≡→≋ : {x : Carrier} {xs : List Carrier} {p q : x ∈₀ xs} → p ≡ q → p ≋ q
   ≡→≋ ≡.refl = ≋-refl
@@ -188,13 +189,13 @@ be given to the equality.
   record elements (l : List Carrier) : Set (ℓS ⊔ ℓs) where
     constructor El
     field
-      {witness} : Carrier
-      belongs : witness ∈₀ l
+      {witness}  :  Carrier
+      belongs    :  witness ∈₀ l
 
   open elements public
 
-  lift-el : {l₁ l₂ : List Carrier} (f : ∀ {w} → ( w ∈₀ l₁ → w ∈₀ l₂))
-    → elements l₁ → elements l₂
+  lift-el : {l₁ l₂ : List Carrier} (f : {w : Carrier} → w ∈₀ l₁ → w ∈₀ l₂)
+          → elements l₁ → elements l₂
   lift-el f (El l) = El (f l)
 
   _⟷_ : {l : List Carrier} → Rel (elements l) (ℓs ⊔ ℓS)
@@ -202,9 +203,9 @@ be given to the equality.
 
   elem-of : List Carrier → Setoid (ℓs ⊔ ℓS) (ℓs ⊔ ℓS)
   elem-of l = record
-    { Carrier = elements l
-    ; _≈_ = _⟷_
-    ; isEquivalence = record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
+    { Carrier         =   elements l
+    ; _≈_             =   _⟷_
+    ; isEquivalence   =   record { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans }
     }
 \end{code}
 %}}}
@@ -221,19 +222,72 @@ It is very important to note that |_⇔_| isn't reflective 'for free', i.e.
 the proof does not involve just |id|.
 \begin{code}
 module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
-  open Setoid S
-  open Locations S
-  open LocEquiv S
-  open Membership S
-  open Substitution S
+  open Setoid         S  
+  open Locations      S  
+  open LocEquiv       S  
+  open Membership     S  
+  open Substitution   S  
 
   infix 3 _⇔_
 
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ≅ elem-of ys
 
+  open import Data.Product
+  
+  -- I could not prove |⇔| implies set-containment; i.e., |{e : Carrier} → e ∈₀ xs → e ∈₀ ys)|
+  -- so trying this variant.
+  -- 
+  ⇔-forwards : {xs ys : List Carrier} → xs ⇔ ys
+              → {e : Carrier} → e ∈₀ xs → Σ Carrier (λ e′ → e ≈ e′ × e′ ∈₀ ys)
+  ⇔-forwards {xs} {ys} record { to = to ; from = from ; inverse-of = inverse-of } {e} e∈xs = {!!}
+    where in-ys : elements ys
+          in-ys = to ⟨$⟩ El {witness = e} e∈xs
+
+          e′  : Carrier
+          e′  = elements.witness in-ys
+
+          e′∈ys : e′ ∈₀ ys
+          e′∈ys = elements.belongs in-ys
+
+  wrap-⇔-injective : {x y : Carrier} → (x ∷ []) ⇔ (y ∷ []) → x ≈ y
+  wrap-⇔-injective {x} {y} record { to = to ; from = from ; inverse-of = inverse-of } = one-point arg
+    where
+      pf : elements (y ∷ [])
+      pf = to ⟨$⟩ El {witness = x} (here refl)
+
+      arg : x ∈₀ y ∷ []
+      arg = {!!}
+
+      one-point : ∀ {e} → e ∈₀ (y ∷ []) → e ≈ y
+      one-point (here e≈y) = e≈y
+      one-point (there ())
+
   ≡→⇔ : {a b : List Carrier} → a ≡ b → a ⇔ b
   ≡→⇔ ≡.refl = ≅-refl
+
+  -- move to other setoid
+  module _ (F    : List Carrier → Carrier)
+           {_⊕_  : Carrier → Carrier → Carrier}
+           (ind  : ∀{x xs} → F (x ∷ xs)  ≈  x ⊕ F xs)
+           (pres : ∀{x s y t} → (x ∷ s) ⇔ (y ∷ t) → x ⊕ F s ≈ y ⊕ F t)
+    where
+     ⇔-subst :  {s t : List Carrier}
+             → s ⇔ t → F s ≈ F t
+     ⇔-subst {[]} {[]} pf = refl
+     ⇔-subst {[]} {x ∷ t} record { to = to ; from = from ; inverse-of = inverse-of } = sure-why-not oh
+       where sure-why-not : Setoid.Carrier (elem-of []) → _
+             sure-why-not (El ())
+             
+             oh : Setoid.Carrier (elem-of [])
+             oh = from ⟨$⟩ Membership.El {witness = x} (here refl)
+     ⇔-subst {x ∷ s} {[]} record { to = to ; from = from ; inverse-of = inverse-of } = again uhHm
+       where again : Setoid.Carrier (elem-of []) → _
+             again (El ())
+             
+             uhHm : Setoid.Carrier (elem-of [])
+             uhHm = to ⟨$⟩ El {witness = x} (here refl)
+     ⇔-subst {x ∷ s} {y ∷ t} pf = trans ind (trans (pres pf) (sym ind))
 \end{code}
 %}}}
 

@@ -302,8 +302,17 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
                       (let open BagEq Z ; open CommMonoid CM)
                     → s ⇔ t
                     → foldr _*_ e s ≈⌊ Z ⌋ foldr _*_ e t
-       fold-permute {Z} {MkCommMon e _*_ isCommMon} {s} {t} pf = {!!}
-\end{code}
+       fold-permute {Z} {MkCommMon e _*_ isCommMon} {s} {t} pf = BagEq.⇔-subst Z (foldr _*_ e) {_*_} (Setoid.refl Z) pres pf
+         where open BagEq Z
+               pres₀ : ∀{x y s} → (x ∷ s) ⇔ (y ∷ s) → Setoid._≈_ Z (x * foldr _*_ e s) (y * foldr _*_ e s)
+               pres₀ {x} {y} {[]} pf₁ = {!!}
+               pres₀ {x} {y} {x₁ ∷ s₁} pf₁ = {!!}
+\end{code}               
+               pres : ∀{x s y t} → (x ∷ s) ⇔ (y ∷ t) → Setoid._≈_ Z (x * foldr _*_ e s) (y * foldr _*_ e t)
+               pres {x} {[]} {y} {t₁} q = {!!}
+               pres {x} {a ∷ s} {y} {[]} q = {!!}
+               pres {x} {a ∷ s₁} {y} {b ∷ t₁} record { to = to ; from = from ; inverse-of = inverse-of } = {!!}
+
 
 \begin{spec}
       open Locations

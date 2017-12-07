@@ -15,7 +15,7 @@ open import Relation.Binary using (Setoid ; IsEquivalence ; Rel ;
 open import Function.Equality    using (Π ; _⟶_ ; id ; _∘_ ; _⟨$⟩_ ; cong )
 open import Function             using (_$_; flip) renaming (id to id₀; _∘_ to _⊚_)
 
-open import Data.List     using (List; []; _++_; _∷_; map; reverse)
+open import Data.List     using (List; []; _++_; _∷_; map; reverse; [_])
 open import Data.Nat      using (ℕ; zero; suc)
 
 open import EqualityCombinators
@@ -68,6 +68,16 @@ Nevertheless, the 'location' function is straightforward:
   toℕ (there pf) = suc (toℕ pf)
 \end{code}
 
+Some results for this combinator,
+\begin{code}
+  ∈₀-one-point : {e y : Carrier} → e ∈₀ [ y ] → e ≈ y
+  ∈₀-one-point (here e≈y) = e≈y
+  ∈₀-one-point (there ())
+
+  ∈₀-one-point˘ : {e y : Carrier} → e ≈ y → e ∈₀ [ y ]
+  ∈₀-one-point˘ e≈y = here e≈y
+\end{code}
+
 We need to know when two locations are the same.
 
 \begin{code}
@@ -83,7 +93,17 @@ module LocEquiv {ℓS ℓs} (S : Setoid ℓS ℓs) where
     thereEq : {xs : List Carrier} {x x' z : Carrier} {loc : x ∈₀ xs} {loc' : x' ∈₀ xs}
            → loc ≋ loc' → there {x = z} loc  ≋  there {x = z} loc'
   open _≋_ public
+
+  -- Singletons only have one possible membership proof.
+  ≋-one-point : {e y : Carrier} (p : e ∈₀ [ y ]) → p  ≋  here refl
+  ≋-one-point (Locations.here e≈y) = hereEq e≈y refl
+  ≋-one-point (Locations.there ())
 \end{code}
+\begin{spec}
+  new : {e y : Carrier} (p : e ∈₀ [ y ]) → e ≈ y
+  new p with ≋-one-point p
+  ...| q = {!internal error :-(!}
+\end{spec}
 
 These are seen to be another form of natural numbers as well.
 
@@ -93,6 +113,8 @@ with |_≈_| identifying upper and lower case.
 There should be 3 elements of |_≋_| for |a ∷ A ∷ a ∷ []|, not 6.
 When we get to defining |BagEq|,
 there will be 6 different ways in which that list, as a Bag, is equivalent to itself.
+
+MA: Is this formalisied by witnessing an isomorphism between `Fin n` and `a ≋ b` where `n = length xs`?
 
 Furthermore, it is important to notice that we have an injectivity property:
 |x ∈₀ xs ≋ y ∈₀ xs| implies |x ≈ y|.
@@ -126,10 +148,6 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ap-∈₀-eq x≈y (here sm)      =  hereEq sm (x≈y ⟨≈˘≈⟩ sm)
   ap-∈₀-eq x≈y (there x∈xs)  =  thereEq (ap-∈₀-eq x≈y x∈xs)
 
-  ap-∈₀-refl : {x : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
-  ap-∈₀-refl (Locations.here sm) = hereEq (refl ⟨≈˘≈⟩ sm) sm
-  ap-∈₀-refl (Locations.there xx) = thereEq (ap-∈₀-refl xx)
-
   ap-∈₀-cong : {x y : Carrier} {xs : List Carrier} (x≈y : x ≈ y)
                 {i j : x ∈₀ xs} → i ≋ j → ap-∈₀ x≈y i  ≋  ap-∈₀ x≈y j
   ap-∈₀-cong x≈y (hereEq x≈z y≈z) = hereEq (x≈y ⟨≈˘≈⟩ x≈z) (x≈y ⟨≈˘≈⟩ y≈z)
@@ -145,11 +163,16 @@ module Substitution {ℓS ℓs : Level} (S : Setoid ℓS ℓs) where
   ap-∈₀-rinv x≈y (here sm) = hereEq (x≈y ⟨≈˘≈⟩ (sym x≈y ⟨≈˘≈⟩ sm)) sm
   ap-∈₀-rinv x≈y (there y∈ys) = thereEq (ap-∈₀-rinv x≈y y∈ys)
 
-  -- functoriality: |trans| becomes composition.
+  -- functoriality: |refl| becomes identity and |trans| becomes composition.
+  
   ap-∈₀-trans : {x y z : Carrier} {xs : List Carrier} {x∈xs : x ∈₀ xs}
     (x≈y : x ≈ y) (y≈z : y ≈ z) → ap-∈₀ (x≈y ⟨≈≈⟩ y≈z) x∈xs ≋ ap-∈₀ y≈z (ap-∈₀ x≈y x∈xs)
   ap-∈₀-trans {x∈xs = here sm} x≈y y≈z      =  hereEq (trans x≈y y≈z ⟨≈˘≈⟩ sm) (y≈z ⟨≈˘≈⟩ (x≈y ⟨≈˘≈⟩ sm))
   ap-∈₀-trans {x∈xs = there x∈xs} x≈y y≈z  =  thereEq (ap-∈₀-trans x≈y y≈z)
+
+  ap-∈₀-refl : {x : Carrier} {xs : List Carrier} (x∈xs : x ∈₀ xs) → ap-∈₀ refl x∈xs ≋ x∈xs
+  ap-∈₀-refl (Locations.here sm) = hereEq (refl ⟨≈˘≈⟩ sm) sm
+  ap-∈₀-refl (Locations.there xx) = thereEq (ap-∈₀-refl xx)
 \end{code}
 %}}}
 
@@ -195,9 +218,10 @@ be given to the equality.
   open elements public
 
   lift-el : {l₁ l₂ : List Carrier} (f : {w : Carrier} → w ∈₀ l₁ → w ∈₀ l₂)
-          → elements l₁ → elements l₂
+           → elements l₁ → elements l₂
   lift-el f (El l) = El (f l)
 
+  infix 4 _⟷_
   _⟷_ : {l : List Carrier} → Rel (elements l) (ℓs ⊔ ℓS)
   (El b₁) ⟷ (El b₂) = b₁ ≋ b₂
 
@@ -213,7 +237,7 @@ be given to the equality.
 %{{{ \subsection{|BagEq|}
 \subsection{|BagEq|}
 
-Fundamental definition: two Bags, represented as |List Carrier| are equivalent
+Fundamental definition: Two Bags, represented as |List Carrier| are equivalent
 if and only if there exists a permutation between their |Setoid| of positions,
 and this is independent of the representative.  The best way to succinctly
 express this is via |_⇔_|.
@@ -232,16 +256,31 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
 
   _⇔_ : (xs ys : List Carrier) → Set (ℓS ⊔ ℓs)
   xs ⇔ ys = elem-of xs ≅ elem-of ys
+\end{code}
+
+\begin{spec}
+  -- forwards and backwards combinators
+  𝒻 : {xs ys : List Carrier} → xs ⇔ ys → Carrier → Carrier
+  𝒻 record { to = to ; from = from ; inverse-of = inverse-of } x = {!to ⟨$⟩ ???!}
 
   open import Data.Product
   
   -- I could not prove |⇔| implies set-containment; i.e., |{e : Carrier} → e ∈₀ xs → e ∈₀ ys)|
   -- so trying this variant.
   -- 
-  ⇔-forwards : {xs ys : List Carrier} → xs ⇔ ys
-              → {e : Carrier} → e ∈₀ xs → Σ Carrier (λ e′ → e ≈ e′ × e′ ∈₀ ys)
-  ⇔-forwards {xs} {ys} record { to = to ; from = from ; inverse-of = inverse-of } {e} e∈xs = {!!}
-    where in-ys : elements ys
+  ⇔-forwards : {xs ys : List Carrier} → xs ⇔ ys → {e : Carrier} → e ∈₀ xs → e ∈₀ ys
+  ⇔-forwards {xs} {ys} record { to = to ; from = from ; inverse-of = record { left-inverse-of = left-inverse-of ; right-inverse-of = right-inverse-of } } {e} e∈xs = {!!}
+    where
+
+          𝒆 = from ⟨$⟩ (to ⟨$⟩ El e∈xs)
+
+          eef : 𝒆 ⟷ El e∈xs
+          eef = left-inverse-of (El e∈xs)
+
+          yes : elements.witness (to ⟨$⟩ El e∈xs) ∈₀ ys
+          yes = elements.belongs (to ⟨$⟩ El e∈xs)
+
+          in-ys : elements ys
           in-ys = to ⟨$⟩ El {witness = e} e∈xs
 
           e′  : Carrier
@@ -250,19 +289,106 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
           e′∈ys : e′ ∈₀ ys
           e′∈ys = elements.belongs in-ys
 
-  wrap-⇔-injective : {x y : Carrier} → (x ∷ []) ⇔ (y ∷ []) → x ≈ y
-  wrap-⇔-injective {x} {y} record { to = to ; from = from ; inverse-of = inverse-of } = one-point arg
+  -- only one possible permutation: The identity permutation.
+  ⇔-singleton : {x : Carrier} {xs : List Carrier} → [ x ] ⇔ xs → {e : Carrier} → e ∈₀ xs → e ≈ x
+  ⇔-singleton {x} {xs} record { to = to ; from = from ; inverse-of = record { left-inverse-of = left-inverse-of ; right-inverse-of = right-inverse-of } } {e} (Locations.here e≈hd-xs) = {!!}
+    where in-[x] : elements [ x ]
+          in-[x] = from ⟨$⟩ Membership.El (here e≈hd-xs)
+          
+          𝓌 : {y : Carrier} → y ∈₀ xs → Carrier  -- i.e., |elements xs → elements [ x ]|
+          𝓌 y∈xs = elements.witness (from ⟨$⟩ El y∈xs)
+
+          𝓌-is-id : {a : Carrier} (p : a ∈₀ xs) → 𝓌 p ≈ a
+          𝓌-is-id = {!!} -- main goal
+
+          Ω : {a : Carrier} (p : a ∈₀ xs) → 𝓌 p ∈₀ [ x ]
+          Ω {a} p = elements.belongs (from ⟨$⟩ El p)
+
+          Ω-constant : {a : Carrier} (p : a ∈₀ xs) → Ω p  ≋  here refl
+          Ω-constant p = ≋-one-point (Ω p)
+
+          𝓌-constant : {a : Carrier} (p : a ∈₀ xs) → 𝓌 p  ≈  x
+          𝓌-constant  p = fp≈x
+            where
+            
+              fp∈[x] : 𝓌 p ∈₀ [ x ]
+              fp∈[x] = elements.belongs (from ⟨$⟩ El p)
+
+              fp≈x : 𝓌 p ≈ x
+              fp≈x = ∈₀-one-point fp∈[x]
+
+          complex : ∀{a b} → from ⟨$⟩ a  ⟷ from ⟨$⟩ b   →   a ⟷ b
+          complex {a} {b} given = let _then_ = Setoid.trans (elem-of xs) in lef then (go then rig)
+            where
+                  go : to ⟨$⟩ (from ⟨$⟩ a)  ⟷ to ⟨$⟩ (from ⟨$⟩ b)
+                  go = cong to given
+
+                  lef  : a ⟷ to ⟨$⟩ (from ⟨$⟩ a)
+                  lef  = Setoid.sym (elem-of xs) (right-inverse-of a)
+
+                  rig  : to ⟨$⟩ (from ⟨$⟩ b) ⟷ b
+                  rig  = right-inverse-of b
+
+          -- 𝓌-injective : {a b : Carrier} {p : a ∈₀ xs} {q : b ∈₀ xs} → 𝓌 p ≈ 𝓌 q → p ≋ q
+          
+          surj : {a : Carrier} {p : a ∈₀ xs} →  elements.belongs(to ⟨$⟩ (from ⟨$⟩ El p)) ≋ p
+          surj = right-inverse-of _
+
+          one : {p : Setoid.Carrier (elem-of xs)} → elements.belongs (from ⟨$⟩ p) ≋ here refl
+          one {p} = ≋-one-point (elements.belongs (from ⟨$⟩ p))
+
+          -- only one element-proof in xs.
+          strong-one : (p q : elements xs) → p ⟷ q
+          strong-one p q = complex p⟷q
+            where
+
+              r = El (here refl)
+
+              p=r : from ⟨$⟩ p  ⟷  r
+              p=r = one {p}
+              
+              r=q : r ⟷ from ⟨$⟩ q
+              r=q = Setoid.sym (elem-of [ x ]) (one {q})
+
+              _then_ = Setoid.trans (elem-of [ x ])
+
+              p⟷q : from ⟨$⟩ p ⟷ from ⟨$⟩ q
+              p⟷q = p=r then r=q
+
+          -- only one element in xs.
+          unique : {a b : Carrier} → a ∈₀ xs → b ∈₀ xs → a ≈ b
+          unique p q = ≋→≈ p q (strong-one (El p) (El q))
+
+
+          -- Now the work directly relevant to the task at hand:
+
+
+          e′ : Carrier
+          e′ = elements.witness in-[x]
+
+          e∈[x]′ : e′ ∈₀ [ x ]
+          e∈[x]′ = elements.belongs in-[x]
+
+          e≈x′ : e′ ≈ x
+          e≈x′ = ∈₀-one-point e∈[x]′
+
+          e≈e′ : e ≈ e′
+          e≈e′ = unique (here e≈hd-xs) {!??? repair ⇔-forwards!}
+          
+          
+  ⇔-singleton record { to = to ; from = from ; inverse-of = inverse-of } (Locations.there q) = {!!}
+
+  wrap-⇔-injective : {x y : Carrier} → [ x ] ⇔ [ y ] → x ≈ y
+  wrap-⇔-injective {x} {y} record { to = to ; from = from ; inverse-of = inverse-of } = ∈₀-one-point arg
     where
-      pf : elements (y ∷ [])
-      pf = to ⟨$⟩ El {witness = x} (here refl)
+      y₀ : elements (y ∷ [])
+      y₀ = to ⟨$⟩ El {witness = x} (here refl)
 
-      arg : x ∈₀ y ∷ []
+      arg : x ∈₀ [ y ]
       arg = {!!}
+\end{code}
 
-      one-point : ∀ {e} → e ∈₀ (y ∷ []) → e ≈ y
-      one-point (here e≈y) = e≈y
-      one-point (there ())
-
+\begin{code}
   ≡→⇔ : {a b : List Carrier} → a ≡ b → a ⇔ b
   ≡→⇔ ≡.refl = ≅-refl
 

@@ -60,7 +60,7 @@ import Structures.Semigroup
 import Structures.Monoid
 import Structures.CommMonoid
 import Structures.CommMonoidTerm
--- import Structures.Multiset  -- has interaction points
+import Structures.Multiset  -- has interaction points
 -- import Structures.BagEquivalence
 import Structures.AbelianGroup
 

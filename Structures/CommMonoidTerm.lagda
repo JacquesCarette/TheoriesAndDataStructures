@@ -154,7 +154,21 @@ module _ {ℓ o : Level} (X : Setoid ℓ o) where
     _∙_ : Term → Term → Term
 
   open Setoid X using () renaming (_≈_ to _≈ₓ_)
+\end{code}
 
+\begin{spec}
+  open import Relation.Nullary
+  data _∈_ : X₀ → Term → Set (ℓ ⊍ o) where
+    inj : {x y : X₀} → x ≈ₓ y → x ∈ inj y
+    pre : {x y : X₀} {first second : Term} → x ∈ first → ¬ (x ∈ second) → x ∈ (first ∙ second)
+    post : {x y : X₀} {first second : Term} → x ∈ second → ¬ (x ∈ first) → x ∈ (first ∙ second)
+    both : {x y : X₀} {first second : Term} → x ∈ second → x ∈ first → x ∈ (first ∙ second)
+\end{spec}
+
+    MA: Besides the positivity check, this approach would allow us to ``count'' the number of occurrences
+    of an element in a bag and therefore yields decdiable equality:
+    |x ≟ y  ⇔  num. of occurrences of x in (⦃ x ⦄ ∪ ⦃ y ⦄)| is 2.
+\begin{code}
   data _≈ₜ_ : Term → Term → Set (ℓ ⊍ o) where
     -- This is an equivalence relation
     ≈ₜ-refl : {t : Term} → t ≈ₜ t

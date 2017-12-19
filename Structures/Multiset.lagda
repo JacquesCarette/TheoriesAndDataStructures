@@ -329,9 +329,6 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
          (x * F s) * F t  ■
 
        -- to prove
-       postulate reflect-empty : {Z : Setoid ℓ (o ⊍ ℓ)} {CM : CommMonoid Z} {t : List (Carrier Z)}
-                                 (let open BagEq Z) → [] ⇔ t → [] ≡ t
-
        postulate cons-is-non-empty
                     : {Z : Setoid ℓ (o ⊍ ℓ)} {CM : CommMonoid Z} {x : Carrier Z} {s : List (Carrier Z)}
                         (let open BagEq Z)
@@ -343,7 +340,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
                       (let open BagEq Z ; open CommMonoid CM)
                     → s ⇔ t
                     → foldr _*_ e s ≈⌊ Z ⌋ foldr _*_ e t
-       old-permute {Z} {CM} {s = []} {t} p with reflect-empty {Z} {CM} {t = t} p
+       old-permute {Z} {CM} {s = []} {t} p with Belongs.BagEq.reflect-empty Z p
        old-permute {Z} {CM} {[]} {.[]} p | ≡.refl = Setoid.refl Z
        old-permute {Z} {CM} {s = x ∷ s} {[]} p = cons-is-non-empty {Z} {CM} p
        old-permute {Z} {CM} {s = x ∷ s} {y ∷ t} p = {!if x = y then indcution, otherwise?!}

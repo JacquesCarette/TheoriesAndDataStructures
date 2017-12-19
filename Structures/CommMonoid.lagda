@@ -60,8 +60,10 @@ record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
 
   field
     e            : X₀
-    _*_          : X₀ → X₀ → X₀
+    _*_          : X₀ → X₀ → X₀  -- \edcomm{MA}{Why is this `e` but above is `·`?}
+    -- \edcomm{MA}{The field name really oughtn't be abbreviated!}
     isCommMonoid : IsCommutativeMonoid _≈_ _*_ e
+    
   module ≈ = Setoid X
   _⟨≈⟩_ = trans
 

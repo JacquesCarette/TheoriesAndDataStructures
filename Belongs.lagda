@@ -258,6 +258,16 @@ module BagEq {ℓS ℓs} (S : Setoid ℓS ℓs) where
   xs ⇔ ys = elem-of xs ≅ elem-of ys
 \end{code}
 
+\begin{code}
+  open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
+  
+  reflect-empty : {t : List Carrier} → [] ⇔ t → [] ≡ t
+  reflect-empty {[]} eq = ≡.refl
+  reflect-empty {x ∷ xs} record { to = to ; from = from ; inverse-of = inverse-of }
+       with from ⟨$⟩₀ Membership.El (Locations.here (Setoid.refl S))
+  ... | Membership.El ()
+\end{code}
+
 \begin{spec}
   -- forwards and backwards combinators
   𝒻 : {xs ys : List Carrier} → xs ⇔ ys → Carrier → Carrier

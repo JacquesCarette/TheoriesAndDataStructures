@@ -20,7 +20,7 @@ open import EqualityCombinators
 open import Belongs
 open import Structures.CommMonoid renaming (Hom to CMArrow)
 
-open import Data.Nat.Properties using (≤-steps ; n≤1+n)
+open import Data.Nat.Properties using (≤-steps ; n≤1+n ; n∸n≡0)
 
 open import Data.List using (monoid)
 open import Data.Fin using (fromℕ)
@@ -101,12 +101,13 @@ The following is inspired by copumkin & vmchale's libraries.
   insert (x ∷ xs) (suc i) a = x ∷ insert xs i a
 
   -- Given a permutation, apply it to a vector.
-  permute : ∀ {n} {a} {A : Set a} → Permutation n → Vec A n → Vec A n
-  permute nil [] = []
-  permute (cons p ps) (x ∷ xs) = insert (permute ps xs) p x
-
   infix 6 _◈_
-  _◈_ = permute
+  _◈_ : ∀ {n} {a} {A : Set a} → Permutation n → Vec A n → Vec A n
+  nil         ◈ []       = []
+  (cons p ps) ◈ (x ∷ xs) = insert (ps ◈ xs) p x
+
+  _ℕ∷_ : (n : ℕ) (ps : Permutation n) → Permutation (suc n)
+  _ℕ∷_ = λ n ps → cons (fromℕ n) ps
 \end{code}
 %}}}
 
@@ -136,15 +137,15 @@ The following is inspired by copumkin & vmchale's libraries.
   test₅ : rotate 5 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
   test₅ = ≡.refl
 
-  id : {n : ℕ} → Permutation n
-  id = rotate 0
+  Id : {n : ℕ} → Permutation n
+  Id = rotate 0
   -- I.e., insertions at position 0 only; since 0 rotations needed.  
 
   -- rev {n} = rotate n {0} -- we need to use subst to obtain |n + 0 ≡ n|
   -- A direct implementation is then clearer.
   rev : {n : ℕ} → Permutation n
   rev {zero}  = nil
-  rev {suc n} = cons (fromℕ n) rev
+  rev {suc n} = n ℕ∷ rev
 \end{code}
 
 \end{code}
@@ -201,55 +202,128 @@ The following is inspired by copumkin & vmchale's libraries.
   toVec nil         = []
   toVec (cons p ps) = toℕ p ∷ toVec ps
 
+  -- ToDo: Consider forming inverse of toVec.
+
+  infixr 6 _at_ _at′_
+
   _at_ : {n : ℕ} → Permutation n → (i : Fin n) → Fin (n ∸ toℕ i)
   cons p ps at zero   =  p
   cons p ps at suc i  =  ps at i
 
+  at-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at i)  ≡  lookup i (toVec ps)
+  at-spec {.(suc _)} {cons p ps} {zero}  =  ≡.refl
+  at-spec {.(suc _)} {cons p ps} {suc i} =  at-spec {ps = ps}
+
+  open import Data.Fin.Properties using (inject≤-lemma ; to-from ; toℕ-injective)
+
   _at′_ : {n : ℕ} → Permutation n → Fin n → Fin n
   cons p p₁ at′ zero = p
   cons p p₁ at′ suc i = inject≤ (p₁ at′ i) (n≤1+n _)
+
+  at′-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at′ i)  ≡ lookup i (toVec ps)
+  at′-spec {.(suc _)} {cons p ps} {zero} = ≡.refl
+  at′-spec {.(suc n)} {cons {n} p ps} {suc i}
+    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) = at′-spec {ps = ps}
+
+  -- It is easier to prove certain results with |_at_| rather than |_at′_| due to the
+  -- pesky injection. This combinator will hopefully alleviate some troubles.
+  -- See |rev-end′| for example usage.
+  at-at′ : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at i) ≡  toℕ (ps at′ i)
+  at-at′ {.(suc _)} {cons p ps} {zero} = ≡.refl
+  at-at′ {.(suc n)} {cons p ps} {suc {n} i}
+    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) =  at-at′ {n} {i = i}
+
+  test-Id : toVec (Id {5}) ≡ 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
+  test-Id = ≡.refl
+
+  Id-spec : {n : ℕ} {j : Fin (suc n)} → toℕ (Id {suc n} at j)  ≡  0
+  Id-spec {n} {zero} = ≡.refl
+  Id-spec {zero} {suc ()}
+  Id-spec {suc n} {suc j} = Id-spec {n} {j}
+
+  rev-spec : {n : ℕ} {i : Fin n} → (toℕ (rev {n} at i)) ≡ n ∸ toℕ (suc i)
+  rev-spec {.(suc n)} {zero {n}} = to-from n
+  rev-spec {.(suc n)} {suc {n} i} = rev-spec {n} {i}
+
+  test-rev : toVec (rev {5}) ≡ 4 ∷ 3 ∷ 2 ∷ 1 ∷ 0 ∷ []
+  test-rev = ≡.refl
+
+  rev-end : {n : ℕ} → toℕ (rev {suc n} at fromℕ n) ≡ 0
+  rev-end {n} = rev-spec {suc n} {fromℕ n} ⟨≡≡⟩ n-𝓃=0
+    where n-𝓃=0 : n ∸ toℕ (fromℕ n) ≡ 0
+          n-𝓃=0 rewrite to-from n = n∸n≡0 n
+
+  rev-start′ : {n : ℕ} → (rev {suc n} at′ zero) ≡ fromℕ n
+  rev-start′ {n} = ≡.refl
+
+  rev-end′ :  {n : ℕ} → rev {suc n} at′ fromℕ n ≡ zero
+  rev-end′ {n} = toℕ-injective (≡.sym at-at′ ⟨≡≡⟩ rev-end)
 \end{code}
 %}}}
 
 %{{{ Inversion of permutations: deleteP and _˘
 \begin{code}
-  -- Deletion for permutations: |PS : Perm (suc n) ↦ psᵢ ∸ 1 : Perm n| ?
-  -- [p₁, …, pₙ] ↦ [p₁ ∸ 1, …, pᵢ₋₁ ∸ 1, pᵢ₊₁ ∸1, …, pₙ ∸ 1]
-  deleteP : {n : ℕ} → Fin (suc n) → Permutation (suc n) → Permutation n
-  deleteP {n} zero (cons p ps) = ps
-  deleteP {zero} (suc ()) ps
-  deleteP {suc n} (suc i) (cons zero ps) = cons zero (deleteP i ps)
-  deleteP {suc n} (suc i) (cons (suc p) ps) = cons p (deleteP i ps)
+  -- Deletion for permutations:
+  -- [p₁, …, pₙ] ─ i   ↦   [p₁ ∸ 1, …, pᵢ₋₁ ∸ 1, pᵢ, pᵢ₊₁, …, pₙ] ?
+  _─_ : {n : ℕ} → Permutation (suc n) → Fin (suc n) → Permutation n
+  cons p ps         ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
+  (cons zero ps)    ─ (suc {zero} ())
+  (cons zero ps)    ─ (suc {(suc n)} i) = cons zero (ps ─ i)  -- the suc is dropped, parenthesis move.
+  cons (suc p) ps   ─ suc {zero} ()
+  (cons (suc p) ps) ─ (suc {(suc n)} i) = cons p (ps ─ i)  -- the suc's “cancel” & mutually associate.
 
--- Where is mine hero in shining logical armor?
--- 
---   deleteP-spec : {n : ℕ} {i : Fin (suc n)} {ps : Permutation (suc (suc n))}
---                → toℕ ( (deleteP (suc i) ps) at i) ≡ toℕ (ps at (suc i)) ∸ 1
---   deleteP-spec {zero} {zero} {cons zero (cons zero nil)} = ≡.refl
---   deleteP-spec {zero} {suc ()} {cons zero (cons zero nil)}
---   deleteP-spec {zero} {zero} {cons (suc zero) (cons zero nil)} = ≡.refl
---   deleteP-spec {zero} {suc ()} {cons (suc zero) (cons zero nil)}
---   deleteP-spec {zero} {i} {cons (suc (suc ())) (cons zero nil)}
---   deleteP-spec {zero} {i} {cons p (cons (suc ()) ps)}
---   deleteP-spec {suc n} {zero} {cons zero (cons p ps)} = {! shakka when the walls fell!}
---   deleteP-spec {suc n} {suc i} {cons zero ps} = {!!}
---   deleteP-spec {suc n} {i} {cons (suc p) ps} = {!!}
+  ─-spec : {n : ℕ} {ps : Permutation (suc n)} {i : Fin n} → (ps ─ (suc i)) at i  ≡  {!!}
+  ─-spec {n} {ps} {i} = {!!}
+  -- Where is mine hero in shining logical armor?
 
   -- Permutations come with the obvious involution, but non-trivial implementation
   _˘ : {n : ℕ} → Permutation n → Permutation n
   _˘ {zero }     nil          = nil
-  _˘ {suc n} ps@(cons p ps′) = cons 𝓅 ( (deleteP 𝒑 ps)˘ )
+  _˘ {suc n} ps@(cons p ps′) = cons 𝓅 ( (ps ─ 𝒑)˘ )
     where 𝓅 : Fin (suc n)
           𝓅 = ps at′ p
 
           𝒑 : Fin (suc n)
           𝒑 = ps at′ 𝓅
 
-  test₆ : (rev ˘) ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
-  test₆ = ≡.refl
+  test-rev˘ : toVec (rev {5} ˘) ≡ 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
+  test-rev˘ = ≡.refl
+  -- Oh no, this looks bad!
+  test-rev˘˘ :  ¬  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
+  test-rev˘˘ ()
 
-  rev˘≈Id : {n : ℕ} {xs : Seq n} → rev ˘ ◈ xs  ≡  xs
-  rev˘≈Id {n} {xs} = {!!}
+  -- |n ℕ∷_| and |_─ fromℕ n| are inverses
+  ℕ∷-inverse-─ : {n : ℕ} → n ℕ∷ (rev {suc n} ─ fromℕ n)  ≡  rev {suc n}
+  ℕ∷-inverse-─ {zero} = ≡.refl
+  ℕ∷-inverse-─ {suc n} = ≡.cong (λ x → cons (fromℕ (suc n)) x) ℕ∷-inverse-─
+
+  test-rev-end : toVec (rev {5} ─ fromℕ 4) ≡ 3 ∷ 2 ∷ 1 ∷ 0 ∷ [] -- i.e., toVec (rev {4})
+  test-rev-end = ≡.refl
+
+  rev-end=rev : {n : ℕ}  →  rev {suc n} ─ fromℕ n  ≡  rev {n}
+  rev-end=rev {zero} = ≡.refl
+  rev-end=rev {suc n} = ≡.cong (n ℕ∷_) rev-end=rev
+
+  rev˘=Id : {n : ℕ} → rev ˘  ≡  Id {n}
+  rev˘=Id {zero} = ≡.refl
+  rev˘=Id {suc n} = ≡.cong₂ cons rev-end′ it -- ≡.cong₂ cons rev-end′ goal
+
+    where
+
+      step₁ : rev {suc n}  at′ rev {suc n} at′ fromℕ n ≡ (rev {suc n}) at′ zero
+      step₁ = ≡.cong (rev at′_) rev-end′
+
+      step₂ : (rev {suc n}) at′ zero  ≡  fromℕ n
+      step₂ = rev-start′
+
+      it₀ :    (rev {suc n} ─ (rev {suc n} at′ rev {suc n} at′ fromℕ n))  ˘
+            ≡ (rev {n}) ˘
+      it₀ = ≡.cong _˘ (≡.cong (rev {suc n} ─_) (step₁ ⟨≡≡⟩ step₂)
+            ⟨≡≡⟩ rev-end=rev)
+
+      it : (rev {suc n} ─ (rev {suc n} at′ rev {suc n} at′ fromℕ n))  ˘
+            ≡ Id
+      it = it₀ ⟨≡≡⟩ rev˘=Id
 
   -- Extensional Permutation equality
   infix 5 _≈ₚ_
@@ -257,12 +331,12 @@ The following is inspired by copumkin & vmchale's libraries.
   _≈ₚ_ {n} ps qs  =  {xs : Seq n} → ps ◈ xs  ≈ₖ  qs ◈ xs
 
   -- This operation is involutionary: It is its own inverse.
-  ˘˘ : {n : ℕ} {ps : Permutation n} → ps ˘ ˘  ≈ₚ  ps
-  ˘˘ {zero} {nil} = ≈ₖ-refl
-  ˘˘ {suc n} {cons p ps} {x ∷ xs} = {! Lord, give me strength.!}
+  -- ˘˘ : {n : ℕ} {ps : Permutation n} → ps ˘ ˘  ≈ₚ  ps
+  -- ˘˘ {zero} {nil} = ≈ₖ-refl
+  -- ˘˘ {suc n} {cons p ps} {x ∷ xs} = {! FALSE: See test-rev˘˘!}
 
   -- The identity permutation is a fixed point.
-  Id˘ : {n : ℕ} → id ˘  ≈ₚ  id {n}
+  Id˘ : {n : ℕ} → Id ˘  ≈ₚ  Id {n}
   Id˘ {.0} {[]} = ≈ₖ-refl
   Id˘ {.(suc _)} {x ∷ xs} = cons ≈.refl Id˘
 \end{code}
@@ -331,29 +405,33 @@ The following is inspired by copumkin & vmchale's libraries.
 %{{{ ◈ is a group action: It is an functorial in it's first argument.
 
 \begin{code}
-  ◈-leftId : {n : ℕ} {xs : Seq n} → id ◈ xs  ≈ₖ  xs
+  ◈-leftId : {n : ℕ} {xs : Seq n} → Id ◈ xs  ≈ₖ  xs
   ◈-leftId {zero} {[]} = ≈ₖ-refl
   ◈-leftId {suc n} {x ∷ xs} = cons ≈.refl ◈-leftId
 
   -- Composition of permutations
   infix 6 _⊙_
   _⊙_ : {n : ℕ} → Permutation n → Permutation n → Permutation n
-  nil ⊙ qs        =  qs
-  cons p ps ⊙ qs  =  cons (qs at′ p) (ps ⊙ deleteP p qs)
-  
+  nil ⊙ nil = nil
+  cons p ps ⊙ qs  =  cons (qs at′ p) (ps ⊙ (qs ─ p))
+
+  -- ⊙-nil : {n : ℕ} {ps : Permutation n} → ps ⊙ nil  ≡  ps
+  -- ⊙-nil {n} {ps} = ?
+
   -- The inversion operation is contravariant: It reverses composition.
   ◈-˘ : {n : ℕ} {ps qs : Permutation n} → (ps ⊙ qs)˘  ≈ₚ (qs ˘ ⊙ ps ˘)
-  ◈-˘ = {!!}
+  ◈-˘ {.0} {nil} {nil} = ≈ₖ-refl
+  ◈-˘ {.(suc _)} {cons p ps} {qs} = {! MA: write a test to be confident this is somewhat true.!}
 
   insert-◈ : {n : ℕ} {ps : Permutation n} {q : Fin (suc n)} {qs : Permutation n}
              {xs : Seq n} {x : Carrier}
            → insert (ps ◈ (qs ◈ xs)) q x  ≈ₖ  (cons zero ps) ◈ (insert (qs ◈ xs) q x)
-  insert-◈ {n} {ps} {q} {qs} {xs} = {!!}
+  insert-◈ {n} {ps} {q} {qs} {xs} = {! MA: write a test to be confident this is somewhat true.!}
 
   ◈-compose : {n : ℕ} {ps qs : Permutation n} {xs : Seq n} → (ps ⊙ qs) ◈ xs  ≈ₖ  ps ◈ (qs ◈ xs)
   ◈-compose {.0} {nil} {nil} {[]} = ≈ₖ-refl
   ◈-compose {.(suc _)} {cons zero ps} {cons q qs} {x ∷ xs} = ≈ₖ-trans (insert-cong ◈-compose) insert-◈
-  ◈-compose {.(suc _)} {cons (suc p) ps} {cons q qs} {x ∷ xs} = {!!}
+  ◈-compose {.(suc _)} {cons (suc p) ps} {cons q qs} {x ∷ xs} = {! MA: write a test to be confident this is somewhat true. !}
 \end{code}
 
 %}}}
@@ -361,7 +439,7 @@ The following is inspired by copumkin & vmchale's libraries.
 %{{{ the pesky-hole from the summer
 \begin{code}
   data _≈ᵥ_ {n : ℕ} (xs : Seq n) (ys : Seq n) : Set (c ⊍ l) where
-    yes : (p : Permutation n) → permute p xs ≈ₖ ys → xs ≈ᵥ ys
+    yes : (p : Permutation n) → p ◈ xs ≈ₖ ys → xs ≈ᵥ ys
 
   open import Relation.Binary.SetoidReasoning
 
@@ -404,15 +482,15 @@ The following is inspired by copumkin & vmchale's libraries.
 
   open import Relation.Binary.PropositionalEquality using (inspect; [_])
 
-  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (permute p xs) 
+  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs) 
   proposition₁ {.0} {[]} {nil} = refl
   proposition₁ {.(suc _)} {x ∷ xs} {cons zero ps} = refl ⟨∙⟩ proposition₁
-  proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with permute ps xs | inspect (permute ps) xs
+  proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with ps ◈ xs | inspect (_◈_ ps) xs
   proposition₁ {.(suc 0)} {x ∷ xs} {cons (suc ()) ps} | [] | _
   proposition₁ {.(suc (suc _))} {x ∷ xs} {cons (suc p) ps} | x′ ∷ xs′ | [ ps-on-xs≈xs′ ] = begin⟨ 𝒮 ⟩
       x * fold xs
     ≈⟨ refl ⟨∙⟩ proposition₁ ⟩
-      x * fold (permute ps xs)
+      x * fold (ps ◈ xs)
     ≡⟨ ≡.cong (λ zs → x * fold zs) ps-on-xs≈xs′ ⟩
       x * fold (x′ ∷ xs′)
     ≡⟨ ≡.refl ⟩

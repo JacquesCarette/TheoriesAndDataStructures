@@ -47,7 +47,7 @@ module VecEquality {ℓ c : Level} (𝒮 : Setoid c ℓ) where
   Seq = Vec Carrier
 
   -- `k`omponent-wise equality on sequences ;; MA: Subscript `c` not directly available.
-  infix 5 _≈ₖ_  
+  infix 5 _≈ₖ_
   data _≈ₖ_ : {n : ℕ} → Seq n → Seq n → Set (c ⊍ ℓ) where
     nil  : [] ≈ₖ []
     cons : {x y : Carrier} {n : ℕ} {xs ys : Seq n} (x≈y : x ≈ y) (xs≈ys : xs ≈ₖ ys) → (x ∷ xs) ≈ₖ (y ∷ ys)
@@ -78,10 +78,10 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   open Setoid 𝒮
   open import Data.Vec
   open import Data.Nat hiding (fold ; _*_)
-  open import Data.Fin hiding (_+_ ; fold ; _≤_)  
+  open import Data.Fin hiding (_+_ ; fold ; _≤_)
 \end{code}
 
-  %{{{ Permutations datatype, insert, permute ◈ 
+  %{{{ Permutations datatype, insert, permute ◈
 \begin{code}
   data Permutation : ℕ → Set where
     nil  : Permutation 0
@@ -136,7 +136,7 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
 
   Id : {n : ℕ} → Permutation n
   Id = rotate 0
-  -- I.e., insertions at position 0 only; since 0 rotations needed.  
+  -- I.e., insertions at position 0 only; since 0 rotations needed.
 
   -- rev {n} = rotate n {0} -- we need to use subst to obtain |n + 0 ≡ n|
   -- A direct implementation is then clearer.
@@ -153,11 +153,11 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
 {-
   Also considered,
 
-  -- rotate : {n : ℕ} (i : Fin n) → Permutation (toℕ i + n) 
+  -- rotate : {n : ℕ} (i : Fin n) → Permutation (toℕ i + n)
   -- rotate {suc zero} zero    = cons zero nil
   -- rotate {suc (suc n)} zero = cons zero (rotate zero)
   -- rotate {suc n} (suc i) = cons (fromℕ (toℕ i + suc n)) (subst Permutation {!!} (rotate (inject₁ i)))
--}  
+-}
 
   rotate₋₁ : (n : ℕ) (i : ℕ){{coh : i ≤ n}} → Permutation (i + n)
   rotate₋₁ zero .0 {{z≤n}} = nil
@@ -211,7 +211,7 @@ The following is inspired by copumkin & vmchale's libraries.
 
   at-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at i)  ≡  lookup i (toVec ps)
   at-spec {.(suc _)} {cons p ps} {zero}  =  ≡.refl
-  at-spec {.(suc _)} {cons p ps} {suc i} =  at-spec {ps = ps}
+  at-spec {.(suc _)} {cons p ps} {suc i} =  at-spec {ps = ps} {i}
 
   open import Data.Fin.Properties using (inject≤-lemma ; to-from ; toℕ-injective)
 
@@ -222,7 +222,7 @@ The following is inspired by copumkin & vmchale's libraries.
   at′-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at′ i)  ≡ lookup i (toVec ps)
   at′-spec {.(suc _)} {cons p ps} {zero} = ≡.refl
   at′-spec {.(suc n)} {cons {n} p ps} {suc i}
-    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) = at′-spec {ps = ps}
+    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) = at′-spec {ps = ps} {i}
 
   -- It is easier to prove certain results with |_at_| rather than |_at′_| due to the
   -- pesky injection. This combinator will hopefully alleviate some troubles.
@@ -256,7 +256,7 @@ The following is inspired by copumkin & vmchale's libraries.
   rev-start′ {n} = ≡.refl
 
   rev-end′ :  {n : ℕ} → rev {suc n} at′ fromℕ n ≡ zero
-  rev-end′ {n} = toℕ-injective (≡.sym at-at′ ⟨≡≡⟩ rev-end)
+  rev-end′ {n} = toℕ-injective (≡.sym (at-at′ {ps = rev {suc n}} {fromℕ n}) ⟨≡≡⟩ rev-end {n})
 \end{code}
 %}}}
   %{{{ Inversion of permutations: deleteP and _˘
@@ -351,7 +351,7 @@ The following is inspired by copumkin & vmchale's libraries.
               → xs  ≈ₖ  ys  →  insert xs i e  ≈ₖ  insert ys i e
   insert-cong {i = zero} xs≈ys = cons ≈.refl xs≈ys
   insert-cong {i = suc _} nil              = ≈ₖ-refl
-  insert-cong {i = suc _} (cons x≈y xs≈ys) = cons x≈y (insert-cong xs≈ys)
+  insert-cong {i = suc j} (cons x≈y xs≈ys) = cons x≈y (insert-cong {i = j} xs≈ys)
 
   -- Inverse of insert
   delete : {n : ℕ} {a : Level} {A : Set a} → Vec A (suc n) → Fin (suc n) → Vec A n
@@ -374,10 +374,10 @@ The following is inspired by copumkin & vmchale's libraries.
   delete-insert {xs = x ∷ xs} {suc (suc i)} {e} = goal
     where it :    delete (x ∷ insert xs (suc i) e) (suc (suc i))
                ≈ₖ (x ∷ delete (insert xs (suc i) e) (suc i))
-          it = delete-suc
+          it = delete-suc {xs =  insert xs (suc i) e}
 
           indHyp : delete (insert xs (suc i) e) (suc i)  ≈ₖ  xs
-          indHyp = delete-insert
+          indHyp = delete-insert {i = suc i} {x = e}
 
           goal : delete (x ∷ insert xs (suc i) e) (suc (suc i)) ≈ₖ (x ∷ xs)
           goal = ≈ₖ-trans it (cons ≈.refl indHyp)
@@ -389,7 +389,7 @@ The following is inspired by copumkin & vmchale's libraries.
   insert-delete {suc n} {x ∷ xs} {zero} = ≈ₖ-refl
   insert-delete {suc n} {x ∷ xs} {suc i} = goal
     where it : delete (x ∷ xs) (suc i)  ≈ₖ  (x ∷ delete xs i)
-          it = delete-suc
+          it = delete-suc {xs = xs}
 
           notice :    insert (x ∷ delete xs i) (suc i) (lookup i xs)
                    ≈ₖ (x ∷ insert (delete xs i) i (lookup i xs))
@@ -397,11 +397,11 @@ The following is inspired by copumkin & vmchale's libraries.
 
           indHyp :    insert (delete xs i) i (lookup i xs)
                    ≈ₖ  xs
-          indHyp = insert-delete
+          indHyp = insert-delete {i = i}
 
           goal :    insert (delete (x ∷ xs) (suc i)) (suc i) (lookup i xs)
                   ≈ₖ (x ∷ xs)
-          goal = ≈ₖ-trans (insert-cong it) (cons ≈.refl indHyp) 
+          goal = ≈ₖ-trans (insert-cong {i = suc i} it) (cons ≈.refl indHyp)
 \end{code}
 %}}}
   %{{{ ◈ is a group action: It is an functorial in it's first argument.
@@ -530,9 +530,9 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   open CommMonoid 𝒞
   open IsCommutativeMonoid isCommMonoid -- \edcomm{MA}{The field name really oughtn't be abbreviated!}
-  
+
   open Setoid 𝒮
-  
+
   open VecEquality 𝒮
   -- module ≈ = Setoid 𝒮
 
@@ -554,11 +554,11 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   open import Data.List
   open import Data.Nat  hiding (fold ; _*_)
-  open import Data.Fin  hiding (_+_ ; fold ; _≤_)  
+  open import Data.Fin  hiding (_+_ ; fold ; _≤_)
 \end{code}
 
 
-\begin{code}  
+\begin{code}
   -- fold is a setoid homomorphism
 
   fold : Seq∞ → Carrier
@@ -567,9 +567,11 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   open import Data.Vec using (fromList)
 
   fold-cong : {xs ys : Seq∞} → xs ≈ₚ ys → fold xs ≈ fold ys
-  fold-cong {[]} {[]} record { lengths = ≡.refl ; witness = witness ; proof = proof } = {!!}
+  fold-cong {[]} {[]} record { lengths = ≡.refl ; witness = witness ; proof = proof } = refl
   fold-cong {[]} {x ∷ ys} record { lengths = () ; witness = witness ; proof = proof }
-  fold-cong {x ∷ xs} {ys} record { lengths = lengths ; witness = witness ; proof = proof } = {!!}
+  fold-cong {x ∷ xs} {[]} record { lengths = () ; witness = witness ; proof = proof }
+  fold-cong {x ∷ xs} {x₁ ∷ ys} record { lengths = lengths ; witness = (Permutations.cons zero witness) ; proof = proof } = {!!}
+  fold-cong {x ∷ xs} {x₁ ∷ ys} record { lengths = lengths ; witness = (Permutations.cons (suc p) witness) ; proof = proof } = {!!}
 
 \end{code}
   fold-cong : {xs ys : Seq∞} → fromList xs ≈ₖ fromList ys → fold xs ≈ fold ys
@@ -578,7 +580,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   -- commutativity is not used here and so this result is valid for non-commutative monoids as well.
 
   open Permutations 𝒮
-  
+
   data _≈ᵥ_ {n : ℕ} (xs : Seq n) (ys : Seq n) : Set (c ⊍ l) where
     yes : (p : Permutation n) → p ◈ xs ≈ₖ ys → xs ≈ᵥ ys
 
@@ -599,9 +601,9 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   proposition₃ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x y : Carrier}
                → fold (x ∷ y ∷ xs) ≈ fold (y ∷ insert xs i x)
-  proposition₃ {.0} {[]} {zero} =  proposition₄ 
+  proposition₃ {.0} {[]} {zero} =  proposition₄
   proposition₃ {.0} {[]} {suc ()}
-  proposition₃ {.(suc _)} {x ∷ xs} {zero} = proposition₄ 
+  proposition₃ {.(suc _)} {x ∷ xs} {zero} = proposition₄
   proposition₃ {.(suc _)} {hd ∷ xs} {suc i} {x} {y} = begin⟨ 𝒮 ⟩
       fold (x ∷ y ∷ hd ∷ xs)
     ≈⟨ proposition₄ ⟩
@@ -613,7 +615,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
     ≡⟨ ≡.refl ⟩
       fold (y ∷ hd ∷ insert xs i x)
     ∎
-  
+
   proposition₂ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x : Carrier}
                → fold (x ∷ xs) ≈ fold (insert xs i x)
   proposition₂ {.0} {[]} {zero} = refl
@@ -623,7 +625,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   open import Relation.Binary.PropositionalEquality using (inspect; [_])
 
-  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs) 
+  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs)
   proposition₁ {.0} {[]} {nil} = refl
   proposition₁ {.(suc _)} {x ∷ xs} {cons zero ps} = refl ⟨∙⟩ proposition₁
   proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with ps ◈ xs | inspect (_◈_ ps) xs
@@ -645,12 +647,12 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
     ∎
 
   -- This is essentially |Multiset.fold-permute|, the pesky-hole from the summer.
-  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys 
+  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys
   proposition₀ (yes p p-on-xs≈ys) = trans proposition₁ (fold-cong p-on-xs≈ys)
 
 
 %{{{ Vector based approach, it works:
-\begin{spec}  
+\begin{spec}
   -- fold is a setoid homomorphism
 
   fold : {n : ℕ} → Seq n → Carrier
@@ -662,7 +664,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   -- commutativity is not used here and so this result is valid for non-commutative monoids as well.
 
   open Permutations 𝒮
-  
+
   data _≈ᵥ_ {n : ℕ} (xs : Seq n) (ys : Seq n) : Set (c ⊍ l) where
     yes : (p : Permutation n) → p ◈ xs ≈ₖ ys → xs ≈ᵥ ys
 
@@ -683,9 +685,9 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   proposition₃ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x y : Carrier}
                → fold (x ∷ y ∷ xs) ≈ fold (y ∷ insert xs i x)
-  proposition₃ {.0} {[]} {zero} =  proposition₄ 
+  proposition₃ {.0} {[]} {zero} =  proposition₄
   proposition₃ {.0} {[]} {suc ()}
-  proposition₃ {.(suc _)} {x ∷ xs} {zero} = proposition₄ 
+  proposition₃ {.(suc _)} {x ∷ xs} {zero} = proposition₄
   proposition₃ {.(suc _)} {hd ∷ xs} {suc i} {x} {y} = begin⟨ 𝒮 ⟩
       fold (x ∷ y ∷ hd ∷ xs)
     ≈⟨ proposition₄ ⟩
@@ -697,7 +699,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
     ≡⟨ ≡.refl ⟩
       fold (y ∷ hd ∷ insert xs i x)
     ∎
-  
+
   proposition₂ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x : Carrier}
                → fold (x ∷ xs) ≈ fold (insert xs i x)
   proposition₂ {.0} {[]} {zero} = refl
@@ -707,7 +709,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   open import Relation.Binary.PropositionalEquality using (inspect; [_])
 
-  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs) 
+  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs)
   proposition₁ {.0} {[]} {nil} = refl
   proposition₁ {.(suc _)} {x ∷ xs} {cons zero ps} = refl ⟨∙⟩ proposition₁
   proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with ps ◈ xs | inspect (_◈_ ps) xs
@@ -729,7 +731,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
     ∎
 
   -- This is essentially |Multiset.fold-permute|, the pesky-hole from the summer.
-  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys 
+  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys
   proposition₀ (yes p p-on-xs≈ys) = trans proposition₁ (fold-cong p-on-xs≈ys)
 \end{spec}
 %}}}
@@ -777,7 +779,7 @@ module Lemmas′ {l c : Level} {𝒞 : CommutativeMonoid c l} where
     cons : {x y : Carrier} {xs ys : Seq} → x ≈ y → xs ≈ₖ ys → (x ∷ xs) ≈ₖ (y ∷ ys)
 
   -- MA: It is a simple matter to show that this is an equivalence relation. TODO.
-  
+
   -- fold is a setoid homomorphism
 
   fold : Seq → Carrier
@@ -809,7 +811,7 @@ module Lemmas′ {l c : Level} {𝒞 : CommutativeMonoid c l} where
 
   -- permute : ∀ {n} {a} {A : Set a} → Permutation n → Vec A n → Vec A n
   mutual
-  
+
     permute : (xs : Seq) → Permutation (length xs) → Seq
     permute [] nil = []
     permute (x ∷ xs) (cons p ps)  = insert (permute xs ps) (cast p) x

@@ -22,6 +22,7 @@ open import Belongs
 open import Structures.CommMonoid renaming (Hom to CMArrow)
 
 open import Data.Nat.Properties using (≤-steps ; n≤1+n ; n∸n≡0)
+open import Data.Nat.Properties.Simple using (+-right-identity)
 
 open import Data.List using (monoid)
 open import Data.Fin using (fromℕ)
@@ -34,6 +35,7 @@ open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 
 
 %{{{ VecEquality
+\edcomm{MA}{See |Data.Vec.Equality|; it may have this setup already. However, ours is heterogenous.}
 \begin{code}
 module VecEquality {ℓ c : Level} (𝒮 : Setoid c ℓ) where
 
@@ -48,9 +50,9 @@ module VecEquality {ℓ c : Level} (𝒮 : Setoid c ℓ) where
 
   -- `k`omponent-wise equality on sequences ;; MA: Subscript `c` not directly available.
   infix 5 _≈ₖ_
-  data _≈ₖ_ : {n : ℕ} → Seq n → Seq n → Set (c ⊍ ℓ) where
+  data _≈ₖ_ : {n m : ℕ} → Seq n → Seq m → Set (c ⊍ ℓ) where
     nil  : [] ≈ₖ []
-    cons : {x y : Carrier} {n : ℕ} {xs ys : Seq n} (x≈y : x ≈ y) (xs≈ys : xs ≈ₖ ys) → (x ∷ xs) ≈ₖ (y ∷ ys)
+    cons : {x y : Carrier} {n m : ℕ} {xs : Seq n} {ys : Seq m} (x≈y : x ≈ y) (xs≈ys : xs ≈ₖ ys) → (x ∷ xs) ≈ₖ (y ∷ ys)
 \end{code}
 
 It is a simple matter to show that this is an equivalence relation.
@@ -82,7 +84,16 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
 \end{code}
 
   %{{{ Permutations datatype, insert, permute ◈
-\begin{code}
+
+We initially took the following as definition. However, later in the development we were
+led inexorably to the utilisation of |subst|. Previous experience suggests that using
+an additional parameter which at first seems to be more general than necessary but in-fact
+the constructor only permit this new parameter to have the same value as was needed before
+with the |subst|.
+
+\edcomm{JC}{Basically, a permutation tells you how to insert all elements of |Fin m| into something of length |n| surjectively. Naturally, this can only be done when |n = m|. |Apply| then applies |Permutation m n| to a |Vec A m|, to obtain a |Vec A n|.}
+
+\begin{spec}
   data Permutation : ℕ → Set where
     nil  : Permutation 0
     cons : {n : ℕ} → (p : Fin (suc n)) → (ps : Permutation n) → Permutation (suc n)
@@ -106,15 +117,51 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
 
   _ℕ∷_ : (n : ℕ) (ps : Permutation n) → Permutation (suc n)
   _ℕ∷_ = λ n ps → cons (fromℕ n) ps
+\end{spec}
+
+Instead we employ a definition relying on a new additional parameter --which will then be forced to be
+equal to an existing parameter. This is in the spirit of the so-called John Major Equality or the
+oxymoron “Heterogeneous Equality” concept.
+
+\begin{code}
+  infixr 5 _∷_
+  data Permutation : (n _ : ℕ) → Set where
+    []  : Permutation 0 0
+    _∷_ : {n : ℕ} → (p : Fin (suc n)) → (ps : Permutation n n) → Permutation (suc n) (suc n)
+
+  -- Notice the additional parameter, in all possible constructions, is the same as the first pa ram.
+  homogeneity : {n m : ℕ} → Permutation n m → n ≡ m
+  homogeneity [] = ≡.refl
+  homogeneity (p ∷ ps) = ≡.cong suc (homogeneity ps)
+
+  -- What exactly are the semantics of these things?
+  -- Insertions!
+  -- See the |permute| operation below.
+
+  -- |insert xs i x ≈ xs[1…i-1] ++ [x] ++ xs[i … len xs]|
+  -- ( Note that this is different from |Data.Vec._[_]≔_| which updates a positional element. )
+  insert : ∀ {n} {a} {A : Set a} → Vec A n → Fin (1 + n) → A → Vec A (1 + n)
+  insert xs zero a = a ∷ xs
+  insert [] (suc ()) a
+  insert (x ∷ xs) (suc i) a = x ∷ insert xs i a
+
+  -- Given a permutation, apply it to a vector.
+  infix 6 _◈_
+  _◈_ : {n m : ℕ} {a : Level} {A : Set a} → Permutation n m → Vec A n → Vec A m
+  []       ◈ []       = []
+  (p ∷ ps) ◈ (x ∷ xs) = insert (ps ◈ xs) p x
+
+  _ℕ∷_ : (n : ℕ) (ps : Permutation n n) → Permutation (suc n) (suc n)
+  _ℕ∷_ = λ n ps → fromℕ n ∷ ps
 \end{code}
 %}}}
   %{{{ Example permutations: Reverse and Identity
 
 \begin{code}
-  rotate : {n : ℕ} (i : ℕ) → Permutation (i + n)
-  rotate {zero}  zero    = nil
-  rotate {suc n} zero    = cons zero (rotate 0)
-  rotate {n}     (suc i) = cons (fromℕ (i + n)) (rotate i)
+  rotate : {n : ℕ} (i : ℕ) → Permutation (i + n) (i + n)
+  rotate {zero}  zero    = []
+  rotate {suc n} zero    = zero     ∷ rotate 0
+  rotate {n}     (suc i) = (i + n) ℕ∷ rotate i
 
   test₀ : rotate 0 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
   test₀ = ≡.refl
@@ -134,17 +181,20 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   test₅ : rotate 5 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
   test₅ = ≡.refl
 
-  Id : {n : ℕ} → Permutation n
+  Id : {n : ℕ} → Permutation n n
   Id = rotate 0
   -- I.e., insertions at position 0 only; since 0 rotations needed.
 
+  -- The identity is deserving of its name.
+  Id-◈ : {n : ℕ} {xs : Seq n} → Id ◈ xs ≈ₖ xs
+  Id-◈ {.0} {[]} = nil
+  Id-◈ {.(suc _)} {x ∷ xs} = cons ≈.refl Id-◈
+
   -- rev {n} = rotate n {0} -- we need to use subst to obtain |n + 0 ≡ n|
   -- A direct implementation is then clearer.
-  rev : {n : ℕ} → Permutation n
-  rev {zero}  = nil
+  rev : {n : ℕ} → Permutation n n
+  rev {zero}  = []
   rev {suc n} = n ℕ∷ rev
-\end{code}
-
 \end{code}
 
 %{{{ Attempt at automatically generating coherency proofs
@@ -159,10 +209,10 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   -- rotate {suc n} (suc i) = cons (fromℕ (toℕ i + suc n)) (subst Permutation {!!} (rotate (inject₁ i)))
 -}
 
-  rotate₋₁ : (n : ℕ) (i : ℕ){{coh : i ≤ n}} → Permutation (i + n)
-  rotate₋₁ zero .0 {{z≤n}} = nil
-  rotate₋₁ (suc n) .0 {{z≤n}} = cons zero (rotate₋₁ n 0 {{z≤n}})
-  rotate₋₁ (suc n) .(suc i) {{s≤s {i} coh}} = cons (fromℕ (i + suc n)) (rotate₋₁ (suc n) i {{≤-steps 1 coh}})
+  rotate₋₁ : (n : ℕ) (i : ℕ){{coh : i ≤ n}} → Permutation (i + n) (i + n)
+  rotate₋₁ zero .0 {{z≤n}} = []
+  rotate₋₁ (suc n) .0 {{z≤n}} = zero ∷ (rotate₋₁ n 0 {{z≤n}})
+  rotate₋₁ (suc n) .(suc i) {{s≤s {i} coh}} = (i + suc n) ℕ∷ (rotate₋₁ (suc n) i {{≤-steps 1 coh}})
 
   test₋₁ : rotate₋₁ 5 0 {{ z≤n }} ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
   test₋₁ = ≡.refl
@@ -185,7 +235,6 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   -- rotate₁ : {n : ℕ} {i : ℕ} → Permutation (i + n)
   -- rotate₁ {n} {i} = rotate₋₁ n i {{ proveLeq {i} {n} {{! Agda, why hath thou forsaken me!}} }}
 \end{code}
-
 %}}}
 
 %}}}
@@ -197,40 +246,45 @@ The following is inspired by copumkin & vmchale's libraries.
   -- Notice that |Permutation n| is similar to, but distinct from, |Vec (Fin (suck n)) n|.
   -- More accurately, as in the traditional sense of the concept,
   -- |Permutation n ≅ (Π i : 0..n-1 • Fin (n ∸ i))|; cf |_at_| below.
-  toVec : {n : ℕ} → Permutation n → Vec ℕ n
-  toVec nil         = []
-  toVec (cons p ps) = toℕ p ∷ toVec ps
+  toVec : {n m : ℕ} → Permutation n m → Vec ℕ n
+  toVec [] = []
+  toVec (p ∷ ps) = toℕ p ∷ toVec ps
+
+  -- Notice that no need to explicitly invoke |homogeneity| since
+  -- the pattern matching ensures |n ≡ m|.
+  --
+  -- Likewise below for |_at_|.
 
   -- ToDo: Consider forming inverse of toVec.
 
-  infixr 6 _at_ _at′_
+  infixr 6 _at_  _at′_
 
-  _at_ : {n : ℕ} → Permutation n → (i : Fin n) → Fin (n ∸ toℕ i)
-  cons p ps at zero   =  p
-  cons p ps at suc i  =  ps at i
+  _at_ : {n m : ℕ} → Permutation n m → (i : Fin n) → Fin (n ∸ toℕ i)
+  (p ∷ ps) at zero   =  p
+  (p ∷ ps) at suc i  =  ps at i
 
-  at-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at i)  ≡  lookup i (toVec ps)
-  at-spec {.(suc _)} {cons p ps} {zero}  =  ≡.refl
-  at-spec {.(suc _)} {cons p ps} {suc i} =  at-spec {ps = ps} {i}
+  at-spec : {n m : ℕ} {ps : Permutation n m} {i : Fin n} → toℕ (ps at i)  ≡  lookup i (toVec ps)
+  at-spec {.(suc _)} {_} {p ∷ ps} {zero}  =  ≡.refl
+  at-spec {.(suc _)} {_} {p ∷ ps} {suc i} =  at-spec {ps = ps} {i}
 
   open import Data.Fin.Properties using (inject≤-lemma ; to-from ; toℕ-injective)
 
-  _at′_ : {n : ℕ} → Permutation n → Fin n → Fin n
-  cons p p₁ at′ zero = p
-  cons p p₁ at′ suc i = inject≤ (p₁ at′ i) (n≤1+n _)
+  _at′_ : {n m : ℕ} → Permutation n m → Fin n → Fin n
+  (p ∷ ps) at′ zero = p
+  (p ∷ ps) at′ suc i = inject≤ (ps at′ i) (n≤1+n _)
 
-  at′-spec : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at′ i)  ≡ lookup i (toVec ps)
-  at′-spec {.(suc _)} {cons p ps} {zero} = ≡.refl
-  at′-spec {.(suc n)} {cons {n} p ps} {suc i}
+  at′-spec : {n m : ℕ} {ps : Permutation n m} {i : Fin n} → toℕ (ps at′ i)  ≡ lookup i (toVec ps)
+  at′-spec {.(suc _)} {_} {p ∷ ps} {zero} = ≡.refl
+  at′-spec {.(suc n)} {_} {_∷_ {n} p ps} {suc i}
     rewrite inject≤-lemma (ps at′ i) (n≤1+n n) = at′-spec {ps = ps} {i}
 
   -- It is easier to prove certain results with |_at_| rather than |_at′_| due to the
   -- pesky injection. This combinator will hopefully alleviate some troubles.
   -- See |rev-end′| for example usage.
-  at-at′ : {n : ℕ} {ps : Permutation n} {i : Fin n} → toℕ (ps at i) ≡  toℕ (ps at′ i)
-  at-at′ {.(suc _)} {cons p ps} {zero} = ≡.refl
-  at-at′ {.(suc n)} {cons p ps} {suc {n} i}
-    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) =  at-at′ {n} {i = i}
+  at-at′ : {n m : ℕ} {ps : Permutation n n} {i : Fin n} → toℕ (ps at i) ≡  toℕ (ps at′ i)
+  at-at′ {.(suc _)} {m} {p ∷ ps} {zero} = ≡.refl
+  at-at′ {.(suc n)} {m} {p ∷ ps} {suc {n} i}
+    rewrite inject≤-lemma (ps at′ i) (n≤1+n n) =  at-at′ {n} {m} {i = i}
 
   test-Id : toVec (Id {5}) ≡ 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
   test-Id = ≡.refl
@@ -256,19 +310,24 @@ The following is inspired by copumkin & vmchale's libraries.
   rev-start′ {n} = ≡.refl
 
   rev-end′ :  {n : ℕ} → rev {suc n} at′ fromℕ n ≡ zero
-  rev-end′ {n} = toℕ-injective (≡.sym (at-at′ {ps = rev {suc n}} {fromℕ n}) ⟨≡≡⟩ rev-end {n})
+  rev-end′ {n} = toℕ-injective
+    (≡.sym (at-at′ {suc n} {suc n} {ps = rev {suc n}} {fromℕ n}) ⟨≡≡⟩ rev-end {n})
 \end{code}
 %}}}
   %{{{ Inversion of permutations: deleteP and _˘
+
+\edcomm{MA}{The inversion construct does not function as intended -- it is not invertible for example!
+See |test-rev˘˘| below.}
+
 \begin{code}
   -- Deletion for permutations:
   -- [p₁, …, pₙ] ─ i   ↦   [p₁ ∸ 1, …, pᵢ₋₁ ∸ 1, pᵢ, pᵢ₊₁, …, pₙ] ?
-  _─_ : {n : ℕ} → Permutation (suc n) → Fin (suc n) → Permutation n
-  cons p ps         ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
-  (cons zero ps)    ─ (suc {zero} ())
-  (cons zero ps)    ─ (suc {(suc n)} i) = cons zero (ps ─ i)  -- the suc is dropped, parenthesis move.
-  cons (suc p) ps   ─ suc {zero} ()
-  (cons (suc p) ps) ─ (suc {(suc n)} i) = cons p (ps ─ i)  -- the suc's “cancel” & mutually associate.
+  _─_ : {n m : ℕ} → Permutation (suc n) (suc m) → Fin (suc n) → Permutation n m
+  (p  ∷ ps)      ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
+  (zero ∷ ps)    ─ (suc {zero} ())
+  (zero ∷ ps)    ─ (suc {(suc n)} i) = zero ∷ (ps ─ i)  -- the suc is dropped, parenthesis move.
+  ((suc p) ∷ ps) ─ suc {zero} ()
+  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = p ∷ (ps ─ i)  -- the suc's “cancel” & mutually associate.
 
 {-
   ─-spec : {n : ℕ} {ps : Permutation (suc n)} {i : Fin n} → (ps ─ (suc i)) at i  ≡  {!!}
@@ -279,9 +338,9 @@ The following is inspired by copumkin & vmchale's libraries.
   open import Relation.Nullary
 
   -- Permutations come with the obvious involution, but non-trivial implementation
-  _˘ : {n : ℕ} → Permutation n → Permutation n
-  _˘ {zero }     nil          = nil
-  _˘ {suc n} ps@(cons p ps′) = cons 𝓅 ( (ps ─ 𝒑)˘ )
+  _˘ : {n m : ℕ} → Permutation n m → Permutation m n
+  _˘ {zero }     []          = []
+  _˘ {suc n} ps@(p ∷ ps′) = 𝓅 ∷ ( (ps ─ 𝒑)˘ )
     where 𝓅 : Fin (suc n)
           𝓅 = ps at′ p
 
@@ -297,9 +356,9 @@ The following is inspired by copumkin & vmchale's libraries.
   -- |n ℕ∷_| and |_─ fromℕ n| are inverses
   ℕ∷-inverse-─ : {n : ℕ} → n ℕ∷ (rev {suc n} ─ fromℕ n)  ≡  rev {suc n}
   ℕ∷-inverse-─ {zero} = ≡.refl
-  ℕ∷-inverse-─ {suc n} = ≡.cong (λ x → cons (fromℕ (suc n)) x) ℕ∷-inverse-─
+  ℕ∷-inverse-─ {suc n} = ≡.cong ((suc n) ℕ∷_) ℕ∷-inverse-─
 
-  test-rev-end : toVec (rev {5} ─ fromℕ 4) ≡ 3 ∷ 2 ∷ 1 ∷ 0 ∷ [] -- i.e., toVec (rev {4})
+  test-rev-end : toVec (rev {5} ─ fromℕ 4) ≡ 3 ∷ 2 ∷ 1 ∷ 0 ∷ [] -- i.e., |toVec (rev {4})|
   test-rev-end = ≡.refl
 
   rev-end=rev : {n : ℕ}  →  rev {suc n} ─ fromℕ n  ≡  rev {n}
@@ -308,7 +367,7 @@ The following is inspired by copumkin & vmchale's libraries.
 
   rev˘=Id : {n : ℕ} → rev ˘  ≡  Id {n}
   rev˘=Id {zero} = ≡.refl
-  rev˘=Id {suc n} = ≡.cong₂ cons rev-end′ it -- ≡.cong₂ cons rev-end′ goal
+  rev˘=Id {suc n} = ≡.cong₂ _∷_ rev-end′ it
 
     where
 
@@ -328,10 +387,10 @@ The following is inspired by copumkin & vmchale's libraries.
       it = it₀ ⟨≡≡⟩ rev˘=Id
 \end{code}
 
-\begin{spec}
+\begin{code}
   -- Extensional Permutation equality
   infix 5 _≈ₚ_
-  _≈ₚ_ : {n : ℕ} (ps qs : Permutation n) → Set (c ⊍ ℓ)
+  _≈ₚ_ : {n m : ℕ} (ps qs : Permutation n m) → Set (c ⊍ ℓ)
   _≈ₚ_ {n} ps qs  =  {xs : Seq n} → ps ◈ xs  ≈ₖ  qs ◈ xs
 
   -- This operation is involutionary: It is its own inverse.
@@ -343,16 +402,47 @@ The following is inspired by copumkin & vmchale's libraries.
   Id˘ : {n : ℕ} → Id ˘  ≈ₚ  Id {n}
   Id˘ {.0} {[]} = ≈ₖ-refl
   Id˘ {.(suc _)} {x ∷ xs} = cons ≈.refl Id˘
-\end{spec}
+\end{code}
 %}}}
-  %{{{ Properties of insertion and deletion for vectors
-\begin{code}
-  insert-cong : {n : ℕ} {xs ys : Seq n} {i : Fin (suc n)} {e : Carrier}
-              → xs  ≈ₖ  ys  →  insert xs i e  ≈ₖ  insert ys i e
-  insert-cong {i = zero} xs≈ys = cons ≈.refl xs≈ys
-  insert-cong {i = suc _} nil              = ≈ₖ-refl
-  insert-cong {i = suc j} (cons x≈y xs≈ys) = cons x≈y (insert-cong {i = j} xs≈ys)
 
+  %{{{ cong properties
+
+\begin{code}
+  insert-cong₁ : {n : ℕ} {xs ys : Seq n} {i : Fin (1 + n)} {e : Carrier}
+               → xs ≈ₖ ys → insert xs i e  ≈ₖ  insert ys i e
+  insert-cong₁ {i = zero} xs≈ys = cons ≈.refl xs≈ys
+  insert-cong₁ {i = suc _} nil              = ≈ₖ-refl
+  insert-cong₁ {i = suc j} (cons x≈y xs≈ys) = cons x≈y (insert-cong₁ {i = j} xs≈ys)
+
+  insert-cong₂ : {n : ℕ} {xs : Seq n} {i j : Fin (1 + n)} {e : Carrier}
+               → i ≡ j → insert xs i e  ≈ₖ  insert xs j e
+  insert-cong₂ ≡.refl = ≈ₖ-refl
+
+  insert-cong₃ : {n : ℕ} {xs : Seq n} {i : Fin (1 + n)} {d e : Carrier}
+               → e ≈ d → insert xs i e  ≈ₖ  insert xs i d
+  insert-cong₃ {xs = []} {zero} e≈d = cons e≈d nil
+  insert-cong₃ {xs = []} {suc ()} e≈d
+  insert-cong₃ {xs = x ∷ xs} {zero} e≈d = cons e≈d ≈ₖ-refl
+  insert-cong₃ {xs = x ∷ xs} {suc i} e≈d = cons ≈.refl (insert-cong₃ e≈d)
+
+  ◈-cong₁ : {n m : ℕ} {ps qs : Permutation n m} {xs : Seq n}
+          → ps ≈ₚ qs → ps ◈ xs ≈ₖ qs ◈ xs
+  ◈-cong₁ eq = eq
+  -- This is part of the definition of permutation equality.
+
+  ◈-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Seq n}
+          → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
+  ◈-cong₂ nil = ≈ₖ-refl
+  ◈-cong₂ {ps = p ∷ ps} (cons {xs = xs} {ys = ys} x≈y eq)
+    = ≈ₖ-trans (insert-cong₁ (◈-cong₂ eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
+\end{code}
+  %}}}
+
+  %{{{ Properties of insertion and deletion for vectors
+\edcomm{MA}{This section should live in something named |Vector.Setoid| since we are considering setoid
+related artifacts of vectors.}
+
+\begin{code}
   -- Inverse of insert
   delete : {n : ℕ} {a : Level} {A : Set a} → Vec A (suc n) → Fin (suc n) → Vec A n
   delete (x ∷ xs) zero    = xs
@@ -401,7 +491,7 @@ The following is inspired by copumkin & vmchale's libraries.
 
           goal :    insert (delete (x ∷ xs) (suc i)) (suc i) (lookup i xs)
                   ≈ₖ (x ∷ xs)
-          goal = ≈ₖ-trans (insert-cong {i = suc i} it) (cons ≈.refl indHyp)
+          goal = ≈ₖ-trans (insert-cong₁ {i = suc i} it) (cons ≈.refl indHyp)
 \end{code}
 %}}}
   %{{{ ◈ is a group action: It is an functorial in it's first argument.
@@ -412,15 +502,27 @@ The following is inspired by copumkin & vmchale's libraries.
   ◈-leftId {suc n} {x ∷ xs} = cons ≈.refl ◈-leftId
 
   -- Composition of permutations
+  -- \edcomm{MA}{This particular form of typing is chosen so that |Permutation| acts as a morphism}
+  -- type constructor for a category whose objects are natural numbers. Then this composition
+  -- has the type necessary to make this into a category.
   infix 6 _⊙_
-  _⊙_ : {n : ℕ} → Permutation n → Permutation n → Permutation n
-  nil ⊙ nil = nil
-  cons p ps ⊙ qs  =  cons (qs at′ p) (ps ⊙ (qs ─ p))
+  _⊙_ : {n m r : ℕ} → Permutation n m → Permutation m r → Permutation n r
+  [] ⊙ [] = []
+  (p ∷ ps) ⊙ qs with homogeneity (p ∷ ps) | homogeneity qs
+  (p ∷ ps) ⊙ qs | _≡_.refl | _≡_.refl = (qs at′ p) ∷ (ps ⊙ (qs ─ p))
 
+  -- \edcomm{MA}{I made componentwise equality heterogenous in order to make the typing here more}
+  -- general; yet it is not.
+  ◈-compose : {n : ℕ} {ps : Permutation n n} {qs : Permutation n n}
+            → {xs : Seq n} → (ps ⊙ qs) ◈ xs  ≈ₖ  ps ◈ (qs ◈ xs)
+  ◈-compose = {!!}
+\end{code}
+
+\edcomm{MA}{ToDo: Prove this composition is associative; i.e., finish the construction site below.}
+\begin{spec}
   -- ⊙-nil : {n : ℕ} {ps : Permutation n} → ps ⊙ nil  ≡  ps
   -- ⊙-nil {n} {ps} = ?
 
-{-
   -- The inversion operation is contravariant: It reverses composition.
   ◈-˘ : {n : ℕ} {ps qs : Permutation n} → (ps ⊙ qs)˘  ≈ₚ (qs ˘ ⊙ ps ˘)
   ◈-˘ {.0} {nil} {nil} = ≈ₖ-refl
@@ -435,97 +537,120 @@ The following is inspired by copumkin & vmchale's libraries.
   ◈-compose {.0} {nil} {nil} {[]} = ≈ₖ-refl
   ◈-compose {.(suc _)} {cons zero ps} {cons q qs} {x ∷ xs} = ≈ₖ-trans (insert-cong ◈-compose) insert-◈
   ◈-compose {.(suc _)} {cons (suc p) ps} {cons q qs} {x ∷ xs} = {! MA: write a test to be confident this is somewhat true. !}
-
--}
-
-\end{code}
+\end{spec}
 
 %}}}
 
 %}}}
 
 Expected definition,
-\begin{spec}
-  data _≈ₚ_ {n : ℕ} (xs ys : Seq n) : Set (c ⊍ ℓ) where
-    yes : (p : Permutation n) → p ◈ xs ≈ₖ ys → xs ≈ₚ ys
-\end{spec}
+\begin{code}
+  module FirstAttempt where
+    data _≈₁_ {n m : ℕ} (xs : Seq n) (ys : Seq m) : Set (c ⊍ ℓ) where
+      yes : (p : Permutation n m) → p ◈ xs ≈ₖ ys → xs ≈₁ ys
+    
+    ≈₁-refl :  {n  : ℕ}{xs : Seq n} → xs ≈₁ xs
+    ≈₁-refl {n} {xs} = yes Id Id-◈
+    
+    ≈₁-sym : {n m : ℕ}{xs : Seq n} {ys : Seq m} → xs ≈₁ ys → ys ≈₁ xs
+    ≈₁-sym {n} {m} {xs} {ys} (yes p x) = {! Would need to use inversion here! !}
+    
+   -- ≈₁-trans : {n m r : ℕ}{xs : Seq n} {ys : Seq m} {zs : Seq r} → xs ≈₁ ys → ys ≈₁ zs → xs ≈₁ zs
+    ≈₁-trans : {n : ℕ}{xs ys zs : Seq n} → xs ≈₁ ys → ys ≈₁ zs → xs ≈₁ zs
+    ≈₁-trans (yes p p◈xs≈ys) (yes q q◈ys≈zs) = yes (q ⊙ p)
+      (≈ₖ-trans ◈-compose (≈ₖ-trans (◈-cong₂ p◈xs≈ys) q◈ys≈zs))
+    
+    ≈₁-isEquivalence : {n : ℕ} → IsEquivalence (_≈₁_ {n} {n})
+    ≈₁-isEquivalence {n} = record { refl = ≈₁-refl ; sym = ≈₁-sym ; trans = ≈₁-trans }
+    
+    ≈₁-∷-cong₂ : {n m : ℕ} {xs : Seq n} {ys : Seq n} {e : Carrier} → xs ≈₁ ys → (e ∷ xs) ≈₁ (e ∷ ys)
+    ≈₁-∷-cong₂ = {!!}
+\end{code}
 
 However this does not fit in with our needs in |Bag.lagda|, so we work with a bit of
 an awkward definition. \edcomm{MA}{Perhaps we could have a transform between the two forms?}
 
-\begin{spec}
-  List = Σ n ∶ ℕ • Seq n
-
-  data _≈ₚₗ_ : (x y : List) → Set (c ⊍ ℓ) where
-    yes : {n : ℕ} {xs ys : Seq n} (p : Permutation n) → p ◈ xs ≈ₖ ys → (n , xs) ≈ₚₗ (n , ys)
-
-  to-awkward : {m n : ℕ} {xs : Seq m} {ys : Seq n} → m ≡ n → xs ≈ₚ ys → (n , xs) ≈ₚₗ (m , ys)
-  to-awkward ≡.refl (yes p p◈xs≈ys) = yes p p◈xs≈ys
-
-  postulate ≈ₚ-refl :  {n : ℕ}{xs       : Seq n} → xs ≈ₚ xs
-  postulate ≈ₚ-sym :   {n : ℕ}{xs ys    : Seq n} → xs ≈ₚ ys → ys ≈ₚ xs
-  postulate ≈ₚ-trans : {n : ℕ}{xs ys zs : Seq n} → xs ≈ₚ ys → ys ≈ₚ zs → xs ≈ₚ zs
-
-  ≈ₚ-isEquivalence : {n : ℕ} → IsEquivalence (_≈ₚ_ {n})
-  ≈ₚ-isEquivalence = record { refl = ≈ₚ-refl ; sym = ≈ₚ-sym ; trans = ≈ₚ-trans }
-
-  ≈ₚₗ-isEquivalence : IsEquivalence _≈ₚₗ_
-  ≈ₚₗ-isEquivalence = record { refl = to-awkward ≈ₚ-refl ; sym = {!to-awkward ∘₀ ?!} ; trans = {!!} }
-
-  ε : List
-  ε = (0 , [])
-
-  _⊕_ : List → List → List
-  (_ , xs) ⊕ (_ , ys) = (_ , xs ++ ys)
-
-  -- Strangely properties about Vec catenation are not in the standard library
-
-  ⊕-left-unit : ∀ ys → (ε ⊕ ys) ≈ₚₗ ys
-  ⊕-left-unit ys = ≈ₚₗ-refl
-
---  ≈ₚₗ-pair : {m n : ℕ} {xs : Seq m} {ys : Seq n} → m ≡ n → s ≈ₚₗ t → (m , xc
-
-  ⊕-right-unit : ∀ ys → (ys ⊕ ε) ≈ₚₗ ys
-  ⊕-right-unit (.0 , []) = ≈ₚₗ-refl
-  ⊕-right-unit (.(suc _) , x ∷ proj₄) = {!≈ₚₗ-refl!}
-\end{spec}
+\begin{code}
+    List = Σ n ∶ ℕ • Seq n
+    
+    length : List → ℕ
+    length (n , xs) = n
+    
+    seq : (l : List) → Seq (length l)
+    seq (n , xs) = xs
+    
+    data _≈₂_ (xs ys : List) : Set (c ⊍ ℓ) where
+      yes : (p : Permutation (length xs) (length ys)) → p ◈ seq xs ≈ₖ seq ys → xs ≈₂ ys
+    
+    to-awkward : {m n : ℕ} {xs : Seq n} {ys : Seq m} → m ≡ n → xs ≈₁ ys → (n , xs) ≈₂ (m , ys)
+    to-awkward ≡.refl (yes p p◈xs≈ys) = yes p p◈xs≈ys
+    
+    ≈₂-refl :  {xs : List} → xs ≈₂ xs
+    ≈₂-refl = to-awkward ≡.refl ≈₁-refl
+    
+    ≈₂-sym : {xs ys : List} → xs ≈₂ ys → ys ≈₂ xs
+    ≈₂-sym (yes p p◈xs≈ys) = to-awkward (homogeneity p) (≈₁-sym (yes p p◈xs≈ys))
+    
+    ≈₂-trans : {xs ys zs : List} → xs ≈₂ ys → ys ≈₂ zs → xs ≈₂ zs
+    ≈₂-trans (yes p x) (yes q x₁) with homogeneity p | homogeneity q
+    ...| ≡.refl | ≡.refl = to-awkward ≡.refl (≈₁-trans (yes p x) (yes q x₁))
+    
+    -- MA: The following will not work due to the poor typing of ≈₂-trans:
+    -- |to-awkward (≡.sym (homogeneity p ⟨≡≡⟩ homogeneity q)) (≈₂-trans ? ?)|
+    
+    ≈₂-isEquivalence : IsEquivalence _≈₂_
+    ≈₂-isEquivalence = record { refl = ≈₂-refl ; sym = ≈₂-sym ; trans = ≈₂-trans }  
+    
+    ε : List
+    ε = (0 , [])
+    
+    _⊕_ : List → List → List
+    (_ , xs) ⊕ (_ , ys) = (_ , xs ++ ys)
+    
+    -- not-so-strangely properties about Vec catenation are not in the standard library
+    -- since they would involve much usage of subst due to the alteration of vector sizes.
+    -- Perhaps take a glance at Data.Vec.Equality.
+    
+    ⊕-left-unit : ∀ ys → (ε ⊕ ys) ≈₂ ys
+    ⊕-left-unit ys = ≈₂-refl
+    
+    -- ++-right-unit : {n : ℕ} {xs : Seq n} → xs ++ [] ≈ₖ xs
+    -- ++-right-unit {xs = xs} = {!!}
+    
+    ⊕-right-unit : ∀ ys → (ys ⊕ ε) ≈₂ ys
+    ⊕-right-unit (.0 , []) = ≈₂-refl
+    ⊕-right-unit (.(suc _) , x ∷ proj₄) = to-awkward (≡.cong suc (≡.sym (+-right-identity _)))
+                 {!≈₁-∷-cong₂ ?!}
+\end{code}
 
 \begin{code}
   open import Data.List
   Seq∞ = List Carrier
 
-  record _≈ₚ_ (xs ys : List Carrier) : Set (c ⊍ ℓ) where
-    len₁ : ℕ
-    len₁ = length xs
-
-    len₂ : ℕ
-    len₂ = length ys
-
+  record _≈₃_ (xs ys : List Carrier) : Set (c ⊍ ℓ) where
     field
-      lengths : len₂ ≡ len₁
-      witness : Permutation len₁
-      proof   : witness ◈ fromList xs ≈ₖ ≡.subst Seq lengths (fromList ys)
+      witness : Permutation (length xs) (length ys)
+      proof   : witness ◈ (fromList xs) ≈ₖ fromList ys
 
-  ≈ₚ-reflexive : {xs ys : Seq∞} → xs ≡ ys → xs ≈ₚ ys
-  ≈ₚ-reflexive ≡.refl = record { lengths = ≡.refl ; witness = Id ; proof = ◈-leftId   }
+  ≈₃-reflexive : {xs ys : Seq∞} → xs ≡ ys → xs ≈₃ ys
+  ≈₃-reflexive ≡.refl = record { witness = Id ; proof = ◈-leftId   }
 
-  ≈ₚ-refl :  {xs : Seq∞} → xs ≈ₚ xs
-  ≈ₚ-refl = ≈ₚ-reflexive ≡.refl
+  ≈₃-refl :  {xs : Seq∞} → xs ≈₃ xs
+  ≈₃-refl = ≈₃-reflexive ≡.refl
 
-  postulate ≈ₚ-sym :   {xs ys    : Seq∞} → xs ≈ₚ ys → ys ≈ₚ xs
-  postulate ≈ₚ-trans : {xs ys zs : Seq∞} → xs ≈ₚ ys → ys ≈ₚ zs → xs ≈ₚ zs
+  postulate ≈₃-sym :   {xs ys    : Seq∞} → xs ≈₃ ys → ys ≈₃ xs
+  postulate ≈₃-trans : {xs ys zs : Seq∞} → xs ≈₃ ys → ys ≈₃ zs → xs ≈₃ zs
 
-  ≈ₚ-isEquivalence : IsEquivalence _≈ₚ_
-  ≈ₚ-isEquivalence = record { refl = ≈ₚ-refl ; sym = ≈ₚ-sym ; trans = ≈ₚ-trans }
+  ≈₃-isEquivalence : IsEquivalence _≈₃_
+  ≈₃-isEquivalence = record { refl = ≈₃-refl ; sym = ≈₃-sym ; trans = ≈₃-trans }
 
-  singleton-≈ : {x y : Carrier} → x ≈ y → (x ∷ []) ≈ₚ (y ∷ [])
-  singleton-≈ x≈y = record { lengths = ≡.refl ; witness = Id ; proof = VecEquality.cons x≈y nil }
+  singleton-≈ : {x y : Carrier} → x ≈ y → (x ∷ []) ≈₃ (y ∷ [])
+  singleton-≈ x≈y = record { witness = Id ; proof = VecEquality.cons x≈y nil }
 \end{code}
-
 
 %{{{ approach via vectors rather than lists
 
-\begin{code}
+\begin{spec}
 module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
   open CommMonoid 𝒞
@@ -555,10 +680,10 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   open import Data.List
   open import Data.Nat  hiding (fold ; _*_)
   open import Data.Fin  hiding (_+_ ; fold ; _≤_)
-\end{code}
+\end{spec}
 
 
-\begin{code}
+\begin{spec}
   -- fold is a setoid homomorphism
 
   fold : Seq∞ → Carrier
@@ -573,7 +698,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   fold-cong {x ∷ xs} {x₁ ∷ ys} record { lengths = lengths ; witness = (Permutations.cons zero witness) ; proof = proof } = {!!}
   fold-cong {x ∷ xs} {x₁ ∷ ys} record { lengths = lengths ; witness = (Permutations.cons (suc p) witness) ; proof = proof } = {!!}
 
-\end{code}
+\end{spec}
   fold-cong : {xs ys : Seq∞} → fromList xs ≈ₖ fromList ys → fold xs ≈ fold ys
   fold-cong {_} {[]} {.[]} nil = refl
   fold-cong {_} {x ∷ xs} {y ∷ ys} (cons x≈y xs≈ys) = x≈y ⟨∙⟩ fold-cong xs≈ys

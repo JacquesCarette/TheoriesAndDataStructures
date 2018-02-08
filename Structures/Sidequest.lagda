@@ -250,12 +250,19 @@ The following is inspired by copumkin & vmchale's libraries.
   toVec [] = []
   toVec (p ∷ ps) = toℕ p ∷ toVec ps
 
+  toVector : {n m : ℕ} → Permutation n m → Vec (Fin n) m
+  toVector = λ p → p ◈ Data.Vec.allFin _
+
   -- Notice that no need to explicitly invoke |homogeneity| since
   -- the pattern matching ensures |n ≡ m|.
   --
   -- Likewise below for |_at_|.
 
   -- ToDo: Consider forming inverse of toVec.
+
+  -- move to DataCombinators.lagda
+  _‼_ : {a : Level} {A : Set a} {n : ℕ} → Vec A n → Fin n → A
+  _‼_ = λ xs i → lookup i xs
 
   infixr 6 _at_  _at′_
 
@@ -327,7 +334,31 @@ See |test-rev˘˘| below.}
   (zero ∷ ps)    ─ (suc {zero} ())
   (zero ∷ ps)    ─ (suc {(suc n)} i) = zero ∷ (ps ─ i)  -- the suc is dropped, parenthesis move.
   ((suc p) ∷ ps) ─ suc {zero} ()
-  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = p ∷ (ps ─ i)  -- the suc's “cancel” & mutually associate.
+  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = either sub1 Id₀ (idris (suc p)) ∷ (ps ─ i)
+
+    where
+
+      open import Data.Sum using () renaming (map to _⊎₁_; [_,_] to either)
+
+      -- Attempt to tighten the bound on a Fin
+      idris : {m : ℕ} → Fin (suc m) → (Fin (suc m)) ⊎ (Fin m)
+      idris {zero} zero = inj₁ zero
+      idris {zero} (suc ())
+      idris {suc m} zero = inj₂ zero
+      idris {suc m} (suc i) = (suc ⊎₁ suc) (idris i)
+
+      -- spec : {m : ℕ} {i : Fin (suc m)} (i<m : toℕ i Data.Nat.< m) → idris i ≡ inj₂ (fromℕ≤ i<m)
+
+      sub1 : {m : ℕ} → Fin (suc (suc m)) → Fin (suc m)
+      sub1 zero    = zero
+      sub1 (suc i) = i
+
+      orginalUse : {m : ℕ} {q : Fin (suc m)}
+                 → (either sub1 Id₀ (idris (suc q))) ≡ q
+      orginalUse {zero} {zero} = ≡.refl
+      orginalUse {zero} {suc ()}
+      orginalUse {suc m} {zero} = {! woah! Nice! … But, why?!}
+      orginalUse {suc m} {suc q} = {!!}
 
 {-
   ─-spec : {n : ℕ} {ps : Permutation (suc n)} {i : Fin n} → (ps ─ (suc i)) at i  ≡  {!!}
@@ -340,34 +371,41 @@ See |test-rev˘˘| below.}
   -- Permutations come with the obvious involution, but non-trivial implementation
   _˘ : {n m : ℕ} → Permutation n m → Permutation m n
   _˘ {zero }     []          = []
-  _˘ {suc n} ps@(p ∷ ps′) = 𝓅 ∷ ( (ps ─ 𝒑)˘ )
+  _˘ {suc n} ps@(p ∷ ps′) = (toVector ps ‼ i'p) ∷ (ps ─ i'p)˘
     where 𝓅 : Fin (suc n)
-          𝓅 = ps at′ p
+          𝓅 = ps at′ p  -- ≟ i'p
 
           𝒑 : Fin (suc n)
           𝒑 = ps at′ 𝓅
 
-  test-rev˘ : toVec (rev {5} ˘) ≡ 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
-  test-rev˘ = ≡.refl
+          i'p : Fin (suc n)
+          i'p = toVector ps ‼ p 
+
+  -- Specification/characterisation of inverse: It can be used to solve equations.
+  ˘-char : {n m : ℕ} {xs : Seq n} {p : Permutation n m} {ys : Seq m} → p ◈ xs ≈ₖ ys → p ˘ ◈ ys ≈ₖ xs
+  ˘-char = {!!}
+
+  test-rev˘ : toVec (rev {5} ˘) ≡ {!toVec (Id {5})!} -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
+  test-rev˘ = {!!} -- ≡.refl
   -- Oh no, this looks bad!
   test-rev˘˘ :  ¬  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
-  test-rev˘˘ ()
+  test-rev˘˘ = {!!} -- ()
 
   -- |n ℕ∷_| and |_─ fromℕ n| are inverses
   ℕ∷-inverse-─ : {n : ℕ} → n ℕ∷ (rev {suc n} ─ fromℕ n)  ≡  rev {suc n}
   ℕ∷-inverse-─ {zero} = ≡.refl
-  ℕ∷-inverse-─ {suc n} = ≡.cong ((suc n) ℕ∷_) ℕ∷-inverse-─
+  ℕ∷-inverse-─ {suc n} = {!!} -- ≡.cong ((suc n) ℕ∷_) ℕ∷-inverse-─
 
   test-rev-end : toVec (rev {5} ─ fromℕ 4) ≡ 3 ∷ 2 ∷ 1 ∷ 0 ∷ [] -- i.e., |toVec (rev {4})|
   test-rev-end = ≡.refl
 
   rev-end=rev : {n : ℕ}  →  rev {suc n} ─ fromℕ n  ≡  rev {n}
   rev-end=rev {zero} = ≡.refl
-  rev-end=rev {suc n} = ≡.cong (n ℕ∷_) rev-end=rev
+  rev-end=rev {suc n} = {!!} -- ≡.cong (n ℕ∷_) rev-end=rev
 
   rev˘=Id : {n : ℕ} → rev ˘  ≡  Id {n}
   rev˘=Id {zero} = ≡.refl
-  rev˘=Id {suc n} = ≡.cong₂ _∷_ rev-end′ it
+  rev˘=Id {suc n} = {!!} -- ≡.cong₂ _∷_ rev-end′ it
 
     where
 
@@ -401,7 +439,7 @@ See |test-rev˘˘| below.}
   -- The identity permutation is a fixed point.
   Id˘ : {n : ℕ} → Id ˘  ≈ₚ  Id {n}
   Id˘ {.0} {[]} = ≈ₖ-refl
-  Id˘ {.(suc _)} {x ∷ xs} = cons ≈.refl Id˘
+  Id˘ {.(suc _)} {x ∷ xs} = {!!} -- cons ≈.refl Id˘
 \end{code}
 %}}}
 
@@ -564,7 +602,7 @@ Expected definition,
     ≈₁-isEquivalence {n} = record { refl = ≈₁-refl ; sym = ≈₁-sym ; trans = ≈₁-trans }
     
     ≈₁-∷-cong₂ : {n m : ℕ} {xs : Seq n} {ys : Seq n} {e : Carrier} → xs ≈₁ ys → (e ∷ xs) ≈₁ (e ∷ ys)
-    ≈₁-∷-cong₂ = {!!}
+    ≈₁-∷-cong₂ eq = {!!}
 \end{code}
 
 However this does not fit in with our needs in |Bag.lagda|, so we work with a bit of
@@ -638,7 +676,9 @@ an awkward definition. \edcomm{MA}{Perhaps we could have a transform between the
   ≈₃-refl :  {xs : Seq∞} → xs ≈₃ xs
   ≈₃-refl = ≈₃-reflexive ≡.refl
 
-  postulate ≈₃-sym :   {xs ys    : Seq∞} → xs ≈₃ ys → ys ≈₃ xs
+  ≈₃-sym : {xs ys : Seq∞} → xs ≈₃ ys → ys ≈₃ xs
+  ≈₃-sym record { witness = witness ; proof = proof } = record { witness = witness ˘ ; proof = {!!} }
+
   postulate ≈₃-trans : {xs ys zs : Seq∞} → xs ≈₃ ys → ys ≈₃ zs → xs ≈₃ zs
 
   ≈₃-isEquivalence : IsEquivalence _≈₃_

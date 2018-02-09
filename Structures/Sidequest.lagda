@@ -33,7 +33,6 @@ open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 \end{code}
 %}}}
 
-
 %{{{ VecEquality
 \edcomm{MA}{See |Data.Vec.Equality|; it may have this setup already. However, ours is heterogenous.}
 \begin{code}
@@ -121,7 +120,9 @@ with the |subst|.
 
 Instead we employ a definition relying on a new additional parameter --which will then be forced to be
 equal to an existing parameter. This is in the spirit of the so-called John Major Equality or the
-oxymoron “Heterogeneous Equality” concept.
+oxymoronic “Heterogeneous Equality” concept.
+
+\edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|. So you use |n| to index, and |m| for what you retrieve.}
 
 \begin{code}
   infixr 5 _∷_
@@ -133,7 +134,25 @@ oxymoron “Heterogeneous Equality” concept.
   homogeneity : {n m : ℕ} → Permutation n m → n ≡ m
   homogeneity [] = ≡.refl
   homogeneity (p ∷ ps) = ≡.cong suc (homogeneity ps)
+\end{code}
 
+One may ask why we do not employ a more general typing for cons, as in
+\begin{spec}
+   _∷_ : {n m : ℕ} → (p : Fin (suc n)) → (ps : Permutation n m) → Permutation (suc n) (suc m)
+\end{spec}
+The issue here is that the need for |homogeneity| comes to the forefront for many uses of
+|Permutation|s in the form of |rewrite|'s or |with|'s --both of which are avoided when we use the
+less generic typing.
+
+For example, our application operation |_◈_| below, and those that use it, must use a |rewrite|
+clause:
+\begin{spec}
+  _◈_ : {n m : ℕ} {a : Level} {A : Set a} → Permutation n m → Vec A n → Vec A m
+  []       ◈ []       = []
+  it@(p ∷ ps) ◈ (x ∷ xs) rewrite (homogeneity it) = insert (ps ◈ xs) p x
+\end{spec}
+
+\begin{code}
   -- What exactly are the semantics of these things?
   -- Insertions!
   -- See the |permute| operation below.
@@ -155,13 +174,29 @@ oxymoron “Heterogeneous Equality” concept.
   _ℕ∷_ = λ n ps → fromℕ n ∷ ps
 \end{code}
 %}}}
-  %{{{ Example permutations: Reverse and Identity
+  %{{{ Rotational Permutations: Reverse and Identity
+
+Let's consider the formation of the family of permutations that rotate a given vector.
+
+We can form such a family in three ways:
+\begin{itemize}
+\item |rotate₋₁|: We request a proof that the rotational push is no more the length of the vector.
+
+\item |rotate|:  The rotational push along with an \emph{offset} are needed to form the permutation.
+
+\item |rotate₁|:   The rotational push is of type |Fin n| where |n| is the length of the vector.
+
+          The downside of this definition is that it requires a double-pattern matching on |n|
+          for any of its uses to normalise. This cost is a bit more than we want and so we instead
+          use |rotate| while acknowledging that |rotate₁| may be the more appropriate definition.
+\end{itemize}
 
 \begin{code}
-  rotate : {n : ℕ} (i : ℕ) → Permutation (i + n) (i + n)
+  -- Make an i-length rotation for an (i + offset)-length vector.
+  rotate : {offset : ℕ} (i : ℕ) → Permutation (i + offset) (i + offset)
   rotate {zero}  zero    = []
-  rotate {suc n} zero    = zero     ∷ rotate 0
-  rotate {n}     (suc i) = (i + n) ℕ∷ rotate i
+  rotate {suc offset} zero    = zero     ∷ rotate 0
+  rotate {offset}     (suc i) = (i + offset) ℕ∷ rotate i
 
   test₀ : rotate 0 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
   test₀ = ≡.refl
@@ -177,25 +212,91 @@ oxymoron “Heterogeneous Equality” concept.
 
   test₄ : rotate 4 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
   test₄ = ≡.refl
-
+  -- That these two can both be written is distastefully permissive.
   test₅ : rotate 5 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
   test₅ = ≡.refl
 
+  rotate₁ : {n : ℕ} (i : Fin n) → Permutation n n
+  rotate₁ {zero} ()
+  rotate₁ {suc zero} zero = zero ∷ []
+  rotate₁ {suc (suc n)} zero = zero ∷ rotate₁ zero
+  rotate₁ {suc n} (suc i) = n ℕ∷ rotate₁ i
+
+  test₀′  : rotate₁ zero ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
+  test₀′  = ≡.refl
+
+  test₁′  : rotate₁ (suc zero)  ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (2 ∷ 3 ∷ 4 ∷ 5 ∷ 1 ∷ [])
+  test₁′  = ≡.refl
+
+  test₂′  : rotate₁ (suc (suc zero)) ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (3 ∷ 4 ∷ 5 ∷ 2 ∷ 1 ∷ [])
+  test₂′  = ≡.refl
+
+  test₃′  : rotate₁ (suc (suc (suc zero))) ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (4 ∷ 5 ∷ 3 ∷ 2 ∷ 1 ∷ [])
+  test₃′  = ≡.refl
+
+  test₄′  : rotate₁ (suc (suc (suc (suc zero)))) ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
+  test₄′  = ≡.refl
+
+  -- Ill-typed.
+  -- test₅′  : rotate₁ (suc (suc (suc (suc (suc zero))))) ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ [])
+  -- test₅′  = ≡.refl
+
+  -- This permutation performs 0-many rotations on a given vector.
   Id : {n : ℕ} → Permutation n n
-  Id = rotate 0
-  -- I.e., insertions at position 0 only; since 0 rotations needed.
+  Id {n} = rotate 0
 
   -- The identity is deserving of its name.
   Id-◈ : {n : ℕ} {xs : Seq n} → Id ◈ xs ≈ₖ xs
-  Id-◈ {.0} {[]} = nil
-  Id-◈ {.(suc _)} {x ∷ xs} = cons ≈.refl Id-◈
+  Id-◈ {xs = []   } = nil
+  Id-◈ {xs = _ ∷ _} = cons ≈.refl Id-◈
 
-  -- rev {n} = rotate n {0} -- we need to use subst to obtain |n + 0 ≡ n|
+  -- ( This is what characterizes, or specifies, the identity! )
+  Id-spec = Id-◈
+\end{code}
+
+Using |rotate₁| would have been a bit more verbose:
+\begin{code}
+  Idd : {n : ℕ} → Permutation n n
+  Idd {zero}  = []
+  Idd {suc n} = rotate₁ zero
+
+  Idd-◈ : {n : ℕ} {xs : Seq n} → Idd ◈ xs ≈ₖ xs
+  Idd-◈ {.0} {[]} = nil
+  Idd-◈ {.1} {x ∷ []} = ≈ₖ-refl
+  Idd-◈ {.(suc (suc _))} {x ∷ x₁ ∷ xs} = cons ≈.refl Idd-◈
+\end{code}
+
+\begin{code}
+  -- |rev {n} == rotate {0} n| -- we need to use subst to obtain |n + 0 ≡ n|
   -- A direct implementation is then clearer.
   rev : {n : ℕ} → Permutation n n
   rev {zero}  = []
   rev {suc n} = n ℕ∷ rev
 \end{code}
+
+\begin{spec}
+  private
+    suc-injective : {m n : ℕ} → _≡_ {A = ℕ} (suc m) (suc n) → m ≡ n
+    suc-injective ≡.refl = ≡.refl
+
+  rev-as-rotate : {n : ℕ}
+    → rev {n} ≡ ≡.subst (λ m → Permutation m m) (+-right-identity n) (rotate {0} n)
+  rev-as-rotate {zero} = ≡.refl
+  rev-as-rotate {suc n} with ≡.cong suc (+-right-identity (suc n))
+  ...| l = {! Why not, Agda?!}
+\end{spec}
+
+\edcomm{MA}{Since addition is defined recursively on the first argument, the equality |rev {n} = rotate {0} n| is ill-typed since the left side has type `Permutation n n` whereas the right has the type `Permutation (n + 0) (n + 0)` which does not rewrite `n + 0` to `n`, by definition of addition. One possible solution might be to redefine `rotate` to produce elements of type `Permutation (n + i) (n + i)` to obtain the automatic rewrite for `0 + n` to `n`. However, it is not longer trivial to infer `n` so that all the types match-up and so we obtain a host of yellow. See the next block below.}
+
+\begin{spec}
+  rotat : {offset : ℕ} (i : ℕ) → Permutation (offset + i) (offset + i)
+  rotat {zero} zero = []
+  rotat {zero} (suc i) = i ℕ∷ rotat {zero} i -- 0 offset with an i rotation is the reverse permutation.
+  rotat {suc offset} i = (offset + i) ℕ∷ rotat {offset} i
+
+  yellow-test₁ : rotat {{! Try to fill me!!}} 1 ◈ (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []) ≡ (2 ∷ 3 ∷ 4 ∷ 5 ∷ 1 ∷ [])
+  yellow-test₁ = ≡.refl
+\end{spec}
 
 %{{{ Attempt at automatically generating coherency proofs
 
@@ -263,7 +364,10 @@ The following is inspired by copumkin & vmchale's libraries.
   -- move to DataCombinators.lagda
   _‼_ : {a : Level} {A : Set a} {n : ℕ} → Vec A n → Fin n → A
   _‼_ = λ xs i → lookup i xs
+\end{code}
 
+Deprecated.
+\begin{spec}
   infixr 6 _at_  _at′_
 
   _at_ : {n m : ℕ} → Permutation n m → (i : Fin n) → Fin (n ∸ toℕ i)
@@ -279,6 +383,7 @@ The following is inspired by copumkin & vmchale's libraries.
   _at′_ : {n m : ℕ} → Permutation n m → Fin n → Fin n
   (p ∷ ps) at′ zero = p
   (p ∷ ps) at′ suc i = inject≤ (ps at′ i) (n≤1+n _)
+  -- \edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|. So you use |n| to index, and |m| for what you retrieve.}
 
   at′-spec : {n m : ℕ} {ps : Permutation n m} {i : Fin n} → toℕ (ps at′ i)  ≡ lookup i (toVec ps)
   at′-spec {.(suc _)} {_} {p ∷ ps} {zero} = ≡.refl
@@ -288,7 +393,7 @@ The following is inspired by copumkin & vmchale's libraries.
   -- It is easier to prove certain results with |_at_| rather than |_at′_| due to the
   -- pesky injection. This combinator will hopefully alleviate some troubles.
   -- See |rev-end′| for example usage.
-  at-at′ : {n m : ℕ} {ps : Permutation n n} {i : Fin n} → toℕ (ps at i) ≡  toℕ (ps at′ i)
+  at-at′ : {n m : ℕ} {ps : Permutation n m} {i : Fin n} → toℕ (ps at i) ≡  toℕ (ps at′ i)
   at-at′ {.(suc _)} {m} {p ∷ ps} {zero} = ≡.refl
   at-at′ {.(suc n)} {m} {p ∷ ps} {suc {n} i}
     rewrite inject≤-lemma (ps at′ i) (n≤1+n n) =  at-at′ {n} {m} {i = i}
@@ -296,10 +401,10 @@ The following is inspired by copumkin & vmchale's libraries.
   test-Id : toVec (Id {5}) ≡ 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
   test-Id = ≡.refl
 
-  Id-spec : {n : ℕ} {j : Fin (suc n)} → toℕ (Id {suc n} at j)  ≡  0
-  Id-spec {n} {zero} = ≡.refl
-  Id-spec {zero} {suc ()}
-  Id-spec {suc n} {suc j} = Id-spec {n} {j}
+  Id-spec₁ : {n : ℕ} {j : Fin (suc n)} → toℕ (Id {suc n} at j)  ≡  0
+  Id-spec₁ {n} {zero} = ≡.refl
+  Id-spec₁ {zero} {suc ()}
+  Id-spec₁ {suc n} {suc j} = Id-spec {n} {j}
 
   rev-spec : {n : ℕ} {i : Fin n} → (toℕ (rev {n} at i)) ≡ n ∸ toℕ (suc i)
   rev-spec {.(suc n)} {zero {n}} = to-from n
@@ -319,7 +424,7 @@ The following is inspired by copumkin & vmchale's libraries.
   rev-end′ :  {n : ℕ} → rev {suc n} at′ fromℕ n ≡ zero
   rev-end′ {n} = toℕ-injective
     (≡.sym (at-at′ {suc n} {suc n} {ps = rev {suc n}} {fromℕ n}) ⟨≡≡⟩ rev-end {n})
-\end{code}
+\end{spec}
 %}}}
   %{{{ Inversion of permutations: deleteP and _˘
 
@@ -327,12 +432,11 @@ The following is inspired by copumkin & vmchale's libraries.
 See |test-rev˘˘| below.}
 
 \begin{code}
-  -- Deletion for permutations:
-  -- [p₁, …, pₙ] ─ i   ↦   [p₁ ∸ 1, …, pᵢ₋₁ ∸ 1, pᵢ, pᵢ₊₁, …, pₙ] ?
+  -- Deletion for permutations
   _─_ : {n m : ℕ} → Permutation (suc n) (suc m) → Fin (suc n) → Permutation n m
   (p  ∷ ps)      ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
   (zero ∷ ps)    ─ (suc {zero} ())
-  (zero ∷ ps)    ─ (suc {(suc n)} i) = zero ∷ (ps ─ i)  -- the suc is dropped, parenthesis move.
+  (zero ∷ ps)    ─ (suc {(suc n)} i) = zero ∷ (ps ─ i)
   ((suc p) ∷ ps) ─ suc {zero} ()
   ((suc p) ∷ ps) ─ (suc {(suc n)} i) = either sub1 Id₀ (idris (suc p)) ∷ (ps ─ i)
 
@@ -352,40 +456,40 @@ See |test-rev˘˘| below.}
       sub1 : {m : ℕ} → Fin (suc (suc m)) → Fin (suc m)
       sub1 zero    = zero
       sub1 (suc i) = i
+\end{code}
 
+\edcomm{MA}{Perhaps it is my poor understanding of dependent types: Why is it that
+|(either sub1 Id₀ (idris (suc q))) ≠ q|?
+\begin{spec}
       orginalUse : {m : ℕ} {q : Fin (suc m)}
                  → (either sub1 Id₀ (idris (suc q))) ≡ q
       orginalUse {zero} {zero} = ≡.refl
       orginalUse {zero} {suc ()}
       orginalUse {suc m} {zero} = {! woah! Nice! … But, why?!}
       orginalUse {suc m} {suc q} = {!!}
+\end{spec}
+}
 
-{-
-  ─-spec : {n : ℕ} {ps : Permutation (suc n)} {i : Fin n} → (ps ─ (suc i)) at i  ≡  {!!}
-  ─-spec {n} {ps} {i} = {!!}
-  -- Where is mine hero in shining logical armor?
--}
+\edcomm{MA}{Having a “specification” for permutation deletion would be exceedingly helpful!}
 
+\begin{code}
   open import Relation.Nullary
 
   -- Permutations come with the obvious involution, but non-trivial implementation
   _˘ : {n m : ℕ} → Permutation n m → Permutation m n
-  _˘ {zero }     []          = []
-  _˘ {suc n} ps@(p ∷ ps′) = (toVector ps ‼ i'p) ∷ (ps ─ i'p)˘
-    where 𝓅 : Fin (suc n)
-          𝓅 = ps at′ p  -- ≟ i'p
-
-          𝒑 : Fin (suc n)
-          𝒑 = ps at′ 𝓅
-
+  _˘ {zero }     []        = []
+  _˘ {suc n} ps@(p ∷ _) = (toVector ps ‼ i'p) ∷ (ps ─ i'p)˘
+    where
           i'p : Fin (suc n)
-          i'p = toVector ps ‼ p 
+          i'p = toVector ps ‼ p
+
+  -- vmchale makes no recursive call...
 
   -- Specification/characterisation of inverse: It can be used to solve equations.
   ˘-char : {n m : ℕ} {xs : Seq n} {p : Permutation n m} {ys : Seq m} → p ◈ xs ≈ₖ ys → p ˘ ◈ ys ≈ₖ xs
-  ˘-char = {!!}
+  ˘-char {n} {m} {xs} {p} {ys} eq = {!!}
 
-  test-rev˘ : toVec (rev {5} ˘) ≡ {!toVec (Id {5})!} -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
+  test-rev˘ : toVec (rev {5} ˘) ≡ {!toVec ((rev {5}) )!} -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
   test-rev˘ = {!!} -- ≡.refl
   -- Oh no, this looks bad!
   test-rev˘˘ :  ¬  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
@@ -403,6 +507,7 @@ See |test-rev˘˘| below.}
   rev-end=rev {zero} = ≡.refl
   rev-end=rev {suc n} = {!!} -- ≡.cong (n ℕ∷_) rev-end=rev
 
+{-
   rev˘=Id : {n : ℕ} → rev ˘  ≡  Id {n}
   rev˘=Id {zero} = ≡.refl
   rev˘=Id {suc n} = {!!} -- ≡.cong₂ _∷_ rev-end′ it
@@ -423,6 +528,7 @@ See |test-rev˘˘| below.}
       it : (rev {suc n} ─ (rev {suc n} at′ rev {suc n} at′ fromℕ n))  ˘
             ≡ Id
       it = it₀ ⟨≡≡⟩ rev˘=Id
+-}
 \end{code}
 
 \begin{code}
@@ -472,7 +578,7 @@ See |test-rev˘˘| below.}
           → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
   ◈-cong₂ nil = ≈ₖ-refl
   ◈-cong₂ {ps = p ∷ ps} (cons {xs = xs} {ys = ys} x≈y eq)
-    = ≈ₖ-trans (insert-cong₁ (◈-cong₂ eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
+    = {!!} -- ≈ₖ-trans (insert-cong₁ (◈-cong₂ eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
 \end{code}
   %}}}
 
@@ -537,7 +643,7 @@ related artifacts of vectors.}
 \begin{code}
   ◈-leftId : {n : ℕ} {xs : Seq n} → Id ◈ xs  ≈ₖ  xs
   ◈-leftId {zero} {[]} = ≈ₖ-refl
-  ◈-leftId {suc n} {x ∷ xs} = cons ≈.refl ◈-leftId
+  ◈-leftId {suc n} {x ∷ xs} = {!!} -- cons ≈.refl ◈-leftId
 
   -- Composition of permutations
   -- \edcomm{MA}{This particular form of typing is chosen so that |Permutation| acts as a morphism}
@@ -547,7 +653,7 @@ related artifacts of vectors.}
   _⊙_ : {n m r : ℕ} → Permutation n m → Permutation m r → Permutation n r
   [] ⊙ [] = []
   (p ∷ ps) ⊙ qs with homogeneity (p ∷ ps) | homogeneity qs
-  (p ∷ ps) ⊙ qs | _≡_.refl | _≡_.refl = (qs at′ p) ∷ (ps ⊙ (qs ─ p))
+  (p ∷ ps) ⊙ qs | _≡_.refl | _≡_.refl = {!!} -- (qs at′ p) ∷ (ps ⊙ (qs ─ p))
 
   -- \edcomm{MA}{I made componentwise equality heterogenous in order to make the typing here more}
   -- general; yet it is not.

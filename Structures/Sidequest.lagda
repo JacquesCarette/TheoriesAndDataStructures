@@ -34,7 +34,8 @@ open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 %}}}
 
 %{{{ VecEquality
-\edcomm{MA}{See |Data.Vec.Equality|; it may have this setup already. However, ours is heterogenous.}
+\edcomm{MA}{See |Data.Vec.Equality|; it may have this setup already. However, ours is over
+and equivalence ≈ .}
 \begin{code}
 module VecEquality {ℓ c : Level} (𝒮 : Setoid c ℓ) where
 
@@ -51,7 +52,8 @@ module VecEquality {ℓ c : Level} (𝒮 : Setoid c ℓ) where
   infix 5 _≈ₖ_
   data _≈ₖ_ : {n m : ℕ} → Seq n → Seq m → Set (c ⊍ ℓ) where
     nil  : [] ≈ₖ []
-    cons : {x y : Carrier} {n m : ℕ} {xs : Seq n} {ys : Seq m} (x≈y : x ≈ y) (xs≈ys : xs ≈ₖ ys) → (x ∷ xs) ≈ₖ (y ∷ ys)
+    cons : {x y : Carrier} {n m : ℕ} {xs : Seq n} {ys : Seq m}
+           (x≈y : x ≈ y) (xs≈ys : xs ≈ₖ ys) → (x ∷ xs) ≈ₖ (y ∷ ys)
 \end{code}
 
 It is a simple matter to show that this is an equivalence relation.
@@ -122,13 +124,14 @@ Instead we employ a definition relying on a new additional parameter --which wil
 equal to an existing parameter. This is in the spirit of the so-called John Major Equality or the
 oxymoronic “Heterogeneous Equality” concept.
 
-\edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|. So you use |n| to index, and |m| for what you retrieve.}
+\edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|.
+So you use |n| to index, and |m| for what you retrieve.}
 
 \begin{code}
   infixr 5 _∷_
-  data Permutation : (n _ : ℕ) → Set where
+  data Permutation : (_ _ : ℕ) → Set where
     []  : Permutation 0 0
-    _∷_ : {n : ℕ} → (p : Fin (suc n)) → (ps : Permutation n n) → Permutation (suc n) (suc n)
+    _∷_ : {n m : ℕ} → (p : Fin (suc m)) → (ps : Permutation n m) → Permutation (suc n) (suc m)
 
   -- Notice the additional parameter, in all possible constructions, is the same as the first pa ram.
   homogeneity : {n m : ℕ} → Permutation n m → n ≡ m
@@ -351,8 +354,15 @@ The following is inspired by copumkin & vmchale's libraries.
   toVec [] = []
   toVec (p ∷ ps) = toℕ p ∷ toVec ps
 
-  toVector : {n m : ℕ} → Permutation n m → Vec (Fin n) m
-  toVector = λ p → p ◈ Data.Vec.allFin _
+  -- note that the most straightforward implementation of |toVector| gives us
+  -- things backwards: elements of |Fin n| of length |m|.
+  toVector′ : {n m : ℕ} → Permutation n m → Vec (Fin n) m
+  toVector′ p = p ◈ Data.Vec.allFin _
+
+  -- but a straightforward implementation does give things the right way 'round
+  toVector : {n m : ℕ} → Permutation n m → Vec (Fin m) n
+  toVector {.0} {.0} [] = []
+  toVector {.(suc _)} {.(suc _)} (p ∷ p₁) = p ∷ Data.Vec.map suc (toVector p₁)
 
   -- Notice that no need to explicitly invoke |homogeneity| since
   -- the pattern matching ensures |n ≡ m|.
@@ -436,9 +446,9 @@ See |test-rev˘˘| below.}
   _─_ : {n m : ℕ} → Permutation (suc n) (suc m) → Fin (suc n) → Permutation n m
   (p  ∷ ps)      ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
   (zero ∷ ps)    ─ (suc {zero} ())
-  (zero ∷ ps)    ─ (suc {(suc n)} i) = zero ∷ (ps ─ i)
+  (zero ∷ ps)    ─ (suc {(suc n)} i) = {!!} -- zero ∷ (ps ─ i)
   ((suc p) ∷ ps) ─ suc {zero} ()
-  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = either sub1 Id₀ (idris (suc p)) ∷ (ps ─ i)
+  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = {!!} -- either sub1 Id₀ (idris (suc p)) ∷ (ps ─ i)
 
     where
 
@@ -477,11 +487,11 @@ See |test-rev˘˘| below.}
 
   -- Permutations come with the obvious involution, but non-trivial implementation
   _˘ : {n m : ℕ} → Permutation n m → Permutation m n
-  _˘ {zero }     []        = []
-  _˘ {suc n} ps@(p ∷ _) = (toVector ps ‼ i'p) ∷ (ps ─ i'p)˘
+  _˘ {zero }          []        = []
+  _˘ {suc n} {suc m} ps@(p ∷ _) = {!!} -- (toVector′ ps ‼ i'p) ∷ (ps ─ i'p)˘
     where
-          i'p : Fin (suc n)
-          i'p = toVector ps ‼ p
+          i'p : Fin (suc m)
+          i'p = {!!} -- toVector ps ‼ p
 
   -- vmchale makes no recursive call...
 
@@ -489,7 +499,7 @@ See |test-rev˘˘| below.}
   ˘-char : {n m : ℕ} {xs : Seq n} {p : Permutation n m} {ys : Seq m} → p ◈ xs ≈ₖ ys → p ˘ ◈ ys ≈ₖ xs
   ˘-char {n} {m} {xs} {p} {ys} eq = {!!}
 
-  test-rev˘ : toVec (rev {5} ˘) ≡ {!toVec ((rev {5}) )!} -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
+  test-rev˘ : toVec (rev {5} ˘) ≡ toVec ((rev {5}) ) -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
   test-rev˘ = {!!} -- ≡.refl
   -- Oh no, this looks bad!
   test-rev˘˘ :  ¬  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
@@ -692,21 +702,21 @@ Expected definition,
   module FirstAttempt where
     data _≈₁_ {n m : ℕ} (xs : Seq n) (ys : Seq m) : Set (c ⊍ ℓ) where
       yes : (p : Permutation n m) → p ◈ xs ≈ₖ ys → xs ≈₁ ys
-    
+
     ≈₁-refl :  {n  : ℕ}{xs : Seq n} → xs ≈₁ xs
     ≈₁-refl {n} {xs} = yes Id Id-◈
-    
+
     ≈₁-sym : {n m : ℕ}{xs : Seq n} {ys : Seq m} → xs ≈₁ ys → ys ≈₁ xs
     ≈₁-sym {n} {m} {xs} {ys} (yes p x) = {! Would need to use inversion here! !}
-    
+
    -- ≈₁-trans : {n m r : ℕ}{xs : Seq n} {ys : Seq m} {zs : Seq r} → xs ≈₁ ys → ys ≈₁ zs → xs ≈₁ zs
     ≈₁-trans : {n : ℕ}{xs ys zs : Seq n} → xs ≈₁ ys → ys ≈₁ zs → xs ≈₁ zs
     ≈₁-trans (yes p p◈xs≈ys) (yes q q◈ys≈zs) = yes (q ⊙ p)
       (≈ₖ-trans ◈-compose (≈ₖ-trans (◈-cong₂ p◈xs≈ys) q◈ys≈zs))
-    
+
     ≈₁-isEquivalence : {n : ℕ} → IsEquivalence (_≈₁_ {n} {n})
     ≈₁-isEquivalence {n} = record { refl = ≈₁-refl ; sym = ≈₁-sym ; trans = ≈₁-trans }
-    
+
     ≈₁-∷-cong₂ : {n m : ℕ} {xs : Seq n} {ys : Seq n} {e : Carrier} → xs ≈₁ ys → (e ∷ xs) ≈₁ (e ∷ ys)
     ≈₁-∷-cong₂ eq = {!!}
 \end{code}
@@ -716,51 +726,51 @@ an awkward definition. \edcomm{MA}{Perhaps we could have a transform between the
 
 \begin{code}
     List = Σ n ∶ ℕ • Seq n
-    
+
     length : List → ℕ
     length (n , xs) = n
-    
+
     seq : (l : List) → Seq (length l)
     seq (n , xs) = xs
-    
+
     data _≈₂_ (xs ys : List) : Set (c ⊍ ℓ) where
       yes : (p : Permutation (length xs) (length ys)) → p ◈ seq xs ≈ₖ seq ys → xs ≈₂ ys
-    
+
     to-awkward : {m n : ℕ} {xs : Seq n} {ys : Seq m} → m ≡ n → xs ≈₁ ys → (n , xs) ≈₂ (m , ys)
     to-awkward ≡.refl (yes p p◈xs≈ys) = yes p p◈xs≈ys
-    
+
     ≈₂-refl :  {xs : List} → xs ≈₂ xs
     ≈₂-refl = to-awkward ≡.refl ≈₁-refl
-    
+
     ≈₂-sym : {xs ys : List} → xs ≈₂ ys → ys ≈₂ xs
     ≈₂-sym (yes p p◈xs≈ys) = to-awkward (homogeneity p) (≈₁-sym (yes p p◈xs≈ys))
-    
+
     ≈₂-trans : {xs ys zs : List} → xs ≈₂ ys → ys ≈₂ zs → xs ≈₂ zs
     ≈₂-trans (yes p x) (yes q x₁) with homogeneity p | homogeneity q
     ...| ≡.refl | ≡.refl = to-awkward ≡.refl (≈₁-trans (yes p x) (yes q x₁))
-    
+
     -- MA: The following will not work due to the poor typing of ≈₂-trans:
     -- |to-awkward (≡.sym (homogeneity p ⟨≡≡⟩ homogeneity q)) (≈₂-trans ? ?)|
-    
+
     ≈₂-isEquivalence : IsEquivalence _≈₂_
-    ≈₂-isEquivalence = record { refl = ≈₂-refl ; sym = ≈₂-sym ; trans = ≈₂-trans }  
-    
+    ≈₂-isEquivalence = record { refl = ≈₂-refl ; sym = ≈₂-sym ; trans = ≈₂-trans }
+
     ε : List
     ε = (0 , [])
-    
+
     _⊕_ : List → List → List
     (_ , xs) ⊕ (_ , ys) = (_ , xs ++ ys)
-    
+
     -- not-so-strangely properties about Vec catenation are not in the standard library
     -- since they would involve much usage of subst due to the alteration of vector sizes.
     -- Perhaps take a glance at Data.Vec.Equality.
-    
+
     ⊕-left-unit : ∀ ys → (ε ⊕ ys) ≈₂ ys
     ⊕-left-unit ys = ≈₂-refl
-    
+
     -- ++-right-unit : {n : ℕ} {xs : Seq n} → xs ++ [] ≈ₖ xs
     -- ++-right-unit {xs = xs} = {!!}
-    
+
     ⊕-right-unit : ∀ ys → (ys ⊕ ε) ≈₂ ys
     ⊕-right-unit (.0 , []) = ≈₂-refl
     ⊕-right-unit (.(suc _) , x ∷ proj₄) = to-awkward (≡.cong suc (≡.sym (+-right-identity _)))

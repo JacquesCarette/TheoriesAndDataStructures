@@ -120,10 +120,6 @@ with the |subst|.
   _ℕ∷_ = λ n ps → cons (fromℕ n) ps
 \end{spec}
 
-Instead we employ a definition relying on a new additional parameter --which will then be forced to be
-equal to an existing parameter. This is in the spirit of the so-called John Major Equality or the
-oxymoronic “Heterogeneous Equality” concept.
-
 \edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|.
 So you use |n| to index, and |m| for what you retrieve.}
 
@@ -444,12 +440,11 @@ See |test-rev˘˘| below.}
 \begin{code}
   -- Deletion for permutations
   _─_ : {n m : ℕ} → Permutation (suc n) (suc m) → Fin (suc n) → Permutation n m
-  (p  ∷ ps)      ─ zero              =  ps  -- i.e. delete the zero'th element is essentially “tail”
-  (zero ∷ ps)    ─ (suc {zero} ())
-  (zero ∷ ps)    ─ (suc {(suc n)} i) = {!!} -- zero ∷ (ps ─ i)
-  ((suc p) ∷ ps) ─ suc {zero} ()
-  ((suc p) ∷ ps) ─ (suc {(suc n)} i) = {!!} -- either sub1 Id₀ (idris (suc p)) ∷ (ps ─ i)
-
+  _─_ {n} (p ∷ ps) zero = ps
+  _─_ {zero} p (suc ())
+  _─_ {suc n} {zero} (_ ∷ ()) (suc q)
+  _─_ {suc n} {suc m} (zero ∷ ps) (suc q) = zero ∷ (ps ─ q)
+  _─_ {suc n} {suc m} (suc p ∷ ps) (suc q) = either sub1 Id₀ (idris (suc p)) ∷ (ps ─ q)
     where
 
       open import Data.Sum using () renaming (map to _⊎₁_; [_,_] to either)
@@ -488,21 +483,24 @@ See |test-rev˘˘| below.}
   -- Permutations come with the obvious involution, but non-trivial implementation
   _˘ : {n m : ℕ} → Permutation n m → Permutation m n
   _˘ {zero }          []        = []
-  _˘ {suc n} {suc m} ps@(p ∷ _) = {!!} -- (toVector′ ps ‼ i'p) ∷ (ps ─ i'p)˘
+  _˘ {suc n} {suc m} ps@(p ∷ _) = (toVector′ ps ‼ p) ∷ ((ps ─ i'p) ˘)
     where
-          i'p : Fin (suc m)
-          i'p = {!!} -- toVector ps ‼ p
+          i'p : Fin (suc n)
+          i'p = toVector′ ps ‼ p -- toVector′ ps ‼ p
 
   -- vmchale makes no recursive call...
 
   -- Specification/characterisation of inverse: It can be used to solve equations.
   ˘-char : {n m : ℕ} {xs : Seq n} {p : Permutation n m} {ys : Seq m} → p ◈ xs ≈ₖ ys → p ˘ ◈ ys ≈ₖ xs
-  ˘-char {n} {m} {xs} {p} {ys} eq = {!!}
+  ˘-char {zero} {.0} {[]} {[]} {[]} eq = eq
+  ˘-char {suc n} {zero} {xs} {()} {[]} eq
+  ˘-char {suc n} {suc m} {x ∷ xs} {zero ∷ p₁} {x₁ ∷ ys} (VecEquality.cons x≈y eq) = VecEquality.cons (≈.sym x≈y) (˘-char eq)
+  ˘-char {suc n} {suc m} {x ∷ xs} {suc p ∷ p₁} {x₁ ∷ ys} eq = {!!}
 
   test-rev˘ : toVec (rev {5} ˘) ≡ toVec ((rev {5}) ) -- 0 ∷ 0 ∷ 0 ∷ 0 ∷ 0 ∷ []
   test-rev˘ = {!!} -- ≡.refl
   -- Oh no, this looks bad!
-  test-rev˘˘ :  ¬  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
+  test-rev˘˘ :  toVec ((rev {5} ˘)˘) ≡ toVec (rev {5}) -- It seems this is not an involution!
   test-rev˘˘ = {!!} -- ()
 
   -- |n ℕ∷_| and |_─ fromℕ n| are inverses
@@ -511,7 +509,7 @@ See |test-rev˘˘| below.}
   ℕ∷-inverse-─ {suc n} = {!!} -- ≡.cong ((suc n) ℕ∷_) ℕ∷-inverse-─
 
   test-rev-end : toVec (rev {5} ─ fromℕ 4) ≡ 3 ∷ 2 ∷ 1 ∷ 0 ∷ [] -- i.e., |toVec (rev {4})|
-  test-rev-end = ≡.refl
+  test-rev-end = {!!}
 
   rev-end=rev : {n : ℕ}  →  rev {suc n} ─ fromℕ n  ≡  rev {n}
   rev-end=rev {zero} = ≡.refl
@@ -577,7 +575,7 @@ See |test-rev˘˘| below.}
   insert-cong₃ {xs = []} {zero} e≈d = cons e≈d nil
   insert-cong₃ {xs = []} {suc ()} e≈d
   insert-cong₃ {xs = x ∷ xs} {zero} e≈d = cons e≈d ≈ₖ-refl
-  insert-cong₃ {xs = x ∷ xs} {suc i} e≈d = cons ≈.refl (insert-cong₃ e≈d)
+  insert-cong₃ {xs = x ∷ xs} {suc i} e≈d = cons ≈.refl (insert-cong₃ {_} {xs} {i} e≈d)
 
   ◈-cong₁ : {n m : ℕ} {ps qs : Permutation n m} {xs : Seq n}
           → ps ≈ₚ qs → ps ◈ xs ≈ₖ qs ◈ xs
@@ -588,7 +586,7 @@ See |test-rev˘˘| below.}
           → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
   ◈-cong₂ nil = ≈ₖ-refl
   ◈-cong₂ {ps = p ∷ ps} (cons {xs = xs} {ys = ys} x≈y eq)
-    = {!!} -- ≈ₖ-trans (insert-cong₁ (◈-cong₂ eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
+    = ≈ₖ-trans (insert-cong₁ {i = p} (◈-cong₂ {ps = ps} eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
 \end{code}
   %}}}
 
@@ -653,7 +651,7 @@ related artifacts of vectors.}
 \begin{code}
   ◈-leftId : {n : ℕ} {xs : Seq n} → Id ◈ xs  ≈ₖ  xs
   ◈-leftId {zero} {[]} = ≈ₖ-refl
-  ◈-leftId {suc n} {x ∷ xs} = {!!} -- cons ≈.refl ◈-leftId
+  ◈-leftId {suc n} {x ∷ xs} = cons ≈.refl ◈-leftId
 
   -- Composition of permutations
   -- \edcomm{MA}{This particular form of typing is chosen so that |Permutation| acts as a morphism}
@@ -662,14 +660,15 @@ related artifacts of vectors.}
   infix 6 _⊙_
   _⊙_ : {n m r : ℕ} → Permutation n m → Permutation m r → Permutation n r
   [] ⊙ [] = []
-  (p ∷ ps) ⊙ qs with homogeneity (p ∷ ps) | homogeneity qs
-  (p ∷ ps) ⊙ qs | _≡_.refl | _≡_.refl = {!!} -- (qs at′ p) ∷ (ps ⊙ (qs ─ p))
+  (p ∷ ps) ⊙ (q ∷ qs) = (toVector (q ∷ qs) ‼ p) ∷ ps ⊙ qs -- (qs at′ p) ∷ (ps ⊙ (qs ─ p))
 
   -- \edcomm{MA}{I made componentwise equality heterogenous in order to make the typing here more}
   -- general; yet it is not.
-  ◈-compose : {n : ℕ} {ps : Permutation n n} {qs : Permutation n n}
-            → {xs : Seq n} → (ps ⊙ qs) ◈ xs  ≈ₖ  ps ◈ (qs ◈ xs)
-  ◈-compose = {!!}
+  ◈-compose : {n m r : ℕ} {ps : Permutation n m} {qs : Permutation m r}
+            → {xs : Seq n} → (ps ⊙ qs) ◈ xs  ≈ₖ  qs ◈ (ps ◈ xs)
+  ◈-compose {ps = []} {[]} {[]} = nil
+  ◈-compose {ps = zero ∷ ps} {q ∷ qs} {x ∷ xs} = {!!}
+  ◈-compose {ps = suc p ∷ ps} {q ∷ qs} {x ∷ xs} = {!!}
 \end{code}
 
 \edcomm{MA}{ToDo: Prove this composition is associative; i.e., finish the construction site below.}

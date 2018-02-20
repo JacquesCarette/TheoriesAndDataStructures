@@ -97,9 +97,10 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   open Equality 𝒮 renaming (_≈_ to _≈ₖ_) public
   -- open Setoid 𝒮
   module ≈ = Setoid 𝒮
+  open ≈ using (Carrier ; _≈_)
   open import Data.Vec
   open import Data.Nat hiding (fold ; _*_)
-  open import Data.Fin hiding (_+_ ; fold ; _≤_)
+  open import Data.Fin hiding (_+_ ; fold ; _≤_)  
 
   -- move to DataCombinators.lagda
   _‼_ : {a : Level} {A : Set a} {n : ℕ} → Vec A n → Fin n → A
@@ -108,8 +109,6 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
 
   %{{{ Permutations datatype, insert, permute ◈
 
-\edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|.
-So you use |n| to index, and |m| for what you retrieve.}
 
 \begin{code}
   infixr 5 _∷_
@@ -144,6 +143,11 @@ This allows us to apply a permutation to a vector.
   []       ◈ []       = []
   (p ∷ ps) ◈ (x ∷ xs) = insert (ps ◈ xs) p x
 \end{code}
+\edcomm{JC}{It is also good to remember that a |Permutation| in our encoding is really a
+program (i.e. a group action). Its meaning is really given by |_◈_| on vectors.
+And, in that sense, a |Permutation| encodes a *sequence of inserts*.
+And it is tricky in the sense that you first do all the inserts
+given by the tail of the permutation, THEN you do the head insertion.}
 
 But that's not the only way to apply a permutation to a vector. There is
 also a ``subtractive'' way to do it. Given a way to remove an element from
@@ -221,44 +225,127 @@ The following is inspired by copumkin & vmchale's libraries.
 
 \end{code}
 
+\edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|.
+So you use |n| to index, and |m| for what you retrieve.}
+\begin{code}   
+  open import Data.Sum using () renaming (map to _⊎₁_; [_,_] to either)
+  
+  -- Attempt to tighten the bound on a Fin
+  idris : {m : ℕ} → Fin (suc m) → (Fin (suc m)) ⊎ (Fin m)
+  idris {zero} zero = inj₁ zero
+  idris {zero} (suc ())
+  idris {suc m} zero = inj₂ zero
+  idris {suc m} (suc i) = (suc ⊎₁ suc) (idris i)
+    
+  sub1 : {m : ℕ} → Fin (suc (suc m)) → Fin (suc m)
+  sub1 zero    = zero
+  sub1 (suc i) = i
+
+  delete : {n m : ℕ} → Permutation (suc n) (suc m) → Fin (suc n) → Permutation n m
+  delete {n} (p ∷ ps) zero = ps
+  delete {zero} p (suc ())
+  delete {suc n} {zero} (_ ∷ ()) (suc q)
+  delete {suc n} {suc m} (zero ∷ ps) (suc q) = zero ∷ (delete ps q)
+  delete {suc n} {suc m} (suc p ∷ ps) (suc q) = either sub1 Id₀ (idris (suc p)) ∷ (delete ps q)  
+
+  delete-spec : {n : ℕ} {ps : Permutation (suc n) (suc n)} {q : Fin (suc n)}
+              → {xs : Vec Carrier (suc n)}
+              → delete ps q ◈ removeElem q xs   ≈ₖ   removeElem q (ps ◈ xs)
+  delete-spec {n} {zero ∷ ps} {zero} {x ∷ xs} = refl _
+  delete-spec {n} {suc p ∷ ps} {zero} {x ∷ xs} = {!!}
+  delete-spec {zero} {p ∷ ps} {suc ()} {x ∷ xs}
+  delete-spec {suc n} {zero ∷ ps} {suc q} {x ∷ xs} = ≈.refl ∷-cong delete-spec
+  delete-spec {suc n} {suc p ∷ ps} {suc q} {x ∷ xs} = {!!}
+
+  _⁇_ : {n m : ℕ} → Permutation n m → Fin n → Fin m
+  ps ⁇ i = toVector ps ‼ i
+
+  delete-lookup : {n m : ℕ} {ps : Permutation (suc n) (suc m)} {q : Fin (suc {!!})}
+                → Data.Fin.raise 1 (delete ps q ⁇ {!q!}) ≡ (ps ⁇ q)
+  delete-lookup = {!!}
+\end{code}
+compose Nil p = p
+compose (i :: p) p' = (index i (toVector p')) :: (compose p (delete i p'))
+
+
 %}}}
   %{{{ Inversion of permutations
 
-\begin{code}
-  lookup-insert : let open ≈ in
-    {n : ℕ} (v : Vec Carrier n) (x : Carrier) (i : Fin (suc n)) →
-    lookup i (insert v i x) ≈ x
+\begin{code}  
+  lookup-insert : {n : ℕ} (v : Vec Carrier n) (x : Carrier) (i : Fin (suc n))
+                → lookup i (insert v i x) ≈ x
   lookup-insert vs x zero = ≈.refl
   lookup-insert [] x (suc ())
   lookup-insert (v ∷ vs) x (suc i) = lookup-insert vs x i
 
-  remove-insert : let open ≈ in
-    {n : ℕ} (v : Vec Carrier n) (x : Carrier) (i : Fin (suc n)) →
-    removeElem i (insert v i x) ≈ₖ v
+  remove-insert : {n : ℕ} (v : Vec Carrier n) (x : Carrier) (i : Fin (suc n))
+                → removeElem i (insert v i x) ≈ₖ v
   remove-insert vs x zero = refl vs
   remove-insert [] x (suc ())
   remove-insert (v ∷ vs) x (suc i) = ≈.refl ∷-cong remove-insert vs x i
 
-  remove-cong : let open ≈ in {n : ℕ} (i : Fin (suc n)) {xs ys : Vec Carrier (suc n)}
-    → xs ≈ₖ ys → removeElem i xs ≈ₖ removeElem i ys
+  remove-cong : {n : ℕ} (i : Fin (suc n)) {xs ys : Vec Carrier (suc n)}
+              → xs ≈ₖ ys → removeElem i xs ≈ₖ removeElem i ys
   remove-cong zero (x¹≈x² Equality.∷-cong eq) = eq
   remove-cong {zero} (suc ()) (x¹≈x² ∷-cong eq)
   remove-cong {suc _} (suc i) {_ ∷ xs} {_ ∷ ys} (x¹≈x² Equality.∷-cong eq) =
     x¹≈x² ∷-cong remove-cong i eq
 
-  ◇-cong₂ : let open ≈ in {n m : ℕ} (ps : Permutation n m) {xs ys : Vec Carrier m}
+  ◇-cong₂ : {n m : ℕ} (ps : Permutation n m) {xs ys : Vec Carrier m}
           → xs ≈ₖ ys → ps ◇ xs ≈ₖ ps ◇ ys
   ◇-cong₂ ps []-cong = refl _
   ◇-cong₂ (zero ∷ ps) (x¹≈x² Equality.∷-cong eq) = x¹≈x² ∷-cong ◇-cong₂ ps eq
   ◇-cong₂ (suc p ∷ ps) eq′@(x¹≈x² Equality.∷-cong eq) =
       lookup-cong p eq ∷-cong ◇-cong₂ ps (remove-cong (suc p) eq′)
 
-  theorem : {n m : ℕ} (p : Permutation n m)  (xs : Vec ≈.Carrier n) →
-    p ◇ (p ◈ xs) ≈ₖ xs
-  theorem [] [] = []-cong
-  theorem (zero ∷ ps) (x ∷ xs) = ≈.refl ∷-cong theorem ps xs
-  theorem (suc p ∷ ps) (x ∷ xs) = lookup-insert (ps ◈ xs) x (suc p) ∷-cong
-    trans (◇-cong₂ ps (remove-insert (ps ◈ xs) x (suc p))) (theorem ps xs)
+  inversionTheorem : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier n)
+                   → p ◇ (p ◈ xs) ≈ₖ xs
+  inversionTheorem [] [] = []-cong
+  inversionTheorem (zero ∷ ps) (x ∷ xs) = ≈.refl ∷-cong inversionTheorem ps xs
+  inversionTheorem (suc p ∷ ps) (x ∷ xs) = lookup-insert (ps ◈ xs) x (suc p) ∷-cong
+    trans (◇-cong₂ ps (remove-insert (ps ◈ xs) x (suc p))) (inversionTheorem ps xs)
+
+  ◈-elimination : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier n) (ys : Vec Carrier m)
+                → p ◈ xs  ≈ₖ  ys   →   xs  ≈ₖ  p ◇ ys
+  ◈-elimination p xs ys eq = trans (sym (inversionTheorem p xs)) (◇-cong₂ p eq)
+\end{code}
+
+The other form as well,
+\begin{code}
+  insert-remove-lookup : {n : ℕ} (v : Vec Carrier (suc n)) (i : Fin (suc n))
+                → insert (removeElem i v) i (lookup i v) ≈ₖ v
+  insert-remove-lookup (x ∷ v) zero = refl _
+  insert-remove-lookup {zero} (x ∷ v) (suc ())
+  insert-remove-lookup {suc n} (x ∷ v) (suc i) = ≈.refl ∷-cong insert-remove-lookup _ _
+
+  insert-cong₁ : {n : ℕ} {xs ys : Vec Carrier n} {i : Fin (1 + n)} {e : Carrier}
+               → xs ≈ₖ ys → insert xs i e  ≈ₖ  insert ys i e
+  insert-cong₁ {i = zero} xs≈ys = ≈.refl ∷-cong xs≈ys
+  insert-cong₁ {i = suc j} []-cong = refl _
+  insert-cong₁ {i = suc j} (x≈y ∷-cong xs≈ys) = x≈y ∷-cong insert-cong₁ xs≈ys
+  
+  inversionTheorem˘ : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier m)
+                    → p ◈ (p ◇ xs) ≈ₖ xs
+  inversionTheorem˘ [] [] = []-cong
+  inversionTheorem˘ (zero ∷ p₁) (x ∷ xs) = ≈.refl ∷-cong inversionTheorem˘ p₁ xs
+  inversionTheorem˘ (suc p ∷ p₁) (x ∷ xs)
+    = trans (insert-cong₁ (inversionTheorem˘ _ _)) (insert-remove-lookup _ _)
+
+  insert-cong₃ : {n : ℕ} {xs : Vec Carrier n} {i : Fin (1 + n)} {d e : Carrier}
+               → e ≈ d → insert xs i e  ≈ₖ  insert xs i d
+  insert-cong₃ {xs = []} {zero} e≈d = e≈d ∷-cong []-cong
+  insert-cong₃ {xs = []} {suc ()} e≈d
+  insert-cong₃ {xs = x ∷ xs} {zero} e≈d = e≈d ∷-cong refl _
+  insert-cong₃ {xs = x ∷ xs} {suc i} e≈d = ≈.refl ∷-cong insert-cong₃ {_} {xs} {i} e≈d
+
+  ◈-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Vec Carrier n}
+          → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
+  ◈-cong₂ []-cong = refl _
+  ◈-cong₂ {ps = p ∷ ps} (x≈y ∷-cong eqs) = trans (insert-cong₁ {i = p} (◈-cong₂ {ps = ps} eqs)) (insert-cong₃ x≈y)
+
+  ◇-elimination : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier m) (ys : Vec Carrier n)
+                → p ◇ xs  ≈ₖ  ys   →   xs  ≈ₖ  p ◈ ys
+  ◇-elimination p xs ys eq = trans (sym (inversionTheorem˘ p xs)) (◈-cong₂ eq)
 \end{code}
 \begin{spec}
   open import Relation.Nullary
@@ -302,33 +389,14 @@ The following is inspired by copumkin & vmchale's libraries.
   %{{{ cong properties
 
 \begin{spec}
-  insert-cong₁ : {n : ℕ} {xs ys : Seq n} {i : Fin (1 + n)} {e : Carrier}
-               → xs ≈ₖ ys → insert xs i e  ≈ₖ  insert ys i e
-  insert-cong₁ {i = zero} xs≈ys = cons ≈.refl xs≈ys
-  insert-cong₁ {i = suc _} nil              = ≈ₖ-refl
-  insert-cong₁ {i = suc j} (cons x≈y xs≈ys) = cons x≈y (insert-cong₁ {i = j} xs≈ys)
-
   insert-cong₂ : {n : ℕ} {xs : Seq n} {i j : Fin (1 + n)} {e : Carrier}
                → i ≡ j → insert xs i e  ≈ₖ  insert xs j e
   insert-cong₂ ≡.refl = ≈ₖ-refl
-
-  insert-cong₃ : {n : ℕ} {xs : Seq n} {i : Fin (1 + n)} {d e : Carrier}
-               → e ≈ d → insert xs i e  ≈ₖ  insert xs i d
-  insert-cong₃ {xs = []} {zero} e≈d = cons e≈d nil
-  insert-cong₃ {xs = []} {suc ()} e≈d
-  insert-cong₃ {xs = x ∷ xs} {zero} e≈d = cons e≈d ≈ₖ-refl
-  insert-cong₃ {xs = x ∷ xs} {suc i} e≈d = cons ≈.refl (insert-cong₃ {_} {xs} {i} e≈d)
 
   ◈-cong₁ : {n m : ℕ} {ps qs : Permutation n m} {xs : Seq n}
           → ps ≈ₚ qs → ps ◈ xs ≈ₖ qs ◈ xs
   ◈-cong₁ eq = eq
   -- This is part of the definition of permutation equality.
-
-  ◈-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Seq n}
-          → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
-  ◈-cong₂ nil = ≈ₖ-refl
-  ◈-cong₂ {ps = p ∷ ps} (cons {xs = xs} {ys = ys} x≈y eq)
-    = ≈ₖ-trans (insert-cong₁ {i = p} (◈-cong₂ {ps = ps} eq)) (insert-cong₃ {_} {ps ◈ ys} {p} x≈y)
 \end{spec}
   %}}}
 
@@ -374,6 +442,75 @@ The following is inspired by copumkin & vmchale's libraries.
 
 %}}}
 
+%{{{ Interface
+
+Permutations form a group,
+\begin{code}
+  infix 5 _≈₁_
+  _≈₁_ : {n m : ℕ} → (a b : Permutation n m) → Set {!!}
+  _≈₁_ = {!!}
+
+  infix 6 _⊙_
+  _⊙_ : {n m r : ℕ} → Permutation n m → Permutation m r → Permutation n r
+  _⊙_ = {!!}
+
+  ⊙-cong : {n m r : ℕ} {a a′ : Permutation n m} {b b′ : Permutation m r}
+         → a ≈₁ a′ → b ≈₁ b′ → a ⊙ b ≈₁ a′ ⊙ b′
+  ⊙-cong = {!!}
+
+  ⊙-assoc : {n m r s : ℕ} {a : Permutation n m} {b : Permutation m r} {c : Permutation r s}
+          → (a ⊙ b) ⊙ c ≈₁ a ⊙ (b ⊙ c)
+  ⊙-assoc = {!!}
+
+  ⊙-leftId : {n m : ℕ} {a : Permutation n m} → idP ⊙ a ≈₁ a
+  ⊙-leftId = {!!}
+
+  ⊙-rightId : {n m : ℕ} {a : Permutation n m} → a ⊙ idP ≈₁ a
+  ⊙-rightId = {!!}
+
+  infix 7 _˘
+  _˘ : {n m : ℕ} → Permutation n m → Permutation m n
+  _˘ = {!!}
+
+  ˘-cong : {n m : ℕ} {a a′ : Permutation n m} → a ≈₁ a′ → a ˘ ≈₁ a′ ˘
+  ˘-cong = {!!}
+
+  ˘- : {n m : ℕ} {a : Permutation n m} → a ˘ ⊙ a ≈₁ idP
+  ˘- = {!!}
+
+  solve-linear-equation : {n m r : ℕ} {a : Permutation n m} {x : Permutation m r} {b : Permutation n r}
+    → a ⊙ x ≈₁ b → x ≈₁ a ˘ ⊙ b
+  solve-linear-equation = {!!}
+
+  ˘-shunting : {n m : ℕ} {a : Permutation n m} {b : Permutation m n}
+             → a ˘ ≈₁ b → a ≈₁ b ˘
+  ˘-shunting = {!!}
+\end{code}
+
+Moreover, permutations provide a group action on vectors:
+\begin{code}
+  ◈-cong₁ : {n m : ℕ} {a b : Permutation n m} {xs : Vec Carrier n}
+          → a ≈₁ b → a ◈ xs ≈ₖ b ◈ xs
+  ◈-cong₁ = {!!}
+  
+  ◈-compose : {n m r : ℕ} {a : Permutation n m} {b : Permutation m r}
+            → {xs : Vec Carrier n} → (a ⊙ b) ◈ xs  ≈ₖ  b ◈ (a ◈ xs)
+  ◈-compose = {!!}
+
+  ◈-solve-linear-equation : {n m : ℕ} {w : Permutation n m} {xs : Vec Carrier n} {ys : Vec Carrier m}
+    → w ◈ xs ≈ₖ ys → xs ≈ₖ w ˘ ◈ ys
+  ◈-solve-linear-equation {n} {m} {w} {xs} {ys} w◈x≈y
+    = sym idP-◈
+    ⇐  ◈-cong₁ (˘- {n} {m} {a = w})
+    ⇐ sym (◈-compose {a = w} {b = w ˘} {xs = xs})
+    ⇐ ◈-cong₂ {m} {n} {ps = w ˘} {w ◈ xs} {ys} w◈x≈y
+    where
+      infixl 4 _⇐_
+      _⇐_ = trans
+\end{code}
+
+%}}}
+
 And now we really want to use our |Permutation| to define a bag equality on lists.
 But this is a bit of a pain, as |Permutation| really acts on |Vec|. But, of course,
 a |List| is just a |Vec| that has forgotten its |length| (or the other way around
@@ -382,9 +519,11 @@ elsewhere, so here we set things up using |Vec|.
 
 \begin{code}
   private
-    A = ≈.Carrier
-    Seq = Vec A
+    Seq = Vec ≈.Carrier
+
+  -- equality-(of vectors)-up-to-permutation
   record _≈ₚ_ {n m : ℕ} (xs : Seq n) (ys : Seq m) : Set ℓ where
+    constructor MkEq
     field
       witness : Permutation n m
       proof   : witness ◈ xs ≈ₖ ys
@@ -393,106 +532,48 @@ elsewhere, so here we set things up using |Vec|.
   ≈ₚ-refl = record { witness = idP ; proof = idP-◈ }
 
   ≈ₚ-sym : {n m : ℕ} {xs : Seq n} {ys : Seq m} → xs ≈ₚ ys → ys ≈ₚ xs
-  ≈ₚ-sym record { witness = witness ; proof = proof } =
-    record { witness = {!!} ; proof = {!!} }
-  {-
+  ≈ₚ-sym (MkEq w pf) = MkEq (w ˘) (◈-solve-linear-equation pf)
 
-  postulate
-    ≈₃-sym : {xs ys : Seq∞} → xs ≈₃ ys → ys ≈₃ xs
-    ≈₃-trans : {xs ys zs : Seq∞} → xs ≈₃ ys → ys ≈₃ zs → xs ≈₃ zs
+  ≈ₚ-trans : {n m r : ℕ} {xs : Seq n} {ys : Seq m} {zs : Seq r}
+           → xs ≈ₚ ys → ys ≈ₚ zs → xs ≈ₚ zs
+  ≈ₚ-trans (MkEq witness proof) (MkEq witness₁ proof₁) =
+    MkEq (witness ⊙ witness₁)
+         (trans ◈-compose (trans (◈-cong₂ proof) proof₁))
 
-  ≈₃-isEquivalence : IsEquivalence _≈₃_
-  ≈₃-isEquivalence = record { refl = ≈₃-refl ; sym = ≈₃-sym ; trans = ≈₃-trans }
+  ≈ₚ-isEquivalence : {n : ℕ} → IsEquivalence (_≈ₚ_ {n} {n})
+  ≈ₚ-isEquivalence = record { refl = ≈ₚ-refl ; sym = ≈ₚ-sym ; trans = ≈ₚ-trans }
 
-  singleton-≈ : {x y : ≈.Carrier} → Setoid._≈_ 𝒮 x y → (x ∷ []) ≈₃ (y ∷ [])
-  singleton-≈ x≈y = record { witness = Id ; proof = x≈y ∷-cong []-cong }
-  -}
+  singleton-≈ : {x y : Carrier} → x ≈ y → (x ∷ []) ≈ₚ (y ∷ [])
+  singleton-≈ = λ x≈y → MkEq idP (x≈y ∷-cong []-cong)
 \end{code}
+%}}}
 
-{-
-  open import Relation.Binary.SetoidReasoning
+%{{{ Pesky-hole from the summer
+\begin{code}
+module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
 
-  -- commutativity here!
-  proposition₄ : {n : ℕ} {zs : Seq n} {x y : Carrier}
-               → fold (x ∷ y ∷ zs) ≈ fold (y ∷ x ∷ zs)
-  proposition₄ {n} {zs} {x} {y} = begin⟨ 𝒮 ⟩
-      fold (x ∷ y ∷ zs)
-    ≈˘⟨ assoc _ _ _ ⟩
-      (x * y) * fold zs
-    ≈⟨ comm _ _ ⟨∙⟩ refl ⟩
-      (y * x) * fold zs
-    ≈⟨ assoc _ _ _ ⟩
-      fold (y ∷ x ∷ zs)
-    ∎
+  open CommMonoid 𝒞
+  open IsCommutativeMonoid isCommMonoid -- \edcomm{MA}{The field name really oughtn't be abbreviated!}
 
-  proposition₃ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x y : Carrier}
-               → fold (x ∷ y ∷ xs) ≈ fold (y ∷ insert xs i x)
-  proposition₃ {.0} {[]} {zero} =  proposition₄
-  proposition₃ {.0} {[]} {suc ()}
-  proposition₃ {.(suc _)} {x ∷ xs} {zero} = proposition₄
-  proposition₃ {.(suc _)} {hd ∷ xs} {suc i} {x} {y} = begin⟨ 𝒮 ⟩
-      fold (x ∷ y ∷ hd ∷ xs)
-    ≈⟨ proposition₄ ⟩
-      fold (y ∷ x ∷ hd ∷ xs)
-    ≡⟨ ≡.refl ⟩
-      y * fold (x ∷ hd ∷ xs)
-    ≈⟨ refl ⟨∙⟩ proposition₃ ⟩
-      y * fold (hd ∷ insert xs i x)
-    ≡⟨ ≡.refl ⟩
-      fold (y ∷ hd ∷ insert xs i x)
-    ∎
+  open Setoid 𝒮
+  open Equality 𝒮 renaming (_≈_ to _≈ₖ_) hiding (refl ; trans)
+  -- module ≈ = Setoid 𝒮
+  
+  open import Data.Vec
+  open import Data.Nat  hiding (fold ; _*_)
 
-  proposition₂ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x : Carrier}
-               → fold (x ∷ xs) ≈ fold (insert xs i x)
-  proposition₂ {.0} {[]} {zero} = refl
-  proposition₂ {.0} {[]} {suc ()}
-  proposition₂ {.(suc _)} {y ∷ xs} {zero} = refl
-  proposition₂ {.(suc _)} {y ∷ xs} {suc i} = proposition₃
+  private
+    Seq = Vec Carrier
 
-  open import Relation.Binary.PropositionalEquality using (inspect; [_])
-
-  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs)
-  proposition₁ {.0} {[]} {nil} = refl
-  proposition₁ {.(suc _)} {x ∷ xs} {cons zero ps} = refl ⟨∙⟩ proposition₁
-  proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with ps ◈ xs | inspect (_◈_ ps) xs
-  proposition₁ {.(suc 0)} {x ∷ xs} {cons (suc ()) ps} | [] | _
-  proposition₁ {.(suc (suc _))} {x ∷ xs} {cons (suc p) ps} | x′ ∷ xs′ | [ ps-on-xs≈xs′ ] = begin⟨ 𝒮 ⟩
-      x * fold xs
-    ≈⟨ refl ⟨∙⟩ proposition₁ ⟩
-      x * fold (ps ◈ xs)
-    ≡⟨ ≡.cong (λ zs → x * fold zs) ps-on-xs≈xs′ ⟩
-      x * fold (x′ ∷ xs′)
-    ≡⟨ ≡.refl ⟩
-      fold (x ∷ x′ ∷ xs′)
-    ≈⟨ proposition₄ ⟩
-      fold (x′ ∷ x ∷ xs′)
-    ≡⟨ ≡.refl ⟩
-      x′ * fold (x ∷ xs′)
-    ≈⟨ refl ⟨∙⟩ proposition₂ ⟩
-      x′ * fold (insert xs′ p x)
-    ∎
-
-  -- This is essentially |Multiset.fold-permute|, the pesky-hole from the summer.
-  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys
-  proposition₀ (yes p p-on-xs≈ys) = trans proposition₁ (fold-cong p-on-xs≈ys)
-
-
-%{{{ Vector based approach, it works:
-\begin{spec}
   -- fold is a setoid homomorphism
 
   fold : {n : ℕ} → Seq n → Carrier
   fold = foldr (λ _ → Carrier) _*_ e
 
   fold-cong : {n : ℕ} {xs ys : Seq n} → xs ≈ₖ ys → fold xs ≈ fold ys
-  fold-cong {_} {[]} {.[]} nil = refl
-  fold-cong {_} {x ∷ xs} {y ∷ ys} (cons x≈y xs≈ys) = x≈y ⟨∙⟩ fold-cong xs≈ys
+  fold-cong []-cong = ≈.refl
+  fold-cong (x≈y ∷-cong xs≈ys) = x≈y ⟨∙⟩ fold-cong xs≈ys
   -- commutativity is not used here and so this result is valid for non-commutative monoids as well.
-
-  open Permutations 𝒮
-
-  data _≈ᵥ_ {n : ℕ} (xs : Seq n) (ys : Seq n) : Set (c ⊍ l) where
-    yes : (p : Permutation n) → p ◈ xs ≈ₖ ys → xs ≈ᵥ ys
 
   open import Relation.Binary.SetoidReasoning
 
@@ -508,6 +589,9 @@ elsewhere, so here we set things up using |Vec|.
     ≈⟨ assoc _ _ _ ⟩
       fold (y ∷ x ∷ zs)
     ∎
+
+  open Permutations 𝒮 hiding (refl ; trans)
+  open import Data.Fin  hiding (_+_ ; fold ; _≤_)  
 
   proposition₃ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x y : Carrier}
                → fold (x ∷ y ∷ xs) ≈ fold (y ∷ insert xs i x)
@@ -535,16 +619,16 @@ elsewhere, so here we set things up using |Vec|.
 
   open import Relation.Binary.PropositionalEquality using (inspect; [_])
 
-  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n} → fold xs ≈ fold (p ◈ xs)
-  proposition₁ {.0} {[]} {nil} = refl
-  proposition₁ {.(suc _)} {x ∷ xs} {cons zero ps} = refl ⟨∙⟩ proposition₁
-  proposition₁ {.(suc _)} {x ∷ xs} {cons (suc p) ps} with ps ◈ xs | inspect (_◈_ ps) xs
-  proposition₁ {.(suc 0)} {x ∷ xs} {cons (suc ()) ps} | [] | _
-  proposition₁ {.(suc (suc _))} {x ∷ xs} {cons (suc p) ps} | x′ ∷ xs′ | [ ps-on-xs≈xs′ ] = begin⟨ 𝒮 ⟩
+  proposition₁ : {n : ℕ} {xs : Seq n} {p : Permutation n n} → fold xs ≈ fold (p ◈ xs)
+  proposition₁ {xs = []} {[]} = refl
+  proposition₁ {xs = x ∷ xs} {zero  ∷ ps} = refl ⟨∙⟩ proposition₁
+  proposition₁ {xs = x ∷ xs} {suc p ∷ ps} with ps ◈ xs | inspect (_◈_ ps) xs
+  proposition₁ {_} {x ∷ xs} {suc () ∷ ps} | [] | _
+  proposition₁ {_} {x ∷ xs} {suc p ∷ ps} | x′ ∷ xs′ | [ ps◈xs≈xs′ ] = begin⟨ 𝒮 ⟩
       x * fold xs
     ≈⟨ refl ⟨∙⟩ proposition₁ ⟩
       x * fold (ps ◈ xs)
-    ≡⟨ ≡.cong (λ zs → x * fold zs) ps-on-xs≈xs′ ⟩
+    ≡⟨ ≡.cong (λ zs → x * fold zs) ps◈xs≈xs′ ⟩
       x * fold (x′ ∷ xs′)
     ≡⟨ ≡.refl ⟩
       fold (x ∷ x′ ∷ xs′)
@@ -557,11 +641,9 @@ elsewhere, so here we set things up using |Vec|.
     ∎
 
   -- This is essentially |Multiset.fold-permute|, the pesky-hole from the summer.
-  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ᵥ ys → fold xs ≈ fold ys
-  proposition₀ (yes p p-on-xs≈ys) = trans proposition₁ (fold-cong p-on-xs≈ys)
-\end{spec}
-%}}}
-
+  proposition₀ : {n : ℕ} {xs ys : Seq n} → xs ≈ₚ ys → fold xs ≈ fold ys
+  proposition₀ (MkEq p p◈xs≈ys) = trans proposition₁ (fold-cong p◈xs≈ys)
+\end{code}
 %}}}
 
 %{{{ attempting to connect the above with work in BagEq

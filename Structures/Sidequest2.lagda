@@ -15,6 +15,7 @@ open import Categories.Agda       using (Setoids)
 open import Function.Equality using (Π ; _⟶_ ; _∘_)
 open import Function using (_$_) renaming (id to Id₀ ; _∘_ to _∘₀_)
 
+import Relation.Binary.Indexed as I
 open import DataProperties hiding (⟨_,_⟩)
 open import ParComp
 open import EqualityCombinators
@@ -70,6 +71,43 @@ module Equality {s₁ s₂} (S : Setoid s₁ s₂) where
   trans []-cong            []-cong             =  []-cong
   trans (x≈y ∷-cong xs≈ys) (y≈z ∷-cong ys≈zs)  =
     ≈₀.trans x≈y y≈z  ∷-cong  trans xs≈ys ys≈zs
+
+  Seq-ISetoid : I.Setoid ℕ s₁ s₂
+  Seq-ISetoid = record { Carrier = Seq ; _≈_ = _≈_
+    ; isEquivalence = record
+      { refl = λ {n} {xs} → refl {n} xs
+      ; sym = sym
+      ; trans = trans
+      }
+    }
+  module Seq≈ = I.Setoid Seq-ISetoid
+
+  -- Material ported from |Relation.Binary.PreorderReasoning|
+  infix  4 _IsRelatedTo_
+  infix  3 _□ₖ
+  infixr 2 _≈ₖ⟨_⟩_ _≈ₖ≡⟨_⟩_ _≈ₖ⟨⟩_
+  infix  1 ≈ₖ-begin_
+
+  data _IsRelatedTo_ {m n : ℕ} (x : Seq m) (y : Seq n) : Set {!!} where
+    relTo : (x∼y : x ≈ y) → x IsRelatedTo y
+
+  ≈ₖ-begin_ : {m n : ℕ} {x : Seq m} {y : Seq n} → x IsRelatedTo y → x ≈ y
+  ≈ₖ-begin relTo x∼y = x∼y
+
+  _≈ₖ⟨_⟩_  : {k m n : ℕ} (x : Seq k) {y : Seq m} {z : Seq n}
+          → x ≈ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ≈ₖ⟨ x≈y ⟩ relTo y≈z = relTo (trans x≈y y≈z)
+
+  _≈ₖ≡⟨_⟩_  : {m n : ℕ} (x : Seq m) {y : Seq m} {z : Seq n}
+          → x ≡ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ≈ₖ≡⟨ x≡y ⟩ relTo y≈z = relTo (trans (Seq≈.reflexive x≡y) y≈z)
+
+  _≈ₖ⟨⟩_  : {m n : ℕ} (x : Seq m) {y : Seq n}
+          → x IsRelatedTo y → x IsRelatedTo y
+  _ ≈ₖ⟨⟩ x≈y = x≈y
+
+  _□ₖ : {n : ℕ} (x : Seq n) → x IsRelatedTo x
+  _□ₖ _ = relTo (refl _)
 
   -- handy-dandy combinator for `k`component-wise equality transitivity.
   infixl 4 _⟨≈ₖ≈⟩_
@@ -160,7 +198,14 @@ a Vector:
   removeElem : {n : ℕ} {a : Level} {A : Set a} → Fin (suc n) → Vec A (suc n) → Vec A n
   removeElem {_}    zero     (_ ∷ v)  =  v
   removeElem {zero} (suc ()) (_ ∷ _)
-  removeElem {suc _} (suc k) (x ∷ v)  =  x ∷ removeElem k v
+  removeElem {suc n} (suc k) (x ∷ v)  =  x ∷ removeElem {n} k v
+
+  -- attempting to get better reduction behaviour --- however, this only shifts
+  -- the ``additional constructor required'' from |n| to |v|.
+  removeElem′ : {n : ℕ} {a : Level} {A : Set a} → Fin (suc n) → Vec A (suc n) → Vec A n
+  removeElem′ _     (_ ∷ [])  =  []
+  removeElem′ zero  (_ ∷ v)  =  v
+  removeElem′ (suc k) (x ∷ y ∷ ys)  =  x ∷ removeElem′ k (y ∷ ys)
 \end{code}
 
 We can define a different application.  But note that it goes the ``other way around'':
@@ -203,6 +248,9 @@ it applies to a |Vec A m| rather than a |Vec A n|.
   Id-◇ : {m : ℕ} {xs : Vec ≈.Carrier m} → Id ◇ xs ≈ₖ xs
   Id-◇ {xs = []   }  =  []-cong
   Id-◇ {xs = _ ∷ _}  =  ≈.refl ∷-cong Id-◇
+  -- For |removeElem′|:
+  -- Id-◇ {xs = _ ∷ []}  =  ≈.refl ∷-cong Id-◇
+  -- Id-◇ {xs = _ ∷ _ ∷ _}  =  ≈.refl ∷-cong Id-◇
 \end{code}
 
 \begin{code}
@@ -256,6 +304,7 @@ The following is inspired by copumkin & vmchale's libraries.
   lemma-0 {suc m} {suc q} {suc i} {qs} = {!!}
 -}
 
+  -- \edcomm{WK}{Right argument sequence for |Permutation|?}
   fromVector′ : {m n : ℕ} → m ≡ n → Vec (Fin n) m → Permutation n m
   fromVector′ {0} ≡.refl []                 = []
   fromVector′ {suc zero} ≡.refl (zero ∷ []) = zero ∷ []
@@ -479,8 +528,19 @@ The other form as well,
                     → p ◈ (p ◇ xs) ≈ₖ xs
   inversionTheorem˘ [] []                 =  []-cong
   inversionTheorem˘ (zero ∷ ps) (_ ∷ xs)  =  ≈.refl ∷-cong inversionTheorem˘ ps xs
-  inversionTheorem˘ (suc _ ∷ _) (_ ∷ _)
-    = insert-cong₁ (inversionTheorem˘ _ _)  ⟨≈ₖ≈⟩  insert-remove-lookup
+  inversionTheorem˘ {suc n} (suc p ∷ ps) (x ∷ xs) with homogeneity (suc p ∷ ps)
+  ... | ≡.refl
+    = ≈ₖ-begin
+      (suc p ∷ ps) ◈ ((suc p ∷ ps) ◇ (x ∷ xs))
+    ≈ₖ⟨⟩ -- Def. |◇|
+      (suc p ∷ ps) ◈ (((x ∷ xs) ‼ suc p)  ∷  (ps ◇ (removeElem (suc p) (x ∷ xs))))
+    ≈ₖ⟨⟩ -- Def. |◈|
+       insert (ps ◈ (ps ◇ (removeElem (suc p) (x ∷ xs)))) (suc p) ((x ∷ xs) ‼ suc p)
+    ≈ₖ⟨ insert-cong₁ {i = suc p} (inversionTheorem˘ ps _) ⟩
+       insert (removeElem (suc p) (x ∷ xs)) (suc p) ((x ∷ xs) ‼ suc p)
+    ≈ₖ⟨ insert-remove-lookup {i = suc p} ⟩
+      x ∷ xs
+    □ₖ
 
   insert-cong₃ : {n : ℕ} {xs : Vec Carrier n} {i : Fin (1 + n)} {d e : Carrier}
                → e ≈ d → insert xs i e  ≈ₖ  insert xs i d
@@ -501,8 +561,8 @@ The other form as well,
 
 \begin{code}
   -- ‼ should be heterogenous: {n m : ℕ}
-  _˘ : {n : ℕ} → Permutation n n → Permutation n n
-  ps ˘ = fromVector (ps ◇ allFin _)
+  _˘ : {m n : ℕ} → Permutation n m → Permutation m n
+  ps ˘ = fromVector′ (homogeneity ps) (ps ◇ allFin _)
 
   rndm-guess : {m n : ℕ} {ps : Permutation m n} {xs : Vec Carrier n}
              →  ps ◇ xs  ≈ₖ  fromVector′ (homogeneity ps) (ps ◇ allFin _) ◈ xs

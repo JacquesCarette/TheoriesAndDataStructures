@@ -1,5 +1,5 @@
 \section{Structures.Sidequest2}
-  
+
 %{{{ Imports
 \begin{code}
 module Structures.Sidequest2 where
@@ -65,10 +65,10 @@ module Equality {s₁ s₂} (S : Setoid s₁ s₂) where
   sym []-cong                  =  []-cong
   sym (x¹≡x² ∷-cong xs¹≈xs²)  =  ≈₀.sym x¹≡x² ∷-cong sym xs¹≈xs²
 
-  trans : {n m l : ℕ} {xs : Seq n} {ys : Seq m} {zs : Seq l} 
+  trans : {n m l : ℕ} {xs : Seq n} {ys : Seq m} {zs : Seq l}
         →  xs ≈ ys → ys ≈ zs → xs ≈ zs
   trans []-cong            []-cong             =  []-cong
-  trans (x≈y ∷-cong xs≈ys) (y≈z ∷-cong ys≈zs)  = 
+  trans (x≈y ∷-cong xs≈ys) (y≈z ∷-cong ys≈zs)  =
     ≈₀.trans x≈y y≈z  ∷-cong  trans xs≈ys ys≈zs
 
   -- handy-dandy combinator for `k`component-wise equality transitivity.
@@ -88,7 +88,7 @@ module Equality {s₁ s₂} (S : Setoid s₁ s₂) where
   lookup-cong₂ : {n : ℕ} {i : Fin n} {xs ys : Seq n} → xs ≈ ys → lookup i xs ≈₀ lookup i ys
   lookup-cong₂ {i =  _   } []-cong          =  ≈₀.refl
   lookup-cong₂ {i = zero } (x≈y ∷-cong _ )  =  x≈y
-  lookup-cong₂ {i = suc _} (_   ∷-cong eq)  =  lookup-cong₂ eq
+  lookup-cong₂ {i = suc i′} (_   ∷-cong eq)  =  lookup-cong₂ {i = i′} eq
 \end{code}
 %}}}
 
@@ -100,8 +100,9 @@ module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   open Equality 𝒮 renaming (_≈_ to _≈ₖ_) public
   open module ≈ = Setoid 𝒮 using (Carrier ; _≈_)
   open import Data.Vec
+  open import Data.Vec.Properties using (lookup∘tabulate; lookup-allFin)
   open import Data.Nat hiding (fold ; _*_)
-  open import Data.Fin hiding (_+_ ; fold ; _≤_)  
+  open import Data.Fin hiding (_+_ ; fold ; _≤_)
 \end{code}
 
   %{{{ Permutations datatype, insert, permute ◈
@@ -129,6 +130,14 @@ See the |permute| operation below.
   insert xs zero a           =  a ∷ xs
   insert [] (suc ()) _
   insert (x ∷ xs) (suc i) a  =  x ∷ insert xs i a
+\end{code}
+
+\begin{code}
+  lookup-insert′  : {n : ℕ} {ℓ : Level} {A : Set ℓ} {xs : Vec A n} {i : Fin (1 + n)} {a : A}
+                  → lookup i (insert xs i a) ≡ a
+  lookup-insert′ {xs = xs} {zero} {a} = _≡_.refl
+  lookup-insert′ {xs = []} {suc ()} {_}
+  lookup-insert′ {xs = x ∷ xs} {suc i} {a} = lookup-insert′ {xs = xs} {i} {a}
 \end{code}
 
 This allows us to apply a permutation to a vector.
@@ -230,7 +239,7 @@ The following is inspired by copumkin & vmchale's libraries.
   sub1 zero    = zero
   sub1 (suc i) = i
 
-  force : {n : ℕ} → let 𝓃 = suc n in Vec (Fin (suc 𝓃)) 𝓃 → Vec (Fin 𝓃) 𝓃
+  force : {m n : ℕ} → let 𝓃 = suc n in Vec (Fin (suc 𝓃)) m → Vec (Fin 𝓃) m
   force = map (λ it → either sub1 Id₀ (tighten it))
 
   -- ‼ need a relationship between q and i.
@@ -247,6 +256,12 @@ The following is inspired by copumkin & vmchale's libraries.
   lemma-0 {suc m} {suc q} {suc i} {qs} = {!!}
 -}
 
+  fromVector′ : {m n : ℕ} → m ≡ n → Vec (Fin n) m → Permutation n m
+  fromVector′ {0} ≡.refl []                 = []
+  fromVector′ {suc zero} ≡.refl (zero ∷ []) = zero ∷ []
+  fromVector′ {suc zero} ≡.refl (suc () ∷ [])
+  fromVector′ {suc (suc n)} ≡.refl (f ∷ fs) = f ∷ fromVector′ ≡.refl (force fs)
+
   fromVector : {n : ℕ} → Vec (Fin n) n → Permutation n n
   fromVector {0} []                 = []
   fromVector {suc zero} (zero ∷ []) = zero ∷ []
@@ -255,62 +270,43 @@ The following is inspired by copumkin & vmchale's libraries.
 
   -- Notice that |Permutation n m| is similar to, but distinct from, |Vec (Fin n) m|
   -- and |Vec (Fin m) n|.  We can use the following to directly _visualize_ a permutation
-  -- in a nicer way that using |Fin|s.
+  -- in a nicer way than using |Fin|s.
   seePerm′ : {n m : ℕ} → Permutation n m → Vec ℕ m
   seePerm′ p = Data.Vec.map toℕ $ toVector′ p
 
   -- We have a different application now...
-  
+
   toVector : {n m : ℕ} → Permutation n m → Vec (Fin m) n
   toVector p = p ◇ allFin _
 \end{code}
 
 Spent a day on this and still could not prove it.
-\begin{spec}
-{-
-tabulate : ∀ {n a} {A : Set a} → (Fin n → A) → Vec A n
-tabulate {zero}  f = []
-tabulate {suc n} f = f zero ∷ tabulate (f ∘ suc)
--}
-
+\edcomm{WK}{There is more in the standard library than just the definitions…}
+\begin{code}
   -- +-suc : ∀ m n → m + suc n ≡ suc (m + n)
   open import Data.Nat.Properties.Simple using (+-suc)
-  
+
   fsuĉ : (m {n} : ℕ) → Fin n → Fin (m + n)
   fsuĉ zero i = i
   fsuĉ (suc m) {n} i = suc (fsuĉ m i) -- ≡.subst Fin (+-suc m n) (fsuĉ m (suc i))
 
-  fsuĉ-suc : {m n : ℕ} {i : Fin n} → ≡.subst Fin (≡.sym (+-suc m n)) (suc (fsuĉ m i)) ≡ fsuĉ m (suc i)
-  fsuĉ-suc {m} {n} {i} = {!!}
-
   -- {m n : ℕ} {i : Fin n}→ (m ∷ tabulate (λ x → m + x)) ‼ i ≡ m + i
-  hmm : {m n : ℕ} {i : Fin n}→ (tabulate (fsuĉ m) ‼ i) ≡ fsuĉ m i
-  hmm {m} {zero} {()}
-  hmm {m} {suc n} {zero} = ≡.refl
-  hmm {m} {suc n} {suc i} = {!indHyp!} ⟨≡≡⟩ fsuĉ-suc
-    where
-      indHyp :  lookup i (tabulate (λ x → fsuĉ m (suc x))) ≡
-             ≡.subst Fin (≡.sym (+-suc m n)) (suc (fsuĉ m i))
-      indHyp = {!hmm {m} {n} {i}!} -- hmm {suc m} {n} {i}
+  hmm : {m n : ℕ} {i : Fin n} → (tabulate (fsuĉ m) ‼ i) ≡ fsuĉ m i
+  hmm {m} {n} {i} =  lookup∘tabulate (fsuĉ m) i
 
   allFin-spec : {n : ℕ} {i : Fin (suc (suc n))} → allFin _ ‼ i  ≡  i
-  allFin-spec {zero} {zero} = ≡.refl
-  allFin-spec {zero} {suc zero} = ≡.refl
-  allFin-spec {zero} {suc (suc ())}
-  allFin-spec {suc n} {zero} = ≡.refl
-  allFin-spec {suc n} {suc zero} = ≡.refl
-  allFin-spec {suc n} {suc (suc i)} = {!!}
-\end{spec}
+  allFin-spec {n} {i} = lookup-allFin i
+\end{code}
 
 \begin{code}
   _∋_ : {a : Level} (A : Set a) (x : A) → A
   A ∋ x = x
 
-  postulate
-    allFin-spec : {n : ℕ} {i : Fin n} → allFin n ‼ i  ≡  i
-    fromVector-cong : {n : ℕ} {vs ws : Vec (Fin n) n} → vs ≡ ws → fromVector vs ≡ fromVector ws
+  fromVector-cong : {n : ℕ} {vs ws : Vec (Fin n) n} → vs ≡ ws → fromVector vs ≡ fromVector ws
+  fromVector-cong = ≡.cong fromVector
 
-    helper : {n : ℕ} (let 𝓃 = suc n) {ps : Permutation 𝓃 𝓃}         
+  postulate
+    helper : {n : ℕ} (let 𝓃 = suc n) {ps : Permutation 𝓃 𝓃}
          →    force (ps ◇ (suc zero ∷ tabulate (λ x → suc (suc x))))
             ≡ toVector ps
 
@@ -320,14 +316,15 @@ tabulate {suc n} f = f zero ∷ tabulate (f ∘ suc)
   from-to {suc zero} {suc () ∷ []}
   -- case on |p| since |removeElem| is defined that way.
   from-to {suc (suc n)} {zero ∷ ps} = ≡.cong₂ _∷_ ≡.refl (fromVector-cong helper ⟨≡≡⟩ from-to)
-  from-to {suc (suc n)} {suc p ∷ ps} = ≡.cong₂ _∷_ allFin-spec (fromVector-cong goal ⟨≡≡⟩ from-to)
+  from-to {suc (suc n)} {suc p ∷ ps} = ≡.cong₂ _∷_ allFin-spec
+       (fromVector-cong (goal p ps) ⟨≡≡⟩ from-to)
     where
-    
+
       postulate
-        goal : {m : ℕ} (let 𝓂 = suc m) {q : Fin 𝓂} {qs : Permutation 𝓂 𝓂}
+        goal : {m : ℕ} (let 𝓂 = suc m) (q : Fin 𝓂) (qs : Permutation 𝓂 𝓂)
            → force (qs ◇ (zero ∷ removeElem q (suc zero ∷ tabulate (λ x → suc (suc x)))))
            ≡ toVector qs
-      -- goal {m} {q} {p₁ ∷ qs} = ≡.cong₂ _∷_ (lemma-0 {m} {q} {p₁} {qs} ⟨≡≡⟩ ≡.sym allFin-spec) {!!} -- 
+      -- goal {m} q (p₁ ∷ qs) = ≡.cong₂ _∷_ (lemma-0 {m} {q} {p₁} {qs} ⟨≡≡⟩ ≡.sym allFin-spec) {!!} --
 
   seePerm : {n m : ℕ} → Permutation n m → Vec ℕ n
   seePerm p = Data.Vec.map toℕ $ toVector p
@@ -374,23 +371,23 @@ For example,
 
   test-inv₃ : aPerm ◈ allFin _  ≡  aPerm˘ ◇ allFin _
   test-inv₃ = ≡.refl
-  
+
   test-inv2 : aPerm ◇ (aPerm ◈ allFin _) ≡ allFin _
   test-inv2 = ≡.refl
 \end{code}
 
 \edcomm{JC}{I think of |Permutation n m| as having length |n| and inhabited by things of type |Fin m|.
 So you use |n| to index, and |m| for what you retrieve.}
-\begin{spec}   
+\begin{spec}
   open import Data.Sum using () renaming (map to _⊎₁_; [_,_] to either)
-  
+
   -- Attempt to tighten the bound on a Fin
   idris : {m : ℕ} → Fin (suc m) → (Fin (suc m)) ⊎ (Fin m)
   idris {zero} zero = inj₁ zero
   idris {zero} (suc ())
   idris {suc m} zero = inj₂ zero
   idris {suc m} (suc i) = (suc ⊎₁ suc) (idris i)
-    
+
   sub1 : {m : ℕ} → Fin (suc (suc m)) → Fin (suc m)
   sub1 zero    = zero
   sub1 (suc i) = i
@@ -400,7 +397,7 @@ So you use |n| to index, and |m| for what you retrieve.}
   delete {zero} p (suc ())
   delete {suc n} {zero} (_ ∷ ()) (suc q)
   delete {suc n} {suc m} (zero ∷ ps) (suc q) = zero ∷ (delete ps q)
-  delete {suc n} {suc m} (suc p ∷ ps) (suc q) = either sub1 Id₀ (idris (suc p)) ∷ (delete ps q)  
+  delete {suc n} {suc m} (suc p ∷ ps) (suc q) = either sub1 Id₀ (idris (suc p)) ∷ (delete ps q)
 
   delete-spec : {n : ℕ} {ps : Permutation (suc n) (suc n)} {q : Fin (suc n)}
               → {xs : Vec Carrier (suc n)}
@@ -424,7 +421,8 @@ compose (i :: p) p' = (index i (toVector p')) :: (compose p (delete i p'))
 %}}}
   %{{{ Inversion of permutations
 
-\begin{code}  
+\edcomm{WK}{|lookup-insert| can be strengthened to a propositional equality, see |lookup-insert′| above.}
+\begin{code}
   lookup-insert : {n : ℕ} (v : Vec Carrier n) (x : Carrier) (i : Fin (suc n))
                 → lookup i (insert v i x) ≈ x
   lookup-insert _ _ zero            =  ≈.refl
@@ -442,21 +440,21 @@ compose (i :: p) p' = (index i (toVector p')) :: (compose p (delete i p'))
   remove-cong₂ {_}     {zero  } (_ ∷-cong xs≈ys) = xs≈ys
   remove-cong₂ {zero } {suc ()} (_ ∷-cong _)
   remove-cong₂ {suc _} {suc i } {_ ∷ _} {_ ∷ _} (x≈y ∷-cong xs≈ys)
-    = x≈y  ∷-cong  remove-cong₂ xs≈ys
+    = x≈y  ∷-cong  remove-cong₂ {i = i} xs≈ys
 
   ◇-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Vec Carrier m}
           → xs ≈ₖ ys → ps ◇ xs  ≈ₖ  ps ◇ ys
   ◇-cong₂  []-cong = refl _
   ◇-cong₂ {ps = zero ∷ ps}     (x≈y ∷-cong xs≈ys) = x≈y  ∷-cong  ◇-cong₂ xs≈ys
   ◇-cong₂ {ps = suc p ∷ ps} eq@(_   ∷-cong xs≈ys)
-    = lookup-cong₂ xs≈ys  ∷-cong  ◇-cong₂ (remove-cong₂ eq)
+    = lookup-cong₂ {i = p} xs≈ys  ∷-cong  ◇-cong₂ (remove-cong₂ {i = suc p} eq)
 
   inversionTheorem : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier n)
                    → p ◇ (p ◈ xs) ≈ₖ xs
   inversionTheorem [] [] = []-cong
   inversionTheorem (zero ∷ ps) (_ ∷ xs)   =  ≈.refl ∷-cong inversionTheorem ps xs
   inversionTheorem (suc p ∷ ps) (x ∷ xs)
-    = lookup-insert _ _ _ ∷-cong (◇-cong₂ (remove-insert _ _ _) ⟨≈ₖ≈⟩ inversionTheorem ps xs)
+    = lookup-insert (ps ◈ xs) x (suc p) ∷-cong (◇-cong₂ (remove-insert _ x (suc p)) ⟨≈ₖ≈⟩ inversionTheorem ps xs)
 
   ◈-elimination : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier n) (ys : Vec Carrier m)
                 → p ◈ xs  ≈ₖ  ys   →   xs  ≈ₖ  p ◇ ys
@@ -469,14 +467,14 @@ The other form as well,
                 → insert (removeElem i v) i (lookup i v) ≈ₖ v
   insert-remove-lookup {_}     {_ ∷ _} {zero  }  =  refl _
   insert-remove-lookup {zero}  {_ ∷ _} {suc ()}
-  insert-remove-lookup {suc _} {_ ∷ _} {suc _ }  =  ≈.refl ∷-cong insert-remove-lookup
+  insert-remove-lookup {suc n} {x ∷ xs} {suc i}  =  ≈.refl ∷-cong insert-remove-lookup {n} {xs} {i}
 
   insert-cong₁ : {n : ℕ} {xs ys : Vec Carrier n} {i : Fin (1 + n)} {e : Carrier}
                → xs ≈ₖ ys → insert xs i e  ≈ₖ  insert ys i e
   insert-cong₁ {i = zero}  xs≈ys               =  ≈.refl ∷-cong xs≈ys
   insert-cong₁ {i = suc _} []-cong             =  refl _
-  insert-cong₁ {i = suc _} (x≈y ∷-cong xs≈ys)  =  x≈y ∷-cong insert-cong₁ xs≈ys
-  
+  insert-cong₁ {i = suc i} (x≈y ∷-cong xs≈ys)  =  x≈y ∷-cong insert-cong₁ {i = i} xs≈ys
+
   inversionTheorem˘ : {n m : ℕ} (p : Permutation n m)  (xs : Vec Carrier m)
                     → p ◈ (p ◇ xs) ≈ₖ xs
   inversionTheorem˘ [] []                 =  []-cong
@@ -506,11 +504,11 @@ The other form as well,
   _˘ : {n : ℕ} → Permutation n n → Permutation n n
   ps ˘ = fromVector (ps ◇ allFin _)
 
-  rndm-guess : {n : ℕ} {ps : Permutation n n} {xs : Vec Carrier n}
-             →  ps ◇ xs  ≈ₖ  fromVector (ps ◇ allFin _) ◈ xs
-  rndm-guess {.0} {[]} {[]} = refl _
-  rndm-guess {.(suc _)} {zero ∷ ps} {x ∷ xs} = {!!}
-  rndm-guess {.(suc _)} {suc p ∷ ps} {x ∷ xs} = {!!}
+  rndm-guess : {m n : ℕ} {ps : Permutation m n} {xs : Vec Carrier n}
+             →  ps ◇ xs  ≈ₖ  fromVector′ (homogeneity ps) (ps ◇ allFin _) ◈ xs
+  rndm-guess {m} {.0} {[]} {[]} = refl _
+  rndm-guess {m} {.(suc _)} {zero ∷ ps} {x ∷ xs} = {!!}
+  rndm-guess {m} {.(suc _)} {suc p ∷ ps} {x ∷ xs} = {!!}
 
   -- {! use inversion theorem, above, to prove this result!}
   crux : {n : ℕ} {ps : Permutation n n} {xs ys : Vec Carrier n} → ps ◈ xs ≈ₖ ys → xs ≈ₖ (ps ˘) ◈ ys
@@ -657,7 +655,7 @@ Moreover, permutations provide a group action on vectors:
   ◈-cong₁ : {n m : ℕ} {a b : Permutation n m} {xs : Vec Carrier n}
           → a ≈₁ b → a ◈ xs ≈ₖ b ◈ xs
   ◈-cong₁ = {!!}
-  
+
   ◈-compose : {n m r : ℕ} {a : Permutation n m} {b : Permutation m r}
             → {xs : Vec Carrier n} → (a ⊙ b) ◈ xs  ≈ₖ  b ◈ (a ◈ xs)
   ◈-compose = {!!}
@@ -720,7 +718,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
   open Setoid 𝒮
   open Equality 𝒮 renaming (_≈_ to _≈ₖ_) hiding (refl ; trans)
   -- module ≈ = Setoid 𝒮
-  
+
   open import Data.Vec
   open import Data.Nat  hiding (fold ; _*_)
 
@@ -753,7 +751,7 @@ module Lemmas {l c : Level} {𝒮 : Setoid c l} (𝒞 : CommMonoid 𝒮) where
     ∎
 
   open Permutations 𝒮 hiding (refl ; trans)
-  open import Data.Fin  hiding (_+_ ; fold ; _≤_)  
+  open import Data.Fin  hiding (_+_ ; fold ; _≤_)
 
   proposition₃ : {n : ℕ} {xs : Seq n} {i : Fin (suc n)} {x y : Carrier}
                → fold (x ∷ y ∷ xs) ≈ fold (y ∷ insert xs i x)

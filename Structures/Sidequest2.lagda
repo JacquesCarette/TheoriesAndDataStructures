@@ -131,6 +131,8 @@ module Equality {s₁ s₂} (S : Setoid s₁ s₂) where
 %}}}
 
 %{{{ Permutations
+\edcomm{WK}{There is a lot currently in module |Permutations| that does not depend on |𝒮|.
+That should be split out.}
 \begin{code}
 module Permutations {ℓ c : Level} (𝒮 : Setoid c ℓ)
   where
@@ -377,6 +379,11 @@ Spent a day on this and still could not prove it.
 
   seePerm : {n m : ℕ} → Permutation n m → Vec ℕ n
   seePerm p = Data.Vec.map toℕ $ toVector p
+
+  seeHelper :  {n : ℕ} (let 𝓃 = suc n) (ps : Permutation 𝓃 𝓃)
+    → Vec ℕ 𝓃 ×  Vec ℕ 𝓃
+  seeHelper ps =  Data.Vec.map toℕ (toVector ps)
+    , Data.Vec.map toℕ (force (ps ◇ (suc zero ∷ tabulate (λ x → suc (suc x)))))
 \end{code}
 
 \begin{spec}
@@ -958,6 +965,13 @@ module Lemmas′ {l c : Level} {𝒞 : CommutativeMonoid c l} where
     insert-cast = {!!}
 \end{spec}
 %}}}
+
+\begin{code}
+open import Relation.Binary.PropositionalEquality renaming (setoid to ⌈_⌉)
+open import Data.Nat using (ℕ)
+
+module P = Permutations ⌈ ℕ ⌉
+\end{code}
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

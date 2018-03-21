@@ -154,6 +154,17 @@ suc-inj {ℕ.suc i} _≡_.refl = _≡_.refl
 
 %}}}
 
+%{{{ vectors: _‼_
+
+\begin{code}
+open import Data.Fin using (Fin)
+open import Data.Vec using (Vec ; lookup)
+
+_‼_ : {a : Level} {A : Set a} {n : ℕ} → Vec A n → Fin n → A
+_‼_ = λ xs i → lookup i xs
+\end{code}
+%}}}
+
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

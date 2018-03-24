@@ -21,11 +21,10 @@ open import Data.Nat using (ℕ   ; zero ; suc ; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup ; allFin)
 
 open import Structures.Sidequest.Permutations.Basic
+open import Structures.Sidequest.Permutations.Vector
 
 module Structures.Sidequest.Permutations.Group {s₁ s₂} (S : Setoid s₁ s₂) where
 
-open import Structures.Sidequest.Permutations.Basic
-open import Structures.Sidequest.Permutations.Vector
 open import Structures.Sidequest.Permutations.ActionProperties S
 open import Structures.Sidequest.Equality S renaming (_≈_ to _≈ₖ_)
 
@@ -47,28 +46,28 @@ postulate
 
   ℓℓℓ : Level
   _≈₁_ : {n m : ℕ} → (a b : Permutation n m) → Set ℓℓℓ
-    
+
   _⊙_ : {n m r : ℕ} → Permutation n m → Permutation m r → Permutation n r
-  
+
   ⊙-cong : {n m r : ℕ} {a a′ : Permutation n m} {b b′ : Permutation m r}
          → a ≈₁ a′ → b ≈₁ b′ → a ⊙ b ≈₁ a′ ⊙ b′
-  
+
   ⊙-assoc : {n m r s : ℕ} {a : Permutation n m} {b : Permutation m r} {c : Permutation r s}
           → (a ⊙ b) ⊙ c ≈₁ a ⊙ (b ⊙ c)
-  
+
   ⊙-leftId : {n m : ℕ} {a : Permutation n m} → Id ⊙ a ≈₁ a
-  
+
   ⊙-rightId : {n m : ℕ} {a : Permutation n m} → a ⊙ Id ≈₁ a
-    
+
   _˘ : {n m : ℕ} → Permutation n m → Permutation m n
-  
+
   ˘-cong : {n m : ℕ} {a a′ : Permutation n m} → a ≈₁ a′ → a ˘ ≈₁ a′ ˘
-  
+
   ˘- : {n m : ℕ} {a : Permutation n m} → a ˘ ⊙ a ≈₁ Id
-  
+
   solve-linear-equation : {n m r : ℕ} {a : Permutation n m} {x : Permutation m r} {b : Permutation n r}
     → a ⊙ x ≈₁ b → x ≈₁ a ˘ ⊙ b
-  
+
   ˘-shunting : {n m : ℕ} {a : Permutation n m} {b : Permutation m n}
              → a ˘ ≈₁ b → a ≈₁ b ˘
 \end{code}
@@ -79,10 +78,10 @@ postulate
 
   ◈-cong₁ : {n m : ℕ} {a b : Permutation n m} {xs : Vec Carrier n}
           → a ≈₁ b → a ◈ xs ≈ₖ b ◈ xs
-  
+
   ◈-compose : {n m r : ℕ} {a : Permutation n m} {b : Permutation m r}
             → {xs : Vec Carrier n} → (a ⊙ b) ◈ xs  ≈ₖ  b ◈ (a ◈ xs)
-  
+
   ◈-solve-linear-equation : {n m : ℕ} {w : Permutation n m} {xs : Vec Carrier n} {ys : Vec Carrier m}
     → w ◈ xs ≈ₖ ys → xs ≈ₖ w ˘ ◈ ys
 \end{code}
@@ -119,8 +118,8 @@ Thought process:
       ps ◈ xs ≈ ys
 ⇒    ps ◇ (ps ◈ xs) ≈ ps ◇ ys                     -- ◇-cong
 ≡    xs ≈ ps ◇ ys                                  -- inversion theorem
-≡    xs ≈ fromVector (ps ◇ allFin _) ◈ ys          -- ???  
-≡    xs ≈  ps ˘ ◈ ys                                -- 
+≡    xs ≈ fromVector (ps ◇ allFin _) ◈ ys          -- ???
+≡    xs ≈  ps ˘ ◈ ys                                --
 \end{spec}
 
 Alternative definition of -˘.

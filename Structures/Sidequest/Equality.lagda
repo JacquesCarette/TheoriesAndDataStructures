@@ -1,7 +1,7 @@
 \section{Structures.Sidequest.Equality}
 
 Documenting congruence laws for |insert| and |remove|; culminating in the notable inversion laws:
-\begin{spec}    
+\begin{spec}
   inversionTheorem  : ∀ p xs → p ◇ (p ◈ xs) ≈ₖ xs
   inversionTheorem˘ : ∀ p xs → p ◈ (p ◇ xs) ≈ₖ xs
 \end{spec}
@@ -25,7 +25,7 @@ open import Data.Vec using (Vec; []; _∷_; _++_; lookup)
 open import Structures.Sidequest.Permutations.Basic
 
 module Structures.Sidequest.Equality {s₁ s₂} (S : Setoid s₁ s₂) where
-  
+
 private
   open module ≈₀ = Setoid S using (Carrier) renaming (_≈_ to _≈₀_)
   Seq = Vec Carrier
@@ -158,7 +158,7 @@ insert-cong₃ : {n : ℕ} {xs : Seq n} {i : Fin (1 + n)} {d e : Carrier}
 insert-cong₃ {xs = []   } {zero  } e≈d  = e≈d      ∷-cong  []-cong
 insert-cong₃ {xs = []   } {suc ()} _
 insert-cong₃ {xs = _ ∷ _} {zero  } e≈d  =  e≈d     ∷-cong  refl _
-insert-cong₃ {xs = _ ∷ _} {suc _ } e≈d  =  ≈₀.refl ∷-cong  insert-cong₃ e≈d
+insert-cong₃ {xs = _ ∷ xs} {suc i} e≈d  =  ≈₀.refl ∷-cong  insert-cong₃ {xs = xs} {i} e≈d
 
 remove-cong₂ : {n : ℕ} {i : Fin (suc n)} {xs ys : Seq (suc n)}
             → xs ≈ ys → removeElem i xs ≈ removeElem i ys

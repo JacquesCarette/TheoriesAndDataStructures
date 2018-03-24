@@ -57,11 +57,21 @@ The other form as well,
 ◈-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Seq n}
         → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
 ◈-cong₂ []-cong                          =  refl _
-◈-cong₂ {ps = _ ∷ _} (x≈y ∷-cong xs≈ys)  =  insert-cong₁ (◈-cong₂ xs≈ys)  ⟨≈ₖ≈⟩  insert-cong₃ x≈y
+◈-cong₂ {ps = p ∷ ps} {x ∷ xs} {y ∷ ys} (x≈y ∷-cong xs≈ys)  = ≈ₖ-begin
+    (p ∷ ps) ◈ (x ∷ xs)
+  ≈ₖ⟨⟩
+    {!!}
+  ≈ₖ⟨ insert-cong₁ {_} {{!!}} {{!!}} {{!!}} (◈-cong₂ xs≈ys) ⟩
+    {!!}
+  ≈ₖ⟨ insert-cong₃ {_} {{!!}} {p} {y} x≈y ⟩
+    {!!}
+  ≈ₖ⟨⟩
+    (p ∷ ps) ◈ (y ∷ ys)
+  □ₖ
 
 ◇-elimination : {n m : ℕ} (p : Permutation n m)  (xs : Seq m) (ys : Seq n)
               → p ◇ xs  ≈ₖ  ys   →   xs  ≈ₖ  p ◈ ys
-◇-elimination p xs ys eq  =  reflexive (≡.sym (inversionTheorem˘ p xs))  ⟨≈ₖ≈⟩  ◈-cong₂ eq
+◇-elimination {n} {m} p xs ys eq  =  reflexive (≡.sym (inversionTheorem˘ {n} {m} p xs))  ⟨≈ₖ≈⟩  ◈-cong₂ {n} {m} {p} {p ◇ xs} {ys} eq
 \end{code}
 %}}}
 

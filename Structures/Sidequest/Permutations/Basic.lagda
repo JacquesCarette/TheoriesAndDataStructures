@@ -114,7 +114,7 @@ insert-remove-lookup : {n : ℕ} {ℓ : Level} {A : Set ℓ} {xs : Vec A (suc n)
               → insert (removeElem i xs) i (xs ‼ i)  ≡  xs
 insert-remove-lookup {xs = x ∷ xs} {zero} = ≡.refl
 insert-remove-lookup {zero} {xs = x ∷ xs} {suc ()}
-insert-remove-lookup {n = suc n} {xs = x ∷ xs} {suc i} = ≡.cong (x ∷_) (insert-remove-lookup {xs = xs})
+insert-remove-lookup {n = suc n} {xs = x ∷ xs} {suc i} = ≡.cong (x ∷_) (insert-remove-lookup {xs = xs} {i})
 \end{code}
 
 \begin{code}
@@ -123,8 +123,8 @@ inversionTheorem : {n m : ℕ} (p : Permutation n m) {ℓ : Level} {A : Set ℓ}
 inversionTheorem [] [] = ≡.refl
 inversionTheorem (zero ∷ ps) (x ∷ xs) = ≡.cong (x ∷_) (inversionTheorem ps xs)
 inversionTheorem (suc p ∷ ps) (x ∷ xs) =
-  ≡.cong₂ _∷_ (lookup-insert {xs = ps ◈ xs}) 
-               (≡.cong (ps ◇_) (remove-insert {xs = ps ◈ xs}) ⟨≡≡⟩ inversionTheorem ps xs)
+  ≡.cong₂ _∷_ (lookup-insert {xs = ps ◈ xs} {suc p} {x})
+               (≡.cong (ps ◇_) (remove-insert {xs = ps ◈ xs} {suc p} {x}) ⟨≡≡⟩ inversionTheorem ps xs)
 
 
 
@@ -139,9 +139,10 @@ inversionTheorem˘ (suc p ∷ ps) {A = A} (x ∷ xs) with homogeneity (suc p ∷
      (suc p ∷ ps) ◈ (((x ∷ xs) ‼ suc p)  ∷  (ps ◇ (removeElem (suc p) (x ∷ xs))))
   ≡⟨⟩ -- Def. |◈|
      insert (ps ◈ (ps ◇ (removeElem (suc p) (x ∷ xs)))) (suc p) ((x ∷ xs) ‼ suc p)
-  ≡⟨ ≡.cong (λ it → insert it _ _) (inversionTheorem˘ ps _) ⟩
+  ≡⟨ ≡.cong  (λ it → insert it (suc p) ((x ∷ xs) ‼ suc p))
+             (inversionTheorem˘ ps (removeElem (suc p) (x ∷ xs))) ⟩
      insert (removeElem (suc p) (x ∷ xs)) (suc p) ((x ∷ xs) ‼ suc p)
-  ≡⟨ insert-remove-lookup {i = suc p} ⟩  
+  ≡⟨ insert-remove-lookup {i = suc p} ⟩
      x ∷ xs
    ∎
   where open import Relation.Binary.EqReasoning (≡.setoid (Vec A _))

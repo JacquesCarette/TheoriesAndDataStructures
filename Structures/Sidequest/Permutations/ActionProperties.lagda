@@ -52,26 +52,33 @@ Subscript 0 for ``underlying'', or `base', equality.
 %}}}
 
 %{{{ ◇-elimination and inversionTheorem˘
-The other form as well,
+The other form as well:
+\edcomm{WK}{There is no point making |ps| implicit!}
 \begin{code}
-◈-cong₂ : {n m : ℕ} {ps : Permutation n m} {xs ys : Seq n}
+◈-cong₂ : {n m : ℕ} (ps : Permutation n m) {xs ys : Seq n}
         → xs ≈ₖ ys → ps ◈ xs ≈ₖ ps ◈ ys
-◈-cong₂ []-cong                          =  refl _
-◈-cong₂ {ps = p ∷ ps} {x ∷ xs} {y ∷ ys} (x≈y ∷-cong xs≈ys)  = ≈ₖ-begin
+◈-cong₂ _ []-cong  =  refl _
+◈-cong₂ (p ∷ ps) {x ∷ xs} {y ∷ ys} (x≈y ∷-cong xs≈ys)  = ≈ₖ-begin
     (p ∷ ps) ◈ (x ∷ xs)
   ≈ₖ⟨⟩
-    {!!}
-  ≈ₖ⟨ insert-cong₁ {_} {{!!}} {{!!}} {{!!}} (◈-cong₂ xs≈ys) ⟩
-    {!!}
-  ≈ₖ⟨ insert-cong₃ {_} {{!!}} {p} {y} x≈y ⟩
-    {!!}
+    insert (ps ◈ xs) p x
+  ≈ₖ⟨ insert-cong₁ {_} {ps ◈ xs} {ps ◈ ys} {p} (◈-cong₂ ps xs≈ys) ⟩
+    insert (ps ◈ ys) p x
+  ≈ₖ⟨ insert-cong₃ {_} {ps ◈ ys} {p} {y} x≈y ⟩
+    insert (ps ◈ ys) p y
   ≈ₖ⟨⟩
     (p ∷ ps) ◈ (y ∷ ys)
   □ₖ
 
 ◇-elimination : {n m : ℕ} (p : Permutation n m)  (xs : Seq m) (ys : Seq n)
               → p ◇ xs  ≈ₖ  ys   →   xs  ≈ₖ  p ◈ ys
-◇-elimination {n} {m} p xs ys eq  =  reflexive (≡.sym (inversionTheorem˘ {n} {m} p xs))  ⟨≈ₖ≈⟩  ◈-cong₂ {n} {m} {p} {p ◇ xs} {ys} eq
+◇-elimination p xs ys p◇xs≈ys  = ≈ₖ-begin
+    xs
+  ≈ₖ≡˘⟨ inversionTheorem˘ p xs ⟩
+    p ◈ (p ◇ xs)
+  ≈ₖ⟨ ◈-cong₂ p p◇xs≈ys ⟩
+    p ◈ ys
+  □ₖ
 \end{code}
 %}}}
 

@@ -95,7 +95,7 @@ module Seq≈ = I.Setoid Seq-ISetoid
 
 infix  4 _IsRelatedTo_
 infix  3 _□ₖ
-infixr 2 _≈ₖ⟨_⟩_ _≈ₖ≡⟨_⟩_ _≈ₖ⟨⟩_
+infixr 2 _≈ₖ⟨_⟩_ _≈ₖ≡⟨_⟩_ _≈ₖ˘⟨_⟩_ _≈ₖ≡˘⟨_⟩_ _≈ₖ⟨⟩_
 infix  1 ≈ₖ-begin_
 
 data _IsRelatedTo_ {m n : ℕ} (x : Seq m) (y : Seq n) : Set s₂ where
@@ -108,9 +108,17 @@ _≈ₖ⟨_⟩_  : {k m n : ℕ} (x : Seq k) {y : Seq m} {z : Seq n}
         → x ≈ y → y IsRelatedTo z → x IsRelatedTo z
 _ ≈ₖ⟨ x≈y ⟩ relTo y≈z = relTo (trans x≈y y≈z)
 
+_≈ₖ˘⟨_⟩_  : {k m n : ℕ} (x : Seq k) {y : Seq m} {z : Seq n}
+        → y ≈ x → y IsRelatedTo z → x IsRelatedTo z
+_ ≈ₖ˘⟨ y≈x ⟩ relTo y≈z = _ ≈ₖ⟨ sym y≈x ⟩ relTo y≈z
+
 _≈ₖ≡⟨_⟩_  : {m n : ℕ} (x : Seq m) {y : Seq m} {z : Seq n}
         → x ≡ y → y IsRelatedTo z → x IsRelatedTo z
 _ ≈ₖ≡⟨ x≡y ⟩ relTo y≈z = relTo (trans (Seq≈.reflexive x≡y) y≈z)
+
+_≈ₖ≡˘⟨_⟩_  : {m n : ℕ} (x : Seq m) {y : Seq m} {z : Seq n}
+        → y ≡ x → y IsRelatedTo z → x IsRelatedTo z
+_ ≈ₖ≡˘⟨ y≡x ⟩ relTo y≈z = _ ≈ₖ≡⟨ ≡.sym y≡x ⟩ relTo y≈z
 
 _≈ₖ⟨⟩_  : {m n : ℕ} (x : Seq m) {y : Seq n}
         → x IsRelatedTo y → x IsRelatedTo y

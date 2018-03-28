@@ -89,10 +89,12 @@ perm {n} p = Vec.map toℕ (permSME₁ p ◣ allFin (suc n))
 
 \begin{code}
 perms : {n : ℕ} → Permutation (suc n) (suc n) → List (Vec ℕ (suc n))
-perms {n} p = List.map (Vec.map toℕ) (perm𝕏s Id₀ p [] ◺ allFin (suc n))
+perms {n} p = List.map (Vec.map toℕ) (execFinList _𝕩_ (perm𝕏s Id₀ p []) (allFin (suc n)))
   where
     open Action (≡.setoid (Fin (suc n)))
 \end{code}
+(Using |_𝕪_| instead of |_𝕩_| produces duplicates even earlier.)
+
 
 Using the original |_◺_|,
 the following list of 15 permuted vectors takes seconds to generate via

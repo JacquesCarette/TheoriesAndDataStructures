@@ -4,10 +4,24 @@
 module FinUtils where
 
 open import Data.Bool
-open import Data.Nat
+open import Data.Nat as Nat
 open import Data.Fin
 open import Data.Maybe as Maybe
 open import Data.Product using ( _×_ ; _,_ )
+open import Relation.Binary.PropositionalEquality as ≡
+
+import Data.Nat.Properties as NatProp
+import Data.Fin.Properties as FinProp
+\end{code}
+
+\begin{code}
+Fin-complement : {n : ℕ} (i : Fin n) → toℕ i Nat.+ (n ∸ toℕ i) ≡ n
+Fin-complement {n} i = NatProp.m+n∸m≡n (NatProp.≤pred⇒≤ (toℕ i) n (FinProp.prop-toℕ-≤ i))
+\end{code}
+
+\begin{code}
+Fin-complement′ : {n : ℕ} (i : Fin n) → suc (toℕ i) Nat.+ (n ∸ suc (toℕ i)) ≡ n
+Fin-complement′ {n} i = NatProp.m+n∸m≡n (FinProp.bounded i)
 \end{code}
 
 \begin{code}

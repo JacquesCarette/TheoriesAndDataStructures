@@ -13,6 +13,7 @@ open ≡ using (_≡_)
 
 -- open import EqualityCombinators  hiding (reflexive)
 open import Function using (_$_) renaming (id to Id₀ ; _∘_ to _∘₀_)
+open import FinUtils using (Fin-complement′)
 open import DataProperties using (_‼_)
 
 open import Data.Maybe
@@ -136,16 +137,32 @@ A ``tracing'' version:
 \end{spec}
 
 \begin{code}
-  _𝕩_ : {n : ℕ} → Fin n → Seq (suc n) → Seq (suc n)
+  FinSeqOp : ℕ → Set c
+  FinSeqOp n = Fin n → Seq (suc n) → Seq (suc n)
+\end{code}
+
+|i 𝕩 v ≡ 𝕏′ i ◣ v|
+\begin{code}
+  _𝕩_ : {n : ℕ} → FinSeqOp n
   zero 𝕩 (x₁ ∷ x₂ ∷ xs) = x₂ ∷ x₁ ∷ xs
   (suc i) 𝕩 (x₁ ∷ xs) = x₁ ∷ (i 𝕩 xs)
 \end{code}
 
-A faster |_◺_|, based on |i 𝕩 v ≡ 𝕏′ i ◣ v|:
+|i 𝕪 v ≡ (𝕏″ 1 (suc i) ⊗ 𝕀) ◣ v|
 \begin{code}
-  _◺_ : {n : ℕ} → List (Fin n) → Seq (suc n) → List (Seq (suc n))
-  [] ◺ v = List.[]
-  (i ∷ is)  ◺ v = let v′ = i 𝕩 v in v′ ∷ (is ◺ v′)
+  _𝕪_ : {n : ℕ} → FinSeqOp n
+  _𝕪_ {n} i (x₁ ∷ xs) with Vec.splitAt (suc (toℕ i)) {n ∸ suc (toℕ i)}
+                         (≡.subst (Vec _) (≡.sym (Fin-complement′ i)) xs)
+  ... | xs₁ , xs₂ , xs₁++xs₂≡xs  = ≡.subst (Vec _) eq (xs₁ Vec.++ x₁ ∷ xs₂)
+    where
+      eq = ≡.trans (+-suc (suc (toℕ i)) (n ∸ suc (toℕ i))) (≡.cong suc (Fin-complement′ i))
+\end{code}
+
+A faster |_◺_|, based on arbitrary |FinSeqOp|:
+\begin{code}
+  execFinList : {n : ℕ} → FinSeqOp n → List (Fin n) → Seq (suc n) → List (Seq (suc n))
+  execFinList fsOp [] v = List.[]
+  execFinList fsOp (i ∷ is) v = let v′ = fsOp i v in v′ ∷ (execFinList fsOp is v′)
 \end{code}
 
 Soundness of |_≋_| with respect to the |_◣_| semantics:

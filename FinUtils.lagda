@@ -6,8 +6,10 @@ module FinUtils where
 open import Data.Bool
 open import Data.Nat as Nat
 open import Data.Fin
+open import Data.List as List
 open import Data.Maybe as Maybe
 open import Data.Product using ( _×_ ; _,_ )
+open import Data.Vec as Vec
 open import Relation.Binary.PropositionalEquality as ≡
 
 import Data.Nat.Properties as NatProp
@@ -31,6 +33,11 @@ suc′ {suc zero} zero = nothing
 suc′ {suc zero} (suc ())
 suc′ {suc (suc n)} zero = just (suc zero)
 suc′ {suc (suc n)} (suc i) = Maybe.map suc (suc′ i)
+\end{code}
+
+\begin{code}
+allFin′ : {n : ℕ} (i : Fin n) → List (Fin n)
+allFin′ {n} i = List.take  (toℕ i) (Vec.toList (allFin n))
 \end{code}
 
 \begin{code}

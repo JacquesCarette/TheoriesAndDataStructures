@@ -1,10 +1,15 @@
-\section{|Structures.Sidequest.Permutations.CallChanges|}
+\section{|Structures.Sidequest.Permutations.PermutationSequences}
 
-A (failed) attempt to interpret factorial numbers as sequences of side-by-side swaps.
+The exploration here started from a failed attempt to interpret factorial numbers
+as sequences of side-by-side swaps (based on |_𝕩_|),
+therefore the original module name ``|CallChanges''.
+
+The approach implemented via |_𝕫_| based on complete rounds of rotations
+should have all the nice properties we can wish for.
 
 %{{{ Imports
 \begin{code}
-module Structures.Sidequest.Permutations.CallChanges where
+module Structures.Sidequest.Permutations.PermutationSequences where
 
 open import Level using (Level)
 open import Relation.Binary using (Setoid)
@@ -89,12 +94,14 @@ perm {n} p = Vec.map toℕ (permSME₁ p ◣ allFin (suc n))
 
 \begin{code}
 perms : {n : ℕ} → Permutation (suc n) (suc n) → List (Vec ℕ (suc n))
-perms {n} p = List.map (Vec.map toℕ) (execFinList _𝕩_ (perm𝕏s Id₀ p []) (allFin (suc n)))
+perms {n} p = List.map (Vec.map toℕ) (execFinList _𝕫_ (perm𝕏s Id₀ p []) (allFin (suc n)))
   where
     open Action (≡.setoid (Fin (suc n)))
 \end{code}
 (Using |_𝕪_| instead of |_𝕩_| produces duplicates even earlier.)
 
+Using |_𝕫_| instead of |_𝕩_| produces no duplicates anymore,
+and should be easy to accelerate and to invert.
 
 Using the original |_◺_|,
 the following list of 15 permuted vectors takes seconds to generate via
@@ -104,47 +111,15 @@ perms (zero ∷ suc (suc zero) ∷ suc zero ∷ suc zero ∷ zero ∷ [])
 \end{spec}
 (Using the current |_◺_|, both this and below are instanteneous.)
 
-Using the original |_◺_|,
+Using the original |_◺_| involving |_𝕩_|,
 the 24 permuted vectors of the following take almost 400 seconds ---
-and contain duplicates! \unfinished
+and contain duplicates!
 \begin{spec}
 perms (suc zero ∷ zero ∷ zero ∷ zero ∷ zero ∷ [])
+\end{spec}
 
-0   (1 ∷ 0 ∷ 2 ∷ 3 ∷ 4 ∷ []) ∷
-1   (1 ∷ 2 ∷ 0 ∷ 3 ∷ 4 ∷ []) ∷  rot 3
-0   (2 ∷ 1 ∷ 0 ∷ 3 ∷ 4 ∷ []) ∷
-1   (2 ∷ 0 ∷ 1 ∷ 3 ∷ 4 ∷ []) ∷  rot 3
-0   (0 ∷ 2 ∷ 1 ∷ 3 ∷ 4 ∷ []) ∷
-2   (0 ∷ 2 ∷ 3 ∷ 1 ∷ 4 ∷ []) ∷
-0   (2 ∷ 0 ∷ 3 ∷ 1 ∷ 4 ∷ []) ∷  nofix 4
-1   (2 ∷ 3 ∷ 0 ∷ 1 ∷ 4 ∷ []) ∷  rot 4
-0   (3 ∷ 2 ∷ 0 ∷ 1 ∷ 4 ∷ []) ∷  nofix 4
-1   (3 ∷ 0 ∷ 2 ∷ 1 ∷ 4 ∷ []) ∷
-0   (0 ∷ 3 ∷ 2 ∷ 1 ∷ 4 ∷ []) ∷
-2   (0 ∷ 3 ∷ 1 ∷ 2 ∷ 4 ∷ []) ∷
-0   (3 ∷ 0 ∷ 1 ∷ 2 ∷ 4 ∷ []) ∷  rot 4
-1   (3 ∷ 1 ∷ 0 ∷ 2 ∷ 4 ∷ []) ∷  nofix 4
-0   (1 ∷ 3 ∷ 0 ∷ 2 ∷ 4 ∷ []) ∷  nofix 4
-1   (1 ∷ 0 ∷ 3 ∷ 2 ∷ 4 ∷ []) ∷  nofix 4
-0   (0 ∷ 1 ∷ 3 ∷ 2 ∷ 4 ∷ []) ∷
-
-2   (0 ∷ 1 ∷ 2 ∷ 3 ∷ 4 ∷ []) ∷
-0   (1 ∷ 0 ∷ 2 ∷ 3 ∷ 4 ∷ []) ∷
-1   (1 ∷ 2 ∷ 0 ∷ 3 ∷ 4 ∷ []) ∷
-0   (2 ∷ 1 ∷ 0 ∷ 3 ∷ 4 ∷ []) ∷
-1   (2 ∷ 0 ∷ 1 ∷ 3 ∷ 4 ∷ []) ∷
-0   (0 ∷ 2 ∷ 1 ∷ 3 ∷ 4 ∷ []) ∷
-3   (0 ∷ 2 ∷ 1 ∷ 4 ∷ 3 ∷ []) ∷ []
-
-Missing:
-    (1 ∷ 3 ∷ 2 ∷ 0 ∷ 4 ∷ []) ∷
-    (1 ∷ 2 ∷ 3 ∷ 0 ∷ 4 ∷ []) ∷
-    (2 ∷ 1 ∷ 3 ∷ 0 ∷ 4 ∷ []) ∷
-    (2 ∷ 3 ∷ 1 ∷ 0 ∷ 4 ∷ []) ∷
-    (3 ∷ 2 ∷ 1 ∷ 0 ∷ 4 ∷ []) ∷
-    (3 ∷ 1 ∷ 2 ∷ 0 ∷ 4 ∷ []) ∷
-
-
+Example |perm𝕏s| results:
+\begin{spec}
 List.map toℕ (perm𝕏s Id₀ (suc zero ∷ zero ∷ zero ∷ zero ∷ zero ∷ []) [])
 0 ∷ 1 ∷ 0 ∷ 1 ∷ 0 ∷ 2 ∷
 0 ∷ 1 ∷ 0 ∷ 1 ∷ 0 ∷ 2 ∷
@@ -174,6 +149,7 @@ List.map toℕ (perm𝕏s Id₀ (suc zero ∷ zero ∷ zero ∷ zero ∷ zero �
 0 ∷ 1 ∷ 0 ∷ 1 ∷ 0 ∷  4 ∷ []
 \end{spec}
 (The |perm𝕏s| calculations have always been fast.)
+
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

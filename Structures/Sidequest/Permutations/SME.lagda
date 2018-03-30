@@ -13,7 +13,7 @@ open ≡ using (_≡_)
 
 -- open import EqualityCombinators  hiding (reflexive)
 open import Function using (_$_) renaming (id to Id₀ ; _∘_ to _∘₀_)
-open import FinUtils using (Fin-complement′)
+open import FinUtils using (Fin-complement′ ; allFin′)
 open import DataProperties using (_‼_)
 
 open import Data.Maybe
@@ -156,6 +156,13 @@ A ``tracing'' version:
   ... | xs₁ , xs₂ , xs₁++xs₂≡xs  = ≡.subst (Vec _) eq (xs₁ Vec.++ x₁ ∷ xs₂)
     where
       eq = ≡.trans (+-suc (suc (toℕ i)) (n ∸ suc (toℕ i))) (≡.cong suc (Fin-complement′ i))
+\end{code}
+
+
+|_𝕫_ i ≡ _𝕪_ i ∘ _𝕪_ (i - 1) ∘ ⋯ ∘  _𝕪_ 1 ∘ _𝕪_ zero|
+\begin{code}
+  _𝕫_ : {n : ℕ} → FinSeqOp n
+  _𝕫_ {n} i = _𝕪_ {n} i ∘₀ λ v → List.foldr _𝕪_ v (List.reverse (allFin′ i))
 \end{code}
 
 A faster |_◺_|, based on arbitrary |FinSeqOp|:

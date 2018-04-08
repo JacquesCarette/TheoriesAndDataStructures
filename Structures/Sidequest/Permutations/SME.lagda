@@ -93,10 +93,10 @@ rightUnit⁻¹ {n} = substSrc (+-right-identity n) 𝕀
 
 \begin{code}
 thenOne : {n : ℕ} → SME (n + 1) (suc n)
-thenOne {n} = substTrg (+-comm _ _) 𝕀
+thenOne {n} = substTrg (+-comm n 1) 𝕀
 
 thenOne⁻¹ : {n : ℕ} → SME (suc n) (n + 1)
-thenOne⁻¹ {n} = substSrc (+-comm _ _) 𝕀
+thenOne⁻¹ {n} = substSrc (+-comm n 1) 𝕀
 \end{code}
 
 \begin{code}
@@ -201,17 +201,17 @@ Interpretation of SM syntax as permutations:
   ≐-trans eq₁ eq₂ = ≈ₖ.trans eq₁ eq₂
 
   ≐-leftId : {m n : ℕ} → (e : SME m n) → 𝕀 ⨾ e ≐ e
-  ≐-leftId _ = ≐-refl
+  ≐-leftId {m} {n} e = ≐-refl {m} {n} {e}
 
   ≐-rightId : {m n : ℕ} → (e : SME m n) → e ⨾ 𝕀 ≐ e
-  ≐-rightId _ = ≐-refl
+  ≐-rightId {m} {n} e = ≐-refl {m} {n} {e}
 
   ≐-⨾-assoc  : {j k m n : ℕ} (e₁ : SME j k) (e₂ : SME k m) (e₃ : SME m n)
            → (e₁ ⨾ e₂) ⨾ e₃ ≐ e₁ ⨾ (e₂ ⨾ e₃)
-  ≐-⨾-assoc _ _ _ = ≐-refl
+  ≐-⨾-assoc e₁ e₂ e₃ = ≈ₖ.refl _ -- ≐-refl {e = e₁ ⨾ e₂ ⨾ e₃}
 
   ≐-⊗-leftId : {m n : ℕ} → (e : SME m n) → 𝕀 {0} ⊗ e ≐ e
-  ≐-⊗-leftId _ = ≐-refl
+  ≐-⊗-leftId e = ≈ₖ.refl _ --  ≐-refl {e = e}
 
   ++-rightId : {n : ℕ} {xs : Seq n} → xs Vec.++ []  ≈ₖ  xs
   ++-rightId {.0} {[]} = ≈ₖ.refl _
@@ -219,7 +219,7 @@ Interpretation of SM syntax as permutations:
 
   -- |≐-⊗-rightId : {m n : ℕ} → (e : SME m n) → (e ⊗ 𝕀 {0}) ⨾ rightUnit ≐ rightUnit ⨾ e|
   -- |≐-⊗-rightId {m} {n} e {v} with +-right-identity m | endo e | Vec.splitAt m v|
-  -- |≐-⊗-rightId {m} {.m} e {.(v₁ Vec.++ [])} | ff | ≡.refl | v₁ , [] , ≡.refl = {!!}| 
+  -- |≐-⊗-rightId {m} {.m} e {.(v₁ Vec.++ [])} | ff | ≡.refl | v₁ , [] , ≡.refl = {!!}|
 \end{code}
 %}}}
 
@@ -231,7 +231,7 @@ A ``tracing'' version:
   [] ◺ v = List.[]
   (i ∷ is)  ◺ v = let v′ = 𝕏′ i ◣ v in v′ ∷ (is ◺ v′)
 
-  -- Push the head element “downwards”, to the right, i-many times  
+  -- Push the head element “downwards”, to the right, i-many times
   sink : {n : ℕ} (i : Fin n) → SME n n
   sink {suc n} zero = 𝕀
   sink {suc n} (suc i) = (thenOne⁻¹ ⨾ (sink i ⊗ 𝕀 {1}) ⨾ thenOne) ⨾ 𝕏′ i  -- push right then a swap
@@ -267,7 +267,7 @@ A ``tracing'' version:
   -- Drowning the last element leaves the list unchanged.
   -- |Reverse = drown n ⨾ drown (n-1) ⨾ ⋯ ⨾ down 0|.
   -- Rotating n, i.e., 1 less the length, leaves the list unchanged.
-  
+
   module Tests₀ (e₀ e₁ e₂ e₃ : Carrier) where
 
     drown-test-0 : drown zero ◣ (e₀ ∷ e₁ ∷ e₂ ∷ e₃ ∷ []) ≡ e₁ ∷ e₂ ∷ e₃ ∷ e₀ ∷ []
@@ -311,7 +311,7 @@ A ``tracing'' version:
     p0132-◺ = ≡.refl
 
     swap-1-3 : ((suc (suc zero) ∷ suc zero ∷ suc (suc zero) ∷ []) ◺ (e₀ ∷ e₁ ∷ e₂ ∷ e₃ ∷ []))
-               ≡    -- (e₀ ∷ e₁ ∷ e₂ ∷ e₃ ∷ [])          -- no swap 
+               ≡    -- (e₀ ∷ e₁ ∷ e₂ ∷ e₃ ∷ [])          -- no swap
                       (e₀ ∷ e₁ ∷ e₃ ∷ e₂ ∷ [])            -- swap indices 2-3
                   ∷  (e₀ ∷ e₃ ∷ e₁ ∷ e₂ ∷ [])            -- swap indices 1-2
                   ∷  (e₀ ∷ e₃ ∷ e₂ ∷ e₁ ∷ []) ∷ []     -- swap indices 2-3
@@ -351,15 +351,15 @@ A ``tracing'' version:
     one-is-head-float = ≡.refl
 
     head-is-head-float : float zero ◣ (e₀ ∷ e₁ ∷ e₂ ∷ last ∷ [])  ≡  (e₀ ∷ e₁ ∷ e₂ ∷ e₃ ∷ [])
-    head-is-head-float = ≡.refl  
+    head-is-head-float = ≡.refl
 
   {-
         Given [⋯, xᵢ, ⋯, xⱼ, ⋯].
         Leave the first and last segements unalted via |𝕀 {i-1} ⊗ ⁉ ⊗ 𝕀 {n-j} |.
-        Then `⁉` may be to `sink` xᵢ beside xⱼ, then swap, then `float` xⱼ. 
+        Then `⁉` may be to `sink` xᵢ beside xⱼ, then swap, then `float` xⱼ.
         Now may have [⋯, xⱼ, ⋯, xᵢ, ⋯] ?
    -}
-   
+
   -- |𝓧 : {n : ℕ} (i j : Fin n) → SME n n|
   -- |𝓧 {suc n} zero j = {!(float j ⨾ ?)!} ⊗ 𝕀|   -- Indexitis.
   -- |𝓧 {suc n} (suc i) j = {!!}|

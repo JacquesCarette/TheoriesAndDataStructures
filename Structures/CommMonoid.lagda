@@ -63,13 +63,41 @@ record CommMonoid {ℓ} {o} (X : Setoid ℓ o) : Set (lsuc ℓ ⊍ lsuc o) where
     _*_          : X₀ → X₀ → X₀  -- \edcomm{MA}{Why is this `e` but above is `·`?}
     -- \edcomm{MA}{The field name really oughtn't be abbreviated!}
     isCommMonoid : IsCommutativeMonoid _≈_ _*_ e
-    
+
+  open IsCommutativeMonoid isCommMonoid public
+
   module ≈ = Setoid X
   _⟨≈⟩_ = trans
 
   infix -666 eq-in
   eq-in = ≈._≈_
   syntax eq-in M x y  =  x ≈ y ∶ M   -- ghost colon
+
+-- conversions
+
+open import Algebra
+asCommutativeMonoid : {ℓ o : Level} {X : Setoid ℓ o} → CommMonoid X → CommutativeMonoid ℓ o
+asCommutativeMonoid {ℓ} {o} {X} cm = let open CommMonoid cm in record
+  { Carrier = Setoid.Carrier X
+  ; _≈_ = Setoid._≈_ X
+  ; _∙_ = _*_
+  ; ε = e
+  ; isCommutativeMonoid = record
+    { isSemigroup = record { isEquivalence = Setoid.isEquivalence X ; assoc = assoc ; ∙-cong = _⟨∙⟩_ }
+    ; identityˡ = left-unit
+    ; comm = comm
+    }
+  }
+asCommMonoid : {ℓ o : Level} (CM : CommutativeMonoid ℓ o)
+             → CommMonoid ( record { CommutativeMonoid CM } )
+asCommMonoid CM = MkCommMon ε _∙_ (record
+  { left-unit   =   identityˡ
+  ; right-unit  =   proj₂ identity -- derived
+  ; assoc       =   assoc
+  ; comm        =   comm
+  ; _⟨∙⟩_       =   ∙-cong
+  })
+  where open CommutativeMonoid CM
 
 record Hom {ℓ a b : Level} {X : Setoid ℓ a} {Y : Setoid ℓ b} (CMX : CommMonoid X) (CMY : CommMonoid Y)
   : Set (ℓ ⊍ a ⊍ b) where

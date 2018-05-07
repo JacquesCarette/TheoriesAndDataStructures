@@ -120,11 +120,11 @@ Notice that the last line in the record, |open Π mor public|, lifts the setoid-
 operation |_⟨$⟩_| and |cong| to work on our monoid homomorphisms directly.
 %}}}
 
-%{{{ MonoidCat ; Forget
+%{{{ CommMonoidCat ; Forget
 \subsection{Category and Forgetful Functor}
 \begin{code}
-MonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
-MonoidCat ℓ o = let open CommMonoid using (eq-in) in record
+CommMonoidCat : (ℓ o : Level) → Category (lsuc ℓ ⊍ lsuc o) (o ⊍ ℓ) (o ⊍ ℓ)
+CommMonoidCat ℓ o = let open CommMonoid using (eq-in) in record
   { Obj = Σ (Setoid ℓ o) CommMonoid
   ; _⇒_ = λ{ (X , CMX) (Y , CMY) → Hom CMX CMY}
   ; _≡_ = λ { {_} {_ , B} F G → ∀ {x} → F ⟨$⟩ x ≈ G ⟨$⟩ x ∶ B }
@@ -148,7 +148,7 @@ MonoidCat ℓ o = let open CommMonoid using (eq-in) in record
 \end{code}
 
 \begin{code}
-Forget : (ℓ o : Level) → Functor (MonoidCat ℓ o) (Setoids ℓ o)
+Forget : (ℓ o : Level) → Functor (CommMonoidCat ℓ o) (Setoids ℓ o)
 Forget ℓ o = record
   { F₀             =   λ C → record { Setoid (proj₁ C) }
   ; F₁             =   λ F → record { Hom F }

@@ -31,9 +31,7 @@ New experimental variation on |Structures.Multiset| using Brad Hardy's work.
       The expected Functorialty conditions are, for now, in their own record: |FunctorialMSH|.
 
 \item |BuildLeftAdjoint|: Provided we have implementations of the multiset transformers we can
-      produce a |Free| functor from category of setoids to the category of monoids.
-
-      MA: Why not to the category of \emph{commutative} monoids?
+      produce a |Free| functor from category of setoids to the category of commutative monoids.
 
 \end{enumerate}
 
@@ -84,8 +82,11 @@ BagSetoid {ℓ} {c} A = record { CommutativeMonoid (BagEq.commutativeMonoid bag 
 Bag₀ : {ℓ : Level} → Set ℓ → Setoid ℓ ℓ
 Bag₀ A = record { CommutativeMonoid (BagEq.commutativeMonoid bag A) }
 
-_≈ₘ_ : {ℓ c : Level} {X : Setoid ℓ c} → Bag (Setoid.Carrier X) → Bag (Setoid.Carrier X) → Set ℓ
-_≈ₘ_ {X = X} = Setoid._≈_ (BagSetoid X) -- i.e., |Setoid._≈_ {ℓ} {ℓ} ([ bag ]-Equality X)|
+bag-eq : {ℓ c : Level} (X : Setoid ℓ c) → Bag (Setoid.Carrier X) → Bag (Setoid.Carrier X) → Set ℓ
+bag-eq X = Setoid._≈_ (BagSetoid X) -- i.e., |Setoid._≈_ {ℓ} {ℓ} ([ bag ]-Equality X)|
+
+infix -666 bag-eq
+syntax bag-eq X s t  =  s ≈ₘ t ∶ X   -- ghost colon
 \end{code}
 %}}}
 
@@ -337,7 +338,7 @@ module BuildLeftAdjoint
   module _ {ℓ c} {X Y : Setoid ℓ (ℓ ⊍ c)} where open MultisetHom (MSH {ℓ} {c} {X} {Y}) public
   module _ {ℓ c} where open FunctorialMSH {ℓ} {c} Func public
 
-  Free : (ℓ c : Level) → Functor (Setoids ℓ (ℓ ⊍ c)) (MonoidCat ℓ (ℓ ⊍ c))
+  Free : (ℓ c : Level) → Functor (Setoids ℓ (ℓ ⊍ c)) (CommMonoidCat ℓ (ℓ ⊍ c))
   Free _ _ = record
     { F₀             =   λ S → ctrSetoid S , commMonoid S
     ; F₁             =   λ F → record { CMArrow (lift F) }
@@ -365,41 +366,38 @@ module BuildLeftAdjoint
 %{{{ An implementation of |Multiset| using lists with Bag equality
 \subsection{An implementation of |Multiset| using lists with Bag equality}
 \begin{code}
-
+open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
 
 open import Function.Inverse using (_↔_)
 open import Data.List.Any.Properties
 open import Function using (_$_)
-open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■ ; sym to symm)
+open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■) hiding (sym)
+module ↔ = EquationalReasoning
+open import Function.Inverse public using () renaming  (id to  ↔-refl)
 
 postulate
 
   singleton-cong-lemma : {ℓ : Level} (X : Setoid ℓ ℓ) (x y : Setoid.Carrier X) → Setoid._≈_ X x y
                        → {z : Setoid.Carrier X} → (z ≡ x  ⊎  z ∈ [])  ↔  (z ≡ y  ⊎  z ∈ [])
-                       
-module BradHardy  {s₁ s₂} (M : CommutativeMonoid s₁ s₂) where
-  
-  open CommutativeMonoid M renaming (ε to 0#; ∙-cong to +-cong; identity to +-identity; assoc to +-assoc; comm to +-comm ; Carrier to M₀)
+
+-- Ought to be |module CMUtils {ℓ c : Level} {X : Setoid ℓ (ℓ ⊍ c)} (CMX : CommMonoid X) where|.
+module CMUtils {ℓ : Level} {X : Setoid ℓ ℓ} (CMX : CommMonoid X) where
+
+  open CommMonoid CMX
+  open Setoid X using (_≈_)
   open import Data.List as List using (List; []; _∷_; _++_)
 
-  open import Relation.Binary using (Setoid)
-  import Relation.Binary.EqReasoning as EqReasoning
-  import Relation.Binary.PropositionalEquality as P
-  
-  
-  -- https://github.com/bch29/agda-stdlib/blob/106a4fbd6f3feb12e99704589ef93b637fbe96ea/src/Algebra/Operations/CommutativeMonoid.agda
-  private
-    infixl 6 _+_
-    _+_ = _∙_  
-  sum : List M₀ → M₀
-  sum = List.foldr _+_ 0#
+  fold₀ : List (Carrier X) → Carrier X
+  fold₀ = List.foldr _*_ e
+  --
+  -- c.f., -- https://github.com/bch29/agda-stdlib/blob/106a4fbd6f3feb12e99704589ef93b637fbe96ea/src/Algebra/Operations/CommutativeMonoid.agda
 
   -- https://github.com/bch29/agda-stdlib/blob/106a4fbd6f3feb12e99704589ef93b637fbe96ea/src/Data/List/Any/Properties/CommutativeMonoid.agda
   --
   -- In a commutative monoid, if you add up everything in two lists that contain
   -- the same elements, you get the same result.  
   postulate
-    sum-bag : ∀ {xs ys} → xs ∼[ bag ] ys → sum xs ≈ sum ys
+    sum-bag : ∀ {xs ys} → xs ∼[ bag ] ys → fold₀ xs ≈ fold₀ ys
 
 module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
   open Setoid  
@@ -410,7 +408,7 @@ module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
     { commutativeContainer   =   Bag-CommutativeContainer ℓ
     ; singleton              =   record { _⟨$⟩_ = λ x → x ∷ [] ; cong = λ {x} {y} x≈y {z} →
           z ∈ (x ∷ [])
-       ↔⟨ symm $ ∷↔ (_≡_ z) ⟩
+       ↔⟨ ↔.sym $ ∷↔ (_≡_ z) ⟩
           z ≡ x  ⊎  z ∈ []
        ↔⟨ singleton-cong-lemma X x y x≈y ⟩
           z ≡ y  ⊎  z ∈ []
@@ -418,8 +416,8 @@ module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
           z ∈ [ y ]
        ■
       } -- \edcomm{MA}{c.f. |BagEq.∷-cong|.}
-    ; fold  =   λ {Y} CMY → let open BradHardy (asCommutativeMonoid CMY) in record
-      { mor      =   record { _⟨$⟩_ = sum ; cong = sum-bag }
+    ; fold  =   λ {Y} CMY → let open CMUtils CMY in record
+      { mor      =   record { _⟨$⟩_ = fold₀ ; cong = sum-bag }
       ; pres-e   =   Setoid.refl Y
       ; pres-*   =   fold-CM-over-++ CMY
       }
@@ -427,8 +425,7 @@ module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
     }
     where
 
-      open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)
-      open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
+      open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)      
        
       fold-CM-over-++ : {Z : Setoid ℓ ℓ} (cm : CommMonoid Z) {s t : Bag (Carrier Z)}
                       →  let open CommMonoid cm ; F = foldr _*_ e in
@@ -440,60 +437,55 @@ module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
         x * (F s * F t)  ≈⟨ sym Z (assoc isCommMon _ _ _)                  ⟩
         (x * F s) * F t  ■₀
 
+open ImplementationViaList
 \end{code}
 
+\begin{code}
+ListCMHom : {ℓ : Level} (X Y : Setoid ℓ ℓ)
+          → MultisetHom (ListMS X) (ListMS Y)
+ListCMHom {ℓ} X Y = record
+  { lift                =   λ f → let mapf = mapL (f ⟨$⟩₀_) in record
+    { mor      =   record { _⟨$⟩_ = mapf ; cong = λ {xs} {ys} xs≈ys {z} →
+          z ∈ mapf xs
+       ↔⟨⟩
+          Any (z ≡_) (mapL (f ⟨$⟩₀_) xs)
+       ↔⟨ ↔.sym map↔ ⟩
+          Any (λ e → z ≡ f ⟨$⟩₀ e) xs
+       ↔⟨ Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys ⟩
+          Any (λ e → z ≡ f ⟨$⟩₀ e) ys
+       ↔⟨ map↔ ⟩
+          z ∈ mapf ys
+       ■ }
+    ; pres-e   =   ↔-refl
+    ; pres-*   =   λ {xs ys z} → 
+          z ∈ mapf (xs ++ ys)
+       ↔⟨ ≡⇒ (≡.cong (z ∈_) (map-++-commute (f ⟨$⟩₀_) xs ys)) ⟩
+          z ∈ (mapf xs ++ mapf ys)
+       ■
+    }
+  ; singleton-commute   =   λ f {x} → ↔-refl
+  ; fold-commute        =   it
+  }
+  where
+
+    -- Proving |foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)  ≈ F ⟨$⟩ foldr _*₁_ e₁ xs|.
+    it : {ℓ : Level} {X Y : Setoid ℓ ℓ} {CMX : CommMonoid X} {CMY : CommMonoid Y}
+         (F : CMArrow CMX CMY) {xs : Bag (Carrier X)} (open CMUtils)
+         → Setoid._≈_ Y (fold₀ CMY (mapL (F ⟨$⟩_) xs))
+                         (F ⟨$⟩ fold₀ CMX xs)
+    it {ℓ₁} {X} {Y} {MkCommMon e₁ _*₁_ isCM₁} {MkCommMon e₂ _*₂_ isCM₂} F {[]} = Setoid.sym Y (CMArrow.pres-e F)
+    it {ℓ₁} {X} {Y} {MkCommMon e₁ _*₁_ isCM₁} {MkCommMon e₂ _*₂_ isCM₂} F {x ∷ xs} = begin⟨ Y ⟩
+          (F ⟨$⟩ x)  *₂  foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)
+        ≈⟨ Setoid.refl Y  ⟨∙⟩  it F ⟩
+          (F ⟨$⟩ x)  *₂  (F ⟨$⟩ (foldr _*₁_ e₁ xs))
+        ≈⟨ Setoid.sym Y (CMArrow.pres-* F) ⟩
+          F ⟨$⟩ (x *₁ foldr _*₁_ e₁ xs)
+        ■₀
+        where open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
+\end{code}
 
 Copied from the older approach --to be adapted in-time.
 \begin{spec}
-ListCMHom : ∀ {ℓ o} (X Y : Setoid ℓ (ℓ ⊍ o))
-  → MultisetHom {o = o} (ImplementationViaList.ListMS X) (ImplementationViaList.ListMS Y)
-ListCMHom {ℓ} {o} X Y = record
-  { lift = λ F → let g = Π._⟨$⟩_ F in record
-    { mor = record
-      { _⟨$⟩_ = mapL g
-      ; cong = λ {xs} {ys} xs≈ys →
-        elem-of (mapL g xs)   ≅⟨ shift-map F xs ⟩
-        shifted F xs          ≅⟨ shifted-cong F xs≈ys ⟩
-        shifted F ys          ≅˘⟨ shift-map F ys ⟩
-        elem-of (mapL g ys) ∎
-      }
-    ; pres-e =
-         elem-of []     ≅˘⟨ ⊥⊥≅elem-of-[] ⟩
-         ⊥⊥             ≅⟨ ⊥⊥≅elem-of-[] ⟩
-         (elem-of e₁) ∎
-
-      -- in the proof below, *₀ and *₁ are both ++
-    ; pres-* = λ {x} {y} →
-      elem-of (mapL g (x *₀ y))           ≅⟨ ≡→⇔ (map-++-commute g x y) ⟩
-      elem-of (mapL g x *₁ mapL g y) ∎
-    }
-  ; singleton-commute = λ f {x} → ≅-refl
-  ; fold-commute = f-comm
-  }
-    where
-      open ImplementationViaList
-      open CommMonoid (Multiset.commMonoid (ListMS X)) renaming (e to e₀; _*_ to _*₀_)
-      open CommMonoid (Multiset.commMonoid (ListMS Y)) renaming (e to e₁; _*_ to _*₁_)
-      open Membership Y using (elem-of)
-      open BagEq Y using (≡→⇔)
-      open ElemOfMap
-      open ElemOf[] Y
-      f-comm : {W : CommMonoid X} {Z : CommMonoid Y} (f : Hom (X , W) (Y , Z))
-        {lx : List (Setoid.Carrier X)} →
-        Setoid._≈_ Y (foldr (CommMonoid._*_ Z) (CommMonoid.e Z) (mapL (Π._⟨$⟩_ (Hom.mor f)) lx))
-                     (Hom.mor f Π.⟨$⟩ foldr (CommMonoid._*_ W) (CommMonoid.e W) lx)
-      f-comm {MkCommMon e _*_ isCommMonoid₁} {MkCommMon e₂ _*₂_ isCM₂} f {[]} =
-        Setoid.sym Y (Hom.pres-e f)
-      f-comm {MkCommMon e _*_ isCommMonoid₁} {MkCommMon e₂ _*₂_ isCM₂} f {x ∷ lx} =
-        let g = Π._⟨$⟩_ (Hom.mor f) in  begin⟨ Y ⟩
-         ((g x) *₂ (foldr _*₂_ e₂ (mapL g lx)))  ≈⟨ refl ⟨∙⟩ f-comm f {lx} ⟩
-         ((g x) *₂ (g (foldr _*_ e lx)))         ≈⟨ sym (Hom.pres-* f) ⟩
-         (g (x * foldr _*_ e lx)) ■
-        where
-          open Setoid Y
-          open import Relation.Binary.SetoidReasoning using (_≈⟨_⟩_; begin⟨_⟩_) renaming (_∎ to _■)
-          open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
-
 module BuildProperties where
   open ImplementationViaList
   functoriality : {ℓ o : Level} → FunctorialMSH {ℓ} {o} ListMS ListCMHom

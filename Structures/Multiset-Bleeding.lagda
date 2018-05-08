@@ -373,7 +373,7 @@ module BuildLeftAdjoint
 open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
 
 open import Function.Inverse using (_↔_)
-open import Data.List.Any.Properties
+open import Data.List.Any.Properties hiding (map-id)
 open import Function using (_$_)
 open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■) hiding (sym)
 module ↔ = EquationalReasoning
@@ -445,9 +445,13 @@ open ImplementationViaList
 \end{code}
 
 \begin{code}
-ListCMHom : {ℓ : Level} (X Y : Setoid ℓ ℓ)
+∈-↔-reflexive : {ℓ : Level} {X : Set ℓ} {xs ys : Bag X}
+            → xs ≡ ys  →  {z : X}  →  z ∈ xs  ↔  z ∈ ys
+∈-↔-reflexive ≡.refl = ↔-refl
+
+ListCMHom : {ℓ : Level} {X Y : Setoid ℓ ℓ}
           → MultisetHom (ListMS X) (ListMS Y)
-ListCMHom {ℓ} X Y = record
+ListCMHom {ℓ} {X} {Y} = record
   { lift                =   λ f → let mapf = mapL (f ⟨$⟩₀_) in record
     { mor      =   record { _⟨$⟩_ = mapf ; cong = λ {xs} {ys} xs≈ys {z} →
           z ∈ mapf xs
@@ -461,11 +465,8 @@ ListCMHom {ℓ} X Y = record
           z ∈ mapf ys
        ■ }
     ; pres-e   =   ↔-refl
-    ; pres-*   =   λ {xs ys z} → 
-          z ∈ mapf (xs ++ ys)
-       ↔⟨ ≡⇒ (≡.cong (z ∈_) (map-++-commute (f ⟨$⟩₀_) xs ys)) ⟩
-          z ∈ (mapf xs ++ mapf ys)
-       ■
+    ; pres-*   =   λ {xs ys} → ∈-↔-reflexive (map-++-commute (f ⟨$⟩₀_) xs ys)
+                 -- Equivalently, |≡⇒ (≡.cong (z ∈_) (map-++-commute (f ⟨$⟩₀_) xs ys))|
     }
   ; singleton-commute   =   λ f {x} → ↔-refl
   ; fold-commute        =   it
@@ -475,8 +476,7 @@ ListCMHom {ℓ} X Y = record
     -- Proving |foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)  ≈ F ⟨$⟩ foldr _*₁_ e₁ xs|.
     it : {ℓ : Level} {X Y : Setoid ℓ ℓ} {CMX : CommMonoid X} {CMY : CommMonoid Y}
          (F : CMArrow CMX CMY) {xs : Bag (Carrier X)} (open CMUtils)
-         → Setoid._≈_ Y (fold₀ CMY (mapL (F ⟨$⟩_) xs))
-                         (F ⟨$⟩ fold₀ CMX xs)
+         → fold₀ CMY (mapL (F ⟨$⟩_) xs)  ≈⌊ Y ⌋  F ⟨$⟩ fold₀ CMX xs
     it {ℓ₁} {X} {Y} F {[]} = Setoid.sym Y (pres-e F)
     it {ℓ₁} {X} {Y} {CMX@(MkCommMon _ _*₁_ _)} {CMY@(MkCommMon _ _*₂_ isCM₂)} F {x ∷ xs} =
         begin⟨ Y ⟩
@@ -489,6 +489,70 @@ ListCMHom {ℓ} X Y = record
         where open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
               open CMUtils ; open Setoid Y
 \end{code}
+
+\begin{code}
+-- \edcomm{MA}{Should be moved into a List-like library. Maybe moved to the standard library.}
+-- Transforming a list into singletons then catenating is the same as “doing nothing.”
+concat-singleton : {ℓ : Level} {X : Set ℓ} (xs : Bag X)
+                 → xs ≡ foldr _++_ [] (mapL [_] xs)
+concat-singleton []         =   ≡.refl
+concat-singleton (x ∷ xs)   =   ≡.cong (x ∷_) (concat-singleton xs)
+
+-- \edcomm{MA}{Should be moved into a Any-like library. Maybe moved to the standard library.}
+resp-helper : {ℓ : Level} {B : Setoid ℓ ℓ} {l r : Carrier B}
+            → l ≈⌊ B ⌋ r → {z : Carrier B}
+            → (z ≡ l) ↔ (z ≡ r)
+resp-helper {ℓ} {B} {l} {r} l≈r {z} = record
+  { to           =   record { _⟨$⟩_ = {!!} ; cong = {!!} }
+  ; from         =   {!!}
+  ; inverse-of   =   {!!}
+  }
+
+module BuildProperties where
+  open ImplementationViaList
+  functoriality : {ℓ : Level} → FunctorialMSH {ℓ} ListMS ListCMHom
+  functoriality {ℓ} = record
+    { id-pres               =   λ {X} {xs} → ∈-↔-reflexive (map-id xs)
+    ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → ∈-↔-reflexive (map-compose xs)
+    ; resp-≈                =   λ {A} {B} {f} {g} F≈G {xs} → λ {z} → {! 
+          z  ∈  mapL (f ⟨$⟩₀_) xs
+       ↔⟨⟩ 
+          Any (z ≡_) (mapL (f ⟨$⟩₀_) xs)
+       ↔⟨ ↔.sym map↔ ⟩
+          Any (λ e → z ≡ f ⟨$⟩₀ e) xs
+       ↔⟨ Any-cong (λ x →  resp-helper {ℓ} {B} {f ⟨$⟩₀ x} {g ⟨$⟩₀ x} F≈G {z}) (≡⇒ ≡.refl) ⟩ -- Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys ⟩
+          Any (λ e → z ≡ g ⟨$⟩₀ e) xs
+       ↔⟨ map↔ ⟩
+          z  ∈  mapL (g ⟨$⟩₀_) xs
+       ■ !} 
+    ; fold-lift-singleton   =   λ {X} {xs} → ∈-↔-reflexive (concat-singleton xs)
+    }
+    where
+    -- open Membership
+    -- open Locations using (here; there)
+    -- open Setoid using (Carrier; trans; sym)
+    open Multiset using (𝒞; commMonoid)
+    respect-≈ : {A B : Setoid ℓ ℓ} {F G : A ⟶ B}
+      (F≈G : {x : Carrier A} → F ⟨$⟩₀ x ≈⌊ B ⌋ G ⟨$⟩₀ x)
+      (xs : Bag (Carrier A))
+      → mapL (F ⟨$⟩₀_) xs  ≈ₘ  mapL (G ⟨$⟩₀_) xs ∶ B
+    respect-≈                 F≈G [] = ↔-refl
+    respect-≈ {A} {B} {f} {g} F≈G (x ∷ xs) {z} = 
+         z  ∈  mapL (f ⟨$⟩₀_) (x ∷ xs)
+       ↔⟨⟩ 
+          Any (z ≡_) (mapL (f ⟨$⟩₀_) (x ∷ xs))
+       ↔⟨ ↔.sym map↔ ⟩
+          Any (λ e → z ≡ f ⟨$⟩₀ e) (x ∷ xs)
+       ↔⟨ ↔.sym (∷↔ _) ⟩
+          z ≡ f ⟨$⟩₀ x  ⊎  Any (λ e → z ≡ f ⟨$⟩₀ e) xs
+       ↔⟨ {! left sides are not in bijection! It is time to switch from propositional equality to setoid base _≈_!} ⟩
+         z ≡ g ⟨$⟩₀ x  ⊎  Any (λ e → z ≡ g ⟨$⟩₀ e) xs
+       ↔⟨ ∷↔ _ ⟩
+          Any (λ e → z ≡ g ⟨$⟩₀ e) (x ∷ xs)
+       ↔⟨ map↔ ⟩
+          z  ∈  mapL (g ⟨$⟩₀_) (x ∷ xs)
+       ■
+\end{code}    
 
 Copied from the older approach --to be adapted in-time.
 \begin{spec}
@@ -553,10 +617,7 @@ module BuildProperties where
           right-inv {[]} (El ())
           right-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm (sym B F≈G)) F≈G) sm
           right-inv {_ ∷ _} (El (there belongs₁)) = thereEq (right-inv (El belongs₁))
-    concat-singleton : {X : Set ℓ} (lst : List X)
-      → lst ≡ foldr _++_ [] (mapL (λ x → x ∷ []) lst)
-    concat-singleton [] = ≡.refl
-    concat-singleton (x ∷ lst) = ≡.cong (λ z → x ∷ z) (concat-singleton lst)
+    
 \end{spec}
 
 Last but not least, build the left adjoint:

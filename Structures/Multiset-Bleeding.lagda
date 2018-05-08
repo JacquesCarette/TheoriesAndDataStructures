@@ -28,11 +28,15 @@ New experimental variation on |Structures.Multiset| using Brad Hardy's work.
 \item |MultisetHom| consist of a method of |lift|ing functions between types to be between multisets
       which are compatible with the |singleton| and |fold| operations.
 
+      ( Later we show, in |ListCMHom|, that lists with their usual
+        map operation result in such a structure --with bag equality. )
+      
       The expected Functorialty conditions are, for now, in their own record: |FunctorialMSH|.
 
 \item |BuildLeftAdjoint|: Provided we have implementations of the multiset transformers we can
       produce a |Free| functor from category of setoids to the category of commutative monoids.
 
+\item |ImplementationViaList|: An implementation of |Multiset| using lists with Bag equality
 \end{enumerate}
 
 %}}}
@@ -473,15 +477,17 @@ ListCMHom {ℓ} X Y = record
          (F : CMArrow CMX CMY) {xs : Bag (Carrier X)} (open CMUtils)
          → Setoid._≈_ Y (fold₀ CMY (mapL (F ⟨$⟩_) xs))
                          (F ⟨$⟩ fold₀ CMX xs)
-    it {ℓ₁} {X} {Y} {MkCommMon e₁ _*₁_ isCM₁} {MkCommMon e₂ _*₂_ isCM₂} F {[]} = Setoid.sym Y (CMArrow.pres-e F)
-    it {ℓ₁} {X} {Y} {MkCommMon e₁ _*₁_ isCM₁} {MkCommMon e₂ _*₂_ isCM₂} F {x ∷ xs} = begin⟨ Y ⟩
-          (F ⟨$⟩ x)  *₂  foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)
-        ≈⟨ Setoid.refl Y  ⟨∙⟩  it F ⟩
-          (F ⟨$⟩ x)  *₂  (F ⟨$⟩ (foldr _*₁_ e₁ xs))
-        ≈⟨ Setoid.sym Y (CMArrow.pres-* F) ⟩
-          F ⟨$⟩ (x *₁ foldr _*₁_ e₁ xs)
+    it {ℓ₁} {X} {Y} F {[]} = Setoid.sym Y (pres-e F)
+    it {ℓ₁} {X} {Y} {CMX@(MkCommMon _ _*₁_ _)} {CMY@(MkCommMon _ _*₂_ isCM₂)} F {x ∷ xs} =
+        begin⟨ Y ⟩
+           (F ⟨$⟩ x)  *₂  fold₀ CMY (mapL (F ⟨$⟩_) xs)
+        ≈⟨ refl ⟨∙⟩ it F ⟩
+           (F ⟨$⟩ x)  *₂  (F ⟨$⟩ fold₀ CMX xs)
+        ≈˘⟨ pres-* F ⟩
+           F ⟨$⟩ (x *₁ fold₀ CMX xs)
         ■₀
         where open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
+              open CMUtils ; open Setoid Y
 \end{code}
 
 Copied from the older approach --to be adapted in-time.

@@ -158,6 +158,21 @@ Forget ℓ o = record
   }
   where open CommMonoid using (module ≈)
 \end{code}
+
+\begin{spec}
+open import Categories.Agda       using (Sets)
+open import EqualityCombinators
+
+Forget-SETS : (ℓ o : Level) → Functor (CommMonoidCat ℓ o) (Sets ℓ)
+Forget-SETS ℓ o = record
+  { F₀             =   λ C → Setoid.Carrier (proj₁ C)
+  ; F₁             =   λ F → Hom._⟨$⟩_ F
+  ; identity       =   ≡.refl
+  ; homomorphism   =   ≡.refl
+  ; F-resp-≡      =   λ F≈G {x} → {! Agreement over an equivalence relation does not entail extensionality!!}
+  }
+  where open CommMonoid using (module ≈)
+\end{spec}
 %}}}
 
 % Quick Folding Instructions:

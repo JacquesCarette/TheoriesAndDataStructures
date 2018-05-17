@@ -1,5 +1,5 @@
 %% In this file, only CommMonoid up to CMonoidCat & Forget are defined.
-%% The ``free commutative
+%% The issue is that this has no left adjoint in a constructive setting.
 \section{Structures.CommMonoid-SET}
 
 A SET based variant of |Structure.CommMonoid|.
@@ -35,7 +35,7 @@ properties can be re-used.
 open import EqualityCombinators
 
 record IsCommutativeMonoid {ℓ} {A : Set ℓ} (_∙_ : Op₂ A) (ε : A) : Set ℓ where
-  
+
   open AFP (_≡_ {ℓ} {A = A})
   field
     left-unit   : LeftIdentity ε _∙_
@@ -58,10 +58,10 @@ part of the definition.
 record CommMonoid {ℓ} (X : Set ℓ) : Set (lsuc ℓ) where
   constructor MkCommMon
   field
-    e            : X
-    _*_          : X → X → X  -- \edcomm{MA}{Why is this `e` but above is `·`?}
+    ε            : X
+    _∙_          : X → X → X
     -- \edcomm{MA}{The field name really oughtn't be abbreviated!}
-    isCommMonoid : IsCommutativeMonoid _*_ e
+    isCommMonoid : IsCommutativeMonoid _∙_ ε
 
   open IsCommutativeMonoid isCommMonoid public
 
@@ -73,13 +73,13 @@ record CommMonoid {ℓ} (X : Set ℓ) : Set (lsuc ℓ) where
 
 record Hom {ℓ : Level} {X Y : Set ℓ} (CMX : CommMonoid X) (CMY : CommMonoid Y) : Set ℓ where
   constructor MkHom
-  open CommMonoid  CMX  using () renaming (e to e₁; _*_ to _*₁_      )
-  open CommMonoid  CMY  using () renaming (e to e₂; _*_ to _*₂_      )
+  open CommMonoid  CMX  using () renaming (ε to ε₁; _∙_ to _∙₁_      )
+  open CommMonoid  CMY  using () renaming (ε to ε₂; _∙_ to _∙₂_      )
 
   field mor    : X → Y
   field
-    pres-e : mor e₁ ≡ e₂
-    pres-* : {x y : X} → mor (x *₁ y)  ≡  mor x *₂ mor y
+    pres-ε : mor ε₁ ≡ ε₂
+    pres-∙ : {x y : X} → mor (x ∙₁ y)  ≡  mor x ∙₂ mor y
 
   cong : {a b : X} → a ≡ b → mor a ≡ mor b
   cong = ≡.cong mor
@@ -103,8 +103,8 @@ CommMonoidCat ℓ = let open CommMonoid using (eq-in) in record
   ; id  = λ { {A , _} → MkHom id ≡.refl ≡.refl }
   ; _∘_ = λ { {C = _ , C} F G → let open CommMonoid C in record
     { mor      =  mor F ∘ mor G
-    ; pres-e   =  cong F (pres-e G) ⟨≡≡⟩ pres-e F
-    ; pres-*   =  cong F (pres-* G) ⟨≡≡⟩ pres-* F
+    ; pres-ε   =  cong F (pres-ε G) ⟨≡≡⟩ pres-ε F
+    ; pres-∙   =  cong F (pres-∙ G) ⟨≡≡⟩ pres-∙ F
     } }
   ; assoc     = ≡.refl
   ; identityˡ =  ≡.refl
@@ -130,7 +130,7 @@ Forget ℓ o = record
   ; homomorphism   =   ≡.refl
   ; F-resp-≡      =   id
   }
-\end{code} 
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

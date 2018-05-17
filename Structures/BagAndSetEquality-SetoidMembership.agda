@@ -1,5 +1,5 @@
 -- Musa Al-hassy: This' a copy of the standard library's BagAndSetEquality.agda
--- but using setoid equality rather than propositional equality; 
+-- but using setoid equality rather than propositional equality;
 -- i.e., using |Any.Membership| rather than |Any.Membership-≡|.
 
 open import Level
@@ -26,18 +26,17 @@ open import Data.Sum
 open import Function
 open import Function.Equality using (_⟨$⟩_)
 import Function.Equivalence as FE
-open import Function.Inverse as Inv using (_↔_; module Inverse)
+-- open import Function.Inverse as Inv using (_↔_; module Inverse)
 open import Function.Related as Related using (↔⇒; ⌊_⌋; ⌊_⌋→; ⇒→)
 open import Function.Related.TypeIsomorphisms
 open import Relation.Binary
 import Relation.Binary.EqReasoning as EqR
-open import Relation.Binary.PropositionalEquality as P
-  using (_≡_; _≗_)
+-- open import Relation.Binary.PropositionalEquality as P using (_≡_; _≗_)
 open import Relation.Binary.Sum
 open import Relation.Nullary
 
 -- open Any.Membership-≡
-module MM = Any.Membership-≡
+-- module MM = Any.Membership-≡
 open Any.Membership
 private
   module Eq  {k ℓ c} (A : Setoid ℓ c) = Setoid (Related.InducedEquivalence₂ k (_∈_ A))
@@ -177,7 +176,7 @@ commutativeMonoid {ℓ} {c} A = record
       { isEquivalence = Eq.isEquivalence {k = Related.bijection} A
       ; assoc         = λ xs ys zs →
                           Eq.reflexive A (ListMonoid.assoc xs ys zs)
-      ; ∙-cong        = ++-cong
+      ; ∙-cong        = ++-cong {A = A}
       }
     ; identityˡ = λ xs {x} → x ∈ₐ xs ∎
     ; comm      = λ xs ys {x} →

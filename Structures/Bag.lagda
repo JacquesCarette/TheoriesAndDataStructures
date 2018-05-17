@@ -1,7 +1,7 @@
 \section{Structures.Bag}
 
 This section is currently a copy of
-|Structures.Multiset|, but it utilises |Sidequest|'s permutation representation.
+|Structures.Multiset|, but it utilises |Sidequest2|'s permutation representation.
 
 %{{{ Imports
 \begin{code}
@@ -25,14 +25,13 @@ open import DataProperties hiding (⟨_,_⟩)
 -- open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
--- open import Belongs
 open import Structures.CommMonoid renaming (Hom to _⟶̄_) -- |\-->\=|
 
 open import Algebra   using (Monoid)
 open import Data.List using (monoid)
 
 open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
-open _⟶̄_    using (_⟨$⟩_ ; mor ; pres-e ; pres-*) 
+open _⟶̄_    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 open CommMonoid using (eq-in ; isCommMonoid)
 \end{code}
 %}}}
@@ -47,12 +46,12 @@ equivalence relation.
 record IsCtrEquivalence {ℓ : Level} (c : Level) (Ctr : Set ℓ → Set ℓ)
   : Set (lsuc ℓ ⊍ lsuc c) where
 
-  Obj = Setoid ℓ (c ⊍ ℓ)
+  Obj = Setoid ℓ c
 
   field
-    equiv        : (X : Obj) → Rel (Ctr (Setoid.Carrier X)) (c ⊍ ℓ)
+    equiv        : (X : Obj) → Rel (Ctr (Setoid.Carrier X)) c
     equivIsEquiv : (X : Obj) → IsEquivalence (equiv X)
-    
+
   -- handy dandy syntactic sugar for |k|ontainer equality.
   infix -666 equiv
   syntax equiv X s t  =  s ≈ₖ t ∶ X   -- ghost colon
@@ -63,9 +62,9 @@ record IsCtrEquivalence {ℓ : Level} (c : Level) (Ctr : Set ℓ → Set ℓ)
 
 We have a type transformer |ctr| that furnishes setoids with an equivalence relation |equiv|.
 
-\edcomm{MA}{Since there are no `coherencey' constraints, we might as well say that this
-|IsCtrEquivalence| is nothing more than a setoid transformer: The object component of an endofunctor
-on the category of setoids. Indeed:}
+Since there are no coherence constraints, we might as well say that this
+|IsCtrEquivalence| is a setoid transformer: The object component of an endofunctor
+on the category of setoids. Indeed:
 
 \begin{code}
   ctrSetoid : Obj → Obj
@@ -89,10 +88,10 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
   open IsCtrEquivalence using (equiv)
   field
     𝒞                    : Set ℓ → Set ℓ         -- Carrier Mapping
-    isCtrEquivalence     :  IsCtrEquivalence c 𝒞  
+    isCtrEquivalence     :  IsCtrEquivalence c 𝒞
     ∅                    :  {X : Set ℓ} → 𝒞 X
     _⊕_                  :  {X : Set ℓ} → 𝒞 X → 𝒞 X → 𝒞 X
-    isCommutativeMonoid  :  {X : Setoid ℓ (c ⊍ ℓ)} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
+    isCommutativeMonoid  :  {X : Setoid ℓ c} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
 
   open IsCtrEquivalence isCtrEquivalence             public
 
@@ -124,12 +123,12 @@ quite misleading. --c.f. the typing of |⟦_⟧| below.
 \end{itemize}
 
 \begin{code}
-record Bag {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where  
+record Bag {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) where
   field
     commutativeContainer : CommutativeContainer ℓ c
 
   open CommutativeContainer commutativeContainer     public
-  open Setoid X using (_≈_) renaming (Carrier to X₀)  
+  open Setoid X using (_≈_) renaming (Carrier to X₀)
 
   field
     singleton       :  X ⟶ ctrSetoid X             -- A setoid map
@@ -138,7 +137,6 @@ record Bag {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc
 
 
   -- Now for some syntactic variations.
-
 
   -- The name of the container type.
   𝒳 = 𝒞 X₀
@@ -161,13 +159,13 @@ record Bag {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc
 --
 -- Add "⦇" and "⦈" as unicode alternatives for "\(|" and "\|)" respectively.
 -- ( Z NOTATION _ IMAGE BRACKET )
--- |M-x customize-varaible agda-input-user-translations|
+-- |M-x customize-variable agda-input-user-translations|
 --
 -- For some strange reason |⦇| cannot appear as part of an infix name.
 --
 -- As a work around, will use |⟦_⟧|.
 --
-module _ {ℓ c : Level} {X : Setoid ℓ (c ⊍ ℓ)} (X* : Bag X) where
+module _ {ℓ c : Level} {X : Setoid ℓ c} (X* : Bag X) where
 
   module BagSrc where
     open Bag X* public using () renaming (⟅_⟆ to ⟅_⟆ₛ ; 𝓜 to 𝒮; ⟦_⟧ to ⟦_⟧ₛ; 𝒳 to 𝒮₀)
@@ -185,17 +183,17 @@ In the classical contexts of sets and set-functions, the constraints take the fo
 mimics the behaviour of the morphism, or “map”, portion of a functor.
 
 \begin{code}
-record BagHom {ℓ c : Level} {Src Tgt : Setoid ℓ (c ⊍ ℓ)} (Src* : Bag Src) (Tgt* : Bag Tgt)
+record BagHom {ℓ c : Level} {Src Tgt : Setoid ℓ c} (Src* : Bag Src) (Tgt* : Bag Tgt)
   : Set (lsuc ℓ ⊍ lsuc c) where
-  
+
   X₀ = Setoid.Carrier Src
   open Setoid Tgt using (_≈_)
   open BagSrc Src*
   open BagTgt Tgt*
-  
+
   field
     lift : (Src ⟶ Tgt) →  𝒮 ⟶̄ 𝒯
-    -- 
+    --
     -- MA: Perhaps request coherency via |Belongs.shifted-elements| ?
     -- E.g., |lift F xs ≅ shifted F xs| ?
     -- c.f. |Belongs.shift-map|!
@@ -212,7 +210,7 @@ record BagHom {ℓ c : Level} {Src Tgt : Setoid ℓ (c ⊍ ℓ)} (Src* : Bag Src
                  -- |F (x₁ ⊕ ⋯ ⊕ xₙ) ≈ F x₁ ⊕ ⋯ ⊕ F xₙ| for any |n : ℕ|.
 
 open BagHom
-\end{code}    
+\end{code}
 
 \edcomm{MA}{
 
@@ -233,27 +231,27 @@ cannot go into the above.
 \begin{code}
 record FunctorialMSH {ℓ c : Level}
     -- `B`ag type former ;; MS
-    (𝑩   : {ℓ c : Level} (X : Setoid ℓ (ℓ ⊍ c)) → Bag {ℓ} {c} X)
+    (𝑩 : (X : Setoid ℓ c) → Bag {ℓ} {c} X)
 
     -- Collection of bag `H`omomorphisms between given setoids.
-    (𝑯 : {X Y : Setoid ℓ (c ⊍ ℓ)} → BagHom {ℓ} {c} {X} {Y} (𝑩 X) (𝑩 Y))
-    
+    (𝑯 : {X Y : Setoid ℓ c} → BagHom {ℓ} {c} {X} {Y} (𝑩 X) (𝑩 Y))
+
     : Set (lsuc ℓ ⊍ lsuc c)
   where
-  
+
   open Bag hiding (Obj)
   open BagHom
   open Setoid   using (Carrier)
   open IsCtrEquivalence hiding (ctrSetoid ; Obj)
 
   private
-    Obj = Setoid ℓ (c ⊍ ℓ)
+    Obj = Setoid ℓ c
     𝒞ₘ = λ X → 𝒞 {ℓ} {c} (𝑩 X) (Carrier X)
     𝓜ₘ = λ X → commMonoid {ℓ} {c} (𝑩 X) X
 
   𝑳  = λ {X Y : Obj}  (F : X ⟶ Y) → (lift 𝑯 F) ⟨$⟩_
 
-  _≈ₘ_ : {a : Level} {A : Set a} {B : Obj} (f g : A → 𝒞ₘ B) → Set (a ⊍ c ⊍ ℓ)
+  _≈ₘ_ : {a : Level} {A : Set a} {B : Obj} (f g : A → 𝒞ₘ B) → Set (a ⊍ c)
   _≈ₘ_ {a} {A} {B} f g = {e : A} → f e ≈ g e ∶ 𝓜ₘ B
 
   field
@@ -282,11 +280,11 @@ build a Free Functor which is left adjoint to the forgetful functor.
 module BuildLeftAdjoint
 
   -- `B`ag type former ;; MS
-  (𝑩   : {ℓ c : Level} (X : Setoid ℓ (ℓ ⊍ c)) → Bag X)
+  (𝑩   : {ℓ c : Level} (X : Setoid ℓ c) → Bag X)
 
   -- Collection of bag `H`omomorphisms between given setoids.
-  (𝑯  : {ℓ c : Level} {X Y : Setoid ℓ (ℓ ⊍ c)} → BagHom {ℓ} {c} (𝑩 X) (𝑩 {c = c} Y))
-  
+  (𝑯  : {ℓ c : Level} {X Y : Setoid ℓ c} → BagHom {ℓ} {c} (𝑩 X) (𝑩 {c = c} Y))
+
   (Func : {ℓ c : Level} → FunctorialMSH {ℓ} {c} 𝑩 𝑯)
   where
 
@@ -322,12 +320,13 @@ module BuildLeftAdjoint
 %{{{ An implementation of |Bag| using lists with Bag equality
 \subsection{An implementation of |Bag| using lists with Bag equality}
 \begin{code}
-module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
-  open Setoid  
+module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ o) where
+  open Setoid
+  module xx = Setoid X
   -- No: open ElemOfSing X
 
-  open import Structures.Sidequest
-  
+  open import Structures.Sidequest2
+
 
   open import Data.List
   open import Data.Nat hiding (fold ; _*_)
@@ -338,8 +337,8 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
     { commutativeContainer = record
          { 𝒞                   = List
          ; isCtrEquivalence    = record
-            { equiv        = λ Y → let open Permutations Y in _≈ₚ_
-            ; equivIsEquiv = λ Y → let open Permutations Y in ≈ₚ-isEquivalence
+            { equiv        = λ Y → let open Permutations Y in {!!} -- _≈ₖ_
+            ; equivIsEquiv = λ Y → let open Permutations Y in {!!}
             }
          ; ∅                   = [] -- c.f. |Sidequest.ε|
          ; _⊕_                 =  _++_ -- λ{ (_ , xs) (_ , ys) → (_ , xs ++ ys) } -- c.f. |Sidequest._⊕_|
@@ -348,9 +347,9 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
                module ++ = Monoid (monoid (Carrier Y))
            in
            record
-            { left-unit  = λ _ → ≈ₚ-refl -- c.f. |⊕-left-unit|
-            ; right-unit = ≈ₚ-reflexive ∘₀ proj₂ ++.identity
-            ; assoc      = λ xs ys zs → ≈ₚ-reflexive (++.assoc xs ys zs)
+            { left-unit  = λ _ → {!!} -- ≈ₚ-refl -- c.f. |⊕-left-unit|
+            ; right-unit = {!!} -- ≈ₚ-reflexive ∘₀ proj₂ ++.identity
+            ; assoc      = λ xs ys zs → {!!} -- ≈ₚ-reflexive (++.assoc xs ys zs)
             ; comm       = λ xs ys → {!MA: If we could take inverses, then this would follow.
                                            However, as it stands, my inversion operator _˘ is flawed.!}
             ; _⟨∙⟩_      = λ {x} {y} {z} {w} x≈y z≈w → {!!}
@@ -360,9 +359,9 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
     ; fold = λ {Y} CMY →
            let open CommMonoid CMY
                open Permutations Y
-               open Lemmas CMY
+               -- open Lemmas CMY
            in record
-         { mor      =   record { _⟨$⟩_ = fold ; cong = {!!} } -- record { _⟨$⟩_ = foldr _*_ e ; cong = fold-permute {CM = CMX} }
+         { mor      =   record { _⟨$⟩_ = {!!} ; cong = {!!} } -- record { _⟨$⟩_ = foldr _*_ e ; cong = fold-permute {CM = CMX} }
          ; pres-e   =   {!!} -- refl Y
          ; pres-*   =   {!!} -- fold-CM-over-++ CMX
          }
@@ -391,7 +390,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
             { left-unit  = λ y → ≅-refl
             ; right-unit = λ ys → ≡→⇔ (proj₂ ++.identity ys)
             ; assoc      = λ xs ys zs → ≡→⇔ (++.assoc xs ys zs)
-            ; comm       = λ xs ys → 
+            ; comm       = λ xs ys →
                elem-of (xs ++ ys)         ≅˘⟨ ⊎S≅++ ⟩
                elem-of xs ⊎S elem-of ys   ≅⟨ ⊎S-comm _ _ ⟩
                elem-of ys ⊎S elem-of xs   ≅⟨ ⊎S≅++ ⟩
@@ -414,7 +413,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
     where
        open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)
        open import Relation.Binary.SetoidReasoning renaming (_∎ to _■)
-        
+
        fold-CM-over-++ : {Z : Setoid ℓ (o ⊍ ℓ)} (cm : CommMonoid Z) {s t : List (Carrier Z)}
                        →  let open CommMonoid cm ; F = foldr _*_ e in
                            F (s ++ t) ≈⌊ Z ⌋ (F s * F t)

@@ -43,7 +43,7 @@ New experimental variation on |Structures.Multiset| using Brad Hardy's work.
 
 %{{{ Imports
 \begin{code}
-module Structures.Multiset-Bleeding where
+module Structures.Multiset-Bleeding-SetoidMembership where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
 open import Relation.Binary using (Setoid; Rel; IsEquivalence)
@@ -74,23 +74,28 @@ open CommMonoid using (eq-in ; isCommMonoid)
 
 open Setoid using (Carrier)
 
-open import Data.List.Any ; open Membership-≡
 import Data.List.Any.BagAndSetEquality as BagEq
+open import Data.List.Any -- ; open Membership-≡
+open Membership
+open import Function.Related hiding (_∼[_]_)
+
+import Structures.BagAndSetEquality-SetoidMembership as SetoidBagEq
 
 -- multiset type
 
--- \edcomm{MA}{ Currently only using propositional equality; will return to do setoid equality later!}
-BagSetoid : {ℓ c : Level} (let ohno = ℓ) → Setoid ℓ c → Setoid ℓ ohno
-BagSetoid {ℓ} {c} A = record { CommutativeMonoid (BagEq.commutativeMonoid bag (Setoid.Carrier A)) }
+BagSetoid : {ℓ c : Level} → Setoid ℓ c → Setoid ℓ (c ⊍ ℓ)
+BagSetoid {ℓ} {c} A = InducedEquivalence₂ bijection (_∈_ A)
 
-Bag₀ : {ℓ : Level} → Set ℓ → Setoid ℓ ℓ
-Bag₀ A = record { CommutativeMonoid (BagEq.commutativeMonoid bag A) }
-
-bag-eq : {ℓ c : Level} (X : Setoid ℓ c) → Bag (Setoid.Carrier X) → Bag (Setoid.Carrier X) → Set ℓ
-bag-eq X = Setoid._≈_ (BagSetoid X) -- i.e., |Setoid._≈_ {ℓ} {ℓ} ([ bag ]-Equality X)|
+bag-eq : {ℓ c : Level} (X : Setoid ℓ c) → Bag (Setoid.Carrier X) → Bag (Setoid.Carrier X) → Set (c ⊍ ℓ)
+bag-eq X = Setoid._≈_ (BagSetoid X)
 
 infix -666 bag-eq
 syntax bag-eq X s t  =  s ≈ₘ t ∶ X   -- ghost colon
+
+bag-in : {ℓ c : Level} (X : Setoid ℓ c) → Setoid.Carrier X → Bag (Setoid.Carrier X) → Set (c ⊍ ℓ)
+bag-in X x xs = _∈_ X x xs
+infix 4 bag-in
+syntax bag-in X x xs  =  x ∈ xs ∶ X   -- ghost colon
 \end{code}
 %}}}
 
@@ -126,10 +131,10 @@ on the category of setoids. Indeed:}
     ; isEquivalence  =  equivIsEquiv X
     }
 
-Bag-isCtrEquivalence : (ℓ : Level) → IsCtrEquivalence ℓ Bag
-Bag-isCtrEquivalence ℓ = record
+Bag-isCtrEquivalence : (ℓ c : Level) → IsCtrEquivalence {ℓ} c Bag
+Bag-isCtrEquivalence ℓ c = record
   { equiv        = λ X → Setoid._≈_ (BagSetoid X)
-  ; equivIsEquiv = λ X → Setoid.isEquivalence {ℓ} {ℓ} ([ bag ]-Equality (Setoid.Carrier X))
+  ; equivIsEquiv = λ X → Setoid.isEquivalence (BagSetoid X)
   }
 \end{code}
 %}}}
@@ -160,22 +165,20 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     ; isCommMonoid   =   isCommutativeMonoid
     }
 
-Bag-CommutativeContainer : (ℓ : Level) → CommutativeContainer ℓ ℓ
-Bag-CommutativeContainer ℓ = record
+Bag-CommutativeContainer : (ℓ c : Level) → CommutativeContainer ℓ c
+Bag-CommutativeContainer ℓ c = record
   { 𝒞 = Bag
-  ; isCtrEquivalence = Bag-isCtrEquivalence ℓ
+  ; isCtrEquivalence = Bag-isCtrEquivalence ℓ c
   ; ∅   = []
   ; _⊕_ = _++_
   ; isCommutativeMonoid = λ {X} → 
-      let open CommutativeMonoid (BagEq.commutativeMonoid bag (Setoid.Carrier X)) in record
-      { left-unit   =   identityˡ
-      ; right-unit  =   proj₂ identity -- derived
-      ; assoc       =   assoc
-      ; comm        =   comm
-      ; _⟨∙⟩_       =   ∙-cong
+      let open CommutativeMonoid (SetoidBagEq.commutativeMonoid X) in record
+      { left-unit   =  identityˡ
+      ; right-unit  =  proj₂ identity -- derived
+      ; assoc       =  assoc
+      ; comm        =  comm
+      ; _⟨∙⟩_       =  ∙-cong
       }
-  -- |record { CommMonoid (asCommMonoid {ℓ} {ℓ} (BagEq.commutativeMonoid bag (Setoid.Carrier X))) }|
-  -- wont work for some reason; it yields yellow.
   }
 \end{code}
 
@@ -380,16 +383,23 @@ module ↔ = EquationalReasoning
 open import Function.Inverse public using () renaming  (id to  ↔-refl)
 
 postulate
-
-  singleton-cong-lemma : {ℓ : Level} (X : Setoid ℓ ℓ) (x y : Setoid.Carrier X) → Setoid._≈_ X x y
-                       → {z : Setoid.Carrier X} → (z ≡ x  ⊎  z ∈ [])  ↔  (z ≡ y  ⊎  z ∈ [])
-
+  singleton-cong-lemma : {ℓ c : Level} (X : Setoid ℓ c) (x y : Setoid.Carrier X) → Setoid._≈_ X x y
+                         → {z : Setoid.Carrier X}
+                         → (Setoid._≈_ X z x ⊎ z ∈ [] ∶ X) ↔ (Setoid._≈_ X z y ⊎ z ∈ [] ∶ X)
+  -- singleton-cong-lemma X x y x≈y {z} =  let open Setoid X renaming (_≈_ to _≈ₓ_) in
+  --        (z ≈ₓ x  ⊎  z ∈ [] ∶ X)
+  --     ↔⟨ {!!} ⟩
+  --        (z ≈ₓ y  ⊎  z ∈ [] ∶ X)
+  --     ■                       
+  
 -- Ought to be |module CMUtils {ℓ c : Level} {X : Setoid ℓ (ℓ ⊍ c)} (CMX : CommMonoid X) where|.
-module CMUtils {ℓ : Level} {X : Setoid ℓ ℓ} (CMX : CommMonoid X) where
+module CMUtils {ℓ c : Level} {X : Setoid ℓ c} (CMX : CommMonoid X) where
 
   open CommMonoid CMX
   open Setoid X using (_≈_)
   open import Data.List as List using (List; []; _∷_; _++_)
+
+  open SetoidBagEq using (kind-eq)
 
   fold₀ : List (Carrier X) → Carrier X
   fold₀ = List.foldr _*_ e
@@ -401,24 +411,23 @@ module CMUtils {ℓ : Level} {X : Setoid ℓ ℓ} (CMX : CommMonoid X) where
   -- In a commutative monoid, if you add up everything in two lists that contain
   -- the same elements, you get the same result.  
   postulate
-    sum-bag : ∀ {xs ys} → xs ∼[ bag ] ys → fold₀ xs ≈ fold₀ ys
+    sum-bag : ∀ {xs ys} → xs ∼[ bijection ] ys ∶ X → fold₀ xs ≈ fold₀ ys
 
-module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
+module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) where
   open Setoid  
-  -- open ElemOfSing X
 
-  ListMS : Multiset {ℓ} {ℓ} X -- \edcomm{MA}{This homogenity of levels is unsettling. }
+  ListMS : Multiset {ℓ} {c ⊍ ℓ} X
   ListMS = record
-    { commutativeContainer   =   Bag-CommutativeContainer ℓ
-    ; singleton              =   record { _⟨$⟩_ = λ x → x ∷ [] ; cong = λ {x} {y} x≈y {z} →
-          z ∈ (x ∷ [])
-       ↔⟨ ↔.sym $ ∷↔ (_≡_ z) ⟩
-          z ≡ x  ⊎  z ∈ []
-       ↔⟨ singleton-cong-lemma X x y x≈y ⟩
-          z ≡ y  ⊎  z ∈ []
-       ↔⟨ ∷↔ (_≡_ z) ⟩          
-          z ∈ [ y ]
-       ■
+    { commutativeContainer   =   Bag-CommutativeContainer ℓ (c ⊍ ℓ)
+    ; singleton              =   record { _⟨$⟩_ = λ x → x ∷ [] ; cong = λ {x} {y} x≈y {z} → let open Setoid X renaming (_≈_ to _≈ₓ_) in
+           z ∈ (x ∷ []) ∶ X
+         ↔⟨ ↔.sym $ ∷↔ (_≈ₓ_ z) ⟩
+           z ≈ₓ x  ⊎  z ∈ [] ∶ X
+        ↔⟨ singleton-cong-lemma X x y x≈y ⟩
+           z ≈ₓ y  ⊎  z ∈ [] ∶ X
+        ↔⟨ ∷↔ (_≈ₓ_ z) ⟩          
+           z ∈ [ y ] ∶ X
+        ■ 
       } -- \edcomm{MA}{c.f. |BagEq.∷-cong|.}
     ; fold  =   λ {Y} CMY → let open CMUtils CMY in record
       { mor      =   record { _⟨$⟩_ = fold₀ ; cong = sum-bag }
@@ -431,7 +440,7 @@ module ImplementationViaList {ℓ : Level} (X : Setoid ℓ ℓ) where
 
       open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)      
        
-      fold-CM-over-++ : {Z : Setoid ℓ ℓ} (cm : CommMonoid Z) {s t : Bag (Carrier Z)}
+      fold-CM-over-++ : {Z : Setoid ℓ (ℓ ⊍ c)} (cm : CommMonoid Z) {s t : Bag (Carrier Z)}
                       →  let open CommMonoid cm ; F = foldr _*_ e in
                           F (s ++ t) ≈⌊ Z ⌋ (F s * F t)
       fold-CM-over-++ {Z} (MkCommMon e _*_ isCommMon) {[]} {t} = sym Z (left-unit isCommMon _)
@@ -445,27 +454,28 @@ open ImplementationViaList
 \end{code}
 
 \begin{code}
-∈-↔-reflexive : {ℓ : Level} {X : Set ℓ} {xs ys : Bag X}
-            → xs ≡ ys  →  {z : X}  →  z ∈ xs  ↔  z ∈ ys
-∈-↔-reflexive ≡.refl = ↔-refl
+∈-↔-reflexive : {ℓ c : Level} (X : Setoid ℓ c) {xs ys : Bag (Setoid.Carrier X)}
+            → xs ≡ ys  →  {z : Setoid.Carrier X}
+            →  z ∈ xs ∶ X  ↔  z ∈ ys ∶ X -- 
+∈-↔-reflexive X ≡.refl = ↔-refl
 
-ListCMHom : {ℓ : Level} {X Y : Setoid ℓ ℓ}
-          → MultisetHom (ListMS X) (ListMS Y)
+-- Musa: The level homogenity is required due to the use of |Any-cong| below.
+ListCMHom : {ℓ : Level} {X Y : Setoid ℓ ℓ} → MultisetHom (ListMS {ℓ} {ℓ} X) (ListMS Y)
 ListCMHom {ℓ} {X} {Y} = record
   { lift                =   λ f → let mapf = mapL (f ⟨$⟩₀_) in record
-    { mor      =   record { _⟨$⟩_ = mapf ; cong = λ {xs} {ys} xs≈ys {z} →
-          z ∈ mapf xs
-       ↔⟨⟩
-          Any (z ≡_) (mapL (f ⟨$⟩₀_) xs)
-       ↔⟨ ↔.sym map↔ ⟩
-          Any (λ e → z ≡ f ⟨$⟩₀ e) xs
-       ↔⟨ Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys ⟩
-          Any (λ e → z ≡ f ⟨$⟩₀ e) ys
-       ↔⟨ map↔ ⟩
-          z ∈ mapf ys
+    { mor      =   record { _⟨$⟩_ = mapf ; cong = λ {xs} {ys} xs≈ys {z} → let open Setoid Y renaming (_≈_ to _≈₁_) in
+           z ∈ mapf xs ∶ Y
+        ↔⟨⟩
+         Any (z ≈₁_) (mapL (f ⟨$⟩₀_) xs)
+        ↔⟨ ↔.sym map↔ ⟩
+         Any (λ e → z ≈₁ f ⟨$⟩₀ e) xs
+        ↔⟨ {! Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys !} ⟩
+         Any (λ e → z ≈₁ f ⟨$⟩₀ e) ys
+        ↔⟨ map↔ ⟩
+           z ∈ mapf ys ∶ Y
        ■ }
     ; pres-e   =   ↔-refl
-    ; pres-*   =   λ {xs ys} → ∈-↔-reflexive (map-++-commute (f ⟨$⟩₀_) xs ys)
+    ; pres-*   =   λ {xs ys} → ∈-↔-reflexive Y (map-++-commute (f ⟨$⟩₀_) xs ys)
                  -- Equivalently, |≡⇒ (≡.cong (z ∈_) (map-++-commute (f ⟨$⟩₀_) xs ys))|
     }
   ; singleton-commute   =   λ f {x} → ↔-refl
@@ -502,123 +512,50 @@ concat-singleton (x ∷ xs)   =   ≡.cong (x ∷_) (concat-singleton xs)
 resp-helper : {ℓ : Level} {B : Setoid ℓ ℓ} {l r : Carrier B}
             → l ≈⌊ B ⌋ r → {z : Carrier B}
             → (z ≡ l) ↔ (z ≡ r)
-resp-helper {ℓ} {B} {l} {r} l≈r {z} = record
-  { to           =   record { _⟨$⟩_ = {!!} ; cong = {!!} }
-  ; from         =   {!!}
-  ; inverse-of   =   {!!}
-  }
+resp-helper {ℓ} {B} {l} {r} l≈r {z} = {!!}
 
 module BuildProperties where
   open ImplementationViaList
   functoriality : {ℓ : Level} → FunctorialMSH {ℓ} ListMS ListCMHom
   functoriality {ℓ} = record
-    { id-pres               =   λ {X} {xs} → ∈-↔-reflexive (map-id xs)
-    ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → ∈-↔-reflexive (map-compose xs)
-    ; resp-≈                =   λ {A} {B} {f} {g} F≈G {xs} → λ {z} →  
-          z  ∈  mapL (f ⟨$⟩₀_) xs
-       ↔⟨⟩ 
-          Any (z ≡_) (mapL (f ⟨$⟩₀_) xs)
+    { id-pres               =   λ {X} {xs} → ∈-↔-reflexive X (map-id xs)
+    ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → ∈-↔-reflexive Z (map-compose xs)
+    ; resp-≈                =   λ {X} {Y} {f} {g} F≈G {xs} → λ {z} →  let open Setoid Y renaming (_≈_ to _≈₁_) in
+          z  ∈  mapL (f ⟨$⟩₀_) xs ∶ Y
+        ↔⟨⟩
+          Any (z ≈₁_) (mapL (f ⟨$⟩₀_) xs)
        ↔⟨ ↔.sym map↔ ⟩
-          Any (λ e → z ≡ f ⟨$⟩₀ e) xs
-       ↔⟨ Any-cong (λ x →  resp-helper {ℓ} {B} {f ⟨$⟩₀ x} {g ⟨$⟩₀ x} F≈G {z}) (≡⇒ ≡.refl) ⟩ -- Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys ⟩
-          Any (λ e → z ≡ g ⟨$⟩₀ e) xs
+          Any (λ e → z ≈₁ f ⟨$⟩₀ e) xs
+       ↔⟨ {! Any-cong (λ x →  resp-helper {ℓ} {B} {f ⟨$⟩₀ x} {g ⟨$⟩₀ x} F≈G {z}) (≡⇒ ≡.refl) !}  ⟩ -- Any-cong (λ x → ≡⇒ ≡.refl) xs≈ys ⟩
+          Any (λ e → z ≈₁ g ⟨$⟩₀ e) xs
        ↔⟨ map↔ ⟩
-          z  ∈  mapL (g ⟨$⟩₀_) xs
+          z  ∈  mapL (g ⟨$⟩₀_) xs ∶ Y
        ■  
-    ; fold-lift-singleton   =   λ {X} {xs} → ∈-↔-reflexive (concat-singleton xs)
+    ; fold-lift-singleton   =   λ {X} {xs} → ∈-↔-reflexive X (concat-singleton xs)
     }
     where
-    -- open Membership
-    -- open Locations using (here; there)
-    -- open Setoid using (Carrier; trans; sym)
     open Multiset using (𝒞; commMonoid)
     respect-≈ : {A B : Setoid ℓ ℓ} {F G : A ⟶ B}
       (F≈G : {x : Carrier A} → F ⟨$⟩₀ x ≈⌊ B ⌋ G ⟨$⟩₀ x)
       (xs : Bag (Carrier A))
       → mapL (F ⟨$⟩₀_) xs  ≈ₘ  mapL (G ⟨$⟩₀_) xs ∶ B
     respect-≈                 F≈G [] = ↔-refl
-    respect-≈ {A} {B} {f} {g} F≈G (x ∷ xs) {z} = 
-         z  ∈  mapL (f ⟨$⟩₀_) (x ∷ xs)
-       ↔⟨⟩ 
-          Any (z ≡_) (mapL (f ⟨$⟩₀_) (x ∷ xs))
+    respect-≈ {A} {B} {f} {g} F≈G (x ∷ xs) {z} = let open Setoid B renaming (_≈_ to _≈₁_) in
+         z  ∈  mapL (f ⟨$⟩₀_) (x ∷ xs) ∶ B
+       ↔⟨⟩
+         Any (z ≈₁_) (mapL (f ⟨$⟩₀_) (x ∷ xs))
        ↔⟨ ↔.sym map↔ ⟩
-          Any (λ e → z ≡ f ⟨$⟩₀ e) (x ∷ xs)
+         Any (λ e → z ≈₁ f ⟨$⟩₀ e) (x ∷ xs)
        ↔⟨ ↔.sym (∷↔ _) ⟩
-          z ≡ f ⟨$⟩₀ x  ⊎  Any (λ e → z ≡ f ⟨$⟩₀ e) xs
-       ↔⟨ {! left sides are not in bijection! It is time to switch from propositional equality to setoid base _≈_!} ⟩
-         z ≡ g ⟨$⟩₀ x  ⊎  Any (λ e → z ≡ g ⟨$⟩₀ e) xs
+         z ≈₁ f ⟨$⟩₀ x  ⊎  Any (λ e → z ≈₁ f ⟨$⟩₀ e) xs
+       ↔⟨ {!!} ⟩
+         z ≈₁ g ⟨$⟩₀ x  ⊎  Any (λ e → z ≈₁ g ⟨$⟩₀ e) xs
        ↔⟨ ∷↔ _ ⟩
-          Any (λ e → z ≡ g ⟨$⟩₀ e) (x ∷ xs)
+          Any (λ e → z ≈₁ g ⟨$⟩₀ e) (x ∷ xs)
        ↔⟨ map↔ ⟩
-          z  ∈  mapL (g ⟨$⟩₀_) (x ∷ xs)
+          z  ∈  mapL (g ⟨$⟩₀_) (x ∷ xs) ∶ B
        ■
-\end{code}    
-
-Copied from the older approach --to be adapted in-time.
-\begin{spec}
-module BuildProperties where
-  open ImplementationViaList
-  functoriality : {ℓ o : Level} → FunctorialMSH {ℓ} {o} ListMS ListCMHom
-  functoriality {ℓ} {o} = record
-    { id-pres = λ {X} {x} → BagEq.≡→⇔ X (map-id x)
-    ; ∘-pres = λ {_} {_} {Z} {f} {g} {x} → BagEq.≡→⇔ Z (map-compose x)
-    ; resp-≈ = λ {A} {B} {F} {G} F≈G {l} → respect-≈ {F = F} {G} F≈G l
-    ; fold-lift-singleton = λ {X} {l} → BagEq.≡→⇔ X (concat-singleton l)
-    }
-    where
-    open Membership
-    open Locations using (here; there)
-    open Setoid using (Carrier; trans; sym)
-    open Multiset using (Ctr; commMonoid)
-    respect-≈ : {A B : Setoid ℓ (o ⊍ ℓ)} {F G : A ⟶ B}
-      (F≈G : {x : Carrier A} → F Π.⟨$⟩ x ≈⌊ B ⌋ G Π.⟨$⟩ x)
-      (lst : Ctr (ListMS A) (Carrier A))
-      → mapL (Π._⟨$⟩_ F) lst ≈ mapL (Π._⟨$⟩_ G) lst ∶ commMonoid (ListMS B)
-    respect-≈                 F≈G [] = ≅-refl
-    respect-≈ {A} {B} {F} {G} F≈G (x ∷ lst) = record
-      { to = record { _⟨$⟩_ = to-G ; cong = cong-to-G }
-      ; from = record { _⟨$⟩_ = from-G ; cong = cong-from-G }
-      ; inverse-of = record { left-inverse-of = left-inv ; right-inverse-of = right-inv } }
-        where
-          open LocEquiv B
-          f = mapL (Π._⟨$⟩_ F)
-          g = mapL (Π._⟨$⟩_ G)
-
-          to-G : {l : List (Carrier A)} → elements B (f l) → elements B (g l)
-          to-G {[]} (El ())
-          to-G {_ ∷ _} (El (here sm)) = El (here (trans B sm F≈G))
-          to-G {_ ∷ _} (El (there belongs)) = lift-el B there (to-G (El belongs))
-
-          cong-to-G : {l : List (Carrier A)} {i j : elements B (f l)} → belongs i ≋ belongs j
-            → belongs (to-G i) ≋ belongs (to-G j)
-          cong-to-G {[]} ()
-          cong-to-G {_ ∷ _} (hereEq x≈z y≈z) = LocEquiv.hereEq (trans B x≈z F≈G) (trans B y≈z F≈G)
-          cong-to-G {_ ∷ _} (thereEq i≋j) = LocEquiv.thereEq (cong-to-G i≋j)
-
-          from-G : {l : List (Carrier A)} → elements B (g l) → elements B (f l)
-          from-G {[]} (El ())
-          from-G {_ ∷ _} (El (here sm)) = El (here (trans B sm (sym B F≈G)))
-          from-G {_ ∷ xs} (El (there x₁)) = lift-el B there (from-G (El x₁))
-
-          cong-from-G : {l : List (Carrier A)} {i j : elements B (g l)} → belongs i ≋ belongs j
-            → belongs (from-G i) ≋ belongs (from-G j)
-          cong-from-G {[]} ()
-          cong-from-G {_ ∷ _} (hereEq x≈z y≈z) = hereEq (trans B x≈z (sym B F≈G)) (trans B y≈z (sym B F≈G))
-          cong-from-G {_ ∷ _} (thereEq loc₁) = thereEq (cong-from-G loc₁)
-
-          left-inv : {l : List (Carrier A)} (y : elements B (mapL (Π._⟨$⟩_ F) l))
-            → belongs (from-G (to-G y)) ≋ belongs y
-          left-inv {[]} (El ())
-          left-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm F≈G) (sym B F≈G)) sm
-          left-inv {_ ∷ _} (El (there belongs₁)) = thereEq (left-inv (El belongs₁))
-
-          right-inv : {l : List (Carrier A)} (y : elements B (mapL (Π._⟨$⟩_ G) l))
-            → belongs (to-G (from-G y)) ≋ belongs y
-          right-inv {[]} (El ())
-          right-inv {_ ∷ _} (El (here sm)) = hereEq (trans B (trans B sm (sym B F≈G)) F≈G) sm
-          right-inv {_ ∷ _} (El (there belongs₁)) = thereEq (right-inv (El belongs₁))
-    
-\end{spec}
+\end{code}              
 
 Last but not least, build the left adjoint:
 

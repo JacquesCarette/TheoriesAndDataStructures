@@ -58,7 +58,7 @@ open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open import Data.List     using ([]; [_]; _++_; _∷_; foldr)  renaming (map to mapL ; List to Bag)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 
-open import DataProperties hiding (⟨_,_⟩)
+open import DataProperties hiding (⟨_,_⟩ ; ⊎-cong)
 open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
@@ -80,6 +80,10 @@ open Membership
 open import Function.Related hiding (_∼[_]_)
 
 import Structures.BagAndSetEquality-SetoidMembership as SetoidBagEq
+
+open import Algebra
+open import Function.Related.TypeIsomorphisms
+module ×⊎ {k ℓ} = CommutativeSemiring (×⊎-CommutativeSemiring k ℓ)
 
 -- multiset type
 
@@ -386,11 +390,38 @@ postulate
   singleton-cong-lemma : {ℓ c : Level} (X : Setoid ℓ c) (x y : Setoid.Carrier X) → Setoid._≈_ X x y
                          → {z : Setoid.Carrier X}
                          → (Setoid._≈_ X z x ⊎ z ∈ [] ∶ X) ↔ (Setoid._≈_ X z y ⊎ z ∈ [] ∶ X)
-  -- singleton-cong-lemma X x y x≈y {z} =  let open Setoid X renaming (_≈_ to _≈ₓ_) in
-  --        (z ≈ₓ x  ⊎  z ∈ [] ∶ X)
-  --     ↔⟨ {!!} ⟩
-  --        (z ≈ₓ y  ⊎  z ∈ [] ∶ X)
-  --     ■                       
+
+ssingleton-cong-lemma : {ℓ : Level} (X : Setoid ℓ ℓ) (x y : Setoid.Carrier X) → Setoid._≈_ X x y
+                         → {z : Setoid.Carrier X}
+                         → (Setoid._≈_ X z x ⊎ z ∈ [] ∶ X) ↔ (Setoid._≈_ X z y ⊎ z ∈ [] ∶ X)
+ssingleton-cong-lemma X x y x≈y {z} = 
+         (z ≈ₓ x  ⊎  z ∈ [] ∶ X)
+      ↔⟨ ×⊎.+-cong it ↔-refl ⟩
+         (z ≈ₓ y  ⊎  z ∈ [] ∶ X)
+      ■
+      where
+        open Setoid X renaming (_≈_ to _≈ₓ_)
+        it :  z ≈ₓ x  ↔ z ≈ₓ y 
+        it =  z ≈ₓ x
+           ↔⟨ return↔ ⟩
+              Any (z ≈ₓ_) [ x ]
+           ↔⟨ Any-cong (λ _ → ↔-refl) {!uses _≡_ :(!} ⟩
+              Any (z ≈ₓ_) [ y ]
+           ↔⟨ ↔.sym return↔ ⟩
+              z ≈ₓ y
+           ■
+
+        to : ≡.setoid (z ≈ₓ x) ⟶ ≡.setoid (z ≈ₓ y)
+        to = record { _⟨$⟩_ = λ z≈x → Setoid.trans X z≈x x≈y ; cong = λ{ ≡.refl → ≡.refl } }
+
+        from : ≡.setoid (z ≈ₓ y) ⟶ ≡.setoid (z ≈ₓ x)
+        from = record { _⟨$⟩_ = λ z≈y → Setoid.trans X z≈y (Setoid.sym X x≈y) ; cong = λ { ≡.refl → ≡.refl } }
+
+        lleft-inverse : (x₁ : z ≈ₓ x) → trans (trans x₁ x≈y) (sym x≈y) ≡ x₁
+        lleft-inverse = {! true if uniqueness of ≈-proofs, as is the case for _≡_.!}
+
+        bit :  z ≈ₓ x  ↔ z ≈ₓ y
+        bit = record { to = to ; from = from ; inverse-of = record { left-inverse-of = lleft-inverse ; right-inverse-of = {!!} } }
   
 -- Ought to be |module CMUtils {ℓ c : Level} {X : Setoid ℓ (ℓ ⊍ c)} (CMX : CommMonoid X) where|.
 module CMUtils {ℓ c : Level} {X : Setoid ℓ c} (CMX : CommMonoid X) where

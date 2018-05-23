@@ -112,7 +112,7 @@ xs ++ ys = rec (_∷ ys) (λ x xs' res → x ∷ res) xs
 ++-assoc {xs = xs} {ys} {zs} = rec {X = λ xs → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs} ≐-refl (λ x xs' ind → ≡.cong (x ∷_) ind) xs         
 
 List₁SG : {ℓ : Level} (X : Set ℓ) → Semigroup {ℓ}
-List₁SG X = MkSG (List₁ X) _++_ ++-assoc
+List₁SG X = MkSG (List₁ X) _++_ (λ {x} {y} {z} → ++-assoc {X = X} {x} {y} {z})
 \end{code}
 
 We can interpret the syntax of a |List₁| in any semigroup provided we have
@@ -129,7 +129,7 @@ lifted to a homomorphism of semigroups.
 -- lift 
 list₁ : {ℓ : Level} {X : Set ℓ} {S : Semigroup {ℓ} }
      →  (X → Carrier S)  →  Hom (List₁SG X) S
-list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  ⟦⟧-over-++
+list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  (λ {x} {y} → ⟦⟧-over-++ {x} {y}) 
   where 𝒽  = ⟦ f , Op S ⟧
         ⟦⟧-over-++ : {xs ys : List₁ X} → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)
         ⟦⟧-over-++ {xs} {ys} = rec {X = λ xs → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)}

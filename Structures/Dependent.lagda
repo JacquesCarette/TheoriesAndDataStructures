@@ -109,8 +109,8 @@ Dependents ℓ = record
     ; sym = λ{ (eq , eq') → ≅.sym eq , ≅.sym eq'}
     ; trans = λ{ (peq , peq') (qeq , qeq') → ≅.trans peq qeq , ≅.trans peq' qeq' }
     }
-  ; ∘-resp-≡   =   λ{ {f = f} (f≅h , f≅h') (g≅k , g≅k') → ≅.trans (≅.cong (mor f) g≅k) f≅h ,
-                    ≅.trans (≅.cong (shift {!f!}) g≅k') f≅h' }
+  ; ∘-resp-≡   =   λ{ {A} {B} {C} {f} {h} {g} {k} (f≅h , f≅h') (g≅k , g≅k')
+                   → ≅.trans (≅.cong (mor f) g≅k) f≅h , λ {s} {op} →  ≅.trans {x = shift f (shift g op)} {z = shift h (shift k op)} {!≅.cong {x = shift k op} {y = ?} (shift f) ?!} f≅h' }
   }
   where open import Relation.Binary
 \end{code}
@@ -129,7 +129,7 @@ Forget ℓ = record
   }
 \end{code}
 
-\edcomm{MA}{ToDo ∷ construct another forgetful functor}
+\edcomm{MA}{ToDo ∷ Construct another forgetful functor}
 
 %}}}
 

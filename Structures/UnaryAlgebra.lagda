@@ -243,16 +243,16 @@ f ^ zero = id
 f ^ suc n = f ^ n ∘ f
 
 -- important property of iteration that allows it to be defined in an alternative fashion
-iter-swap : {ℓ : Level} {A : Set ℓ} {f : A → A} {n : ℕ} → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
-iter-swap {n = zero} = ≐-refl
-iter-swap {f = f} {n = suc n} = ∘-≐-cong₁ f iter-swap
+iter-swap : {ℓ : Level} {A : Set ℓ} {f : A → A} (n : ℕ) → (f ^ n) ∘ f ≐ f ∘ (f ^ n)
+iter-swap zero = ≐-refl
+iter-swap {f = f} (suc n) = ∘-≐-cong₁ f (iter-swap n)
 
 -- iteration of commutable functions
 iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
   → (leap-frog : f ∘ g ≐ᵢ h ∘ f)
   → {n : ℕ} → h ^ n ∘ f ≐ᵢ f ∘ g ^ n
 iter-comm leap {zero} = ≡.refl
-iter-comm {g = g} {h} leap {suc n} = ≡.cong (h ^ n) (≡.sym leap) ⟨≡≡⟩ iter-comm leap
+iter-comm {ℓ} {B} {C} {f} {g = g} {h} leap {suc n} {x} = ≡.cong (h ^ n) (≡.sym (leap {x})) ⟨≡≡⟩ iter-comm {ℓ} {B} {C} {f} {g} {h} leap {n} {g x}
 
 -- exponentation distributes over product
 ^-over-× : {a b : Level} {A : Set a} {B : Set b} {f : A → A} {g : B → B}
@@ -287,7 +287,7 @@ ziggy : {a : Level} {A : Set a} (n : ℕ) → at n  ≐  (suc ×₁ id {A = A}) 
 ziggy zero = ≐-refl
 ziggy {A = A} (suc n) = begin⟨ ≐-setoid A (ℕ × A) ⟩
    (suc ×₁ id)             ∘ at n                            ≈⟨ ∘-≐-cong₂ (suc ×₁ id) (ziggy n) ⟩
-   (suc ×₁ id)             ∘ (suc ×₁ id {A = A}) ^ n ∘ at 0  ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym iter-swap) ⟩
+   (suc ×₁ id)             ∘ (suc ×₁ id {A = A}) ^ n ∘ at 0  ≈⟨ ∘-≐-cong₁ (at 0) (≐-sym (iter-swap n )) ⟩
    (suc ×₁ id {A = A}) ^ n ∘ (suc ×₁ id)             ∘ at 0  ∎
   where open import Relation.Binary.SetoidReasoning
 
@@ -295,8 +295,8 @@ AdjLeft² : ∀ o → Adjunction (Free² o) (Forget o)
 AdjLeft² o = record
   { unit        =   record { η = λ _ → at 0 ; commute = λ _ → ≡.refl }
   ; counit      =   record
-    { η         =   λ A → MkHom (uncurry (Op A ^_)) (λ{ {n , a} → iter-swap a})
-    ; commute   =   λ F → uncurry (λ x y → iter-comm (pres-op F))
+    { η         =   λ A → MkHom (uncurry (Op A ^_)) (λ{ {n , a} → iter-swap n a})
+    ; commute   =   λ {X} {Y} F → uncurry λ x y → iter-comm {f = mor F} {g = Op X} {h = Op Y} (pres-op F) {n = x} {y}
     }
   ; zig         =   uncurry ziggy
   ; zag         =   ≡.refl

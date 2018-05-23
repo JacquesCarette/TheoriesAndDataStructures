@@ -22,7 +22,7 @@ open import Algebra.Structures
 open import Data.Nat                using (ℕ; suc) renaming (_+_ to _+ℕ_)
 open import Data.Fin                using (Fin; inject+; raise)
 open import Data.Integer            using (ℤ; _+_; +_; -_)
-open import Data.Integer.Properties using (commutativeRing)
+open import Data.Integer.Properties using (+-*-commutativeRing)
 \end{code}
 
 %}}}
@@ -57,7 +57,7 @@ G1 c A = record
     }
   }
   where
-    module AG = CommutativeRing commutativeRing
+    module AG = CommutativeRing +-*-commutativeRing
 \end{code}
 
 %}}}
@@ -253,7 +253,7 @@ G2 c A = record
     }
   }
   where
-    module AG = CommutativeRing commutativeRing
+    module AG = CommutativeRing +-*-commutativeRing
     open DirectSum
     open Injection
     open import Relation.Binary using (IsEquivalence)

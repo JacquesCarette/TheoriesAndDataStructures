@@ -1,4 +1,4 @@
-\section{Binary Heterogeneous Relations ---\edcomm{MA}{What \emph{named} data structure do these correspond to in programming?}}
+\section{Binary Heterogeneous Relations --- Bipartite graphs}
 
 We consider two sorted algebras endowed with a binary heterogeneous relation.
 An example of such a structure is a graph, or network, which has a sort for edges and a

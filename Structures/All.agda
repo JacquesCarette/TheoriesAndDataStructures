@@ -1,4 +1,7 @@
 module Structures.All where
+--
+-- We are using Agda 2.5.3 with Brad Hardy's variant of the standard library:
+-- https://github.com/bch29/agda-stdlib
 
 -- ============================================================================================
 -- Helpers
@@ -32,6 +35,9 @@ import Structures.TwoSorted
 --
 import Structures.Rel
 
+-- Arrows in the one-object one-arrow category correspond to the functions to a singleton set.
+import Structures.OneCat
+
 -- A type along with a value of that type.
 --
 -- import Structures.Pointed
@@ -60,7 +66,7 @@ import Structures.Semigroup
 import Structures.Monoid
 import Structures.CommMonoid
 import Structures.CommMonoidTerm
-import Structures.Multiset  -- has interaction points
+-- import Structures.Multiset  -- has interaction points
 -- import Structures.BagEquivalence
 import Structures.AbelianGroup
 

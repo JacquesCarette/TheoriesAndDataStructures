@@ -11,11 +11,12 @@ module Structures.SequencesAsBags where
 open import Level
 open import Relation.Binary using (Setoid; IsEquivalence)
 open import Data.Table using (Table; permute; rearrange; lookup)
-open import Data.Nat using (ℕ)
+open import Data.Nat using (ℕ; _+_)
 open import Data.Fin using (Fin)
 open import Data.Fin.Permutation
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Table.Relation.Equality using (setoid)
-open import Data.Product using (Σ; _,_; _×_)
+open import Data.Product using (Σ; _,_; _×_; proj₁)
 import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary.SetoidReasoning
 open import Function.Equality using (module Π)
@@ -23,6 +24,8 @@ import Function.Inverse as Inv using (module Inverse)
 open import Function.Inverse using (_↔_)
 open import Algebra   using (CommutativeMonoid)
 
+open import FinEquivPlusTimes using (module Plus)
+open import FinEquivTypeEquiv using (module PlusE)
 \end{code}
 %}}}
 
@@ -58,9 +61,6 @@ syntax sPermute T p  =  p ◈ T
 Eq : {ℓ c : Level} (S : Setoid ℓ c) {n : ℕ} → Setoid ℓ c
 Eq S {n} = setoid S n
 
--- module _ {ℓ c : Level} (S : Setoid ℓ c) where
---   _≈ₜ_ : (f g : Seq (Setoid.Carrier S)) → Set c
---   f ≈ₜ g = let open Setoid (setoid S (len f)) in table f ≈ {!table g!}
 \end{code}
 %}}}
 
@@ -78,14 +78,14 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       eq : (table T₁) ≈ permute shuffle (table T₂)
 
     homogenous : len T₁ P.≡ len T₂
-    homogenous = ↔⇒≡ shuffle  
-      
+    homogenous = ↔⇒≡ shuffle
+
   open _≈ₛ_
 
   ≈ₛ-refl : {T : Seq S₀} → T ≈ₛ T
   ≈ₛ-refl {T} = record { shuffle = id ; eq = refl }
     where open Setoid (Eq S)
-  
+
   interchange : (f : Seq S₀) {m : ℕ} (s : Permutation m (len f)) {k : Fin m}
                 (let open Setoid S) → (s ◈ f) ‼ k ≈ f ‼ (s ⟨$⟩ʳ k)
   interchange f {m} s {k} = let open Setoid S in begin⟨ S ⟩
@@ -101,7 +101,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ≈⟨ refl ⟩
       f ‼ (s ⟨$⟩ʳ k)
     ∎
-  
+
   ≈ₛ-sym : {f g : Seq S₀} → f ≈ₛ g → g ≈ₛ f
   ≈ₛ-sym {f} {g} (s ⟨π⟩ f≈sg) = let open Setoid S in record
     { shuffle = flip s
@@ -153,12 +153,12 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   open Setoid S using () renaming (_≈_ to _≈₀_)
 
-  singleton-cong : {x y : S₀} → x ≈₀ y → singleton x ≈ₛ singleton y 
+  singleton-cong : {x y : S₀} → x ≈₀ y → singleton x ≈ₛ singleton y
   singleton-cong {x} {y} x≈y = record
     { shuffle = Inv.id
     ; eq      = λ _ → x≈y
     }
-\end{code}    
+\end{code}
 %}}}
 
 %{{{ ø ; _⊕_ ; many holes
@@ -168,44 +168,42 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   open import Data.Table.Base
   import Data.List as L
+  open Plus -- from FinEquivPlusTimes
+  open PlusE -- from FinEquivTypeEquiv
 
   infixr 6 _⊕_
   _⊕_ : Seq S₀ → Seq S₀ → Seq S₀
-  f ⊕ g = table˘ (fromList (toList (table f) L.++ toList (table g)))
+  f ⊕ g = sequence (lf + lg) λ i → look-split (proj₁ +≃⊎ i)
+    where
+      lf = len f
+      lg = len g
+      look-split : Fin lf ⊎ Fin lg → S₀
+      look-split (inj₁ x) = f ‼ x
+      look-split (inj₂ y) = g ‼ y
 \end{code}
 
-\begin{spec}
-
-  -- MA: The following are essentially the ``identity'' isomorphisms +-identity, +-commutativity, and +-associtivity?
+\begin{code}
 
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
   ⊕-comm {f} {g} = record
     { shuffle = record
-      { to         = record { _⟨$⟩_ = λ x → {!!} ; cong = {!!} }
-      ; from       = {!!}
-      ; inverse-of = {!!}
+      { to         = record { _⟨$⟩_ = proj₁ (swap+ {lf}) ; cong = λ { P.refl → P.refl} }
+      ; from       = record { _⟨$⟩_ = proj₁ (swap+ {lg}) ; cong = λ { P.refl → P.refl} }
+      ; inverse-of = record { left-inverse-of = λ { x → {!!} }
+                            ; right-inverse-of = {!!} }
       }
-    ; eq      = {!!}
+    ; eq      = λ i → {!!}
     }
     where
-
-      open import Data.Nat
-
-      len-homo : len (f ⊕ g) P.≡ len f + len g
-      len-homo with L.tabulate (_‼_ f) | L.tabulate (_‼_ g)
-      len-homo | L.[] | L.[] = {!!}
-      len-homo | L.[] | x L.∷ q = {!!}
-      len-homo | x L.∷ p | q = {!!}
-
-      +-comm : Fin (len (f ⊕ g)) → Fin (len (g ⊕ f))
-      +-comm x = {!!}
+      lf = len f
+      lg = len g
 
   ⊕-assoc : {f g h : Seq S₀} → (f ⊕ g) ⊕ h  ≈ₛ  f ⊕ (g ⊕ h)
   ⊕-assoc {f} {g} {h} = record
     { shuffle = {!!}
     ; eq      = {!!}
     }
-  
+
   commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
   commutativeMonoid = record
     { Carrier               =   Seq S₀
@@ -219,11 +217,6 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       ; comm          =   λ f g → ⊕-comm {f} {g}
       }
     }
-\end{spec}
-
-\begin{code}
-  postulate
-    commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
 \end{code}
 
 %}}}

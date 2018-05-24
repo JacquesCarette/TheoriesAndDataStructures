@@ -1,8 +1,8 @@
-\section{Structures.Multiset}
+\section{Structures.Multiset -- up-to-date, works}
 
 %{{{ Imports
 \begin{code}
-module Structures.Multiset where
+module Structures.Experiments.Multiset where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
 open import Relation.Binary using (Setoid; Rel; IsEquivalence)
@@ -25,7 +25,7 @@ open import Belongs
 open import Structures.CommMonoid renaming (Hom to CMArrow)
 
 open import Algebra   using (Monoid)
-open import Data.List using (monoid)
+open import Data.List using ()
 
 open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
 open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
@@ -289,7 +289,7 @@ module ImplementationViaList {ℓ o : Level} (X : Setoid ℓ (ℓ ⊍ o)) where
              open BagEq       Y   using   (≡→⇔)
              open Membership  Y   using   (elem-of)
              open ConcatTo⊎S  Y   using   (⊎S≅++)
-             module ++ = Monoid (monoid (Carrier Y))
+             module ++ = Monoid {!!} -- (monoid (Carrier Y))
            in record
             { left-unit  = λ y → ≅-refl
             ; right-unit = λ ys → ≡→⇔ (proj₂ ++.identity ys)

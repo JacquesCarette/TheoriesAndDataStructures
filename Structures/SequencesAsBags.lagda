@@ -22,6 +22,7 @@ open import Relation.Binary.SetoidReasoning
 open import Function.Equality using (module Π)
 import Function.Inverse as Inv using (module Inverse)
 open import Function.Inverse using (_↔_)
+open import Function using () renaming (id to id₀)
 open import Algebra   using (CommutativeMonoid)
 
 open import FinEquivPlusTimes using (module Plus)
@@ -210,7 +211,8 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   [_,_]′∘swap (inj₂ y) = P.refl
 
   expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) P.≡ swap₊ (proj₁ +≃⊎ i)
-  expand-swap+ i = P.trans (P.cong (proj₁ +≃⊎) (β₁ i)) (P.trans (Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i)) (β₁ _))
+  expand-swap+ i = P.trans (P.cong (proj₁ +≃⊎) (β₁ i)) (
+                   P.trans (Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i)) (β₁ _))
 
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
   ⊕-comm {f} {g} = record
@@ -230,13 +232,9 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   ⊕-assoc {f} {g} {h} = record
     { shuffle = fin≃⇒Perm (assocr+ {len f} {len g} {len h})
     ; eq      = λ i → begin⟨ S ⟩
-      lookup (table ((f ⊕ g) ⊕ h)) i                           ≈⟨ Setoid.refl S ⟩
-      lookup (Table.tabulate (_‼_ ((f ⊕ g) ⊕ h))) i             ≈⟨ Setoid.refl S ⟩
-      ((f ⊕ g) ⊕ h) ‼ i                                         ≈⟨ {!!} ⟩
-      (f ⊕ g ⊕ h) ‼ (proj₁ (assocr+ {len f}) i)                 ≈⟨ Setoid.refl S ⟩
-      lookup (Table.tabulate (_‼_ (f ⊕ g ⊕ h))) (proj₁ (assocr+ {len f}) i)   ≈⟨ Setoid.refl S ⟩
-      lookup (table (f ⊕ g ⊕ h)) (to (fin≃⇒Perm (assocr+ {len f})) Π.⟨$⟩ i) ≈⟨ Setoid.refl S ⟩
-      lookup (Table.tabulate (lookup (table (f ⊕ g ⊕ h)) ∘  (to (fin≃⇒Perm (assocr+ {len f})) Π.⟨$⟩_) )) i  ≈⟨ Setoid.refl S ⟩
+      lookup (table ((f ⊕ g) ⊕ h)) i                                                             ≈⟨ Setoid.refl S ⟩
+      [ (λ j → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ j)) , h ‼_ ]′ (proj₁ +≃⊎ i)                            ≈⟨ {!!} ⟩
+      [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′ (proj₁ +≃⊎ (proj₁ (assocr+ {len f}) i))  ≈⟨ Setoid.refl S ⟩
       lookup (permute (fin≃⇒Perm (assocr+ {len f})) (table (f ⊕ g ⊕ h))) i ∎
     }
     where open Inv.Inverse; open import Function using (_∘_)

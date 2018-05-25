@@ -26,8 +26,11 @@ open import Algebra   using (CommutativeMonoid)
 
 open import FinEquivPlusTimes using (module Plus)
 open import FinEquivTypeEquiv using (module PlusE; _fin≃_)
-open import TypeEquiv using (swap₊)
-import Equiv
+open import TypeEquiv using (swap₊; swap₊equiv)
+-- open import TypeEquivEquiv using (swap₊-nat)
+open import EquivEquiv using (_≋_)
+open import Equiv using (_●_; β₁)
+open import Data.Sum.Properties2 using (swap₊-coh)
 \end{code}
 %}}}
 
@@ -202,10 +205,22 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
 \begin{code}
 
+  [_,_]′∘swap : {ℓ ℓ′ : Level} {X Y : Set ℓ} {Z : Set ℓ′} {f : X → Z} {g : Y → Z} → (i : X ⊎ Y) → [ g , f ]′ (swap₊ i) P.≡ [ f , g ]′ i
+  [_,_]′∘swap (inj₁ x) = P.refl
+  [_,_]′∘swap (inj₂ y) = P.refl
+
+  expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) P.≡ swap₊ (proj₁ +≃⊎ i)
+  expand-swap+ i = P.trans (P.cong (proj₁ +≃⊎) (β₁ i)) (P.trans (Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i)) (β₁ _))
+
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
   ⊕-comm {f} {g} = record
     { shuffle = fin≃⇒Perm (swap+ {lf} {lg})
-    ; eq      = λ i → {!!}
+    ; eq      = λ i → Setoid.sym S (begin⟨ S ⟩
+      lookup (permute (fin≃⇒Perm (swap+ {lf})) (table (g ⊕ f))) i ≈⟨ Setoid.refl S ⟩ -- unwind lots of definitions
+      [ g ‼_ , f ‼_ ]′ (proj₁ +≃⊎ (proj₁ (swap+ {lf}) i))          ≡⟨ P.cong [ g ‼_ , f ‼_ ]′ (expand-swap+ i) ⟩
+      [ g ‼_ , f ‼_ ]′ (swap₊ (proj₁ +≃⊎ i))                       ≡⟨ [_,_]′∘swap {f = f ‼_} (proj₁ +≃⊎ i) ⟩
+      [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)                               ≈⟨ Setoid.refl S ⟩ -- rewind definitions
+      lookup (table (f ⊕ g)) i ∎)
     }
     where
       lf = len f
@@ -217,7 +232,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ; eq      = λ i → begin⟨ S ⟩
       lookup (table ((f ⊕ g) ⊕ h)) i                           ≈⟨ Setoid.refl S ⟩
       lookup (Table.tabulate (_‼_ ((f ⊕ g) ⊕ h))) i             ≈⟨ Setoid.refl S ⟩
-      ((f ⊕ g) ⊕ h) ‼ i                                         ≈⟨ {!fin≃⇒lookup (assocr+ {len f}) ((f ⊕ g ⊕ h) ‼_) i!} ⟩
+      ((f ⊕ g) ⊕ h) ‼ i                                         ≈⟨ {!!} ⟩
       (f ⊕ g ⊕ h) ‼ (proj₁ (assocr+ {len f}) i)                 ≈⟨ Setoid.refl S ⟩
       lookup (Table.tabulate (_‼_ (f ⊕ g ⊕ h))) (proj₁ (assocr+ {len f}) i)   ≈⟨ Setoid.refl S ⟩
       lookup (table (f ⊕ g ⊕ h)) (to (fin≃⇒Perm (assocr+ {len f})) Π.⟨$⟩ i) ≈⟨ Setoid.refl S ⟩
@@ -234,7 +249,10 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ; ε                     =   ∅
     ; isCommutativeMonoid   =   record
       { isSemigroup   =   record
-        { isEquivalence = ≈ₛ-isEquivalence ; assoc = λ f g h → ⊕-assoc {f} {g} {h} ; ∙-cong = {!!} }
+        { isEquivalence = ≈ₛ-isEquivalence
+        ; assoc = λ f g h → ⊕-assoc {f} {g} {h}
+        ; ∙-cong = λ x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩ {!!}
+      }
       ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ {!!}
       ; comm          =   λ f g → ⊕-comm {f} {g}
       }

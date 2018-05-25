@@ -26,13 +26,21 @@ open import Function.Inverse using (_↔_)
 open import Function using () renaming (id to id₀)
 open import Algebra   using (CommutativeMonoid)
 
-open import FinEquivPlusTimes using (module Plus)
+open import FinEquivPlusTimes using (module Plus; F0≃⊥)
 open import FinEquivTypeEquiv using (module PlusE; _fin≃_)
-open import TypeEquiv using (swap₊; swap₊equiv)
+open import TypeEquiv using (swap₊; swap₊equiv; unite₊equiv)
 -- open import TypeEquivEquiv using (swap₊-nat)
 open import EquivEquiv using (_≋_)
-open import Equiv using (_●_; β₁)
+open import Equiv using (_●_; β₁; _⊎≃_; id≃; _⟨≃≃⟩_; ≐-trans; ≐-sym;
+  cong∘l; cong∘r; β⊎₁)
 open import Data.Sum.Properties2 using (swap₊-coh)
+
+infixr 10 _⊙_
+
+private
+  _⊙_ = ≐-trans
+  !_ = ≐-sym
+
 \end{code}
 %}}}
 
@@ -245,6 +253,25 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     }
     where open Inv.Inverse; open import Function using (_∘_)
 
+  merge-map : {ℓ ℓ′ : Level} {B : Set ℓ} → (z : Fin 0 ⊎ B) → TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) P.≡ [ (λ ()) , id₀ ]′ z
+  merge-map (inj₁ ())
+  merge-map (inj₂ y) = P.refl
+
+  lookup-map : {x : Seq S₀} (c : Fin 0 ⊎ Fin (len x)) →
+    x ‼ ([ (λ ()) , id₀ ]′ c) P.≡ [ ∅ ‼_ , x ‼_ ]′ c
+  lookup-map (inj₁ ())
+  lookup-map (inj₂ y) = P.refl
+
+  table-unite+ : {ℓ : Level} (x : Seq S₀) → Setoid._≈_ (setoid S (len (∅ ⊕ x))) (table (∅ ⊕ x)) (permute (fin≃⇒Perm unite+) (table x))
+  table-unite+ {ℓ} x = λ i → begin⟨ S ⟩
+    lookup (table (∅ ⊕ x)) i                                             ≡⟨ P.refl ⟩
+    [ (λ () ) , x ‼_ ]′ (proj₁ +≃⊎ i)                                     ≡⟨ P.sym (lookup-map (proj₁ +≃⊎ i)) ⟩
+    x ‼ ([ (λ ()) , id₀ ]′ (proj₁ +≃⊎ i))                                 ≡⟨ P.sym (P.cong (x ‼_) (merge-map (proj₁ +≃⊎ i))) ⟩
+    x ‼ (TypeEquiv.unite₊ (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))  ≡⟨ P.sym (P.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r _ β⊎₁)) i)) ⟩
+    x ‼ (proj₁ (unite₊equiv ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i                       ≡⟨ P.refl ⟩
+    x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)                        ≡⟨ P.refl ⟩
+    lookup (permute (fin≃⇒Perm unite+) (table x)) i ∎
+
   commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
   commutativeMonoid = record
     { Carrier               =   Seq S₀
@@ -257,7 +284,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
         ; assoc = λ f g h → ⊕-assoc {f} {g} {h}
         ; ∙-cong = λ x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩ {!!}
       }
-      ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ {!!}
+      ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ table-unite+ {ℓ} x
       ; comm          =   λ f g → ⊕-comm {f} {g}
       }
     }

@@ -43,22 +43,22 @@ open import Proofs using (
 -- equivalent to ⊥ and ⊤
 
 module _ {ℓ : Level} where
+  Fin0-⊥ : Fin 0 → ⊥ {ℓ}
+  Fin0-⊥ ()
+
+  F0≃⊥ : Fin 0 ≃ ⊥ {ℓ}
+  F0≃⊥ = f , qinv g α β
+    where
+      f : Fin 0 → ⊥
+      f ()
+      g : ⊥ → Fin 0
+      g ()
+      α : f ∘ g ≐ id
+      α ()
+      β : g ∘ f ≐ id
+      β ()
+
   abstract
-    Fin0-⊥ : Fin 0 → ⊥ {ℓ}
-    Fin0-⊥ ()
-
-    F0≃⊥ : Fin 0 ≃ ⊥ {ℓ}
-    F0≃⊥ = f , qinv g α β
-      where
-        f : Fin 0 → ⊥
-        f ()
-        g : ⊥ → Fin 0
-        g ()
-        α : f ∘ g ≐ id
-        α ()
-        β : g ∘ f ≐ id
-        β ()
-
     Fin1≃⊤ : Fin 1 ≃ ⊤ {ℓ}
     Fin1≃⊤ = f , qinv g α β
       where

@@ -6,6 +6,7 @@ aspect is that the tables involved are over a |Setoid|.
 
 %{{{ imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
 module Structures.SequencesAsBags where
 
 open import Level
@@ -69,6 +70,27 @@ Eq S {n} = setoid S n
 
 \end{code}
 %}}}
+
+%{{{ ø ; _⊕_
+MA: These need to be setoid independet, otherwise risk using ≡.setoid!
+\begin{code}
+∅ : {ℓ : Level} {S₀ : Set ℓ} → Seq S₀
+∅ = sequence 0 λ ()
+
+open import Data.Table.Base
+import Data.List as L
+open Plus -- from FinEquivPlusTimes
+open PlusE -- from FinEquivTypeEquiv
+
+infixr 6 _⊕_
+_⊕_ : {ℓ : Level} {S₀ : Set ℓ} → Seq S₀ → Seq S₀ → Seq S₀
+f ⊕ g = sequence (lf + lg) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)
+    where
+      lf = len f
+      lg = len g
+\end{code}
+%}}}
+
 
 %{{{ Sequence equality _≈ₛ_ ; BagRep
 \begin{code}
@@ -186,24 +208,8 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 \end{code}
 %}}}
 
-%{{{ ø ; _⊕_ ; many holes
-\begin{code}
-  ∅ : Seq S₀
-  ∅ = sequence 0 λ ()
 
-  open import Data.Table.Base
-  import Data.List as L
-  open Plus -- from FinEquivPlusTimes
-  open PlusE -- from FinEquivTypeEquiv
-
-  infixr 6 _⊕_
-  _⊕_ : Seq S₀ → Seq S₀ → Seq S₀
-  f ⊕ g = sequence (lf + lg) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)
-    where
-      lf = len f
-      lg = len g
-\end{code}
-
+%{{{ holes: commutativeMonoid
 \begin{code}
 
   [_,_]′∘swap : {ℓ ℓ′ : Level} {X Y : Set ℓ} {Z : Set ℓ′} {f : X → Z} {g : Y → Z} → (i : X ⊎ Y) → [ g , f ]′ (swap₊ i) P.≡ [ f , g ]′ i

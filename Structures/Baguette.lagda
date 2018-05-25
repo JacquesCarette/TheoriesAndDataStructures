@@ -55,45 +55,42 @@ we already have files named “multiset” and “bag” in the experimental dir
 module Structures.Baguette where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
-open import Relation.Binary using (Setoid; Rel; IsEquivalence)
 
--- open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Setoids)
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
+open Π                        using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
+open import Algebra           using (Monoid ; CommutativeMonoid ; CommutativeSemiring)
+open import Relation.Binary   using (Setoid; Rel; IsEquivalence)
+open Setoid                   using (Carrier)
 
-open import Data.List     using ([]; [_]; _++_; _∷_; foldr)  renaming (map to mapL)
+open import Data.List  using ([]; [_]; _++_; _∷_)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
-open import Data.List as List
+import Data.List as List
 
 open import DataProperties hiding (⟨_,_⟩ ; ⊎-cong)
 open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
--- open import Belongs
 open import Structures.CommMonoid renaming (Hom to CMArrow)
 
-open import Algebra   using (Monoid ; CommutativeMonoid)
-
-
-open Π          using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
 open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 open CommMonoid using (eq-in ; isCommMonoid)
 
-open Setoid using (Carrier)
+-- open import Data.List.Any
+-- open import Function.Related hiding (_∼[_]_)
+-- open import Function.Related.TypeIsomorphisms
+-- module ×⊎ {k ℓ} = CommutativeSemiring (×⊎-CommutativeSemiring k ℓ)
+open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
 
--- import Data.List.Any.BagAndSetEquality as BagEq
-open import Data.List.Any -- ; open Membership-≡
--- open Membership
-open import Function.Related hiding (_∼[_]_)
-
--- import Structures.BagAndSetEquality-SetoidMembership as SetoidBagEq
-
-open import Algebra
-open import Function.Related.TypeIsomorphisms
-module ×⊎ {k ℓ} = CommutativeSemiring (×⊎-CommutativeSemiring k ℓ)
+open import Function.Inverse using (_↔_)
+open import Data.List.Any.Properties hiding (map-id)
+open import Function using (_$_)
+-- open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■) hiding (sym)
+-- module ↔ = EquationalReasoning
+-- open import Function.Inverse public using () renaming  (id to  ↔-refl)
 
 -- multiset type
 open import Structures.SequencesAsBags as Seq using (table ; table˘ ; BagSetoid) renaming (Seq to Bag)
@@ -172,31 +169,22 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     ; isCommMonoid   =   isCommutativeMonoid
     }
 
-open import Data.Table.Base
-
 Bag-CommutativeContainer : (ℓ c : Level) → CommutativeContainer ℓ c
-Bag-CommutativeContainer ℓ c = {!!}
-\end{code} 
- record
+Bag-CommutativeContainer ℓ c = record
   { 𝒞 = Bag
   ; isCtrEquivalence = Bag-isCtrEquivalence ℓ c
-  ; ∅   = Bag.sequence 0 (λ())                                              -- []
-  ; _⊕_ = λ x y → table˘ (fromList (toList (table x) ++ toList (table y))) -- _++_
-  ; isCommutativeMonoid = λ {X} → 
-      let open CommutativeMonoid (commutativeMonoid X) in record
-      { left-unit   =  λ x → {!fromList-toList!} -- identityˡ
-      ; right-unit  =  {!!} -- proj₂ identity -- derived
-      ; assoc       =  {!!} -- assoc
-      ; comm        =  {!comm!} -- comm
-      ; _⟨∙⟩_       =  {!∙-cong!} -- 
+  ; ∅   = λ {X} → Seq.∅
+  ; _⊕_ = λ {X} → Seq._⊕_
+  ; isCommutativeMonoid = λ {X} →
+      let open CommutativeMonoid (Seq.commutativeMonoid X) in record
+      { left-unit   =  identityˡ
+      ; right-unit  =  proj₂ identity
+      ; assoc       =  assoc
+      ; comm        =  comm
+      ; _⟨∙⟩_       =  ∙-cong
       }
   }
--- where  
--- open import Data.Table.Base
--- fromList-toList : {!{a : Level} {A : Set a} {n : ℕ} {T : Table A n} → fromList (toList T) P.≡ T!}
--- fromList-toList = {!!}
-
-
+\end{code}   
 %}}}
 
 %{{{ Multiset
@@ -388,35 +376,57 @@ module BuildLeftAdjoint
 %{{{ An implementation of |Multiset| using lists with Bag equality
 \subsection{An implementation of |Multiset| using lists with Bag equality}
 \begin{code}
-open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
+module CMUtils {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
+  open Setoid S using (_≈_) renaming (Carrier to S₀)
+  open CommMonoid CMS renaming (_*_ to _+_)
+  open import Data.Table.Base
+  open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
+  open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
+  
+  sumₛ : Bag S₀ → S₀
+  sumₛ = λ f → sumₜ (table f)
 
-open import Function.Inverse using (_↔_)
-open import Data.List.Any.Properties hiding (map-id)
-open import Function using (_$_)
-open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■) hiding (sym)
-module ↔ = EquationalReasoning
-open import Function.Inverse public using () renaming  (id to  ↔-refl)
+  -- In a commutative monoid, if you add up everything in two sequences that contain
+  -- the same elements, you get the same result.
+  sumₛ-cong : {f g : Bag S₀} → f ≈ₘ g ∶ S → sumₛ f ≈ sumₛ g
+  sumₛ-cong {f} {g} (s Seq.⟨π⟩ f≈sg) = let open Setoid S in begin⟨ S ⟩
+      sumₛ f
+    ≈⟨ refl ⟩
+      sumₜ (table f)
+    ≈⟨ sumₜ-cong {Seq.len f} {table f} {table (s Seq.◈ g)} f≈sg ⟩
+      sumₜ (table (s Seq.◈ g))
+    ≈⟨ sym (sumₜ-permute′ {Seq.len f} {Seq.len g} (table g) s)   ⟩
+      sumₜ (table g)
+    ≈⟨ refl ⟩
+      sumₛ g
+    ■₀
 
--- Ought to be |module CMUtils {ℓ c : Level} {X : Setoid ℓ (ℓ ⊍ c)} (CMX : CommMonoid X) where|.
-module CMUtils {ℓ c : Level} {X : Setoid ℓ c} (CMX : CommMonoid X) where
-
-  open CommMonoid CMX
-  open Setoid X using (_≈_)
-  -- open import Data.List as List using (List; []; _∷_; _++_)
-
-  -- open SetoidBagEq using (kind-eq)
-
-  fold₀ : List (Carrier X) → Carrier X
-  fold₀ = List.foldr _*_ e
+  -- Since JC provided the definition of _⊕_, he may be able to make this postulate go through?
   --
-  -- c.f., -- https://github.com/bch29/agda-stdlib/blob/106a4fbd6f3feb12e99704589ef93b637fbe96ea/src/Algebra/Operations/CommutativeMonoid.agda
-
-  -- https://github.com/bch29/agda-stdlib/blob/106a4fbd6f3feb12e99704589ef93b637fbe96ea/src/Data/List/Any/Properties/CommutativeMonoid.agda
   --
-  -- In a commutative monoid, if you add up everything in two lists that contain
-  -- the same elements, you get the same result.  
---   postulate
---     sum-bag : ∀ {xs ys} → xs ∼[ bijection ] ys ∶ X → fold₀ xs ≈ fold₀ ys
+  -- The |sumₛ| operator distributes over addition.
+  postulate sumₛ-homo : {f g : Bag S₀} → sumₛ (f Seq.⊕ g) ≈ sumₛ f + sumₛ g -- c.f., fold-CM-over-++ below.
+{-  
+  sumₛ-homo {f} {g} = let open Setoid S in begin⟨ S ⟩
+      sumₛ (f Seq.⊕ g)
+    ≈⟨ {!!} ⟩
+      sumₛ (sequence (Seq.len f + Seq.len g) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i))
+    ≈⟨ {!!} ⟩
+      sumₛ f + sumₛ g
+    ■₀  
+-}
+
+{- older attempt:
+  sumₛ-homo {f} {g} = let open Setoid S in begin⟨ S ⟩
+      sumₛ (f Seq.⊕ g)
+    ≈⟨ {!_‼_!} ⟩
+      sumₜ {!!}
+    ≈⟨ sym {!∑-+-hom (Seq.len (f Seq.⊕ g)) !} ⟩
+      sumₜ (table f) + sumₜ (table g)
+    ≈⟨ refl ⟩ 
+      sumₛ f + sumₛ g
+    ■₀
+-}
 
 module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) where
   open Setoid  
@@ -424,38 +434,46 @@ module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) where
   ListMS : Multiset {ℓ} {c ⊍ ℓ} X
   ListMS = record
     { commutativeContainer   =   Bag-CommutativeContainer ℓ (c ⊍ ℓ)
-    ; singleton              =   record { _⟨$⟩_ = {!Seq.singleton X!} ; cong = {!singleton-cong!} }
+    ; singleton              =   record { _⟨$⟩_ = Seq.singleton X ; cong = Seq.singleton-cong X }
     ; fold  =   λ {Y} CMY → let open CMUtils CMY in record
-      { mor      =   record { _⟨$⟩_ = fold₀ ; cong = {!sum-bag!} } -- Maybe want Data.Table.base.foldr?
-      ; pres-e   =   {!!} -- Setoid.refl Y
-      ; pres-*   =   {!!} -- fold-CM-over-++ CMY
+      { mor      =   record { _⟨$⟩_ = sumₛ ; cong = sumₛ-cong }
+      ; pres-e   =   Setoid.refl Y
+      ; pres-*   =   λ {f} {g} → sumₛ-homo {f} {g} -- fold-CM-over-++ CMY
       }
-    ; fold-singleton         =   {!!} -- λ {CMX} {x} → Setoid.sym X (CommMonoid.right-unit CMX x)
+    ; fold-singleton         =   λ {CMX} {x} → Setoid.sym X (CommMonoid.right-unit CMX x)
     }
+\end{code}
+\begin{spec}
     where
 
+      open import Data.Table.Base
+
       open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)      
-\end{code}       
+
       fold-CM-over-++ : {Z : Setoid ℓ (ℓ ⊍ c)} (cm : CommMonoid Z) {s t : Bag (Carrier Z)}
-                      →  let open CommMonoid cm ; F = List.foldr _*_ e in
+                      →  let open CommMonoid cm ; F = λ f → foldr _*_ e (table f) in
                           F (s Seq.⊕ t) ≈⌊ Z ⌋ (F s * F t)
+      fold-CM-over-++ {Z} cm {s} {t} = {!!}                            
+{-
       fold-CM-over-++ {Z} (MkCommMon e _*_ isCommMon) {[]} {t} = sym Z (left-unit isCommMon _)
       fold-CM-over-++ {Z} CMZ@(MkCommMon e _*_ isCommMon) {x ∷ s} {t} = begin⟨ Z ⟩
         let F = List.foldr _*_ e in
         x * F (s ++ t)   ≈⟨ cong isCommMon (refl Z) (fold-CM-over-++ CMZ ) ⟩
         x * (F s * F t)  ≈⟨ sym Z (assoc isCommMon _ _ _)                  ⟩
         (x * F s) * F t  ■₀
-
-
+-}
+\end{spec}
 
 \begin{code}
 open ImplementationViaList
 
+open import Data.Table.Base
+
 ListCMHom : {ℓ : Level} {X Y : Setoid ℓ ℓ} → MultisetHom (ListMS {ℓ} {ℓ} X) (ListMS {ℓ} {ℓ} Y)
 ListCMHom {ℓ} {X} {Y} = record
-  { lift                =   λ f → let mapf = mapL (f ⟨$⟩₀_) in record
-    { mor      =   record { _⟨$⟩_ = mapf ; cong = {!!} } -- λ {xs} {ys} xs≈ys {z} → {!!} }
-    ; pres-e   =   {!!} -- ↔-refl
+  { lift                =   λ f → let mapf = λ x → table˘ (map (f ⟨$⟩₀_) (table x)) in record
+    { mor      =   record { _⟨$⟩_ = mapf ; cong = {!map - cong ?!} }
+    ; pres-e   =   {!Seq.≈ₛ-refl Y!}
     ; pres-*   =   λ {xs ys} → {!!} -- ∈-↔-reflexive Y (map-++-commute (f ⟨$⟩₀_) xs ys)
                  -- Equivalently, |≡⇒ (≡.cong (z ∈_) (map-++-commute (f ⟨$⟩₀_) xs ys))|
     }
@@ -480,7 +498,7 @@ ListCMHom {ℓ} {X} {Y} = record
         where open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
               open CMUtils ; open Setoid Y
 
-\begin{code}
+\begin{spec}
 -- \edcomm{MA}{Should be moved into a List-like library. Maybe moved to the standard library.}
 --
 -- Transforming a list into singletons then catenating is the same as “doing nothing.”
@@ -500,7 +518,7 @@ module BuildProperties where
     }
     where
     open Multiset using (𝒞; commMonoid)
-\end{code}              
+\end{spec}              
 
 Last but not least, build the left adjoint:
 

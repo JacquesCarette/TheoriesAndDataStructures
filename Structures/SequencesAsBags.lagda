@@ -14,9 +14,9 @@ open import Data.Table using (Table; permute; rearrange; lookup)
 open import Data.Nat using (ℕ; _+_)
 open import Data.Fin using (Fin)
 open import Data.Fin.Permutation
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Table.Relation.Equality using (setoid)
-open import Data.Product using (Σ; _,_; _×_; proj₁)
+open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂)
 import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary.SetoidReasoning
 open import Function.Equality using (module Π)
@@ -25,7 +25,9 @@ open import Function.Inverse using (_↔_)
 open import Algebra   using (CommutativeMonoid)
 
 open import FinEquivPlusTimes using (module Plus)
-open import FinEquivTypeEquiv using (module PlusE)
+open import FinEquivTypeEquiv using (module PlusE; _fin≃_)
+open import TypeEquiv using (swap₊)
+import Equiv
 \end{code}
 %}}}
 
@@ -161,6 +163,25 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 \end{code}
 %}}}
 
+%{{{ Permutation is equivalent to _fin≃_ (which is Fin n ≃ Fin m)
+\begin{code}
+  Perm⇒fin≃ : {m n : ℕ} → Permutation m n → m fin≃ n
+  Perm⇒fin≃ p = _⟨$⟩_ (to p) , Equiv.qinv (_⟨$⟩_ (from p)) (right-inverse-of p) (left-inverse-of p)
+    where open Inv.Inverse; open Function.Equality using (_⟨$⟩_)
+
+  fin≃⇒Perm : {m n : ℕ} → m fin≃ n → Permutation m n
+  fin≃⇒Perm (f , Equiv.qinv b α β) = record { to = P.→-to-⟶ f ; from = P.→-to-⟶ b
+    ; inverse-of = record { left-inverse-of = β ; right-inverse-of = α } }
+
+  ≡⇒≈₀ : {x y : S₀} → x P.≡ y → x ≈₀ y
+  ≡⇒≈₀ P.refl = Setoid.refl S
+
+  -- this lemma is true, but likely useless.
+  fin≃⇒lookup : {m n : ℕ} → (p : m fin≃ n) → (f : Fin m → S₀) (i : Fin m) → f i ≈₀ lookup (permute (fin≃⇒Perm p) (Table.tabulate λ j → f (Equiv.isqinv.g (proj₂ p) j))) i
+  fin≃⇒lookup p f i =  ≡⇒≈₀ (P.cong f (P.sym (Equiv.isqinv.β (proj₂ p) i)))
+\end{code}
+%}}}
+
 %{{{ ø ; _⊕_ ; many holes
 \begin{code}
   ∅ : Seq S₀
@@ -173,25 +194,17 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   infixr 6 _⊕_
   _⊕_ : Seq S₀ → Seq S₀ → Seq S₀
-  f ⊕ g = sequence (lf + lg) λ i → look-split (proj₁ +≃⊎ i)
+  f ⊕ g = sequence (lf + lg) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)
     where
       lf = len f
       lg = len g
-      look-split : Fin lf ⊎ Fin lg → S₀
-      look-split (inj₁ x) = f ‼ x
-      look-split (inj₂ y) = g ‼ y
 \end{code}
 
 \begin{code}
 
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
   ⊕-comm {f} {g} = record
-    { shuffle = record
-      { to         = record { _⟨$⟩_ = proj₁ (swap+ {lf}) ; cong = λ { P.refl → P.refl} }
-      ; from       = record { _⟨$⟩_ = proj₁ (swap+ {lg}) ; cong = λ { P.refl → P.refl} }
-      ; inverse-of = record { left-inverse-of = λ { x → {!!} }
-                            ; right-inverse-of = {!!} }
-      }
+    { shuffle = fin≃⇒Perm (swap+ {lf} {lg})
     ; eq      = λ i → {!!}
     }
     where
@@ -200,9 +213,18 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   ⊕-assoc : {f g h : Seq S₀} → (f ⊕ g) ⊕ h  ≈ₛ  f ⊕ (g ⊕ h)
   ⊕-assoc {f} {g} {h} = record
-    { shuffle = {!!}
-    ; eq      = {!!}
+    { shuffle = fin≃⇒Perm (assocr+ {len f} {len g} {len h})
+    ; eq      = λ i → begin⟨ S ⟩
+      lookup (table ((f ⊕ g) ⊕ h)) i                           ≈⟨ Setoid.refl S ⟩
+      lookup (Table.tabulate (_‼_ ((f ⊕ g) ⊕ h))) i             ≈⟨ Setoid.refl S ⟩
+      ((f ⊕ g) ⊕ h) ‼ i                                         ≈⟨ {!fin≃⇒lookup (assocr+ {len f}) ((f ⊕ g ⊕ h) ‼_) i!} ⟩
+      (f ⊕ g ⊕ h) ‼ (proj₁ (assocr+ {len f}) i)                 ≈⟨ Setoid.refl S ⟩
+      lookup (Table.tabulate (_‼_ (f ⊕ g ⊕ h))) (proj₁ (assocr+ {len f}) i)   ≈⟨ Setoid.refl S ⟩
+      lookup (table (f ⊕ g ⊕ h)) (to (fin≃⇒Perm (assocr+ {len f})) Π.⟨$⟩ i) ≈⟨ Setoid.refl S ⟩
+      lookup (Table.tabulate (lookup (table (f ⊕ g ⊕ h)) ∘  (to (fin≃⇒Perm (assocr+ {len f})) Π.⟨$⟩_) )) i  ≈⟨ Setoid.refl S ⟩
+      lookup (permute (fin≃⇒Perm (assocr+ {len f})) (table (f ⊕ g ⊕ h))) i ∎
     }
+    where open Inv.Inverse; open import Function using (_∘_)
 
   commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
   commutativeMonoid = record
@@ -213,7 +235,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ; isCommutativeMonoid   =   record
       { isSemigroup   =   record
         { isEquivalence = ≈ₛ-isEquivalence ; assoc = λ f g h → ⊕-assoc {f} {g} {h} ; ∙-cong = {!!} }
-      ; identityˡ     =   λ x → {!!}
+      ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ {!!}
       ; comm          =   λ f g → ⊕-comm {f} {g}
       }
     }

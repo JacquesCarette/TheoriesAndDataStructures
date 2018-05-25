@@ -37,7 +37,7 @@ _≐_ {A = A} f g = (x : A) → f x ≡ g x
 
 ∘-resp-≐ : ∀ {ℓA ℓB ℓC} {A : Set ℓA} {B : Set ℓB} {C : Set ℓC} {f h : B → C} {g i : A → B} →
   (f ≐ h) → (g ≐ i) → f ∘ g ≐ h ∘ i
-∘-resp-≐ {f = f} {i = i} f≐h g≐i x = trans (cong f (g≐i x)) (f≐h (i x)) 
+∘-resp-≐ {f = f} {i = i} f≐h g≐i x = trans (cong f (g≐i x)) (f≐h (i x))
 
 ≐-isEquivalence : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → IsEquivalence (_≐_ {ℓ} {ℓ′} {A} {B})
 ≐-isEquivalence = record { refl = ≐-refl ; sym = ≐-sym ; trans = ≐-trans }
@@ -48,7 +48,7 @@ cong∘l : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ�
   (g ≐ i) → (f ∘ g) ≐ (f ∘ i)
 cong∘l f g~i x = cong f (g~i x)
 
-cong∘r : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} 
+cong∘r : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″}
   {f h : B → C} → (g : A → B) →
   (f ≐ h) → (f ∘ g) ≐ (h ∘ g)
 cong∘r g f~h x = f~h (g x)
@@ -80,23 +80,22 @@ sym≃ : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} → (A ≃ B) → B ≃
 sym≃ (A→B , equiv) = e.g , qinv A→B e.β e.α
   where module e = isqinv equiv
 
-abstract
-  trans≃ :  ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} → A ≃ B → B ≃ C → A ≃ C
-  trans≃ {A = A} {B} {C} (f , qinv f⁻¹ fα fβ) (g , qinv g⁻¹ gα gβ) = 
-    (g ∘ f) , (qinv (f⁻¹ ∘ g⁻¹) (λ x → trans (cong g (fα (g⁻¹ x))) (gα x))
-                                          (λ x → trans (cong f⁻¹ (gβ (f x))) (fβ x)))
-  -- more convenient infix version, flipped
-  _●_ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} → B ≃ C → A ≃ B → A ≃ C
-  a ● b = trans≃ b a
+trans≃ :  ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} → A ≃ B → B ≃ C → A ≃ C
+trans≃ {A = A} {B} {C} (f , qinv f⁻¹ fα fβ) (g , qinv g⁻¹ gα gβ) =
+  (g ∘ f) , (qinv (f⁻¹ ∘ g⁻¹) (λ x → trans (cong g (fα (g⁻¹ x))) (gα x))
+                                        (λ x → trans (cong f⁻¹ (gβ (f x))) (fβ x)))
+-- more convenient infix version, flipped
+_●_ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} → B ≃ C → A ≃ B → A ≃ C
+a ● b = trans≃ b a
 
-  -- since we're abstract, these all us to do restricted expansion
-  β₁ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
-    proj₁ (f ● g) ≐ (proj₁ f ∘ proj₁ g)
-  β₁ x = refl
+-- since we're abstract, these all us to do restricted expansion
+β₁ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
+  proj₁ (f ● g) ≐ (proj₁ f ∘ proj₁ g)
+β₁ x = refl
 
-  β₂ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
-    isqinv.g (proj₂ (f ● g)) ≐ (isqinv.g (proj₂ g) ∘ (isqinv.g (proj₂ f)))
-  β₂  x = refl
+β₂ : ∀ {ℓ ℓ′ ℓ″} {A : Set ℓ} {B : Set ℓ′} {C : Set ℓ″} {f : B ≃ C} {g : A ≃ B} →
+  isqinv.g (proj₂ (f ● g)) ≐ (isqinv.g (proj₂ g) ∘ (isqinv.g (proj₂ f)))
+β₂  x = refl
 
 -- convenient infix version
 infixr 5 _⟨≃≃⟩_

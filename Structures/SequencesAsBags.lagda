@@ -209,9 +209,6 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   ≡⇒≈₀ : {x y : S₀} → x P.≡ y → x ≈₀ y
   ≡⇒≈₀ P.refl = Setoid.refl S
 
-  -- this lemma is true, but likely useless.
-  fin≃⇒lookup : {m n : ℕ} → (p : m fin≃ n) → (f : Fin m → S₀) (i : Fin m) → f i ≈₀ lookup (permute (fin≃⇒Perm p) (Table.tabulate λ j → f (Equiv.isqinv.g (proj₂ p) j))) i
-  fin≃⇒lookup p f i =  ≡⇒≈₀ (P.cong f (P.sym (Equiv.isqinv.β (proj₂ p) i)))
 \end{code}
 %}}}
 
@@ -281,7 +278,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       { isSemigroup   =   record
         { isEquivalence = ≈ₛ-isEquivalence
         ; assoc = λ f g h → ⊕-assoc {f} {g} {h}
-        ; ∙-cong = λ x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩ {!!}
+        ; ∙-cong = λ x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩ {!λ i → ?!}
       }
       ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ table-unite+ {ℓ} x
       ; comm          =   λ f g → ⊕-comm {f} {g}

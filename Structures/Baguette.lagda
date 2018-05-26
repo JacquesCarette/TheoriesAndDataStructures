@@ -69,6 +69,9 @@ open Setoid                   using (Carrier)
 open import Data.List  using ([]; [_]; _++_; _∷_)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 import Data.List as List
+open import Data.Fin.Permutation using (Permutation) renaming (id to idp)
+open import Data.Nat using (ℕ; zero; suc)
+import Data.Fin as Fin
 
 open import Data.Sum using ([_,_]′)
 
@@ -490,51 +493,53 @@ ListCMHom {ℓ} {X} {Y} = record
     ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map f (proj₁ +≃⊎ i)
     }
   ; singleton-commute   =   λ F → Seq.≈ₛ-refl Y
-  ; fold-commute        =   λ {CMX} {CMY} F {s} → it {CMX = CMX} {CMY} F s
+  ; fold-commute        =   λ {CMX} {CMY} F {s} → it {CMX = CMX} {CMY} F {Seq.len s}
   }
   where
-    open Setoid Y
-    open import Data.Nat using (zero; suc)
-    import Data.Fin as Fin
     -- Proving |foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)  ≈ F ⟨$⟩ foldr _*₁_ e₁ xs|.
     it : {ℓ : Level} {X Y : Setoid ℓ ℓ} {CMX : CommMonoid X} {CMY : CommMonoid Y}
-         (F : CMArrow CMX CMY) (s : Bag (Carrier X))
-         → foldr (CommMonoid._*_ CMY) (CommMonoid.e CMY) (tabulate (λ x → mor F ⟨$⟩₀ (s Bag.‼ x)))  ≈⌊ Y ⌋
-           mor F ⟨$⟩₀ foldr (CommMonoid._*_ CMX) (CommMonoid.e CMX) (tabulate (Bag._‼_ s))
-    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F (Bag.sequence zero fun) = Setoid.sym Y (pres-e F)
-    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F (Bag.sequence (suc len) fun) = {!!} {-
-        begin⟨ Y ⟩
-           (F ⟨$⟩ x)  *₂  foldr CMY (mapL (F ⟨$⟩_) xs)
-        ≈⟨ refl ⟨∙⟩ it F ⟩
-           (F ⟨$⟩ x)  *₂  (F ⟨$⟩ foldr CMX xs)
-        ≈˘⟨ pres-* F ⟩
-           F ⟨$⟩ (x *₁ foldr CMX xs)
-        ■₀ -}
+         (F : CMArrow CMX CMY) {n : ℕ} {s : Fin.Fin n → Carrier X}
+         → foldr (CommMonoid._*_ CMY) (CommMonoid.e CMY) (tabulate (λ x → mor F ⟨$⟩₀ (s x)))  ≈⌊ Y ⌋
+           mor F ⟨$⟩₀ foldr (CommMonoid._*_ CMX) (CommMonoid.e CMX) (tabulate s)
+    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {zero} {_} = Setoid.sym Y (pres-e F)
+    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {suc len} {tb} =
+       let G = mor F ⟨$⟩₀_ in begin⟨ Y ⟩
+       G (tb Fin.zero) *₂ (foldr _*₂_ e₂ (tabulate (λ x → G (tb (Fin.suc x)))))  ≈⟨ Setoid.refl Y ⟨∙⟩ it F {len} ⟩
+       G (tb Fin.zero) *₂ (G (foldr _*₁_ e₁ (tabulate λ x → tb (Fin.suc x))))    ≈⟨ Setoid.sym Y (pres-* F) ⟩
+       G (foldr _*₁_ e₁ (tabulate tb)) ■₀
         where open IsCommutativeMonoid isCM₂ using (_⟨∙⟩_)
               open CMUtils
 \end{code}
 
-\begin{spec}
--- \edcomm{MA}{Should be moved into a List-like library. Maybe moved to the standard library.}
---
--- Transforming a list into singletons then catenating is the same as “doing nothing.”
-concat-singleton : {ℓ : Level} {X : Set ℓ} (xs : List.List X)
-                 → xs ≡ List.foldr _++_ [] (mapL [_] xs)
-concat-singleton []         =   ≡.refl
-concat-singleton (x ∷ xs)   =   ≡.cong (x ∷_) (concat-singleton xs)
+\begin{code}
 
 module BuildProperties where
   open ImplementationViaList
   functoriality : {ℓ : Level} → FunctorialMSH {ℓ} (ListMS {ℓ} {ℓ}) ListCMHom
   functoriality {ℓ} = record
-    { id-pres               =   λ {X} {xs} → {!!} -- ∈-↔-reflexive X (map-id xs)
-    ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → {!!}
-    ; resp-≈                =   λ {X} {Y} {f} {g} F≈G {xs} → {!!}
-    ; fold-lift-singleton   =   λ {X} {xs} → {!!}
+    { id-pres               =   λ {X} {xs} → idp Seq.⟨π⟩ λ _ → Setoid.refl X
+    ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → Seq.≈ₛ-refl Z
+    ; resp-≈                =   λ {X} {Y} {f} {g} F≈G {xs} → idp Seq.⟨π⟩ λ i → F≈G {xs Bag.‼ i}
+    ; fold-lift-singleton   =   λ {X} {xs} →
+      fold-perm {X} (Bag.len xs) (Bag._‼_ xs) Seq.⟨π⟩ λ i → ?
     }
     where
-    open Multiset using (𝒞; commMonoid)
-\end{spec}
+    open Multiset using (𝒞; commMonoid; ctrSetoid; fold; singleton)
+    open MultisetHom using (lift)
+    module _ {X : Setoid ℓ ℓ} where
+      LMS = ListMS {ℓ} {ℓ} X
+      L = ListMS {ℓ} {ℓ} (ctrSetoid LMS X)
+      C = commMonoid LMS X
+      same-size : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
+        let xs = Bag.sequence n bg in
+        n ≡ (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
+      same-size zero bg = ≡.refl
+      same-size (suc n) bg = ≡.cong suc (same-size n _)
+      fold-perm : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
+        let xs = Bag.sequence n bg in
+        Permutation n (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
+      fold-perm n bg = ≡.subst (λ i → Permutation n i) (same-size n bg) idp
+\end{code}
 
 Last but not least, build the left adjoint:
 

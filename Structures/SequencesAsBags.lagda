@@ -33,7 +33,6 @@ open import TypeEquiv using (swap₊; swap₊equiv; unite₊equiv)
 open import EquivEquiv using (_≋_)
 open import Equiv using (_●_; β₁; _⊎≃_; id≃; _⟨≃≃⟩_; ≐-trans; ≐-sym;
   cong∘l; cong∘r; β⊎₁)
-open import Data.Sum.Properties2 using (swap₊-coh)
 
 infixr 10 _⊙_
 

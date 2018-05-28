@@ -93,10 +93,15 @@ open PlusE -- from FinEquivTypeEquiv
 
 infixr 6 _⊕_
 _⊕_ : {ℓ : Level} {S₀ : Set ℓ} → Seq S₀ → Seq S₀ → Seq S₀
-f ⊕ g = sequence (lf + lg) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)
+_⊕_ {ℓ} {S₀} f g = sequence (lf + lg) (λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i))
     where
       lf = len f
       lg = len g
+      -- go : {m n : ℕ} → Fin (m + n) → Fin m ⊎ Fin n
+      -- go = λ i → case (toℕ i <? m) of λ
+      --    { (yes p) → inj₁ (fromℕ≤ p)
+      --     ; (no ¬p) → inj₂ (reduce≥ i (≤-pred (≰⇒> ¬p)))
+      --     }
 \end{code}
 %}}}
 
@@ -123,9 +128,11 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   ≈ₛ-refl {T} = record { shuffle = id ; eq = refl }
     where open Setoid (Eq S)
 
+  open Setoid S
+
   interchange : (f : Seq S₀) {m : ℕ} (s : Permutation m (len f)) {k : Fin m}
-                (let open Setoid S) → (s ◈ f) ‼ k ≈ f ‼ (s ⟨$⟩ʳ k)
-  interchange f {m} s {k} = let open Setoid S in begin⟨ S ⟩
+                → (s ◈ f) ‼ k ≈ f ‼ (s ⟨$⟩ʳ k)
+  interchange f {m} s {k} = begin⟨ S ⟩
       (s ◈ f) ‼ k
     ≈⟨ refl ⟩
       table˘ (permute s (table f)) ‼ k
@@ -140,7 +147,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ∎
 
   ≈ₛ-sym : {f g : Seq S₀} → f ≈ₛ g → g ≈ₛ f
-  ≈ₛ-sym {f} {g} (s ⟨π⟩ f≈sg) = let open Setoid S in record
+  ≈ₛ-sym {f} {g} (s ⟨π⟩ f≈sg) = record
     { shuffle = flip s
     ; eq = λ k → begin⟨ S ⟩
            g ‼ k
@@ -156,7 +163,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     }
 
   ≈ₛ-trans : {f g h : Seq S₀} → f ≈ₛ g → g ≈ₛ h → f ≈ₛ h
-  ≈ₛ-trans {f} {g} {h} (s ⟨π⟩ f≈sg) (r ⟨π⟩ g≈rh) = let open Setoid S in record
+  ≈ₛ-trans {f} {g} {h} (s ⟨π⟩ f≈sg) (r ⟨π⟩ g≈rh) = record
     { shuffle = Inv._∘_ r s
     ; eq      = λ k → begin⟨ S ⟩
                 f ‼ k
@@ -217,7 +224,6 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
 %{{{ holes: commutativeMonoid
 \begin{code}
-
   [_,_]′∘swap : {ℓ ℓ′ : Level} {X Y : Set ℓ} {Z : Set ℓ′} {f : X → Z} {g : Y → Z} → (i : X ⊎ Y) → [ g , f ]′ (swap₊ i) P.≡ [ f , g ]′ i
   [_,_]′∘swap (inj₁ x) = P.refl
   [_,_]′∘swap (inj₂ y) = P.refl
@@ -368,7 +374,7 @@ A property useful for Functors related to commutative monoids. Phrased in terms 
 tables (it will be used for Bags later). First argument explict as we do induction on it.
 \begin{code}
 module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
-  open Setoid S using (_≈_) renaming (Carrier to S₀)
+  open Setoid S renaming (Carrier to S₀)
   open CommMonoid CMS
   open import Data.Table.Base
   open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
@@ -376,53 +382,81 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
 
   sumₛ = λ s → sumₜ (table s)
 
+  split-off-term : {n : ℕ} (h : Fin (ℕ.suc n) → S₀) → sumₛ (sequence (ℕ.suc n) h) ≈ h Fin.zero * sumₛ (sequence n λ i → h (Fin.suc i))
+  split-off-term {ℕ.zero} h  = Setoid.refl S
+  split-off-term {ℕ.suc n} h = Setoid.refl S
+
+  open import Function using (_∘_)
+  open import Data.Fin using () renaming (suc to fsuc ; zero to fzero)
+
+  sumₛ-cong-like : (k : ℕ) {f g : Fin k → S₀} (ext : {i : Fin k} → f i ≈ g i) → sumₛ (sequence k f) ≈ sumₛ (sequence k g)
+  sumₛ-cong-like ℕ.zero {f} {g} ext = refl
+  sumₛ-cong-like (ℕ.suc k) {f} {g} ext = begin⟨ S ⟩
+       sumₛ (sequence (ℕ.suc k) f)
+    ≈⟨ refl ⟩
+       f fzero * sumₛ (sequence k (f ∘ fsuc))
+    ≈⟨ ext {fzero} ⟨∙⟩ sumₛ-cong-like k ext ⟩
+       g fzero * sumₛ (sequence k (g ∘ fsuc))
+    ≈⟨ refl ⟩
+       sumₛ (sequence (ℕ.suc k) g)
+    ∎
+
+  open import Relation.Nullary
+  open import Data.Nat using (_≤?_)
+
+  suc-⊕-shunting : {m n : ℕ} → {f : Fin (ℕ.suc (ℕ.suc m)) → S₀} {g : Fin n → S₀}
+                 → {i : Fin (ℕ.suc m + n)}
+                 → [ f , g ]′ (proj₁ +≃⊎ (Fin.suc i)) ≈ [ (λ j → f (Fin.suc j)) , g ]′ (proj₁ +≃⊎ i) 
+  suc-⊕-shunting {i = fzero} = refl
+  suc-⊕-shunting {m} {i = fsuc i} with (ℕ.suc (ℕ.suc (Data.Fin.toℕ i)) ≤? ℕ.suc m) | ℕ.suc (Data.Fin.toℕ i) ≤? m
+  ...| yes p | yes p₁ = refl
+  ...| yes p | no ¬p = refl
+  ...| no ¬p | yes p = refl
+  ...| no ¬p | no ¬p₁ = refl
+
+  split-off-term-⊕ : {m n : ℕ} (f : Fin (ℕ.suc m) → S₀) (g : Fin n → S₀)
+                   → sumₛ (sequence (ℕ.suc m) f ⊕ sequence n g) ≈ f Fin.zero * sumₛ (sequence m (λ i → f (Fin.suc i)) ⊕ sequence n g)
+  split-off-term-⊕ {ℕ.zero} {n} f g = refl
+  split-off-term-⊕ {ℕ.suc m} {n} f g = begin⟨ S ⟩
+      sumₛ (sequence (ℕ.suc (ℕ.suc m)) f ⊕ sequence n g)
+    ≈⟨ refl ⟩
+      f Fin.zero * sumₛ (sequence (ℕ.suc m + n) L)
+    ≈⟨ refl ⟨∙⟩ sumₛ-cong-like (ℕ.suc m + n) {L} {R} (suc-⊕-shunting {m} {n} {f} {g}) ⟩
+      f Fin.zero * sumₛ (sequence (ℕ.suc m + n) R)
+    ≈⟨ refl ⟩
+      f Fin.zero * sumₛ (sequence (ℕ.suc m) (λ i → f (Fin.suc i)) ⊕ sequence n g)
+    ∎
+    where
+
+      L R : Fin (ℕ.suc (m + n)) → S₀
+      L = λ i → [ f , g ]′ (proj₁ +≃⊎ (Fin.suc i))
+      R = λ i → [ (λ j → f (Fin.suc j)) , g ]′ (proj₁ +≃⊎ i)
+
   sumₜ-homo : (m : ℕ) {n : ℕ} {f : Fin m → S₀} {g : Fin n → S₀} →
     sumₛ (sequence m f ⊕ sequence n g) ≈ sumₛ (sequence m f) * sumₛ (sequence n g)
   sumₜ-homo ℕ.zero {_} {_} {g} = ≈.sym (left-unit (sumₜ (tabulate g)))
-  sumₜ-homo (ℕ.suc m) {n} {f} {g} = begin⟨ S ⟩
-    sumₜ (table (sequence (ℕ.suc m) f ⊕ sequence n g))              ≈⟨ {!!} ⟩
-    sumₜ (table (sequence (ℕ.suc m) f)) * sumₜ (table (sequence n g)) ∎
-
-  split-off-term : {n : ℕ} (h : Fin (ℕ.suc n) → S₀) → sumₛ (sequence (ℕ.suc n) h) ≈ h Fin.zero * sumₛ (sequence n λ i → h (Fin.suc i))
-  split-off-term {ℕ.zero} h = Setoid.refl S
-  split-off-term {ℕ.suc n} h = Setoid.refl S
-  
-  ⊕-correctness : {n : ℕ} (f g : Fin n → S₀) → sumₛ (sequence n f ⊕ sequence n g) ≈ sumₛ (sequence n λ i → f i * g i)
-  ⊕-correctness {ℕ.zero} f g = Setoid.refl S
-  ⊕-correctness {ℕ.suc n} f g = {!!}
-
-  -- MA: This is essentially a fold-fusion law: Fusing two folds, pointwise along their functions, into a single one.
-  sumₜ-homo-homogenous : (n : ℕ) {f g : Fin n → S₀} →
-    sumₛ (sequence n f) * sumₛ (sequence n g) ≈ sumₛ (sequence n f ⊕ sequence n g)
-  sumₜ-homo-homogenous ℕ.zero {f} {g} = left-unit (sumₜ (tabulate g))
-  sumₜ-homo-homogenous (ℕ.suc n) {f} {g} = 
-    let open Setoid S
-        sumf  = sumₜ (table (sequence n (λ i → f (Fin.suc i))))
-        f0    = f Fin.zero
-        sumg  = sumₜ (table (sequence n (λ i → g (Fin.suc i))))
-        g0    = g Fin.zero
-        sumfg = sumₛ (sequence n (λ i → f (Fin.suc i) * g (Fin.suc i)))
+  sumₜ-homo (ℕ.suc m) {n} {f} {g} =
+    let
+      f′   = λ i → f (Fin.suc i)
+      sumf  = sumₛ (sequence m f′)
+      f0    = f Fin.zero
+      sumg = sumₛ (sequence n g)
+      f⊕g = sequence (ℕ.suc (m + n)) (λ i → [ f , g ]′ (proj₁ +≃⊎ i))
     in begin⟨ S ⟩
-       (sumₜ (table (sequence (ℕ.suc n) f))) * (sumₜ (table (sequence (ℕ.suc n) g)))
-    ≈⟨ split-off-term f ⟨∙⟩ split-off-term g ⟩
-       (f0 * sumf) * (g0 * sumg)
-    ≈⟨ assoc _ _ _ ⟩
-       f0 * (sumf * (g0 * sumg))
-    ≈⟨ refl ⟨∙⟩ (refl ⟨∙⟩ comm _ _) ⟩
-       f0 * (sumf * (sumg * g0))
-    ≈⟨ refl ⟨∙⟩ sym (assoc _ _ _) ⟩
-       f0 * ((sumf * sumg) * g0)
-    ≈⟨ refl ⟨∙⟩ ({!sumₜ-homo-homogenous n!} ⟨∙⟩ refl) ⟩
-       f0 * (sumfg * g0)
-    ≈⟨ refl ⟨∙⟩ comm _ _ ⟩
-       f0 * (g0 * sumfg)
+      sumₛ f⊕g
+    ≈⟨ split-off-term-⊕ f g ⟩
+      f0 * sumₛ (sequence m f′ ⊕ sequence n g)
+    ≈⟨ refl ⟨∙⟩ sumₜ-homo m {n} {f′} {g} ⟩
+      f0 * (sumf * sumg)
     ≈⟨ sym (assoc _ _ _) ⟩
-       (f0 * g0) * sumfg
-    ≈⟨ sym (split-off-term (λ i → f i * g i))  ⟩
-       sumₛ (sequence (ℕ.suc n) λ i → f i * g i)
-    ≈⟨ sym (⊕-correctness f g) ⟩
-       sumₛ (sequence (ℕ.suc n) f ⊕ sequence (ℕ.suc n) g)
+      (f0 * sumf) * sumg
+    ≈⟨ sym (split-off-term f) ⟨∙⟩ refl ⟩
+      sumₛ (sequence (ℕ.suc m) f) * sumg
     ∎
+  
+  -- ⊕-correctness : {n : ℕ} (f g : Fin n → S₀) → sumₛ (sequence n f ⊕ sequence n g) ≈ sumₛ (sequence n λ i → f i * g i)
+  -- ⊕-correctness {ℕ.zero} f g = Setoid.refl S
+  -- ⊕-correctness {ℕ.suc n} f g = {!!}
 \end{code}
 %}}}
 

@@ -6,7 +6,6 @@ aspect is that the tables involved are over a |Setoid|.
 
 %{{{ imports
 \begin{code}
--- {-# OPTIONS --allow-unsolved-metas #-}
 module Structures.SequencesAsBags where
 
 open import Level
@@ -18,7 +17,8 @@ open import Data.Fin.Permutation
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Table.Relation.Equality using (setoid)
 open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂)
-import Relation.Binary.PropositionalEquality as P
+import Relation.Binary.PropositionalEquality as ≡
+open ≡ using (_≡_) renaming (trans to _⟨≡≡⟩_)
 open import Relation.Binary.SetoidReasoning
 open import Function.Equality using (module Π)
 import Function.Inverse as Inv using (module Inverse)
@@ -97,11 +97,6 @@ _⊕_ {ℓ} {S₀} f g = sequence (lf + lg) (λ i → [ f ‼_ , g ‼_ ]′ (pr
     where
       lf = len f
       lg = len g
-      -- go : {m n : ℕ} → Fin (m + n) → Fin m ⊎ Fin n
-      -- go = λ i → case (toℕ i <? m) of λ
-      --    { (yes p) → inj₁ (fromℕ≤ p)
-      --     ; (no ¬p) → inj₂ (reduce≥ i (≤-pred (≰⇒> ¬p)))
-      --     }
 \end{code}
 %}}}
 
@@ -119,7 +114,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       shuffle : Permutation (len T₁) (len T₂)
       eq : (table T₁) ≈ permute shuffle (table T₂)
 
-    homogenous : len T₁ P.≡ len T₂
+    homogenous : len T₁ ≡ len T₂
     homogenous = ↔⇒≡ shuffle
 
   open _≈ₛ_
@@ -151,7 +146,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     { shuffle = flip s
     ; eq = λ k → begin⟨ S ⟩
            g ‼ k
-         ≡⟨  P.sym (P.cong (g ‼_) (inverseʳ s)) ⟩
+         ≡⟨  ≡.sym (≡.cong (g ‼_) (inverseʳ s)) ⟩
            g ‼ (s ⟨$⟩ʳ (s ⟨$⟩ˡ k))
          ≈⟨ refl ⟩
            (s ◈ g) ‼ (s ⟨$⟩ˡ k)
@@ -212,32 +207,35 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     where open Inv.Inverse; open Function.Equality using (_⟨$⟩_)
 
   fin≃⇒Perm : {m n : ℕ} → m fin≃ n → Permutation m n
-  fin≃⇒Perm (f , Equiv.qinv b α β) = record { to = P.→-to-⟶ f ; from = P.→-to-⟶ b
+  fin≃⇒Perm (f , Equiv.qinv b α β) = record { to = ≡.→-to-⟶ f ; from = ≡.→-to-⟶ b
     ; inverse-of = record { left-inverse-of = β ; right-inverse-of = α } }
 
-  ≡⇒≈₀ : {x y : S₀} → x P.≡ y → x ≈₀ y
-  ≡⇒≈₀ P.refl = Setoid.refl S
-
+  ≡⇒≈₀ : {x y : S₀} → x ≡ y → x ≈₀ y
+  ≡⇒≈₀ ≡.refl = Setoid.refl S
 \end{code}
 %}}}
 
 
-%{{{ holes: commutativeMonoid
+%{{{ commutativeMonoid
 \begin{code}
-  [_,_]′∘swap : {ℓ ℓ′ : Level} {X Y : Set ℓ} {Z : Set ℓ′} {f : X → Z} {g : Y → Z} → (i : X ⊎ Y) → [ g , f ]′ (swap₊ i) P.≡ [ f , g ]′ i
-  [_,_]′∘swap (inj₁ x) = P.refl
-  [_,_]′∘swap (inj₂ y) = P.refl
+  -- Swap flips arguments of sum functor.
+  [_,_]′∘swap : {ℓ ℓ′ : Level} {X Y : Set ℓ} {Z : Set ℓ′} {f : X → Z} {g : Y → Z}
+               → (i : X ⊎ Y) → [ g , f ]′ (swap₊ i)  ≡  [ f , g ]′ i
+  [_,_]′∘swap (inj₁ x) = ≡.refl
+  [_,_]′∘swap (inj₂ y) = ≡.refl
 
-  expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) P.≡ swap₊ (proj₁ +≃⊎ i)
-  expand-swap+ i = P.trans (P.cong (proj₁ +≃⊎) (β₁ i)) (
-                   P.trans (Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i)) (β₁ _))
+  
+  expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) ≡ swap₊ (proj₁ +≃⊎ i)
+  expand-swap+ i =  ≡.cong (proj₁ +≃⊎) (β₁ i)
+             ⟨≡≡⟩ ((Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i))
+             ⟨≡≡⟩ (β₁ _))
 
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
   ⊕-comm {f} {g} = record
     { shuffle = fin≃⇒Perm (swap+ {lf} {lg})
     ; eq      = λ i → Setoid.sym S (begin⟨ S ⟩
       lookup (permute (fin≃⇒Perm (swap+ {lf})) (table (g ⊕ f))) i ≈⟨ Setoid.refl S ⟩ -- unwind lots of definitions
-      [ g ‼_ , f ‼_ ]′ (proj₁ +≃⊎ (proj₁ (swap+ {lf}) i))          ≡⟨ P.cong [ g ‼_ , f ‼_ ]′ (expand-swap+ i) ⟩
+      [ g ‼_ , f ‼_ ]′ (proj₁ +≃⊎ (proj₁ (swap+ {lf}) i))          ≡⟨ ≡.cong [ g ‼_ , f ‼_ ]′ (expand-swap+ i) ⟩
       [ g ‼_ , f ‼_ ]′ (swap₊ (proj₁ +≃⊎ i))                       ≡⟨ [_,_]′∘swap {f = f ‼_} (proj₁ +≃⊎ i) ⟩
       [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i)                               ≈⟨ Setoid.refl S ⟩ -- rewind definitions
       lookup (table (f ⊕ g)) i ∎)
@@ -250,13 +248,13 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   ⊕-assoc {f} {g} {h} = record
     { shuffle = fin≃⇒Perm (assocr+ {len f} {len g} {len h})
     ; eq      = λ i → begin⟨ S ⟩
-      lookup (table ((f ⊕ g) ⊕ h)) i                                                             ≡⟨ P.refl ⟩
-      [ (λ j → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ j)) , h ‼_ ]′ (proj₁ +≃⊎ i)                            ≡⟨ P.sym (absorb₂ _) ⟩
-      [ [ f ‼_ , g ‼_ ]′ , h ‼_ ]′ (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))                                   ≡⟨ P.sym (reassocl (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))) ⟩
-      [ f ‼_ , [ g ‼_ , h ‼_ ]′ ]′ (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))                 ≡⟨ P.sym (absorb₁ _) ⟩
+      lookup (table ((f ⊕ g) ⊕ h)) i                                                             ≡⟨ ≡.refl ⟩
+      [ (λ j → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ j)) , h ‼_ ]′ (proj₁ +≃⊎ i)                            ≡⟨ ≡.sym (absorb₂ _) ⟩
+      [ [ f ‼_ , g ‼_ ]′ , h ‼_ ]′ (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))                                   ≡⟨ ≡.sym (reassocl (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))) ⟩
+      [ f ‼_ , [ g ‼_ , h ‼_ ]′ ]′ (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))                 ≡⟨ ≡.sym (absorb₁ _) ⟩
       [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′
-        (gg (id≃ ⊎≃ +≃⊎) (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))))                          ≡⟨ P.sym (P.cong [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′ (left-cancel i)) ⟩
-      [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′ (proj₁ +≃⊎ (proj₁ (assocr+ {len f}) i))  ≡⟨ P.refl ⟩
+        (gg (id≃ ⊎≃ +≃⊎) (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))))                          ≡⟨ ≡.sym (≡.cong [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′ (left-cancel i)) ⟩
+      [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′ (proj₁ +≃⊎ (proj₁ (assocr+ {len f}) i))  ≡⟨ ≡.refl ⟩
       lookup (permute (fin≃⇒Perm (assocr+ {len f})) (table (f ⊕ g ⊕ h))) i ∎
     }
     where
@@ -264,11 +262,11 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     open Inv.Inverse; open import Function using (_∘_)
     open TypeEquiv using (assocl₊equiv; assocr₊equiv)
     module _ where
-      open P.≡-Reasoning using (begin_) renaming (_∎ to _∎≡; _≡⟨_⟩_ to _≣⟨_⟩_)
-      left-cancel : {m n o : ℕ} → (i : Fin ((m + n) + o)) → proj₁ (+≃⊎ {m} {n + o}) (proj₁ (assocr+ {m} {n} {o}) i) P.≡
+      open ≡.≡-Reasoning using (begin_) renaming (_∎ to _∎≡; _≡⟨_⟩_ to _≣⟨_⟩_)
+      left-cancel : {m n o : ℕ} → (i : Fin ((m + n) + o)) → proj₁ (+≃⊎ {m} {n + o}) (proj₁ (assocr+ {m} {n} {o}) i) ≡
           gg (id≃ ⊎≃ +≃⊎) (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))
       left-cancel {m} {n} {o}  i = begin
-        proj₁ (+≃⊎ {m} {n + o}) (proj₁ (assocr+ {m} {n} {o}) i)                                ≣⟨ P.refl ⟩
+        proj₁ (+≃⊎ {m} {n + o}) (proj₁ (assocr+ {m} {n} {o}) i)                                ≣⟨ ≡.refl ⟩
         gg ⊎≃+ (gg (assocl+ {m}) i)                                                            ≣⟨ cong∘l (gg ⊎≃+) β₂ i ⟩
         gg ⊎≃+ (gg (⊎≃+ ⊎≃ id≃ ● assocl₊equiv ● id≃ ⊎≃ +≃⊎ ● +≃⊎ {m}) (gg ⊎≃+ i))              ≣⟨ cong∘l (gg ⊎≃+) β₂ (gg ⊎≃+ i) ⟩
         gg ⊎≃+ (gg (assocl₊equiv ● id≃ ⊎≃ +≃⊎ ● +≃⊎ {m}) (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))         ≣⟨ cong∘l (gg ⊎≃+) β₂ _ ⟩
@@ -277,61 +275,69 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
         gg (id≃ ⊎≃ +≃⊎) (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))                         ∎≡
         -- assocl+ = ⊎≃+ ● ⊎≃+ ⊎≃ id≃ ● assocl₊equiv ● id≃ ⊎≃ +≃⊎ ● +≃⊎ {m}
       absorb₁ : {m n o : ℕ} {D : Set ℓ} {f : Fin m → D} {g : Fin n → D} {h : Fin o → D} (i : Fin m ⊎ Fin n ⊎ Fin o ) →
-                [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ (gg (id≃ ⊎≃ +≃⊎) i) P.≡
+                [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ (gg (id≃ ⊎≃ +≃⊎) i) ≡
                 [ f , [ g , h ]′ ]′ i
       absorb₁ {f = f} {g} {h} (inj₁ x) = cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₁ x)
-      absorb₁ {f = f} {g} {h} (inj₂ (inj₁ x)) = P.trans
-        (cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₁ x)))
-        (P.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₁ x)))
-      absorb₁ {f = f} {g} {h} (inj₂ (inj₂ y)) = P.trans
-        (cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₂ y)))
-        (P.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₂ y)))
+      absorb₁ {f = f} {g} {h} (inj₂ (inj₁ x)) = 
+              cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₁ x))
+        ⟨≡≡⟩ ≡.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₁ x))
+      absorb₁ {f = f} {g} {h} (inj₂ (inj₂ y)) = 
+        cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₂ y))
+        ⟨≡≡⟩ ≡.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₂ y))
 
-      reassocl : {m n o : ℕ} {D : Set ℓ} {a : Fin m → D} {b : Fin n → D} {c : Fin o → D} (i : (Fin m ⊎ Fin n) ⊎ Fin o) →
-        [ a , [ b , c ]′ ]′ (gg assocl₊equiv i) P.≡ [ [ a , b ]′ , c ]′ i
-      reassocl (inj₁ (inj₁ x)) = P.refl
-      reassocl (inj₁ (inj₂ y)) = P.refl
-      reassocl (inj₂ y) = P.refl
+      reassocl : {m n o : ℕ} {D : Set ℓ} {a : Fin m → D} {b : Fin n → D} {c : Fin o → D}
+               → (i : (Fin m ⊎ Fin n) ⊎ Fin o) → [ a , [ b , c ]′ ]′ (gg assocl₊equiv i)  ≡  [ [ a , b ]′ , c ]′ i
+      reassocl (inj₁ (inj₁ x))   =   ≡.refl
+      reassocl (inj₁ (inj₂ y))   =   ≡.refl
+      reassocl (inj₂ y)          =   ≡.refl
 
       absorb₂ : {m n o : ℕ} {D : Set ℓ} {f : Fin m → D} {g : Fin n → D} {h : Fin o → D} (i : Fin (m + n) ⊎ Fin o ) →
-                [ [ f , g ]′ , h ]′ (gg (⊎≃+ ⊎≃ id≃) i) P.≡
+                [ [ f , g ]′ , h ]′ (gg (⊎≃+ ⊎≃ id≃) i) ≡
                 [ (λ j → [ f , g ]′ (proj₁ +≃⊎ j)) , h ]′ i
-      absorb₂ {f = f} {g} {h} (inj₁ x) = P.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₁ x))
-      absorb₂ {f = f} {g} {h} (inj₂ y) = P.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₂ y))
+      absorb₂ {f = f} {g} {h} (inj₁ x) = ≡.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₁ x))
+      absorb₂ {f = f} {g} {h} (inj₂ y) = ≡.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₂ y))
 
-  merge-map : {ℓ ℓ′ : Level} {B : Set ℓ} → (z : Fin 0 ⊎ B) → TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) P.≡ [ (λ ()) , id₀ ]′ z
+  merge-map : {ℓ ℓ′ : Level} {B : Set ℓ} → (z : Fin 0 ⊎ B)
+            → TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) ≡ [ (λ ()) , id₀ ]′ z
   merge-map (inj₁ ())
-  merge-map (inj₂ y) = P.refl
+  merge-map (inj₂ _) = ≡.refl
 
-  lookup-map : {x : Seq S₀} (c : Fin 0 ⊎ Fin (len x)) →
-    x ‼ ([ (λ ()) , id₀ ]′ c) P.≡ [ ∅ ‼_ , x ‼_ ]′ c
+  lookup-map : {x : Seq S₀} (c : Fin 0 ⊎ Fin (len x))
+            → x ‼ ([ (λ ()) , id₀ ]′ c)  ≡  [ ∅ ‼_ , x ‼_ ]′ c
   lookup-map (inj₁ ())
-  lookup-map (inj₂ y) = P.refl
+  lookup-map (inj₂ _) = ≡.refl
 
   table-unite+ : {ℓ : Level} (x : Seq S₀) → Setoid._≈_ (setoid S (len (∅ ⊕ x))) (table (∅ ⊕ x)) (permute (fin≃⇒Perm unite+) (table x))
-  table-unite+ {ℓ} x = λ i → begin⟨ S ⟩
+  table-unite+ {ℓ} x = λ i →
+    let 𝒾 = proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i
+    in begin⟨ S ⟩
        lookup (table (∅ ⊕ x)) i
-    ≡⟨ P.refl ⟩
-      [ (λ () ) , x ‼_ ]′ (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i)
-    ≡⟨ P.sym (lookup-map {x} (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i)) ⟩
-      x ‼ ([ (λ ()) , id₀ ]′ (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i))
-    ≡⟨ P.sym (P.cong (x ‼_) (merge-map {zero} {ℓ} {Fin (len x)} (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i))) ⟩
+    ≡⟨ ≡.refl ⟩
+      [ (λ () ) , x ‼_ ]′ 𝒾
+    ≡⟨ ≡.sym (lookup-map {x} 𝒾) ⟩
+      x ‼ ([ (λ ()) , id₀ ]′ 𝒾)
+    ≡⟨ ≡.sym (≡.cong (x ‼_) (merge-map {zero} {ℓ} {Fin (len x)} 𝒾)) ⟩
       x ‼ (TypeEquiv.unite₊ {zero} {zero} (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))
-    ≡⟨ P.sym (P.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r inj₂ β⊎₁)) i)) ⟩
+    ≡⟨ ≡.sym (≡.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r inj₂ β⊎₁)) i)) ⟩
       x ‼ (proj₁ (unite₊equiv {zero} {zero} ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i
-    ≡⟨ P.refl ⟩
-      x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)                        
-    ≡⟨ P.refl ⟩
+    ≡⟨ ≡.refl ⟩
+      x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)       
+    ≡⟨ ≡.refl ⟩
        lookup (permute (fin≃⇒Perm unite+) (table x)) i
     ∎ where open import Level
 
-  map-map : {ℓ ℓ′ ℓ′′ : Level} {A C : Set ℓ} {B D : Set ℓ′} {E : Set ℓ′′} {c : A → B} {d : C → D} {a : B → E} {b : D → E}
-    (i : A ⊎ C) → [ a , b ]′ (Data.Sum.map c d i) P.≡ [ a ∘₀ c , b ∘₀ d ]′ i
-  map-map (inj₁ x) = P.refl
-  map-map (inj₂ y) = P.refl
+  open Data.Sum renaming (map to _⊎₁_)
 
-  switch-map : {ℓ ℓ′ : Level} {A B : Set ℓ} {a c : A → S₀} {b d : B → S₀} →
-    (∀ i → a i ≈₀ c i) → (∀ i → b i ≈₀ d i) → (∀ j → [ a , b ]′ j ≈₀ [ c , d ]′ j)
+  -- functor-map absorption for the sum functor.
+  map-map : {ℓ ℓ′ ℓ′′ : Level} {A C : Set ℓ} {B D : Set ℓ′} {E : Set ℓ′′} {c : A → B} {d : C → D} {a : B → E} {b : D → E}
+    (i : A ⊎ C) → ([ a , b ]′ ∘₀ (c ⊎₁ d)) i ≡ [ a ∘₀ c , b ∘₀ d ]′ i
+  map-map (inj₁ _)   =   ≡.refl
+  map-map (inj₂ _)   =   ≡.refl
+
+  -- Extensional equality of sum functor is pointwise extensional.
+  switch-map : {ℓ ℓ′ : Level} {A B : Set ℓ} {a c : A → S₀} {b d : B → S₀}
+             (a≈c : (i : A) → a i ≈₀ c i) (b≈d : (i : B) → b i ≈₀ d i)
+             → ((j : A ⊎ B) → [ a , b ]′ j ≈₀ [ c , d ]′ j)
   switch-map a≐c b≐d (inj₁ x) = a≐c x
   switch-map a≐c b≐d (inj₂ y) = b≐d y
   
@@ -345,26 +351,29 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       { isSemigroup   =   record
         { isEquivalence = ≈ₛ-isEquivalence
         ; assoc = λ f g h → ⊕-assoc {f} {g} {h}
-        ; ∙-cong = λ {x} {y} {u} {v} x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩
+        ; ∙-cong = λ {F} {G} {u} {K} x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩
            λ i →
-           let x≃y = Perm⇒fin≃ (shuffle x≈y) in
-           let u≃v = Perm⇒fin≃ (shuffle u≈v) in
-           let j = proj₁ +≃⊎ i in           
-           begin⟨ S ⟩
-              [ _‼_ x , _‼_ u ]′ j
-           ≈⟨ Setoid.sym S (switch-map {_} {ℓ} (λ j → Setoid.sym S (eq x≈y j)) (λ j → Setoid.sym S (eq u≈v j)) j) ⟩
-              [ y ‼_ ∘₀ (proj₁ x≃y) , v ‼_ ∘₀ (proj₁ u≃v) ]′ j
-           ≡⟨ P.sym (map-map (proj₁ (+≃⊎ {len x} {len u}) i)) ⟩
-              [ _‼_ y , _‼_ v ]′ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)
-           ≡⟨ P.sym (P.cong [ _‼_ y , _‼_ v ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j))) ⟩
-              [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)))
-           ≡⟨ P.sym (P.cong (λ x → [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ x))
-                       (P.trans (β₁ _)
-                       (P.cong (proj₁ ⊎≃+) (P.trans (β₁ i) (β⊎₁ _))))) ⟩
-              [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i))
-           ∎
+           let x≃y = Perm⇒fin≃ (shuffle x≈y)
+               u≃v = Perm⇒fin≃ (shuffle u≈v)
+               u≃₁v = proj₁ u≃v
+               x≃₁y = proj₁ x≃y
+               j = proj₁ +≃⊎ i
+               f = F ‼_
+               g = G ‼_
+               k = K ‼_
+           in Setoid.sym S (begin⟨ S ⟩
+             [ g , k ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i))
+            ≡⟨ ≡.cong ([ g , k ]′ ∘₀ proj₁ +≃⊎) (β₁ _ ⟨≡≡⟩ ≡.cong (proj₁ ⊎≃+) (β₁ i ⟨≡≡⟩ β⊎₁ _)) ⟩
+              [ g , k ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ ((x≃₁y ⊎₁ u≃₁v) j)))
+            ≡⟨ ≡.cong [ g , k ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) ((x≃₁y ⊎₁ u≃₁v) j)) ⟩
+              [ g , k ]′ ((x≃₁y ⊎₁ u≃₁v) j)
+            ≡⟨ map-map (proj₁ (+≃⊎ {len F} {len u}) i) ⟩
+              [ g ∘₀ x≃₁y , k ∘₀ u≃₁v ]′ j
+            ≈⟨ switch-map {_} {ℓ} (Setoid.sym S ∘₀ eq x≈y) (Setoid.sym S ∘₀ eq u≈v) j ⟩
+              [ f , _‼_ u ]′ j
+            ∎)
       }
-      ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ table-unite+ {ℓ} x
+      ; identityˡ      =   λ x   → fin≃⇒Perm unite+ ⟨π⟩ table-unite+ {ℓ} x
       ; comm          =   λ f g → ⊕-comm {f} {g}
       }
     }
@@ -379,24 +388,25 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
   open import Data.Table.Base
   open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
   open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
+  open import Data.Fin using () renaming (suc to fsuc ; zero to fzero)
 
   sumₛ = λ s → sumₜ (table s)
 
-  split-off-term : {n : ℕ} (h : Fin (ℕ.suc n) → S₀) → sumₛ (sequence (ℕ.suc n) h) ≈ h Fin.zero * sumₛ (sequence n λ i → h (Fin.suc i))
-  split-off-term {ℕ.zero} h  = Setoid.refl S
-  split-off-term {ℕ.suc n} h = Setoid.refl S
+  split-off-term : {n : ℕ} (h : Fin (ℕ.suc n) → S₀)
+                 →   sumₛ (sequence (ℕ.suc n) h)
+                  ≈   h fzero * sumₛ (sequence n (h ∘₀ fsuc))
+  split-off-term {ℕ.zero}  _  =  refl
+  split-off-term {ℕ.suc _} _  =  refl
 
-  open import Function using (_∘_)
-  open import Data.Fin using () renaming (suc to fsuc ; zero to fzero)
-
-  sumₛ-cong-like : (k : ℕ) {f g : Fin k → S₀} (ext : {i : Fin k} → f i ≈ g i) → sumₛ (sequence k f) ≈ sumₛ (sequence k g)
+  sumₛ-cong-like : (k : ℕ) {f g : Fin k → S₀} (ext : {i : Fin k} → f i ≈ g i)
+                → sumₛ (sequence k f) ≈ sumₛ (sequence k g)
   sumₛ-cong-like ℕ.zero {f} {g} ext = refl
   sumₛ-cong-like (ℕ.suc k) {f} {g} ext = begin⟨ S ⟩
        sumₛ (sequence (ℕ.suc k) f)
     ≈⟨ refl ⟩
-       f fzero * sumₛ (sequence k (f ∘ fsuc))
+       f fzero * sumₛ (sequence k (f ∘₀ fsuc))
     ≈⟨ ext {fzero} ⟨∙⟩ sumₛ-cong-like k ext ⟩
-       g fzero * sumₛ (sequence k (g ∘ fsuc))
+       g fzero * sumₛ (sequence k (g ∘₀ fsuc))
     ≈⟨ refl ⟩
        sumₛ (sequence (ℕ.suc k) g)
     ∎

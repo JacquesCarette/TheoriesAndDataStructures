@@ -70,12 +70,12 @@ open import Data.List  using ([]; [_]; _++_; _∷_)  renaming (map to mapL)
 open import Data.List.Properties using (map-++-commute; map-id; map-compose)
 import Data.List as List
 open import Data.Fin.Permutation using (Permutation) renaming (id to idp)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc) renaming (_+_ to _+ℕ_)
 import Data.Fin as Fin
 
 open import Data.Sum using ([_,_]′)
 
-open import DataProperties hiding (⟨_,_⟩ ; ⊎-cong)
+open import DataProperties hiding (⟨_,_⟩ ; ⊎-cong; _‼_)
 open import SetoidEquiv
 open import ParComp
 open import EqualityCombinators
@@ -87,21 +87,15 @@ open Plus using (+≃⊎)
 open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
 open CommMonoid using (eq-in ; isCommMonoid)
 
--- open import Data.List.Any
--- open import Function.Related hiding (_∼[_]_)
--- open import Function.Related.TypeIsomorphisms
--- module ×⊎ {k ℓ} = CommutativeSemiring (×⊎-CommutativeSemiring k ℓ)
 open import Relation.Binary.SetoidReasoning renaming (_∎ to _■₀)
 
-open import Function.Inverse using (_↔_)
+open import Function.Inverse using (_↔_; module Inverse)
 open import Data.List.Any.Properties hiding (map-id)
 open import Function using (_$_)
--- open import Function.Related hiding (_∼[_]_) ; open EquationalReasoning renaming (_∎ to _■) hiding (sym)
--- module ↔ = EquationalReasoning
--- open import Function.Inverse public using () renaming  (id to  ↔-refl)
 
 -- multiset type
-open import Structures.SequencesAsBags as Seq using (table ; table˘ ; BagSetoid) renaming (Seq to Bag)
+open import Structures.SequencesAsBags as Seq
+  using (table ; table˘ ; BagSetoid; len; sequence) renaming (Seq to Bag)
 
 bag-eq : {ℓ c : Level} (X : Setoid ℓ c) (f g : Bag (Setoid.Carrier X)) → Set (c ⊍ ℓ)
 bag-eq X = Setoid._≈_ (BagSetoid X)
@@ -409,32 +403,15 @@ module CMUtils {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
       sumₛ g
     ■₀
 
-  -- Since JC provided the definition of _⊕_, he may be able to make this postulate go through?
-  --
-  --
   -- The |sumₛ| operator distributes over addition.
-  postulate sumₛ-homo : {f g : Bag S₀} → sumₛ (f Seq.⊕ g) ≈ sumₛ f + sumₛ g -- c.f., fold-CM-over-++ below.
-{-
+  sumₛ-homo : {f g : Bag S₀} → sumₛ (f Seq.⊕ g) ≈ sumₛ f + sumₛ g
   sumₛ-homo {f} {g} = let open Setoid S in begin⟨ S ⟩
       sumₛ (f Seq.⊕ g)
-    ≈⟨ {!!} ⟩
-      sumₛ (sequence (Seq.len f + Seq.len g) λ i → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ i))
+    ≈⟨ ≈.refl ⟩
+      sumₛ (sequence (len f +ℕ len g) λ i → [ f Seq.‼_ , g Seq.‼_ ]′ (proj₁ +≃⊎ i))
     ≈⟨ {!!} ⟩
       sumₛ f + sumₛ g
     ■₀
--}
-
-{- older attempt:
-  sumₛ-homo {f} {g} = let open Setoid S in begin⟨ S ⟩
-      sumₛ (f Seq.⊕ g)
-    ≈⟨ {!_‼_!} ⟩
-      sumₜ {!!}
-    ≈⟨ sym {!∑-+-hom (Seq.len (f Seq.⊕ g)) !} ⟩
-      sumₜ (table f) + sumₜ (table g)
-    ≈⟨ refl ⟩
-      sumₛ f + sumₛ g
-    ■₀
--}
 
 module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) where
   open Setoid
@@ -490,7 +467,7 @@ ListCMHom {ℓ} {X} {Y} = record
       ; cong  = λ i≈ₛj → Seq._≈ₛ_.shuffle i≈ₛj Seq.⟨π⟩ (λ a → Π.cong f (Seq._≈ₛ_.eq i≈ₛj a))
       }
     ; pres-e   =   Function.Inverse.id Seq.⟨π⟩ λ ()
-    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map f (proj₁ +≃⊎ i)
+    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map {g = Bag._‼_ xs} f (proj₁ +≃⊎ i) -- apply-map {g = {!!}} {{!!}} f (proj₁ +≃⊎ i)
     }
   ; singleton-commute   =   λ F → Seq.≈ₛ-refl Y
   ; fold-commute        =   λ {CMX} {CMY} F {s} → it {CMX = CMX} {CMY} F {Seq.len s}
@@ -521,11 +498,13 @@ module BuildProperties where
     ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → Seq.≈ₛ-refl Z
     ; resp-≈                =   λ {X} {Y} {f} {g} F≈G {xs} → idp Seq.⟨π⟩ λ i → F≈G {xs Bag.‼ i}
     ; fold-lift-singleton   =   λ {X} {xs} →
-      fold-perm {X} (Bag.len xs) (Bag._‼_ xs) Seq.⟨π⟩ λ i → ?
+      fold-perm {X} (Bag.len xs) (Bag._‼_ xs) Seq.⟨π⟩ λ i → fold-perm-adequate {X} (Bag.len xs) (Bag._‼_ xs) i
     }
     where
     open Multiset using (𝒞; commMonoid; ctrSetoid; fold; singleton)
     open MultisetHom using (lift)
+    open import Data.Table using (permute)
+    import Equiv
     module _ {X : Setoid ℓ ℓ} where
       LMS = ListMS {ℓ} {ℓ} X
       L = ListMS {ℓ} {ℓ} (ctrSetoid LMS X)
@@ -538,7 +517,31 @@ module BuildProperties where
       fold-perm : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
         Permutation n (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
-      fold-perm n bg = ≡.subst (λ i → Permutation n i) (same-size n bg) idp
+      fold-perm zero bg = idp
+      fold-perm (suc n) bg = record
+        { to = record
+          { _⟨$⟩_ = λ { Fin.zero → Fin.zero ; (Fin.suc x) → Fin.suc (Function.Inverse.Inverse.to (fold-perm n (λ i → bg (Fin.suc i))) ⟨$⟩₀ x)}
+          ; cong = λ { ≡.refl → ≡.refl} }
+        ; from = record
+          { _⟨$⟩_ = λ { Fin.zero → Fin.zero ; (Fin.suc x) → Fin.suc (Function.Inverse.Inverse.from (fold-perm n (λ i → bg (Fin.suc i))) ⟨$⟩₀ x)}
+          ; cong = λ { ≡.refl → ≡.refl} }
+        ; inverse-of = record
+          { left-inverse-of = λ { Fin.zero → ≡.refl ; (Fin.suc x) → ≡.cong Fin.suc (Function.Inverse.Inverse.left-inverse-of (fold-perm n _) x)}
+          ; right-inverse-of = λ { Fin.zero → ≡.refl ; (Fin.suc x) → ≡.cong Fin.suc (Function.Inverse.Inverse.right-inverse-of (fold-perm n _) x)} }
+        }
+
+      fold-perm-id : (n : ℕ) (bg : Fin.Fin n → Carrier X) (i : Fin.Fin n) → Fin.toℕ (Inverse.to (fold-perm n bg) ⟨$⟩₀ i) ≡ Fin.toℕ i
+      fold-perm-id zero bg ()
+      fold-perm-id (suc n) bg Fin.zero = ≡.refl
+      fold-perm-id (suc n) bg (Fin.suc i) = ≡.cong suc (fold-perm-id n _ i)
+
+      fold-perm-adequate : (n : ℕ) (bg : Fin.Fin n → Carrier X) (i : Fin.Fin n) →
+        let xs = Bag.sequence n bg in
+        lookup (table xs) i ≈⌊ X ⌋
+          lookup (permute (fold-perm n bg) (table (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))) i
+      fold-perm-adequate zero bg ()
+      fold-perm-adequate (suc n) bg Fin.zero = Setoid.refl X
+      fold-perm-adequate (suc n) bg (Fin.suc i) = fold-perm-adequate n (bg Function.∘ Fin.suc) i
 \end{code}
 
 Last but not least, build the left adjoint:

@@ -138,9 +138,12 @@ module Plus where
            (sym (inj₂-≡ (raise m y) (≤-pred (≰⇒> ¬p)))))
 
    -- the main equivalence
-  abstract
-    fwd-iso : {m n : ℕ} → (Fin m ⊎ Fin n) ≃ Fin (m + n)
-    fwd-iso {m} {n} = fwd , qinv bwd (fwd∘bwd~id {m}) (bwd∘fwd~id {m})
+
+  fwd-iso : {m n : ℕ} → (Fin m ⊎ Fin n) ≃ Fin (m + n)
+  fwd-iso {m} {n} = fwd , qinv bwd (fwd∘bwd~id {m}) (bwd∘fwd~id {m})
+
+  reveal-fwd-iso : {m n : ℕ} → fwd-iso {m} {n} ≡ (fwd , qinv bwd (fwd∘bwd~id {m}) (bwd∘fwd~id))
+  reveal-fwd-iso = refl
 
   -- aliases for the above which are more convenient
   ⊎≃+ : {m n : ℕ} → (Fin m ⊎ Fin n) ≃ Fin (m + n)

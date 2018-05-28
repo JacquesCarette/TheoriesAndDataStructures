@@ -23,7 +23,7 @@ open import Relation.Binary.SetoidReasoning
 open import Function.Equality using (module Π)
 import Function.Inverse as Inv using (module Inverse)
 open import Function.Inverse using (_↔_)
-open import Function using () renaming (id to id₀)
+open import Function using () renaming (id to id₀; _∘_ to _∘₀_)
 open import Algebra   using (CommutativeMonoid)
 
 open import FinEquivPlusTimes using (module Plus; F0≃⊥)
@@ -243,7 +243,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     { shuffle = fin≃⇒Perm (assocr+ {len f} {len g} {len h})
     ; eq      = λ i → begin⟨ S ⟩
       lookup (table ((f ⊕ g) ⊕ h)) i                                                             ≡⟨ P.refl ⟩
-      [ (λ j → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ j)) , h ‼_ ]′ (proj₁ +≃⊎ i)                            ≡⟨ P.sym {!!} ⟩
+      [ (λ j → [ f ‼_ , g ‼_ ]′ (proj₁ +≃⊎ j)) , h ‼_ ]′ (proj₁ +≃⊎ i)                            ≡⟨ P.sym (absorb₂ _) ⟩
       [ [ f ‼_ , g ‼_ ]′ , h ‼_ ]′ (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))                                   ≡⟨ P.sym (reassocl (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i))) ⟩
       [ f ‼_ , [ g ‼_ , h ‼_ ]′ ]′ (gg assocl₊equiv (gg (⊎≃+ ⊎≃ id≃) (gg ⊎≃+ i)))                 ≡⟨ P.sym (absorb₁ _) ⟩
       [ f ‼_ , (λ j → [ g ‼_ , h ‼_ ]′ (proj₁ +≃⊎ j)) ]′
@@ -278,11 +278,18 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       absorb₁ {f = f} {g} {h} (inj₂ (inj₂ y)) = P.trans
         (cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₂ y)))
         (P.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₂ y)))
+
       reassocl : {m n o : ℕ} {D : Set ℓ} {a : Fin m → D} {b : Fin n → D} {c : Fin o → D} (i : (Fin m ⊎ Fin n) ⊎ Fin o) →
         [ a , [ b , c ]′ ]′ (gg assocl₊equiv i) P.≡ [ [ a , b ]′ , c ]′ i
       reassocl (inj₁ (inj₁ x)) = P.refl
       reassocl (inj₁ (inj₂ y)) = P.refl
       reassocl (inj₂ y) = P.refl
+
+      absorb₂ : {m n o : ℕ} {D : Set ℓ} {f : Fin m → D} {g : Fin n → D} {h : Fin o → D} (i : Fin (m + n) ⊎ Fin o ) →
+                [ [ f , g ]′ , h ]′ (gg (⊎≃+ ⊎≃ id≃) i) P.≡
+                [ (λ j → [ f , g ]′ (proj₁ +≃⊎ j)) , h ]′ i
+      absorb₂ {f = f} {g} {h} (inj₁ x) = P.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₁ x))
+      absorb₂ {f = f} {g} {h} (inj₂ y) = P.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₂ y))
 
   merge-map : {ℓ ℓ′ : Level} {B : Set ℓ} → (z : Fin 0 ⊎ B) → TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) P.≡ [ (λ ()) , id₀ ]′ z
   merge-map (inj₁ ())
@@ -303,6 +310,16 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)                        ≡⟨ P.refl ⟩
     lookup (permute (fin≃⇒Perm unite+) (table x)) i ∎
 
+  map-map : {ℓ ℓ′ ℓ′′ : Level} {A C : Set ℓ} {B D : Set ℓ′} {E : Set ℓ′′} {c : A → B} {d : C → D} {a : B → E} {b : D → E}
+    (i : A ⊎ C) → [ a , b ]′ (Data.Sum.map c d i) P.≡ [ a ∘₀ c , b ∘₀ d ]′ i
+  map-map (inj₁ x) = P.refl
+  map-map (inj₂ y) = P.refl
+
+  switch-map : {ℓ ℓ′ : Level} {A B : Set ℓ} {a c : A → S₀} {b d : B → S₀} →
+    (∀ i → a i ≈₀ c i) → (∀ i → b i ≈₀ d i) → (∀ j → [ a , b ]′ j ≈₀ [ c , d ]′ j)
+  switch-map a≐c b≐d (inj₁ x) = a≐c x
+  switch-map a≐c b≐d (inj₂ y) = b≐d y
+
   commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
   commutativeMonoid = record
     { Carrier               =   Seq S₀
@@ -313,7 +330,23 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       { isSemigroup   =   record
         { isEquivalence = ≈ₛ-isEquivalence
         ; assoc = λ f g h → ⊕-assoc {f} {g} {h}
-        ; ∙-cong = λ x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩ λ i → {!!}
+        ; ∙-cong = λ {x} {y} {u} {v} x≈y u≈v → (fin≃⇒Perm (Perm⇒fin≃ (shuffle x≈y) PlusE.+F Perm⇒fin≃ (shuffle u≈v))) ⟨π⟩
+           λ i →
+           let x≃y = Perm⇒fin≃ (shuffle x≈y) in
+           let u≃v = Perm⇒fin≃ (shuffle u≈v) in
+           let j = proj₁ +≃⊎ i in
+           begin⟨ S ⟩
+           [ _‼_ x , _‼_ u ]′ j
+               ≈⟨ Setoid.sym S (switch-map {_} {ℓ} (λ j → Setoid.sym S (eq x≈y j)) (λ j → Setoid.sym S (eq u≈v j)) j) ⟩
+           [ y ‼_ ∘₀ (proj₁ x≃y) , v ‼_ ∘₀ (proj₁ u≃v) ]′ j
+              ≡⟨ P.sym (map-map (proj₁ +≃⊎ i)) ⟩
+           [ _‼_ y , _‼_ v ]′ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)
+               ≡⟨ P.sym (P.cong [ _‼_ y , _‼_ v ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j))) ⟩
+           [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)))
+               ≡⟨ P.sym (P.cong (λ x → [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ x))
+                       (P.trans (β₁ _)
+                       (P.cong (proj₁ ⊎≃+) (P.trans (β₁ i) (β⊎₁ _))))) ⟩
+           [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i)) ∎
       }
       ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ table-unite+ {ℓ} x
       ; comm          =   λ f g → ⊕-comm {f} {g}

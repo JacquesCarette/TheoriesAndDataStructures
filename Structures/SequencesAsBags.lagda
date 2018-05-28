@@ -6,7 +6,7 @@ aspect is that the tables involved are over a |Setoid|.
 
 %{{{ imports
 \begin{code}
-{-# OPTIONS --allow-unsolved-metas #-}
+-- {-# OPTIONS --allow-unsolved-metas #-}
 module Structures.SequencesAsBags where
 
 open import Level
@@ -304,13 +304,20 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   table-unite+ : {ℓ : Level} (x : Seq S₀) → Setoid._≈_ (setoid S (len (∅ ⊕ x))) (table (∅ ⊕ x)) (permute (fin≃⇒Perm unite+) (table x))
   table-unite+ {ℓ} x = λ i → begin⟨ S ⟩
-    lookup (table (∅ ⊕ x)) i                                             ≡⟨ P.refl ⟩
-    [ (λ () ) , x ‼_ ]′ (proj₁ +≃⊎ i)                                     ≡⟨ P.sym (lookup-map (proj₁ +≃⊎ i)) ⟩
-    x ‼ ([ (λ ()) , id₀ ]′ (proj₁ +≃⊎ i))                                 ≡⟨ P.sym (P.cong (x ‼_) (merge-map (proj₁ +≃⊎ i))) ⟩
-    x ‼ (TypeEquiv.unite₊ (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))  ≡⟨ P.sym (P.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r _ β⊎₁)) i)) ⟩
-    x ‼ (proj₁ (unite₊equiv ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i                       ≡⟨ P.refl ⟩
-    x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)                        ≡⟨ P.refl ⟩
-    lookup (permute (fin≃⇒Perm unite+) (table x)) i ∎
+       lookup (table (∅ ⊕ x)) i
+    ≡⟨ P.refl ⟩
+      [ (λ () ) , x ‼_ ]′ (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i)
+    ≡⟨ P.sym (lookup-map {x} (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i)) ⟩
+      x ‼ ([ (λ ()) , id₀ ]′ (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i))
+    ≡⟨ P.sym (P.cong (x ‼_) (merge-map {zero} {ℓ} {Fin (len x)} (proj₁ (+≃⊎ {len {A = S₀} ∅} {len x}) i))) ⟩
+      x ‼ (TypeEquiv.unite₊ {zero} {zero} (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))
+    ≡⟨ P.sym (P.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r inj₂ β⊎₁)) i)) ⟩
+      x ‼ (proj₁ (unite₊equiv {zero} {zero} ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i
+    ≡⟨ P.refl ⟩
+      x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)                        
+    ≡⟨ P.refl ⟩
+       lookup (permute (fin≃⇒Perm unite+) (table x)) i
+    ∎ where open import Level
 
   map-map : {ℓ ℓ′ ℓ′′ : Level} {A C : Set ℓ} {B D : Set ℓ′} {E : Set ℓ′′} {c : A → B} {d : C → D} {a : B → E} {b : D → E}
     (i : A ⊎ C) → [ a , b ]′ (Data.Sum.map c d i) P.≡ [ a ∘₀ c , b ∘₀ d ]′ i
@@ -321,7 +328,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     (∀ i → a i ≈₀ c i) → (∀ i → b i ≈₀ d i) → (∀ j → [ a , b ]′ j ≈₀ [ c , d ]′ j)
   switch-map a≐c b≐d (inj₁ x) = a≐c x
   switch-map a≐c b≐d (inj₂ y) = b≐d y
-
+  
   commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
   commutativeMonoid = record
     { Carrier               =   Seq S₀
@@ -336,19 +343,20 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
            λ i →
            let x≃y = Perm⇒fin≃ (shuffle x≈y) in
            let u≃v = Perm⇒fin≃ (shuffle u≈v) in
-           let j = proj₁ +≃⊎ i in
+           let j = proj₁ +≃⊎ i in           
            begin⟨ S ⟩
-           [ _‼_ x , _‼_ u ]′ j
-               ≈⟨ Setoid.sym S (switch-map {_} {ℓ} (λ j → Setoid.sym S (eq x≈y j)) (λ j → Setoid.sym S (eq u≈v j)) j) ⟩
-           [ y ‼_ ∘₀ (proj₁ x≃y) , v ‼_ ∘₀ (proj₁ u≃v) ]′ j
-              ≡⟨ P.sym (map-map (proj₁ +≃⊎ i)) ⟩
-           [ _‼_ y , _‼_ v ]′ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)
-               ≡⟨ P.sym (P.cong [ _‼_ y , _‼_ v ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j))) ⟩
-           [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)))
-               ≡⟨ P.sym (P.cong (λ x → [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ x))
+              [ _‼_ x , _‼_ u ]′ j
+           ≈⟨ Setoid.sym S (switch-map {_} {ℓ} (λ j → Setoid.sym S (eq x≈y j)) (λ j → Setoid.sym S (eq u≈v j)) j) ⟩
+              [ y ‼_ ∘₀ (proj₁ x≃y) , v ‼_ ∘₀ (proj₁ u≃v) ]′ j
+           ≡⟨ P.sym (map-map (proj₁ (+≃⊎ {len x} {len u}) i)) ⟩
+              [ _‼_ y , _‼_ v ]′ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)
+           ≡⟨ P.sym (P.cong [ _‼_ y , _‼_ v ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j))) ⟩
+              [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ (Data.Sum.map (proj₁ x≃y) (proj₁ u≃v) j)))
+           ≡⟨ P.sym (P.cong (λ x → [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ x))
                        (P.trans (β₁ _)
                        (P.cong (proj₁ ⊎≃+) (P.trans (β₁ i) (β⊎₁ _))))) ⟩
-           [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i)) ∎
+              [ _‼_ y , _‼_ v ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i))
+           ∎
       }
       ; identityˡ     =   λ x → (fin≃⇒Perm unite+) ⟨π⟩ table-unite+ {ℓ} x
       ; comm          =   λ f g → ⊕-comm {f} {g}
@@ -366,12 +374,55 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
   open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
   open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
 
+  sumₛ = λ s → sumₜ (table s)
+
   sumₜ-homo : (m : ℕ) {n : ℕ} {f : Fin m → S₀} {g : Fin n → S₀} →
-    sumₜ (table (sequence m f ⊕ sequence n g)) ≈ sumₜ (table (sequence m f)) * sumₜ (table (sequence n g))
+    sumₛ (sequence m f ⊕ sequence n g) ≈ sumₛ (sequence m f) * sumₛ (sequence n g)
   sumₜ-homo ℕ.zero {_} {_} {g} = ≈.sym (left-unit (sumₜ (tabulate g)))
   sumₜ-homo (ℕ.suc m) {n} {f} {g} = begin⟨ S ⟩
     sumₜ (table (sequence (ℕ.suc m) f ⊕ sequence n g))              ≈⟨ {!!} ⟩
     sumₜ (table (sequence (ℕ.suc m) f)) * sumₜ (table (sequence n g)) ∎
+
+  split-off-term : {n : ℕ} (h : Fin (ℕ.suc n) → S₀) → sumₛ (sequence (ℕ.suc n) h) ≈ h Fin.zero * sumₛ (sequence n λ i → h (Fin.suc i))
+  split-off-term {ℕ.zero} h = Setoid.refl S
+  split-off-term {ℕ.suc n} h = Setoid.refl S
+  
+  ⊕-correctness : {n : ℕ} (f g : Fin n → S₀) → sumₛ (sequence n f ⊕ sequence n g) ≈ sumₛ (sequence n λ i → f i * g i)
+  ⊕-correctness {ℕ.zero} f g = Setoid.refl S
+  ⊕-correctness {ℕ.suc n} f g = {!!}
+
+  -- MA: This is essentially a fold-fusion law: Fusing two folds, pointwise along their functions, into a single one.
+  sumₜ-homo-homogenous : (n : ℕ) {f g : Fin n → S₀} →
+    sumₛ (sequence n f) * sumₛ (sequence n g) ≈ sumₛ (sequence n f ⊕ sequence n g)
+  sumₜ-homo-homogenous ℕ.zero {f} {g} = left-unit (sumₜ (tabulate g))
+  sumₜ-homo-homogenous (ℕ.suc n) {f} {g} = 
+    let open Setoid S
+        sumf  = sumₜ (table (sequence n (λ i → f (Fin.suc i))))
+        f0    = f Fin.zero
+        sumg  = sumₜ (table (sequence n (λ i → g (Fin.suc i))))
+        g0    = g Fin.zero
+        sumfg = sumₛ (sequence n (λ i → f (Fin.suc i) * g (Fin.suc i)))
+    in begin⟨ S ⟩
+       (sumₜ (table (sequence (ℕ.suc n) f))) * (sumₜ (table (sequence (ℕ.suc n) g)))
+    ≈⟨ split-off-term f ⟨∙⟩ split-off-term g ⟩
+       (f0 * sumf) * (g0 * sumg)
+    ≈⟨ assoc _ _ _ ⟩
+       f0 * (sumf * (g0 * sumg))
+    ≈⟨ refl ⟨∙⟩ (refl ⟨∙⟩ comm _ _) ⟩
+       f0 * (sumf * (sumg * g0))
+    ≈⟨ refl ⟨∙⟩ sym (assoc _ _ _) ⟩
+       f0 * ((sumf * sumg) * g0)
+    ≈⟨ refl ⟨∙⟩ ({!sumₜ-homo-homogenous n!} ⟨∙⟩ refl) ⟩
+       f0 * (sumfg * g0)
+    ≈⟨ refl ⟨∙⟩ comm _ _ ⟩
+       f0 * (g0 * sumfg)
+    ≈⟨ sym (assoc _ _ _) ⟩
+       (f0 * g0) * sumfg
+    ≈⟨ sym (split-off-term (λ i → f i * g i))  ⟩
+       sumₛ (sequence (ℕ.suc n) λ i → f i * g i)
+    ≈⟨ sym (⊕-correctness f g) ⟩
+       sumₛ (sequence (ℕ.suc n) f ⊕ sequence (ℕ.suc n) g)
+    ∎
 \end{code}
 %}}}
 

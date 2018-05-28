@@ -467,7 +467,7 @@ ListCMHom {ℓ} {X} {Y} = record
       ; cong  = λ i≈ₛj → Seq._≈ₛ_.shuffle i≈ₛj Seq.⟨π⟩ (λ a → Π.cong f (Seq._≈ₛ_.eq i≈ₛj a))
       }
     ; pres-e   =   Function.Inverse.id Seq.⟨π⟩ λ ()
-    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map {g = Bag._‼_ xs} f (proj₁ +≃⊎ i) -- apply-map {g = {!!}} {{!!}} f (proj₁ +≃⊎ i)
+    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map {g = Bag._‼_ xs} f (proj₁ +≃⊎ i)
     }
   ; singleton-commute   =   λ F → Seq.≈ₛ-refl Y
   ; fold-commute        =   λ {CMX} {CMY} F {s} → it {CMX = CMX} {CMY} F {Seq.len s}

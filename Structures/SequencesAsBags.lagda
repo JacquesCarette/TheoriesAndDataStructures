@@ -34,6 +34,8 @@ open import EquivEquiv using (_≋_)
 open import Equiv using (_●_; β₁; _⊎≃_; id≃; _⟨≃≃⟩_; ≐-trans; ≐-sym;
   cong∘l; cong∘r; β⊎₁)
 
+open import Structures.CommMonoid renaming (Hom to CMArrow)
+
 infixr 10 _⊙_
 
 private
@@ -354,6 +356,23 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     }
 \end{code}
 
+A property useful for Functors related to commutative monoids. Phrased in terms of
+tables (it will be used for Bags later). First argument explict as we do induction on it.
+\begin{code}
+module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
+  open Setoid S using (_≈_) renaming (Carrier to S₀)
+  open CommMonoid CMS
+  open import Data.Table.Base
+  open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
+  open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
+
+  sumₜ-homo : (m : ℕ) {n : ℕ} {f : Fin m → S₀} {g : Fin n → S₀} →
+    sumₜ (table (sequence m f ⊕ sequence n g)) ≈ sumₜ (table (sequence m f)) * sumₜ (table (sequence n g))
+  sumₜ-homo ℕ.zero {_} {_} {g} = ≈.sym (left-unit (sumₜ (tabulate g)))
+  sumₜ-homo (ℕ.suc m) {n} {f} {g} = begin⟨ S ⟩
+    sumₜ (table (sequence (ℕ.suc m) f ⊕ sequence n g))              ≈⟨ {!!} ⟩
+    sumₜ (table (sequence (ℕ.suc m) f)) * sumₜ (table (sequence n g)) ∎
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

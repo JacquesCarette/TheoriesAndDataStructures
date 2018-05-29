@@ -8,7 +8,7 @@ aspect is that the tables involved are over a |Setoid|.
 \begin{code}
 module Structures.SequencesAsBags where
 
-open import Level
+open import Level using (Level)
 open import Relation.Binary using (Setoid; IsEquivalence)
 open import Data.Table using (Table; permute; rearrange; lookup)
 open import Data.Nat using (ℕ; _+_)
@@ -107,7 +107,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   open Setoid S using () renaming (Carrier to S₀)
 
   infixr 3 _≈ₛ_
-  record _≈ₛ_ (T₁ T₂ : Seq S₀) : Set (ℓ ⊔ c) where
+  record _≈ₛ_ (T₁ T₂ : Seq S₀) : Set c where
     constructor _⟨π⟩_
     open Setoid (setoid S (len T₁)) -- Table setoid on vectors of length |len T₁|.
     field
@@ -176,7 +176,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   ≈ₛ-isEquivalence : IsEquivalence _≈ₛ_
   ≈ₛ-isEquivalence = record { refl = ≈ₛ-refl ; sym = ≈ₛ-sym ; trans = ≈ₛ-trans }
 
-  BagSetoid : Setoid ℓ (c ⊔ ℓ)
+  BagSetoid : Setoid ℓ c
   BagSetoid = record
     { Carrier         =   Seq S₀
     ; _≈_             =   _≈ₛ_
@@ -224,7 +224,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
   [_,_]′∘swap (inj₁ x) = ≡.refl
   [_,_]′∘swap (inj₂ y) = ≡.refl
 
-  
+
   expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) ≡ swap₊ (proj₁ +≃⊎ i)
   expand-swap+ i =  ≡.cong (proj₁ +≃⊎) (β₁ i)
              ⟨≡≡⟩ ((Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i))
@@ -278,10 +278,10 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
                 [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ (gg (id≃ ⊎≃ +≃⊎) i) ≡
                 [ f , [ g , h ]′ ]′ i
       absorb₁ {f = f} {g} {h} (inj₁ x) = cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₁ x)
-      absorb₁ {f = f} {g} {h} (inj₂ (inj₁ x)) = 
+      absorb₁ {f = f} {g} {h} (inj₂ (inj₁ x)) =
               cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₁ x))
         ⟨≡≡⟩ ≡.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₁ x))
-      absorb₁ {f = f} {g} {h} (inj₂ (inj₂ y)) = 
+      absorb₁ {f = f} {g} {h} (inj₂ (inj₂ y)) =
         cong∘l [ f , (λ j → [ g , h ]′ (proj₁ +≃⊎ j)) ]′ β⊎₂ (inj₂ (inj₂ y))
         ⟨≡≡⟩ ≡.cong [ g , h ]′ (isqinv.α (proj₂ +≃⊎) (inj₂ y))
 
@@ -321,7 +321,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ≡⟨ ≡.sym (≡.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r inj₂ β⊎₁)) i)) ⟩
       x ‼ (proj₁ (unite₊equiv {zero} {zero} ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i
     ≡⟨ ≡.refl ⟩
-      x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)       
+      x ‼ (Inv.Inverse.to (fin≃⇒Perm unite+) Π.⟨$⟩ i)
     ≡⟨ ≡.refl ⟩
        lookup (permute (fin≃⇒Perm unite+) (table x)) i
     ∎ where open import Level
@@ -340,8 +340,8 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
              → ((j : A ⊎ B) → [ a , b ]′ j ≈₀ [ c , d ]′ j)
   switch-map a≐c b≐d (inj₁ x) = a≐c x
   switch-map a≐c b≐d (inj₂ y) = b≐d y
-  
-  commutativeMonoid : CommutativeMonoid ℓ (ℓ ⊔ c)
+
+  commutativeMonoid : CommutativeMonoid ℓ c
   commutativeMonoid = record
     { Carrier               =   Seq S₀
     ; _≈_                   =   _≈ₛ_
@@ -416,7 +416,7 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
 
   suc-⊕-shunting : {m n : ℕ} → {f : Fin (ℕ.suc (ℕ.suc m)) → S₀} {g : Fin n → S₀}
                  → {i : Fin (ℕ.suc m + n)}
-                 → [ f , g ]′ (proj₁ +≃⊎ (Fin.suc i)) ≈ [ (λ j → f (Fin.suc j)) , g ]′ (proj₁ +≃⊎ i) 
+                 → [ f , g ]′ (proj₁ +≃⊎ (Fin.suc i)) ≈ [ (λ j → f (Fin.suc j)) , g ]′ (proj₁ +≃⊎ i)
   suc-⊕-shunting {i = fzero} = refl
   suc-⊕-shunting {m} {i = fsuc i} with (ℕ.suc (ℕ.suc (Data.Fin.toℕ i)) ≤? ℕ.suc m) | ℕ.suc (Data.Fin.toℕ i) ≤? m
   ...| yes p | yes p₁ = refl
@@ -431,7 +431,7 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
       sumₛ (sequence (ℕ.suc (ℕ.suc m)) f ⊕ sequence n g)
     ≈⟨ refl ⟩
       f Fin.zero * sumₛ (sequence (ℕ.suc m + n) L)
-    ≈⟨ refl ⟨∙⟩ sumₛ-cong-like (ℕ.suc m + n) {L} {R} (suc-⊕-shunting {m} {n} {f} {g}) ⟩
+    ≈⟨ refl ⟨∙⟩ sumₛ-cong-like (ℕ.suc m + n) {L} {R} (λ {i} → suc-⊕-shunting {m} {n} {f} {g} {i}) ⟩
       f Fin.zero * sumₛ (sequence (ℕ.suc m + n) R)
     ≈⟨ refl ⟩
       f Fin.zero * sumₛ (sequence (ℕ.suc m) (λ i → f (Fin.suc i)) ⊕ sequence n g)
@@ -463,10 +463,6 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
     ≈⟨ sym (split-off-term f) ⟨∙⟩ refl ⟩
       sumₛ (sequence (ℕ.suc m) f) * sumg
     ∎
-  
-  -- ⊕-correctness : {n : ℕ} (f g : Fin n → S₀) → sumₛ (sequence n f ⊕ sequence n g) ≈ sumₛ (sequence n λ i → f i * g i)
-  -- ⊕-correctness {ℕ.zero} f g = Setoid.refl S
-  -- ⊕-correctness {ℕ.suc n} f g = {!!}
 \end{code}
 %}}}
 

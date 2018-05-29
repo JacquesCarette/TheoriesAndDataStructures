@@ -97,7 +97,7 @@ open import Function using (_$_)
 open import Structures.SequencesAsBags as Seq
   using (table ; table˘ ; BagSetoid; len; sequence) renaming (Seq to Bag)
 
-bag-eq : {ℓ c : Level} (X : Setoid ℓ c) (f g : Bag (Setoid.Carrier X)) → Set (c ⊍ ℓ)
+bag-eq : {ℓ c : Level} (X : Setoid ℓ c) (f g : Bag (Setoid.Carrier X)) → Set c
 bag-eq X = Setoid._≈_ (BagSetoid X)
 
 infix -666 bag-eq
@@ -115,8 +115,8 @@ equivalence relation.
 record IsCtrEquivalence {ℓ : Level} (o : Level) (Ctr : Set ℓ → Set ℓ)
   : Set (lsuc ℓ ⊍ lsuc o) where
   field
-    equiv        : (X : Setoid ℓ (o ⊍ ℓ)) → Rel (Ctr (Setoid.Carrier X)) (o ⊍ ℓ)
-    equivIsEquiv : (X : Setoid ℓ (o ⊍ ℓ)) → IsEquivalence (equiv X)
+    equiv        : (X : Setoid ℓ o) → Rel (Ctr (Setoid.Carrier X)) o
+    equivIsEquiv : (X : Setoid ℓ o) → IsEquivalence (equiv X)
 
   -- handy dandy syntactic sugar for |k|ontainer equality.
   infix -666 equiv
@@ -130,7 +130,7 @@ We have a type transformer |ctr| that furnishes setoids with an equivalence rela
 on the category of setoids. Indeed:}
 
 \begin{code}
-  ctrSetoid : (X : Setoid ℓ (o ⊍ ℓ)) → Setoid ℓ (ℓ ⊍ o)
+  ctrSetoid : (X : Setoid ℓ o) → Setoid ℓ o
   ctrSetoid X = record
     { Carrier        =  Ctr (Setoid.Carrier X)
     ; _≈_            =  equiv X
@@ -160,11 +160,11 @@ record CommutativeContainer (ℓ c : Level) : Set (lsuc ℓ ⊍ lsuc c) where
     isCtrEquivalence     :  IsCtrEquivalence c 𝒞
     ∅                    :  {X : Set ℓ} → 𝒞 X
     _⊕_                  :  {X : Set ℓ} → 𝒞 X → 𝒞 X → 𝒞 X
-    isCommutativeMonoid  :  {X : Setoid ℓ (c ⊍ ℓ)} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
+    isCommutativeMonoid  :  {X : Setoid ℓ c} → IsCommutativeMonoid (equiv isCtrEquivalence X) _⊕_ ∅
 
   open IsCtrEquivalence isCtrEquivalence             public
 
-  commMonoid : (X : Setoid ℓ (c ⊍ ℓ)) → CommMonoid (ctrSetoid X)
+  commMonoid : (X : Setoid ℓ c) → CommMonoid (ctrSetoid X)
   commMonoid X = record
     { e              =   ∅
     ; _*_            =   _⊕_
@@ -207,7 +207,7 @@ quite misleading.
 \end{itemize}
 
 \begin{code}
-record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍ lsuc c) where
+record Multiset {ℓ c : Level} (X : Setoid ℓ c) : Set (lsuc ℓ ⊍ lsuc c) where
   field
     commutativeContainer : CommutativeContainer ℓ c
 
@@ -216,7 +216,7 @@ record Multiset {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) : Set (lsuc ℓ ⊍
 
   field
     singleton       :  X ⟶ ctrSetoid X             -- A setoid map
-    fold            :  {Y : Setoid ℓ (c ⊍ ℓ)} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
+    fold            :  {Y : Setoid ℓ c} (CMY : CommMonoid Y) → CMArrow (commMonoid Y) CMY
     fold-singleton  :  {CM : CommMonoid X} {x : X₀} → x ≈ fold CM ⟨$⟩ (singleton ⟨$⟩₀ x)
 
   -- Let's introduce two handy combinators: |𝓜| for referring to the underlying commutative monoid
@@ -255,7 +255,7 @@ In the classical contexts of sets and set-functions, the constraints take the fo
 mimics the behaviour of the morphism, or “map”, portion of a functor.
 
 \begin{code}
-record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (X* : Multiset X) (Y* : Multiset Y)
+record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ c} (X* : Multiset X) (Y* : Multiset Y)
   : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset {ℓ} {c}
   X₀ = Setoid.Carrier X
@@ -264,7 +264,7 @@ record MultisetHom {ℓ c : Level} {X Y : Setoid ℓ (c ⊍ ℓ)} (X* : Multiset
   -- Let's introduce two handy combinators: |𝓜| for referring to the underlying commutative monoid
   -- structure of a |Multiset|.
   private
-    𝓜 = λ {Z : Setoid ℓ (c ⊍ ℓ)} (CMZ : Multiset Z) → commMonoid CMZ Z
+    𝓜 = λ {Z : Setoid ℓ c} (CMZ : Multiset Z) → commMonoid CMZ Z
 
   field
     lift : (X ⟶ Y) → CMArrow (𝓜 X*) (𝓜 Y*)
@@ -297,15 +297,15 @@ we can then phrase what extra properties must hold.  Because these properties
 hold at ``different types'' than the ones for the underlying ones, these
 cannot go into the above.
 \begin{code}
-record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ (c ⊍ ℓ)) → Multiset X)
-    (MSH : {X Y : Setoid ℓ (c ⊍ ℓ)} → MultisetHom {ℓ} {c} {X} {Y} (MS X) (MS Y))
+record FunctorialMSH {ℓ c : Level} (MS : (X : Setoid ℓ c) → Multiset X)
+    (MSH : {X Y : Setoid ℓ c} → MultisetHom {ℓ} {c} {X} {Y} (MS X) (MS Y))
     : Set (lsuc ℓ ⊍ lsuc c) where
   open Multiset
   open MultisetHom
   open Setoid   using (Carrier)
   open IsCtrEquivalence hiding (ctrSetoid)
   private
-    Obj = Setoid ℓ (c ⊍ ℓ)
+    Obj = Setoid ℓ c
     𝒞ₘ = λ X → 𝒞 (MS X) (Carrier X)
     𝓜 = λ X → commMonoid (MS X) X
 
@@ -341,16 +341,16 @@ build a Free Functor which is left adjoint to the forgetful functor.
 
 \begin{code}
 module BuildLeftAdjoint
-  (MS   : {ℓ c : Level} (X : Setoid ℓ (ℓ ⊍ c)) → Multiset X)
-  (MSH  : {ℓ c : Level} {X Y : Setoid ℓ (ℓ ⊍ c)} → MultisetHom {ℓ} {c} (MS X) (MS {c = c} Y))
+  (MS   : {ℓ c : Level} (X : Setoid ℓ c) → Multiset X)
+  (MSH  : {ℓ c : Level} {X Y : Setoid ℓ c} → MultisetHom {ℓ} {c} (MS X) (MS {c = c} Y))
   (Func : {ℓ c : Level} → FunctorialMSH {ℓ} {c} MS MSH )
   where
 
-  module _ {ℓ c} {X : Setoid ℓ (ℓ ⊍ c)} where open Multiset {ℓ} {c} (MS X) public
-  module _ {ℓ c} {X Y : Setoid ℓ (ℓ ⊍ c)} where open MultisetHom (MSH {ℓ} {c} {X} {Y}) public
+  module _ {ℓ c} {X : Setoid ℓ c} where open Multiset {ℓ} {c} (MS X) public
+  module _ {ℓ c} {X Y : Setoid ℓ c} where open MultisetHom (MSH {ℓ} {c} {X} {Y}) public
   module _ {ℓ c} where open FunctorialMSH {ℓ} {c} Func public
 
-  Free : (ℓ c : Level) → Functor (Setoids ℓ (ℓ ⊍ c)) (CommMonoidCat ℓ (ℓ ⊍ c))
+  Free : (ℓ c : Level) → Functor (Setoids ℓ c) (CommMonoidCat ℓ c)
   Free ℓ c = record
     { F₀             =   λ S → ctrSetoid {ℓ} {c} S , commMonoid S
     ; F₁             =   λ F → record { CMArrow (lift F) }
@@ -359,7 +359,7 @@ module BuildLeftAdjoint
     ; F-resp-≡      =   resp-≈
     }
 
-  LeftAdjoint : {ℓ c : Level} → Adjunction (Free ℓ c) (Forget ℓ (ℓ ⊍ c))
+  LeftAdjoint : {ℓ c : Level} → Adjunction (Free ℓ c) (Forget ℓ c)
   LeftAdjoint = record
     { unit = record
       { η = λ _ → singleton
@@ -405,81 +405,55 @@ module CMUtils {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
 
   -- The |sumₛ| operator distributes over addition.
   sumₛ-homo : {f g : Bag S₀} → sumₛ (f Seq.⊕ g) ≈ sumₛ f + sumₛ g
-  sumₛ-homo {f} {g} = let open Setoid S in begin⟨ S ⟩
-      sumₛ (f Seq.⊕ g)
-    ≈⟨ ≈.refl ⟩
-      sumₛ (sequence (len f +ℕ len g) λ i → [ f Seq.‼_ , g Seq.‼_ ]′ (proj₁ +≃⊎ i))
-    ≈⟨ {!!} ⟩
-      sumₛ f + sumₛ g
-    ■₀
+  sumₛ-homo {f} = Seq.sumₜ-homo CMS (len f)
 
-module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ (c ⊍ ℓ)) where
+module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ c) where
   open Setoid
 
-  ListMS : Multiset {ℓ} {c ⊍ ℓ} X
+  ListMS : Multiset {ℓ} {c} X
   ListMS = record
-    { commutativeContainer   =   Bag-CommutativeContainer ℓ (c ⊍ ℓ)
+    { commutativeContainer   =   Bag-CommutativeContainer ℓ c
     ; singleton              =   record { _⟨$⟩_ = Seq.singleton X ; cong = Seq.singleton-cong X }
     ; fold  =   λ {Y} CMY → let open CMUtils CMY in record
       { mor      =   record { _⟨$⟩_ = sumₛ ; cong = sumₛ-cong }
       ; pres-e   =   Setoid.refl Y
-      ; pres-*   =   λ {f} {g} → sumₛ-homo {f} {g} -- fold-CM-over-++ CMY
+      ; pres-*   =   λ {f} {g} → sumₛ-homo {f} {g}
       }
     ; fold-singleton         =   λ {CMX} {x} → Setoid.sym X (CommMonoid.right-unit CMX x)
     }
 \end{code}
-\begin{spec}
-    where
-
-      open import Data.Table.Base
-
-      open IsCommutativeMonoid using (left-unit ; right-unit ; assoc) renaming (_⟨∙⟩_ to cong)
-
-      fold-CM-over-++ : {Z : Setoid ℓ (ℓ ⊍ c)} (cm : CommMonoid Z) {s t : Bag (Carrier Z)}
-                      →  let open CommMonoid cm ; F = λ f → foldr _*_ e (table f) in
-                          F (s Seq.⊕ t) ≈⌊ Z ⌋ (F s * F t)
-      fold-CM-over-++ {Z} cm {s} {t} = {!!}
-{-
-      fold-CM-over-++ {Z} (MkCommMon e _*_ isCommMon) {[]} {t} = sym Z (left-unit isCommMon _)
-      fold-CM-over-++ {Z} CMZ@(MkCommMon e _*_ isCommMon) {x ∷ s} {t} = begin⟨ Z ⟩
-        let F = List.foldr _*_ e in
-        x * F (s ++ t)   ≈⟨ cong isCommMon (refl Z) (fold-CM-over-++ CMZ ) ⟩
-        x * (F s * F t)  ≈⟨ sym Z (assoc isCommMon _ _ _)                  ⟩
-        (x * F s) * F t  ■₀
--}
-\end{spec}
 
 \begin{code}
 open ImplementationViaList
 
 open import Data.Table.Base
 
-apply-map : {ℓ ℓ′ : Level} {X Y : Setoid ℓ ℓ} {Z W : Set ℓ′} {g : Z → Carrier X} {h : W → Carrier X} →
+apply-map : {ℓ ℓ′ c : Level} {X Y : Setoid ℓ c} {Z W : Set ℓ′} {g : Z → Carrier X} {h : W → Carrier X} →
   (f : X ⟶ Y) → (c : Z ⊎ W) → Setoid._≈_ Y (f ⟨$⟩₀ ([ g , h ]′ c)) ([ (λ x → f ⟨$⟩₀ (g x)), (λ x → f ⟨$⟩₀ (h x)) ]′ c)
 apply-map {Y = Y} f (inj₁ x) = Setoid.refl Y
 apply-map {Y = Y} f (inj₂ y) = Setoid.refl Y
 
-ListCMHom : {ℓ : Level} {X Y : Setoid ℓ ℓ} → MultisetHom (ListMS {ℓ} {ℓ} X) (ListMS {ℓ} {ℓ} Y)
-ListCMHom {ℓ} {X} {Y} = record
+ListCMHom : {ℓ c : Level} {X Y : Setoid ℓ c} → MultisetHom (ListMS {ℓ} {c} X) (ListMS {ℓ} {c} Y)
+ListCMHom {ℓ} {c} {X} {Y} = record
   { lift =   λ f → let mapf = λ x → table˘ (map (f ⟨$⟩₀_) (table x)) in record
     { mor      =   record
       { _⟨$⟩_ = mapf
       ; cong  = λ i≈ₛj → Seq._≈ₛ_.shuffle i≈ₛj Seq.⟨π⟩ (λ a → Π.cong f (Seq._≈ₛ_.eq i≈ₛj a))
       }
     ; pres-e   =   Function.Inverse.id Seq.⟨π⟩ λ ()
-    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map {g = Bag._‼_ xs} f (proj₁ +≃⊎ i)
+    ; pres-*   =   λ {xs ys} → Function.Inverse.id Seq.⟨π⟩ λ i → apply-map {ℓ} {_} {c} {g = Bag._‼_ xs} f (proj₁ +≃⊎ i)
     }
   ; singleton-commute   =   λ F → Seq.≈ₛ-refl Y
   ; fold-commute        =   λ {CMX} {CMY} F {s} → it {CMX = CMX} {CMY} F {Seq.len s}
   }
   where
     -- Proving |foldr _*₂_ e₂ (mapL (F ⟨$⟩_) xs)  ≈ F ⟨$⟩ foldr _*₁_ e₁ xs|.
-    it : {ℓ : Level} {X Y : Setoid ℓ ℓ} {CMX : CommMonoid X} {CMY : CommMonoid Y}
+    it : {ℓ c : Level} {X Y : Setoid ℓ c} {CMX : CommMonoid X} {CMY : CommMonoid Y}
          (F : CMArrow CMX CMY) {n : ℕ} {s : Fin.Fin n → Carrier X}
          → foldr (CommMonoid._*_ CMY) (CommMonoid.e CMY) (tabulate (λ x → mor F ⟨$⟩₀ (s x)))  ≈⌊ Y ⌋
            mor F ⟨$⟩₀ foldr (CommMonoid._*_ CMX) (CommMonoid.e CMX) (tabulate s)
-    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {zero} {_} = Setoid.sym Y (pres-e F)
-    it {ℓ} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {suc len} {tb} =
+    it {ℓ} {c} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {zero} {_} = Setoid.sym Y (pres-e F)
+    it {ℓ} {c} {X} {Y} {MkCommMon e₁ _*₁_ _} {MkCommMon e₂ _*₂_ isCM₂} F {suc len} {tb} =
        let G = mor F ⟨$⟩₀_ in begin⟨ Y ⟩
        G (tb Fin.zero) *₂ (foldr _*₂_ e₂ (tabulate (λ x → G (tb (Fin.suc x)))))  ≈⟨ Setoid.refl Y ⟨∙⟩ it F {len} ⟩
        G (tb Fin.zero) *₂ (G (foldr _*₁_ e₁ (tabulate λ x → tb (Fin.suc x))))    ≈⟨ Setoid.sym Y (pres-* F) ⟩
@@ -492,8 +466,8 @@ ListCMHom {ℓ} {X} {Y} = record
 
 module BuildProperties where
   open ImplementationViaList
-  functoriality : {ℓ : Level} → FunctorialMSH {ℓ} (ListMS {ℓ} {ℓ}) ListCMHom
-  functoriality {ℓ} = record
+  functoriality : {ℓ c : Level} → FunctorialMSH {ℓ} (ListMS {ℓ} {c}) ListCMHom
+  functoriality {ℓ} {c} = record
     { id-pres               =   λ {X} {xs} → idp Seq.⟨π⟩ λ _ → Setoid.refl X
     ; ∘-pres                =   λ {_} {_} {Z} {F} {G} {xs} → Seq.≈ₛ-refl Z
     ; resp-≈                =   λ {X} {Y} {f} {g} F≈G {xs} → idp Seq.⟨π⟩ λ i → F≈G {xs Bag.‼ i}
@@ -505,9 +479,9 @@ module BuildProperties where
     open MultisetHom using (lift)
     open import Data.Table using (permute)
     import Equiv
-    module _ {X : Setoid ℓ ℓ} where
-      LMS = ListMS {ℓ} {ℓ} X
-      L = ListMS {ℓ} {ℓ} (ctrSetoid LMS X)
+    module _ {X : Setoid ℓ c} where
+      LMS = ListMS {ℓ} {c} X
+      L = ListMS {ℓ} {c} (ctrSetoid LMS X)
       C = commMonoid LMS X
       same-size : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
@@ -546,10 +520,10 @@ module BuildProperties where
 
 Last but not least, build the left adjoint:
 
-\begin{spec}
+\begin{code}
 module FreeCommMonoid = BuildLeftAdjoint ImplementationViaList.ListMS ListCMHom
   BuildProperties.functoriality
-\end{spec}
+\end{code}
 %}}}
 
 % Quick Folding Instructions:

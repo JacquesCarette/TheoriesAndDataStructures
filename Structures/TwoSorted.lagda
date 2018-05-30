@@ -1,4 +1,4 @@
-\section{Two Sorted Structures}
+\section{Two Sorted Structures ; HELLO WORLD}
 
 So far we have been considering algebraic structures with only one underlying carrier set,
 however programmers are faced with a variety of different types at the same time, and the

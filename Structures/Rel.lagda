@@ -1,3 +1,10 @@
+\def\unfinished{ \LARGE unfinished }
+
+\makeatletter
+\newenvironment{spec}%
+  {\tiny\verbatim}%
+  {\endverbatim}
+
 \section{Binary Heterogeneous Relations --- Bipartite graphs}
 
 We consider two sorted algebras endowed with a binary heterogeneous relation.

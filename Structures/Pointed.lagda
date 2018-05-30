@@ -1,3 +1,5 @@
+\DeclareUnicodeCharacter{7472}{\ensuremath{7472}}
+
 \section{Pointed Algebras: Nullable Types}
 
 We consider the theory of \emph{pointed algebras} which consist of a type
@@ -8,16 +10,17 @@ scenarios all the time in the case of an object-type and a default value of
 a ``null'', or undefined, object. In the more explicit setting of pure functional
 programming, this concept arises in the form of |Maybe|, or |Option| types.
 
-Some programming languages, such as |C#| for example, provide a |default| keyword
-to access a default value of a given data type.
+\verb+Some programming languages, such as |C#| for example, provide a |default| keyword to access a default value of a given data type.+
 
-\edinsert{MA}{Haskell's typeclass analogue of |default|?}
+edinsert{MA}{Haskell's typeclass analogue of |default|?}
 
-\edcomm{MA}{Perhaps discuss ``types as values'' and the subtle issue of how pointed algebras
+edcomm{MA}{Perhaps discuss ``types as values'' and the subtle issue of how pointed algebras
 are completely different than classes in an imperative setting. }
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module Structures.Pointed where
 
 open import Level renaming (suc to lsuc; zero to lzero)
@@ -119,7 +122,7 @@ Forgetᴰ ℓ = record { F₀ = λ P → Σ (Carrier P) (λ x → x ≡ point P)
 
 That is, we ``only remember the point''.
 
-\edinsert{MA}{An adjoint to this functor?}
+edinsert{MA}{An adjoint to this functor?}
 
 %}}}
 
@@ -154,7 +157,7 @@ MaybeLeft ℓ = record
   }
 \end{code}
 
-\edcomm{MA}{Develop |Maybe| explicitly so we can ``see'' how the utility |maybe| ``pops up naturally''.}
+edcomm{MA}{Develop |Maybe| explicitly so we can ``see'' how the utility |maybe| ``pops up naturally''.}
 
 While there is a ``least'' pointed object for any given set, there is, in-general, no ``largest'' pointed object
 corresponding to any given set. That is, there is no co-free functor.

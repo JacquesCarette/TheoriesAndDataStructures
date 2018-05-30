@@ -1,3 +1,5 @@
+\DeclareUnicodeCharacter{8718}{\ensuremath{ 8718 }}
+
 \section{Obtaining Forgetful Functors}
 
 We aim to realise a ``toolkit'' for an data-structure by considering a free
@@ -20,7 +22,7 @@ Such algebras consistute a category from which we obtain a method to
 Forgetful functor builder for single-sorted algebras to Sets.
 
 %{{{ Imports
-\begin{ModuleHead}
+begin{ModuleHead}
 \begin{code}
 module Forget where
 
@@ -34,8 +36,8 @@ open import Function2
 open import Function
 open import EqualityCombinators
 \end{code}
-\end{ModuleHead}
-\edcomm{MA}{For one reason or another, the module head is not making the imports smaller.}
+end{ModuleHead}
+edcomm{MA}{For one reason or another, the module head is not making the imports smaller.}
 %}}}
 
 %{{{ OneSortedAlg

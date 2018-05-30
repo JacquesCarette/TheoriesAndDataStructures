@@ -25,10 +25,13 @@ open import Categories.Agda         using   (Sets)
 open import Function                using   (id ; _∘_ ; const)
 open import Function2               using   (_$ᵢ)
 
+open import Relation.Nullary  -- for showing some impossibility
+
 open import Forget
 open import EqualityCombinators
 open import DataProperties
 
+-- 𝑲onstant
 𝑲 : {a b : Level} {A : Set a} {B : Set b} → A → B → A
 𝑲 a _ = a
 
@@ -45,11 +48,11 @@ data One {ℓ : Level} : Set ℓ where
   ⋆ : One
 
 -- The One-object One-arrow Category
-OneCat : (ℓ : Level) → Category ℓ ℓ ℓ
-OneCat ℓ = record
-  { Obj        =  One {ℓ}
-  ; _⇒_       =   𝑲₂ (One {ℓ})
-  ; _≡_       =   𝑲₂ (One {ℓ})
+OneCat : (ℓ₁ ℓ₂ ℓ₃ : Level) → Category ℓ₁ ℓ₂ ℓ₃
+OneCat ℓ₁ ℓ₂ ℓ₃ = record
+  { Obj        =  One {ℓ₁}
+  ; _⇒_       =   𝑲₂ (One {ℓ₂})
+  ; _≡_       =   𝑲₂ (One {ℓ₃})
   ; id         =  ⋆
   ; _∘_        =  𝑲₂ ⋆
   ; assoc      =  ⋆
@@ -73,19 +76,19 @@ to a singleton set.
 
 \begin{code}
 -- “forget that |One| is a syntactical item, and realise it as a set.”
-Forget : {ℓ : Level} → Functor (OneCat ℓ) (Sets ℓ)
+Forget : {ℓ₁ ℓ₂ ℓ₃ : Level} → Functor (Sets ℓ₁) (OneCat ℓ₁ ℓ₂ ℓ₃)
 Forget {ℓ} = record
-  { F₀             =  𝑲 One
-  ; F₁             =  𝑲₂ ⋆
-  ; identity       =  λ{ {_} {⋆} → ≡.refl }
-  ; homomorphism   =  ≡.refl
-  ; F-resp-≡      =   λ _ → ≡.refl
+  { F₀             =  𝑲 ⋆
+  ; F₁             =  𝑲 ⋆
+  ; identity       =  ⋆
+  ; homomorphism   =  ⋆
+  ; F-resp-≡      =   𝑲 ⋆
   }
 --
 -- Essentially an inclusion functor; i.e., the identity functor.
 -- Might as well call this functor |Id|.
 
-𝒦 : {ℓ₁ ℓ₂ o e : Level} (C : Category ℓ₁ o e) → Functor C (OneCat ℓ₂)
+𝒦 : {ℓ₁ ℓ₂ o e : Level} (C : Category ℓ₁ o e) → Functor C (OneCat ℓ₂ ℓ₂ ℓ₂)
 𝒦 _ = record
   { F₀             = 𝑲 ⋆
   ; F₁             = 𝑲 ⋆
@@ -94,25 +97,23 @@ Forget {ℓ} = record
   ; F-resp-≡      = 𝑲 ⋆
   }
 
--- “freely adorn any set as a singleton syntactical item by replacing its elements with |⋆|.”
-Free : {ℓ : Level} → Functor (Sets ℓ) (OneCat ℓ) 
-Free {ℓ} = 𝒦 (Sets ℓ)
+Free : {ℓ : Level} → Functor (OneCat ℓ ℓ ℓ) (Sets ℓ)
+Free {ℓ} = record
+             { F₀ = λ _ → One {ℓ}
+             ; F₁ = 𝑲₂ {c = ℓ} ⋆
+             ; identity = λ { {x = ⋆} → ≡.refl}
+             ; homomorphism = ≡.refl
+             ; F-resp-≡ = λ _ → ≡.refl
+             }
 --
--- This' essentially a ``constant functor'' (!) and so might as well call it |Δ|.
+-- There is no left adjoint because you can't create objects of an arbitrary
+-- type out of nothing.  This is most glaring when there are indeed none.
 
-Δ⊢Id : {ℓ : Level} → Adjunction (Free {ℓ}) (Forget {ℓ})
-Δ⊢Id {ℓ} = record
-  { unit   = record
-    { η       =  λ _ _ → ⋆ -- the only function to a singleton set
-    ; commute =  λ _ → ≡.refl
-    }
-  ; counit = record
-    { η       =  id
-    ; commute =  id
-    }
-  ; zig =  ⋆
-  ; zag =  λ{ {⋆} {⋆} → ≡.refl }
-  }
+NoLeftAdjoint : {ℓ : Level} → ¬ Adjunction (Free {ℓ}) (Forget {ℓ})
+NoLeftAdjoint {ℓ} adj = ⊥-elim (η counit ⊥ ⋆)
+  where open Adjunction adj
+        open import Categories.NaturalTransformation hiding (id ; _≡_)
+        open NaturalTransformation
 \end{code}
 %}}}
 

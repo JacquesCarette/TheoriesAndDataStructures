@@ -79,6 +79,9 @@ Since there is only one type, or sort, involved in the definition,
 we may hazard these structures as ``one sorted algebras'':
 
 \begin{code}
+Id : {ℓ : Level} {A : Pointed {ℓ}} → Hom A A
+Id = MkHom id ≡.refl
+
 oneSortedAlg : ∀ {ℓ} → OneSortedAlg ℓ
 oneSortedAlg = record
    { Alg         =   Pointed
@@ -87,7 +90,7 @@ oneSortedAlg = record
    ; mor         =   mor
    ; comp        =   λ F G → MkHom (mor F ∘ mor G) (≡.cong (mor F) (preservation G) ⟨≡≡⟩ preservation F)
    ; comp-is-∘   =   ≐-refl
-   ; Id          =   MkHom id ≡.refl
+   ; Id          =   Id
    ; Id-is-id    =   ≐-refl
    }
 \end{code}
@@ -109,7 +112,7 @@ name suffixed with an `s'.
 Of-course, as hinted in the introduction, this structure ---as are many--- is defined in a
 dependent fashion and so we have another forgetful functor:
 
-\begin{code}
+\begin{spec}
 open import Data.Product
 Forgetᴰ : (ℓ : Level) → Functor (Pointeds ℓ) (Sets ℓ)
 Forgetᴰ ℓ = record { F₀ = λ P → Σ (Carrier P) (λ x → x ≡ point P)
@@ -118,7 +121,7 @@ Forgetᴰ ℓ = record { F₀ = λ P → Σ (Carrier P) (λ x → x ≡ point P)
     ; homomorphism = λ {P} {Q} {R} {F} {G} → λ{ {val , val≡ptP} → ≡.cong (λ x → mor G (mor F val) , x) (≡.proof-irrelevance _ _) }
     ; F-resp-≡ = λ {P} {Q} {F} {G} F≈G → λ{ {val , val≡ptP} → {!≡.cong₂ _,_ (F≈G val) ?!} }
     }
-\end{code}
+\end{spec}
 
 That is, we ``only remember the point''.
 
@@ -167,6 +170,39 @@ NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Pointeds ℓ)) → ¬ 
 NoRight (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ⊥) (point (f (Lift ⊥))))
   where open Adjunction
         open NaturalTransformation
+\end{code}
+%}}}
+
+%{{{ 0-ary adjoint
+
+\begin{code}
+module ZeroAryAdjoint where
+
+  open import Structures.OneCat
+
+  Forget-0 : (ℓ : Level) → Functor (Pointeds ℓ) (OneCat ℓ)
+  Forget-0 ℓ = 𝒦 (Pointeds ℓ)
+
+  -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
+  Free-0 : (ℓ : Level) → Functor (OneCat ℓ) (Pointeds ℓ)
+  Free-0 ℓ = record
+     { F₀             =   λ _ → MkPointed One ⋆ -- The only object is mapped to the homset of OneCat: 
+     ; F₁             =   𝑲 Id                  -- It is a pointed set with point being the only object.
+     ; identity       =   λ _ → ≡.refl
+     ; homomorphism   =   λ _ → ≡.refl
+     ; F-resp-≡      =   λ _ _ → ≡.refl
+     }
+
+  Left : (ℓ : Level) → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
+  Left ℓ = record
+    { unit        =   record { η = id ; commute = id }
+    ; counit      =   record
+      { η         =    λ{ (MkPointed X x) → MkHom (𝑲 x) ≡.refl}
+      ; commute   =    λ f → ≡.sym ∘ preservation ∘ (𝑲 f)
+      }          
+    ; zig         =    λ{ ⋆ → ≡.refl }
+    ; zag         =    ⋆
+    }
 \end{code}
 %}}}
 

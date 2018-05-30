@@ -49,6 +49,9 @@ open Hom
 %{{{ SGAlg ; SemigroupCat ; Forget
 \subsection{Category and Forgetful Functor}
 \begin{code}
+Id : {ℓ : Level} {A : Semigroup {ℓ}} → Hom A A
+Id = MkHom id ≡.refl
+
 SGAlg : {ℓ : Level} → OneSortedAlg ℓ
 SGAlg = record
    { Alg         =   Semigroup
@@ -57,7 +60,7 @@ SGAlg = record
    ; mor         =   Hom.mor
    ; comp        =   λ F G → MkHom (mor F ∘ mor G) (≡.cong (mor F) (pres G) ⟨≡≡⟩ pres F)
    ; comp-is-∘   =   ≐-refl
-   ; Id          =   MkHom id ≡.refl
+   ; Id          =   Id
    ; Id-is-id    =   ≐-refl
    }
 
@@ -330,6 +333,52 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
 \end{code}
 
 %}}}
+
+%{{{ 0-ary adjoint
+
+\begin{code}
+module ZeroAryAdjoint where
+
+  open import Structures.OneCat
+
+  Forget-0 : (ℓ : Level) → Functor (SemigroupCat ℓ) (OneCat ℓ)
+  Forget-0 ℓ = 𝒦 (SemigroupCat ℓ)
+
+  -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
+  Free-0 : (ℓ : Level) → Functor (OneCat ℓ) (SemigroupCat ℓ)
+  Free-0 ℓ = record
+     { F₀             =   λ _ → MkSG One (𝑲₂ ⋆) ≡.refl
+     ; F₁             =   𝑲 Id
+     ; identity       =   λ _ → ≡.refl
+     ; homomorphism   =   λ _ → ≡.refl
+     ; F-resp-≡      =   λ _ _ → ≡.refl
+     }
+
+  open import Data.Empty
+  
+  ⊥SG : {ℓ : Level} → Semigroup {ℓ}
+  ⊥SG {ℓ} = MkSG (Lift ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
+
+  -- The above Free-0 is not a free functor.
+  NoRight-0 : {ℓ : Level} (Forget0 : Functor (SemigroupCat ℓ) (OneCat ℓ)) → ¬ (Adjunction (Free-0 ℓ) Forget0)
+  NoRight-0 F adj = lower (mor (η counit ⊥SG) ⋆)
+   where open Adjunction adj
+         open NaturalTransformation
+         open Functor F
+
+  Left : (ℓ : Level) → Adjunction (Forget-0 ℓ) (Free-0 ℓ)
+  Left ℓ = record
+    { unit        =   record { η = λ _ → MkHom (𝑲 ⋆) ≡.refl ; commute = 𝑲₂ ≡.refl } -- naturality of 𝑲
+    ; counit      =   record
+      { η         =    id
+      ; commute   =    id
+      }          
+    ; zig         =    ⋆
+    ; zag         =    λ{ ⋆ → ≡.refl }
+    }
+\end{code}
+%}}}
+
 
 
 % Quick Folding Instructions:

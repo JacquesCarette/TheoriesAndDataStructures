@@ -32,6 +32,7 @@ open import DataProperties
 𝑲 : {a b : Level} {A : Set a} {B : Set b} → A → B → A
 𝑲 a _ = a
 
+-- It will be seen that |𝑲₂ ⋆| forms a monoidal operation on |One|.
 𝑲₂ : {a b c : Level} {A : Set a} {B : Set b} {C : Set c} → A → B → C → A
 𝑲₂ a _ _ = a
 \end{code}
@@ -44,8 +45,8 @@ data One {ℓ : Level} : Set ℓ where
   ⋆ : One
 
 -- The One-object One-arrow Category
-OneCat : {ℓ : Level} → Category ℓ ℓ ℓ
-OneCat {ℓ} = record
+OneCat : (ℓ : Level) → Category ℓ ℓ ℓ
+OneCat ℓ = record
   { Obj        =  One {ℓ}
   ; _⇒_       =   𝑲₂ (One {ℓ})
   ; _≡_       =   𝑲₂ (One {ℓ})
@@ -72,7 +73,7 @@ to a singleton set.
 
 \begin{code}
 -- “forget that |One| is a syntactical item, and realise it as a set.”
-Forget : {ℓ : Level} → Functor (OneCat {ℓ}) (Sets ℓ)
+Forget : {ℓ : Level} → Functor (OneCat ℓ) (Sets ℓ)
 Forget {ℓ} = record
   { F₀             =  𝑲 One
   ; F₁             =  𝑲₂ ⋆
@@ -84,15 +85,18 @@ Forget {ℓ} = record
 -- Essentially an inclusion functor; i.e., the identity functor.
 -- Might as well call this functor |Id|.
 
--- “freely adorn any set as a singleton syntactical item by replacing its elements with |⋆|.”
-Free : {ℓ : Level} → Functor (Sets ℓ) (OneCat {ℓ}) 
-Free {ℓ} = record
+𝒦 : {ℓ₁ ℓ₂ o e : Level} (C : Category ℓ₁ o e) → Functor C (OneCat ℓ₂)
+𝒦 _ = record
   { F₀             = 𝑲 ⋆
   ; F₁             = 𝑲 ⋆
   ; identity       = ⋆
   ; homomorphism   = ⋆
   ; F-resp-≡      = 𝑲 ⋆
   }
+
+-- “freely adorn any set as a singleton syntactical item by replacing its elements with |⋆|.”
+Free : {ℓ : Level} → Functor (Sets ℓ) (OneCat ℓ) 
+Free {ℓ} = 𝒦 (Sets ℓ)
 --
 -- This' essentially a ``constant functor'' (!) and so might as well call it |Δ|.
 

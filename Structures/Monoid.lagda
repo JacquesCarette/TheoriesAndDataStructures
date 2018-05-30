@@ -5,7 +5,8 @@
 module Structures.Monoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)
-open import Data.List using (List; _∷_ ; []; _++_; foldr; map)
+open import Data.List using (List; _∷_ ; []; [_]; _++_; foldr; map)
+open import Data.List.Properties
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
@@ -17,6 +18,7 @@ open import Function2             using (_$ᵢ)
 open import Forget
 open import EqualityCombinators
 open import DataProperties
+
 \end{code}
 %}}}
 
@@ -42,17 +44,17 @@ Each constructor |c : Srcs → Type| becomes an argument |(ss : Srcs) → X ss �
 to obtain a “recursion theorem” like principle.
 The second piece |X ss| may not be possible due to type considerations.
 Really, the induction principle is just the *dependent* version of folding/recursion!
- 
+
 Observe that if we instead use arguments of the form |{ss : Srcs} → X ss → X (c ss)| then, for one reason or
 another, the dependent type |X| needs to be supplies explicity --yellow Agda! Hence, it behooves us to use explicits
-in this case. Sometimes, the yellow cannot be avoided. 
+in this case. Sometimes, the yellow cannot be avoided.
 %}}}
 
 %{{{ Monoid ; Hom
 \subsection{Definition}
 \begin{code}
 record Monoid ℓ : Set (lsuc ℓ) where
-  field 
+  field
     Carrier   :   Set ℓ
     Id        :   Carrier
     _*_       :   Carrier → Carrier → Carrier
@@ -65,10 +67,10 @@ open Monoid
 record Hom {ℓ} (Src Tgt : Monoid ℓ) : Set ℓ where
   constructor MkHom
   open Monoid Src renaming (_*_ to _*₁_)
-  open Monoid Tgt renaming (_*_ to _*₂_) 
+  open Monoid Tgt renaming (_*_ to _*₂_)
   field
     mor     :  Carrier Src → Carrier Tgt
-    pres-Id : mor (Id Src) ≡ Id Tgt 
+    pres-Id : mor (Id Src) ≡ Id Tgt
     pres-Op : {x y : Carrier Src} → mor (x *₁ y)  ≡  mor x *₂ mor y
 
 open Hom
@@ -100,12 +102,78 @@ MonoidCat ℓ = oneSortedCategory ℓ MonoidAlg
 \end{code}
 %}}}
 
-%{{{ forgetful functorS
-\subsection{Forgetful Functors \unfinished}
+%{{{ forgetful functor
+\subsection{Forgetful Functor (to Sets)}
+Forget all structure, and maintain only the underlying carrier
+
 \begin{code}
--- Forget all structure, and maintain only the underlying carrier
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget ℓ = mkForgetful ℓ MonoidAlg
+Forget ℓ = record
+  { F₀ = Carrier
+  ; F₁ = mor
+  ; identity = ≡.refl
+  ; homomorphism = ≡.refl
+  ; F-resp-≡ = _$ᵢ
+  }
+
+Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
+Forget-alg ℓ = mkForgetful ℓ MonoidAlg
+\end{code}
+%}}}
+
+%{{{ Useful kit
+\begin{code}
+ind : {ℓ ℓ′ : Level} {Y : Set ℓ} (P : List Y → Set ℓ′)
+    → (P [])
+    → ((y : Y) (ys : List Y) → P ys → P (y ∷ ys))
+    → (ys : List Y) → P ys
+ind _ n _ []         =   n
+ind P n c (x ∷ xs)   =   c x xs (ind P n c xs)
+\end{code}
+}}}%
+
+%{{{ Free functor; ListLeft
+\begin{code}
+Free : (ℓ : Level) → Functor (Sets ℓ) (MonoidCat ℓ)
+Free ℓ = record
+  { F₀ = λ a → record
+    { Carrier = List a
+    ; Id = []
+    ; _*_ = _++_
+    ; leftId = ≡.refl
+    ; rightId = λ {x} → ++-identityʳ x
+    ; assoc = λ {x y z} → ++-assoc x y z
+    }
+  ; F₁ = λ f → MkHom (map f) ≡.refl λ {xs} {ys} → map-++-commute f xs ys
+  ; identity = map-id
+  ; homomorphism = map-compose
+  ; F-resp-≡ = λ F≐G → map-cong λ x → F≐G {x}
+  }
+
+ListLeft : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
+ListLeft ℓ = record
+  { unit = record { η = λ _ x → [ x ]
+                  ; commute = λ _ → ≡.refl }
+  ; counit = record { η = λ X →
+    let fold = foldr (_*_ X) (Id X)
+        _+_ = _*_ X
+        e   = Id X in
+    MkHom fold ≡.refl
+          λ {x} {y} → ind (λ l → fold (l ++ y) ≡ fold l + fold y)
+                          (≡.sym (leftId X))
+                          (λ z zs eq → ≡.trans (≡.cong (z +_) eq) (≡.sym (assoc X))) x
+                    ; commute = λ {X} {Y} f l →
+   let foldX = foldr (_*_ X) (Id X)
+       foldY = foldr (_*_ Y) (Id Y)
+       _+_ = _*_ Y in
+       ind (λ ll → foldY (map (mor f) ll) ≡ mor f (foldX ll))
+           (≡.sym (pres-Id f))
+           (λ z zs eq → ≡.trans (≡.cong ((mor f z) +_) eq) (≡.sym (pres-Op f)) ) l }
+  ; zig = λ l → ind (λ ll → ll ≡ foldr _++_ [] (map [_] ll)) ≡.refl (λ y ys eq → ≡.cong (y ∷_) eq) l
+  ; zag = λ {X} → ≡.sym (rightId X)
+  }
+\end{code}
+%}}}
 
 -- ToDo ∷ forget to the underlying semigroup
 
@@ -115,8 +183,6 @@ Forget ℓ = mkForgetful ℓ MonoidAlg
 
 -- ToDo ∷ forget to the underlying binary relation, with |x ∼ y ∶≡ (∀ z → x * z ≡ y * z)|
           -- the monoid-indistuighability equivalence relation
-\end{code}
-%}}}
 
 
 % Quick Folding Instructions:

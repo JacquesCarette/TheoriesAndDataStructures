@@ -1,16 +1,19 @@
 \documentclass[serif,mathserif,professionalfont,10pt]{beamer}
-
+\usepackage{ucs}
 \usepackage[utf8x]{inputenc}
 \usepackage{etex}
 \usepackage{graphicx}
 \usepackage{textgreek}
 
+\usepackage{agda}
 \usepackage{amssymb}
 
 \usepackage{color}
 \definecolor{grey}{gray}{0.6}
 
 \beamertemplatenavigationsymbolsempty
+\usetheme{Boadilla}
+\usecolortheme{beaver}
 
 \makeatletter
 \def\mkcommand#1{\expandafter\gdef\csname #1\endcsname}
@@ -48,7 +51,62 @@
 
 \frame{\titlepage}
 
+% Start to fill the slides with verbiage that needs to evolve into something
+% slide-like, with few words and many illustrations. But the words embody the
+% plan and, to a certain extent, the verbal delivery of parts of the story.
 \begin{frame}
-  Loren Ipsum
+\frametitle{Lists and Monoids}
+Lists and Monoids are pervasive in functional programming.
+They are related. A |List| is really a |Free Monoid|. What does that really mean?
+Can it be explained more simply? One explanation is that |List| (with its |map| and
+|fold| operations) is the \emph{language of monoids}. In other words, |List| is the
+canonical term syntax for ``computing with monoids''.
 \end{frame}
+
+\AgdaHide{
+\begin{code}
+module _ where
+open import Level
+open import Structures.Monoid hiding (Forget; Forget-alg)
+open import Function2 using (_$ᵢ)
+open import Forget
+
+open import Categories.Functor    using (Functor)
+open import Categories.Adjunction using (Adjunction)
+open import Categories.Agda       using (Sets)
+open import Categories.Category using (Category)
+\end{code}
+}
+\begin{frame}
+\frametitle{A formal relation}
+The free monoid functor is ``the'' left adjoint to the forgetful functor from
+the category (monoids, homomorphisms) to the category (types, functions). Not Set.
+
+Why on earth would we care about that? Let's see.
+
+Monoid. Monoid Homomorphism. Forgetful functor.
+
+So we need to come up with things with types
+\begin{code}
+Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
+Forget ℓ = record
+  { F₀ = {!!} -- Monoid ℓ → Set ℓ
+  ; F₁ = {!!} -- Hom A B → Carrier A → Carrier B
+  ; identity = {!!} -- {x : Carrier A} → x ≡ x
+  ; homomorphism = {!!} -- {f : Hom X Y} {g : Hom Y Z}
+    -- {x : Carrier X} → mor g (mor f x) ≡ mor g (mor f x)
+  ; F-resp-≡ = {!!} -- {F G : Hom A B} → ((x : Carrier A)
+    -- → mor F x ≡ mor G x) → {x : Carrier A} → mor F x ≡ mor G x
+  }
+
+Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
+Forget-alg ℓ = mkForgetful ℓ MonoidAlg
+\end{code}
+\AgdaHide{
+\begin{code}
+\end{code}
+}
+
+\end{frame}
+
 \end{document}

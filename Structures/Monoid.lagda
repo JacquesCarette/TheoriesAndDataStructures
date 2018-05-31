@@ -109,12 +109,14 @@ Forget all structure, and maintain only the underlying carrier
 \begin{code}
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = record
-  { F₀ = Carrier
-  ; F₁ = mor
-  ; identity = ≡.refl
-  ; homomorphism = ≡.refl
-  ; F-resp-≡ = _$ᵢ
+  { F₀             =   Carrier
+  ; F₁             =   mor
+  ; identity       =   ≡.refl
+  ; homomorphism   =   ≡.refl
+  ; F-resp-≡       =   _$ᵢ
   }
+  
+-- Why do we have both?
 
 Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget-alg ℓ = mkForgetful ℓ MonoidAlg
@@ -175,50 +177,60 @@ ListLeft ℓ = record
 \end{code}
 %}}}
 
+%{{{ Zero object
+
+Singleton sets form both the initial and terminal monoid.
+
+\begin{code}
+open import Structures.OneCat hiding (initial ; terminal)
+open import Categories.Object.Initial
+open import Categories.Object.Terminal
+
+One-Monoid : {ℓ : Level} → Monoid ℓ
+One-Monoid = record
+   { Carrier   =   One
+   ; Id        =   ⋆
+   ; _*_       =   𝑲₂ ⋆
+   ; leftId    =   λ { {⋆} → ≡.refl}
+   ; rightId   =   λ { {⋆} → ≡.refl}
+   ; assoc     =   ≡.refl
+   }
+
+initial : {ℓ : Level} → Initial (MonoidCat ℓ)
+initial = record
+  { ⊥        =  One-Monoid
+  ; !         =  λ {X} → MkHom (λ _ → Id X) ≡.refl (≡.sym (leftId X))
+  ; !-unique  =  λ f →  λ{ ⋆ → ≡.sym (pres-Id f) }
+  }
+
+terminal : {ℓ : Level} → Terminal (MonoidCat ℓ)
+terminal = record
+  { ⊤        =  One-Monoid
+  ; !         =  λ {X} → MkHom (𝑲 ⋆) ≡.refl ≡.refl
+  ; !-unique  =  λ _  _ → uip-One
+  }
+\end{code}
+%}}}
+
 %{{{ 0-Ary version
 \begin{code}
 module ZeroAryAdjoint where
 
-  open import Structures.OneCat
-
   Forget-0 : (ℓ : Level) → Functor (MonoidCat ℓ) (OneCat ℓ ℓ ℓ)
-  Forget-0 ℓ = record
-    { F₀ = Carrier
-    ; F₁ = λ _ → ⋆
-    ; identity = ⋆
-    ; homomorphism = ⋆
-    ; F-resp-≡ = λ _ → ⋆
-    }
+  Forget-0 ℓ = MakeForgetfulFunctor Carrier
 
   -- OneCat can be, itself, viewed as a Monoid
   Free-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (MonoidCat ℓ)
-  Free-0 ℓ = record
-     { F₀             =  λ _ → record
-                                 { Carrier = One
-                                 ; Id = ⋆
-                                 ; _*_ = 𝑲₂ ⋆
-                                 ; leftId = λ { {⋆} → ≡.refl}
-                                 ; rightId = λ { {⋆} → ≡.refl}
-                                 ; assoc = ≡.refl
-                                 }
-     ; F₁             =  λ _ → MkHom id ≡.refl ≡.refl
-     ; identity       =  λ _ → ≡.refl
-     ; homomorphism   =  λ _ → ≡.refl
-     ; F-resp-≡      =   λ _ _ → ≡.refl
-     }
+  Free-0 ℓ = MakeFreeFunctor One-Monoid
 
-  Left : (ℓ : Level) → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
-  Left ℓ = record
-    { unit        =   record { η = λ _ → ⋆ ; commute = id }
-    ; counit      =   record
-      { η         =   λ X → MkHom (λ _ → Id X) ≡.refl (≡.sym (leftId X {Id X}))
-      ; commute   =    λ f x → ≡.sym (pres-Id f)
-      }
-    ; zig         =    λ { ⋆ → ≡.refl}
-    ; zag         =    ⋆
-    }
+  Left : {ℓ : Level} → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
+  Left = Make-Free⊢Forget Carrier initial
+
+  Right : {ℓ : Level} → Adjunction (Forget-0 ℓ) (Free-0 ℓ)
+  Right = Make-Forget⊢CoFree Carrier terminal
 \end{code}
 %}}}
+
 -- ToDo ∷ forget to the underlying semigroup
 
 -- ToDo ∷ forget to the underlying pointed

@@ -82,6 +82,9 @@ open import Categories.Category using (Category)
 The free monoid functor is ``the'' left adjoint to the forgetful functor from
 the category (monoids, homomorphisms) to the category (types, functions). Not Set.
 
+( MA: For many people, sets = types. As such, consider making the distinction explicit:
+  Why is Set nor the same as the category of types and functions? )
+
 Why on earth would we care about that? Let's see.
 
 Monoid. Monoid Homomorphism. Forgetful functor.
@@ -90,14 +93,20 @@ So we need to come up with things with types
 \begin{code}
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = record
-  { F₀ = {!!} -- Monoid ℓ → Set ℓ
-  ; F₁ = {!!} -- Hom A B → Carrier A → Carrier B
-  ; identity = {!!} -- {x : Carrier A} → x ≡ x
+  { F₀           = {!!} -- Monoid ℓ → Set ℓ
+  
+  ; F₁           = {!!} -- Hom A B → Carrier A → Carrier B
+  
+  ; identity     = {!!} -- {x : Carrier A} → x ≡ x
+  
   ; homomorphism = {!!} -- {f : Hom X Y} {g : Hom Y Z}
-    -- {x : Carrier X} → mor g (mor f x) ≡ mor g (mor f x)
-  ; F-resp-≡ = {!!} -- {F G : Hom A B} → ((x : Carrier A)
-    -- → mor F x ≡ mor G x) → {x : Carrier A} → mor F x ≡ mor G x
+                        -- {x : Carrier X} → mor g (mor f x) ≡ mor g (mor f x)
+                        
+  ; F-resp-≡     = {!!} -- {F G : Hom A B} → ((x : Carrier A)
+                        -- → mor F x ≡ mor G x) → {x : Carrier A} → mor F x ≡ mor G x
   }
+
+-- (MA: Perhaps mention that you show both forms to demo how the functor may be constructed? )
 
 Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget-alg ℓ = mkForgetful ℓ MonoidAlg

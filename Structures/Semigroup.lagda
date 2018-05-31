@@ -334,47 +334,53 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
 
 %}}}
 
+%{{{ Terminal and initial object
+
+This category has both a terminal and an initial object.
+
+\begin{code}
+open import Structures.OneCat hiding (terminal ; initial)
+open import Categories.Object.Terminal
+open import Categories.Object.Initial
+open import Data.Empty
+
+One-SG : {ℓ : Level} → Semigroup {ℓ}
+One-SG = MkSG One (λ _ _ → ⋆) ≡.refl
+
+terminal : {ℓ : Level} → Terminal (SemigroupCat ℓ)
+terminal = record
+  { ⊤         =   One-SG
+  ; !         =   MkHom (𝑲 ⋆) ≡.refl
+  ; !-unique  =   λ _ _ → uip-One
+  }
+
+⊥-SG : {ℓ : Level} → Semigroup {ℓ}
+⊥-SG {ℓ} = MkSG (Lift ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
+
+initial : {ℓ : Level} → Initial (SemigroupCat ℓ)
+initial = record
+  { ⊥         =  ⊥-SG
+  ; !         =  MkHom (λ{ (lift ()) }) λ{ {lift ()} }
+  ; !-unique  =  λ{ _ (lift())}
+  }
+\end{code}
+%}}}
+
 %{{{ 0-ary adjoint
 
 \begin{code}
 module ZeroAryAdjoint where
 
-  open import Structures.OneCat
-
   Forget-0 : (ℓ : Level) → Functor (SemigroupCat ℓ) (OneCat ℓ ℓ ℓ)
-  Forget-0 ℓ = record
-    { F₀ = Carrier
-    ; F₁ = λ _ → ⋆
-    ; identity = ⋆
-    ; homomorphism = ⋆
-    ; F-resp-≡ = λ _ → ⋆
-    }
+  Forget-0 ℓ = MakeForgetfulFunctor Carrier
 
-  -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
   CoFree-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (SemigroupCat ℓ)
-  CoFree-0 ℓ = record
-     { F₀             =   λ _ → MkSG One (𝑲₂ ⋆) ≡.refl
-     ; F₁             =   𝑲 Id
-     ; identity       =   λ _ → ≡.refl
-     ; homomorphism   =   λ _ → ≡.refl
-     ; F-resp-≡      =   λ _ _ → ≡.refl
-     }
-
-  open import Data.Empty
-
-  ⊥SG : {ℓ : Level} → Semigroup {ℓ}
-  ⊥SG {ℓ} = MkSG (Lift ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
+  CoFree-0 ℓ = MakeFreeFunctor One-SG
 
   -- There is a functor to ⊥SG, which is indeed a ``small'' semigroup, but it's not
   -- free (no counit)
   NotFree-0  : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (SemigroupCat ℓ)
-  NotFree-0 ℓ = record
-    { F₀ = λ _ → ⊥SG
-    ; F₁ = λ _ → MkHom id ≡.refl
-    ; identity = λ _ → ≡.refl
-    ; homomorphism = λ _ → ≡.refl
-      ; F-resp-≡ = λ _ _ → ≡.refl
-    }
+  NotFree-0 ℓ = MakeFreeFunctor ⊥-SG
 
   -- The above Free-0 is not a free functor, essentially because OneCat is always inhabited, but
   -- there is a semigroup structure on ⊥.
@@ -385,14 +391,13 @@ module ZeroAryAdjoint where
   NoLeft-0 (record {F₀ = F₀; F₁ = F₁; identity = identity}) adj = {!!}
     where open Adjunction adj
           open NaturalTransformation -}
+  --          
+  -- MA: There is!
+  Left : (ℓ : Level) → Adjunction (NotFree-0 ℓ) (Forget-0 ℓ)
+  Left _ = Make-Free⊢Forget Carrier initial
 
   Right : (ℓ : Level) → Adjunction (Forget-0 ℓ) (CoFree-0 ℓ)
-  Right ℓ = record
-    { unit        =   record { η = λ _ → MkHom (𝑲 ⋆) ≡.refl ; commute = 𝑲₂ ≡.refl } -- naturality of 𝑲
-    ; counit      =   record { η =    λ _ → ⋆                ; commute   =    id }
-    ; zig         =    ⋆
-    ; zag         =    λ{ ⋆ → ≡.refl }
-    }
+  Right ℓ = Make-Forget⊢CoFree Carrier terminal
 \end{code}
 %}}}
 

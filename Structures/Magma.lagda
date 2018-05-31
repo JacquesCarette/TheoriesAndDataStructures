@@ -176,6 +176,58 @@ How does this relate to the notion of ``co-trees'' ---infinitely long trees?
 --similar to the lists vs streams view.
 %}}}
 
+%{{{ Zero object
+
+Singleton sets form the terminal magma; while the empty type
+forms the initial magma.
+
+\begin{code}
+open import Structures.OneCat hiding (initial ; terminal)
+open import Categories.Object.Initial
+open import Categories.Object.Terminal
+
+One-Magma : {ℓ : Level} → Magma ℓ
+One-Magma = MkMagma One (𝑲₂ ⋆)
+
+terminal : {ℓ : Level} → Terminal (Magmas ℓ)
+terminal = record
+  { ⊤        =  One-Magma
+  ; !         =  λ {X} → MkHom (𝑲 ⋆) ≡.refl
+  ; !-unique  =  λ _ _ → uip-One
+  }
+
+open import Data.Empty
+initial : {ℓ : Level} → Initial (Magmas ℓ)
+initial = record
+  { ⊥        =  MkMagma (Lift ⊥) λ{ (lift ()) }
+  ; !         =  MkHom (λ{ (lift ()) }) λ{ {lift ()} }
+  ; !-unique  =  λ{ _ ( lift() ) }
+  }
+\end{code}
+%}}}
+
+%{{{ 0-Ary version
+\begin{code}
+module ZeroAryAdjoint where
+
+  Forget-0 : (ℓ : Level) → Functor (Magmas ℓ) (OneCat ℓ ℓ ℓ)
+  Forget-0 ℓ = MakeForgetfulFunctor Carrier
+
+  -- OneCat can be, itself, viewed as a Monoid
+  Free-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (Magmas ℓ)
+  Free-0 ℓ = MakeFreeFunctor One-Magma
+
+  -- MA: Compare with the case of Set in OneCat.lagda.
+  -- c.f. NoLeftAdjoint and YesLeftAdjoint.
+  Left : {ℓ : Level} → Adjunction (MakeFreeFunctor _) (Forget-0 ℓ)
+  Left = Make-Free⊢Forget Carrier initial
+
+  Right : {ℓ : Level} → Adjunction (Forget-0 ℓ) (Free-0 ℓ)
+  Right = Make-Forget⊢CoFree Carrier terminal
+\end{code}
+%}}}
+
+
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

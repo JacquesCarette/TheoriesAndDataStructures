@@ -173,42 +173,36 @@ NoRight (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ⊥) (p
 \end{code}
 %}}}
 
-%{{{ 0-ary adjoint
+%{{{ Initial object
+
+A singleton set with a single point determines an initial object in this category.
 
 \begin{code}
-module ZeroAryAdjoint where
+open import Structures.OneCat hiding (initial)
+open import Categories.Object.Initial
+initial : {ℓ : Level} → Initial (Pointeds ℓ)
+initial = record
+  { ⊥         =   MkPointed One ⋆
+  ; !         =   λ{ {MkPointed X x} → MkHom (𝑲 x) ≡.refl }
+  ; !-unique  =   λ{ f ⋆ → ≡.sym (preservation f) }
+  }
+\end{code}
 
-  open import Structures.OneCat
+%}}}
+
+%{{{ 0-ary adjoint
+\begin{code}
+module ZeroAryAdjoint where  
 
   Forget-0 : (ℓ : Level) → Functor (Pointeds ℓ) (OneCat ℓ ℓ ℓ)
-  Forget-0 ℓ = record
-                 { F₀ = Carrier
-                 ; F₁ = λ _ → ⋆
-                 ; identity = ⋆
-                 ; homomorphism = ⋆
-                 ; F-resp-≡ = λ _ → ⋆
-                 }
+  Forget-0 ℓ = MakeForgetfulFunctor Carrier
 
   -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
   Free-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (Pointeds ℓ)
-  Free-0 ℓ = record
-     { F₀             =   λ _ → MkPointed One ⋆ -- The only object is mapped to the homset of OneCat:
-     ; F₁             =   𝑲 Id                  -- It is a pointed set with point being the only object.
-     ; identity       =   λ _ → ≡.refl
-     ; homomorphism   =   λ _ → ≡.refl
-     ; F-resp-≡      =   λ _ _ → ≡.refl
-     }
+  Free-0 ℓ = MakeFreeFunctor (MkPointed One ⋆)
 
   Left : (ℓ : Level) → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
-  Left ℓ = record
-    { unit        =   record { η = λ _ → ⋆ ; commute = id }
-    ; counit      =   record
-      { η         =    λ{ (MkPointed X x) → MkHom (𝑲 x) ≡.refl}
-      ; commute   =    λ f → ≡.sym ∘ preservation ∘ (𝑲 f)
-      }
-    ; zig         =    λ{ ⋆ → ≡.refl }
-    ; zag         =    ⋆
-    }
+  Left ℓ =  Make-Free⊢Forget {C = Pointeds ℓ} Carrier initial
 \end{code}
 %}}}
 

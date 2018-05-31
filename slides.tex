@@ -159,7 +159,7 @@ Idempotent Commutative Monoid & ? & \\
 \frametitle{Bag and Commutative Monoid}
 \begin{definition}
 A \emph{Bag} (over a type A) is an unordered finite collection
-of elements of A.
+of $x$ s.t. $x~:~A$.
 \end{definition}
 \pause
 Implementation?
@@ -191,15 +191,122 @@ Implementation?
 \begin{frame}
 \frametitle{Change the question!}
 \begin{definition}
-A \emph{DBag} over a type A with decidable equality is an unordered
-collection of elements of A.
+A \emph{DBag} over a type A with dec. $=$ is an unordered
+collection of $x$ s.t. $x~:~A$.
 \end{definition}
 \pause
 \begin{definition}
 A \emph{Bag} over a Setoid A is an unordered
-collection of elements of the carrier of A.
+collection of $x$ s.t. $x : \texttt{Carrier} A$.
 \end{definition}
 \pause
-boo
+Implementation attempts:
+\begin{itemize}
+\item<4->Nils Anders Danielsson's
+\textit{Bag Equivalence via a Proof-Relevant Membership Relation}
+\begin{itemize}
+\item<5->Too many parts over $\equiv$
+\end{itemize}
+\item<6->Erik Palmgren's \textit{Setoid Families}
+\begin{itemize}
+\item<7->Extremely complex, forget the actual dead end.
+\end{itemize}
+\item<8->Mimick above with our own Proof-Relevant $\in$ over
+  Setoid
+\begin{itemize}
+\item<9->Proof that \texttt{fold} well-behaved very hard.
+\end{itemize}
+\item<10->bag-equality in new version of Agda!
+\begin{itemize}
+\item<11->Still assumes $\equiv$.
+\end{itemize}
+\item<12->Experimental lib. with perms over tables
+$\rightarrow$ proof that \texttt{fold} is well-behaved!
+\begin{itemize}
+\item<13->Worked!
+\end{itemize}
+\end{itemize}
 \end{frame}
+
+\begin{frame}
+\frametitle{Key ingredients of Bag}
+Distilling the insights from \textasciitilde1000 lines of Agda 
+\begin{itemize}
+\item Internalize length of ``list'' into a record Seq (subst is evil)
+\item Table of A is $\texttt{Fin} \mathbb{N} \rightarrow A$ (finite
+  support!)
+\item Equivalence of Seq S and Seq T is
+\begin{itemize}
+\item a permutation between $|S|$ and $|T|$, i.e.
+\item an equivalence between $\texttt{Fin}~ |S|$ and $\texttt{Fin}~ |T|$
+\item a proof that permuting the elements of $T$ gives a
+pointwise Setoid-equivalence to those of $S$.
+\end{itemize}
+\item Use previous infrastructure built to move between proofs
+on permutations and proofs on types (work on $\Pi$ languages
+w/ Amr Sabry)
+\item Create an abstract interface for Multiset, MultisetHom and 
+``functorial'' MultisetHom
+\item Satisfies interface $\Rightarrow$\ left
+adjoint to Commutative Monoid
+\item Bag satisfies the interface
+\item Use \texttt{abstract} in key places to prevent normalization
+in proof goals.
+\item Never use subst (even when building the identity permutation)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Extending the tale, take 2}
+Given an arbitrary type A : \\ \vspace*{4mm}
+\begin{tabular}{llll}
+\textbf{Theory} & \textbf{Structure} & Over & Equality \\ \hline
+Carrier & Identity A & Type  & $\equiv$ \\
+Pointed & Maybe A & Type & $\equiv$\\ \hline
+Unary & ℕ × A &  Type & $\equiv$\\
+Involutive & A ⊎ A & Type & $\equiv$ \\ \hline
+Magma & Tree A &  Type & $\equiv$\\
+Semigroup & NEList A & Type & $\equiv$\\ \hline
+Monoid & List A & Type & $\equiv$\\
+Left Unital Semigroup & List A × ℕ & Type & $\equiv$\\
+Right Unital Semigroup & ℕ × List A & Type & $\equiv$\\ \hline
+Commutative Monoid & Bag & Setoid &  proof-relevant permutations \\
+Group & ? & ? & ? \\
+Abelian Group & Hybrid Sets & Setoid &  proof-relevant permutations\\
+Idemp. Comm. Monoid & Set & Setoid &  logical equivalence \\
+\end{tabular}
+\end{frame}
+
+\begin{frame}
+\frametitle{What's the deal with those axioms?}
+linearity, context operations
+\end{frame}
+
+\begin{frame}
+\frametitle{More tale to tell}
+Bivariate. Indexed. Signatures and term algebras.
+\end{frame}
+
+\begin{frame}
+\frametitle{Math and CS}
+Given an arbitrary type A : \\ \vspace*{4mm}
+\begin{tabular}{llll}
+\textbf{Theory} & \textbf{Structure} & Over & Equality \\ \hline
+Carrier & Identity A & Type  & $\equiv$ \\
+Pointed & Maybe A & Type & $\equiv$\\ \hline
+Unary & ℕ × A &  Type & $\equiv$\\
+Involutive & A ⊎ A & Type & $\equiv$ \\ \hline
+Magma & Tree A &  Type & $\equiv$\\
+Semigroup & NEList A & Type & $\equiv$\\ \hline
+Monoid & List A & Type & $\equiv$\\
+Left Unital Semigroup & List A × ℕ & Type & $\equiv$\\
+Right Unital Semigroup & ℕ × List A & Type & $\equiv$\\ \hline
+Commutative Monoid & Bag & Setoid &  proof-relevant permutations \\
+Group & ? & ? & ? \\
+Abelian Group & Hybrid Sets & Setoid &  proof-relevant permutations\\
+Idemp. Comm. Monoid & Set & Setoid &  logical equivalence \\
+\end{tabular}
+\end{frame}
+
+
 \end{document}

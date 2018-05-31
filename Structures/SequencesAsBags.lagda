@@ -81,7 +81,6 @@ Eq S {n} = setoid S n
 %}}}
 
 %{{{ ø ; _⊕_
-MA: These need to be setoid independet, otherwise risk using ≡.setoid!
 \begin{code}
 ∅ : {ℓ : Level} {S₀ : Set ℓ} → Seq S₀
 ∅ = sequence 0 λ ()

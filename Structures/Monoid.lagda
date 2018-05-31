@@ -291,6 +291,22 @@ OneFreeMonoid≅ℕ = record
      ; isoʳ = λ x → length-replicate x {⋆}
      }
   }
+Forget₁ : (ℓ : Level) → Functor (MonoidCat ℓ) (OneCat₀ ℓ ℓ ℓ)
+Forget₁ _ = record
+  { F₀             =  λ _ → ⋆
+  ; F₁             =  𝑲 ⋆
+  ; identity       =  ⋆
+  ; homomorphism   =  ⋆
+  ; F-resp-≡      =   𝑲 ⋆
+  }
+FreedomSad : {ℓ : Level} → Adjunction (Free₁ ℓ) (Forget₁ ℓ)
+FreedomSad = record
+  { unit     =   record { η = id ; commute = id }
+  ; counit   =   record { η = λ X → MkHom (𝑲 (Id X)) ≡.refl (≡.sym (leftId X))
+                        ; commute = λ f x → ≡.sym (pres-Id f) }
+  ; zig      =   {!It is here that we are forced to have the equation: ∀ x. x ≈ ε!}
+  ; zag      =   ⋆
+  }
 \end{code}
 %}}}
 

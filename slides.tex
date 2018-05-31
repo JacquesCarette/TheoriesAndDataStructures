@@ -5,7 +5,6 @@
 \usepackage{graphicx}
 \usepackage{textgreek}
 
-\usepackage{agda}
 \usepackage{amssymb}
 
 \usepackage{color}
@@ -63,20 +62,6 @@ Can it be explained more simply? One explanation is that |List| (with its |map| 
 canonical term syntax for ``computing with monoids''.
 \end{frame}
 
-\AgdaHide{
-\begin{code}
-module _ where
-open import Level
-open import Structures.Monoid hiding (Forget; Forget-alg)
-open import Function2 using (_$ᵢ)
-open import Forget
-
-open import Categories.Functor    using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
-open import Categories.Category using (Category)
-\end{code}
-}
 \begin{frame}
 \frametitle{A formal relation}
 The free monoid functor is ``the'' left adjoint to the forgetful functor from
@@ -114,5 +99,66 @@ Bonus:
 \begin{itemize}
 \item Induction principle
 \end{itemize}
+\end{frame}
+% Notice how I never said ``Monad'' ?
+
+\begin{frame}
+\frametitle{The real tale}
+Given an arbitrary type A : \\ \vspace*{4mm}
+\begin{tabular}{lll}
+\textbf{Theory} & Free \textbf{Structure} & CoFree \\ \hline
+Carrier & Identity A & \\
+Pointed & Maybe A & \\ \hline
+Unary & ℕ × A &  \\
+Involutive & A ⊎ A & A × A \\ \hline
+Magma & Tree A &  \\
+Semigroup & NEList A & \\ \hline
+Monoid & List A & \\
+Left Unital Semigroup & List A × ℕ & \\
+Right Unital Semigroup & ℕ × List A & \\ \hline
+\end{tabular}\\ \vspace*{4mm}
+\pause
+What is the ``Free Structure''? It is the
+\textbf{Normal form term language} associated to the theory.\\
+\end{frame}
+
+\begin{frame}
+\frametitle{Benefits}
+Benefits of the formal approach:
+\begin{itemize}
+\item Obvious: dispell silly conjectures/errors
+\item fold (aka the counit)
+\item induction
+\end{itemize} \vspace*{4mm}
+\pause
+Example: counit for Involutive is ...
+\end{frame}
+
+\begin{frame}
+\frametitle{Extending the tale}
+Given an arbitrary type A : \\ \vspace*{4mm}
+\begin{tabular}{lll}
+\textbf{Theory} & Free \textbf{Structure} & CoFree \\ \hline
+Carrier & Identity A & \\
+Pointed & Maybe A & \\ \hline
+Unary & ℕ × A &  \\
+Involutive & A ⊎ A & A × A \\ \hline
+Magma & Tree A &  \\
+Semigroup & NEList A & \\ \hline
+Monoid & List A & \\
+Left Unital Semigroup & List A × ℕ & \\
+Right Unital Semigroup & ℕ × List A & \\ \hline
+Commutative Monoid & ? & \\
+Group & ? & \\
+Abelian Group & ? & \\
+Idempotent Commutative Monoid & ? & \\
+\end{tabular}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bag and Commutative Monoid}
+\begin{definition}
+doo
+\end{definition}
 \end{frame}
 \end{document}

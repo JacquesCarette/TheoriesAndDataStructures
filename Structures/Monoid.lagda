@@ -186,6 +186,9 @@ open import Structures.OneCat hiding (initial ; terminal)
 open import Categories.Object.Initial
 open import Categories.Object.Terminal
 
+{- In some sense this is a degenerate monoid since
+we have the non-free equation: ∀ x. x ≈ ε.
+-}
 One-Monoid : {ℓ : Level} → Monoid ℓ
 One-Monoid = record
    { Carrier   =   One
@@ -208,6 +211,85 @@ terminal = record
   { ⊤        =  One-Monoid
   ; !         =  λ {X} → MkHom (𝑲 ⋆) ≡.refl ≡.refl
   ; !-unique  =  λ _  _ → uip-One
+  }
+
+OneFreeMonoid : {ℓ : Level} → Monoid ℓ
+OneFreeMonoid = record
+    { Carrier = List One
+    ; Id      = []
+    ; _*_     = _++_
+    ; leftId  = ≡.refl
+    ; rightId = λ {x} → ++-identityʳ x
+    ; assoc   = λ {x y z} → ++-assoc x y z
+    }
+
+OneCat₀ : (ℓ₁ ℓ₂ ℓ₃ : Level) → Category ℓ₁ ℓ₂ ℓ₃
+OneCat₀ ℓ₁ ℓ₂ ℓ₃ = record
+  { Obj        =  One {ℓ₁}
+  ; _⇒_       =   𝑲₂ (One {ℓ₂})
+  ; _≡_       =   𝑲₂ (One {ℓ₃})
+  ; id         =  ⋆
+  ; _∘_        =  𝑲₂ ⋆
+  ; assoc      =  ⋆
+  ; identityˡ  =  ⋆
+  ; identityʳ  =  ⋆
+  ; equiv     =  record
+    { refl    =  ⋆
+    ; sym     =  λ _ → ⋆
+    ; trans   =  𝑲₂ ⋆
+    }
+  ; ∘-resp-≡ = 𝑲₂ ⋆
+  }
+--
+-- By Axiom of Choice we have OneCat ≅ OneCat₀ --possibly without choice since all objects indistinguishable in the former.
+
+Free₁ : (ℓ : Level) → Functor (OneCat₀ ℓ ℓ ℓ) (MonoidCat ℓ)
+Free₁ ℓ = record
+  { F₀           = 𝑲 OneFreeMonoid
+  ; F₁           = λ{ {A} {B} ⋆ → MkHom id ≡.refl ≡.refl}
+  ; identity     = λ _ → ≡.refl
+  ; homomorphism = λ{ {⋆} {⋆} {⋆} {⋆} {⋆} _ → ≡.refl}
+  ; F-resp-≡     = λ{ {⋆} {⋆} {⋆} {⋆} ⋆ → λ _ → ≡.refl }
+  }
+-- Had we used OneCat instead of OneCat₀, then F₁ would be λ{ {A} {B} ⋆ → MkHom f ⋯ }, where f : List A → List B, not possible.
+
+-- It is clear that: OneFreeMonoid ≅ ℕ.
+-- e.g.,
+open import Data.List
+open import Data.List.Properties
+open import Data.Nat
+open import Data.Nat.Properties
+ℕ-monoid : Monoid _
+ℕ-monoid = record
+   { Carrier   =   ℕ
+   ; Id        =   0
+   ; _*_       =   _+_
+   ; leftId    =   λ {x} → +-identityˡ x
+   ; rightId   =   λ {x} → +-identityʳ x
+   ; assoc     =   λ {x} {y} {z} → +-assoc x y z
+   }
+-- Should be, but is not, in the standard library!
+replicate-homo : {ℓ : Level} {A : Set ℓ} {a : A} ({n} m : ℕ)
+               → replicate (m + n) a ≡ replicate m a ++ replicate n a
+replicate-homo zero = ≡.refl
+replicate-homo {a = a} (suc m) = ≡.cong (a ∷_) (replicate-homo m)
+fromℕ : Hom ℕ-monoid OneFreeMonoid
+fromℕ = MkHom (λ n → replicate n ⋆) ≡.refl (λ {m} → replicate-homo m)
+toℕ : Hom OneFreeMonoid ℕ-monoid
+toℕ = MkHom length ≡.refl (λ {x} → length-++ x)
+import Level as Level
+open import Categories.Morphisms (MonoidCat Level.zero)
+from-to : (x : List (One {Level.zero})) → replicate (length x) ⋆ ≡ x
+from-to [] = ≡.refl
+from-to (⋆ ∷ x) = ≡.cong (⋆ ∷_) (from-to x)
+OneFreeMonoid≅ℕ : OneFreeMonoid ≅ ℕ-monoid
+OneFreeMonoid≅ℕ = record
+  { f = toℕ
+  ; g = fromℕ
+  ; iso = record
+     { isoˡ = from-to
+     ; isoʳ = λ x → length-replicate x {⋆}
+     }
   }
 \end{code}
 %}}}

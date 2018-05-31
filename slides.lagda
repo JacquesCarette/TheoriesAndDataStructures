@@ -94,22 +94,17 @@ So we need to come up with things with types
 Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
 Forget ℓ = record
   { F₀           = {!!} -- Monoid ℓ → Set ℓ
-  
+
   ; F₁           = {!!} -- Hom A B → Carrier A → Carrier B
-  
+
   ; identity     = {!!} -- {x : Carrier A} → x ≡ x
-  
+
   ; homomorphism = {!!} -- {f : Hom X Y} {g : Hom Y Z}
                         -- {x : Carrier X} → mor g (mor f x) ≡ mor g (mor f x)
-                        
+
   ; F-resp-≡     = {!!} -- {F G : Hom A B} → ((x : Carrier A)
                         -- → mor F x ≡ mor G x) → {x : Carrier A} → mor F x ≡ mor G x
   }
-
--- (MA: Perhaps mention that you show both forms to demo how the functor may be constructed? )
-
-Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget-alg ℓ = mkForgetful ℓ MonoidAlg
 \end{code}
 \AgdaHide{
 \begin{code}

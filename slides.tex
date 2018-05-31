@@ -158,7 +158,48 @@ Idempotent Commutative Monoid & ? & \\
 \begin{frame}
 \frametitle{Bag and Commutative Monoid}
 \begin{definition}
-doo
+A \emph{Bag} (over a type A) is an unordered finite collection
+of elements of A.
 \end{definition}
+\pause
+Implementation?
+\begin{itemize}
+\item<2-> Inductive type
+\begin{itemize}
+\item<3-> ordered
+\end{itemize}
+\item<4-> $A \rightarrow \mathbb{N}$
+\begin{itemize}
+\item<5-> not finite support
+\end{itemize}
+\item<6-> $A \rightarrow \mathbb{N}$ plus finite support
+\begin{itemize}
+\item<7-> ``finite support'' is hard to say constructively
+\item<8-> summing over all elements of $A$ is even harder
+\item<9-> can build a decidable equiv. relation on $A$ from $A \rightarrow \mathbb{N}$
+\end{itemize}
+\item<10-> $\texttt{List}\ A$ up to bag-equality (aka permutations)
+\begin{itemize}
+\item<11-> almost works!
+\item<12-> Commutative Monoid uses $\equiv$
+\end{itemize}
+\end{itemize}
+\begin{theorem}<13->There is no \emph{Bag} over an arbitrary type (in MLTT).
+\end{theorem}
+\end{frame}
+
+\begin{frame}
+\frametitle{Change the question!}
+\begin{definition}
+A \emph{DBag} over a type A with decidable equality is an unordered
+collection of elements of A.
+\end{definition}
+\pause
+\begin{definition}
+A \emph{Bag} over a Setoid A is an unordered
+collection of elements of the carrier of A.
+\end{definition}
+\pause
+boo
 \end{frame}
 \end{document}

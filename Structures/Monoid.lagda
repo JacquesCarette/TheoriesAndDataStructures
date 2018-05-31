@@ -175,6 +175,50 @@ ListLeft ℓ = record
 \end{code}
 %}}}
 
+%{{{ 0-Ary version
+\begin{code}
+module ZeroAryAdjoint where
+
+  open import Structures.OneCat
+
+  Forget-0 : (ℓ : Level) → Functor (MonoidCat ℓ) (OneCat ℓ ℓ ℓ)
+  Forget-0 ℓ = record
+    { F₀ = Carrier
+    ; F₁ = λ _ → ⋆
+    ; identity = ⋆
+    ; homomorphism = ⋆
+    ; F-resp-≡ = λ _ → ⋆
+    }
+
+  -- OneCat can be, itself, viewed as a Monoid
+  Free-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (MonoidCat ℓ)
+  Free-0 ℓ = record
+     { F₀             =  λ _ → record
+                                 { Carrier = One
+                                 ; Id = ⋆
+                                 ; _*_ = 𝑲₂ ⋆
+                                 ; leftId = λ { {⋆} → ≡.refl}
+                                 ; rightId = λ { {⋆} → ≡.refl}
+                                 ; assoc = ≡.refl
+                                 }
+     ; F₁             =  λ _ → MkHom id ≡.refl ≡.refl
+     ; identity       =  λ _ → ≡.refl
+     ; homomorphism   =  λ _ → ≡.refl
+     ; F-resp-≡      =   λ _ _ → ≡.refl
+     }
+
+  Left : (ℓ : Level) → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
+  Left ℓ = record
+    { unit        =   record { η = λ _ → ⋆ ; commute = id }
+    ; counit      =   record
+      { η         =   λ X → MkHom (λ _ → Id X) ≡.refl (≡.sym (leftId X {Id X}))
+      ; commute   =    λ f x → ≡.sym (pres-Id f)
+      }
+    ; zig         =    λ { ⋆ → ≡.refl}
+    ; zag         =    ⋆
+    }
+\end{code}
+%}}}
 -- ToDo ∷ forget to the underlying semigroup
 
 -- ToDo ∷ forget to the underlying pointed

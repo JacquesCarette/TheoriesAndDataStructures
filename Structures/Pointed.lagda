@@ -154,7 +154,7 @@ MaybeLeft ℓ = record
   ; counit      =   record
     { η         =    λ X → MkHom (maybe id (point X)) ≡.refl
     ; commute   =    maybe ≐-refl ∘ ≡.sym ∘ preservation
-    }          
+    }
   ; zig         =    maybe ≐-refl ≡.refl
   ; zag         =    ≡.refl
   }
@@ -180,13 +180,19 @@ module ZeroAryAdjoint where
 
   open import Structures.OneCat
 
-  Forget-0 : (ℓ : Level) → Functor (Pointeds ℓ) (OneCat ℓ)
-  Forget-0 ℓ = 𝒦 (Pointeds ℓ)
+  Forget-0 : (ℓ : Level) → Functor (Pointeds ℓ) (OneCat ℓ ℓ ℓ)
+  Forget-0 ℓ = record
+                 { F₀ = Carrier
+                 ; F₁ = λ _ → ⋆
+                 ; identity = ⋆
+                 ; homomorphism = ⋆
+                 ; F-resp-≡ = λ _ → ⋆
+                 }
 
   -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
-  Free-0 : (ℓ : Level) → Functor (OneCat ℓ) (Pointeds ℓ)
+  Free-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (Pointeds ℓ)
   Free-0 ℓ = record
-     { F₀             =   λ _ → MkPointed One ⋆ -- The only object is mapped to the homset of OneCat: 
+     { F₀             =   λ _ → MkPointed One ⋆ -- The only object is mapped to the homset of OneCat:
      ; F₁             =   𝑲 Id                  -- It is a pointed set with point being the only object.
      ; identity       =   λ _ → ≡.refl
      ; homomorphism   =   λ _ → ≡.refl
@@ -195,11 +201,11 @@ module ZeroAryAdjoint where
 
   Left : (ℓ : Level) → Adjunction (Free-0 ℓ) (Forget-0 ℓ)
   Left ℓ = record
-    { unit        =   record { η = id ; commute = id }
+    { unit        =   record { η = λ _ → ⋆ ; commute = id }
     ; counit      =   record
       { η         =    λ{ (MkPointed X x) → MkHom (𝑲 x) ≡.refl}
       ; commute   =    λ f → ≡.sym ∘ preservation ∘ (𝑲 f)
-      }          
+      }
     ; zig         =    λ{ ⋆ → ≡.refl }
     ; zag         =    ⋆
     }

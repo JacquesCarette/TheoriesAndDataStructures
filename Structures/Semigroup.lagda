@@ -75,7 +75,7 @@ Forget-isFaithful F G F≈G = λ x → F≈G {x}
 \end{code}
 %}}}
 
-%{{{ List₁ ; _++_ ; ⟦_,_⟧ ; map  ; list₁ ; ind 
+%{{{ List₁ ; _++_ ; ⟦_,_⟧ ; map  ; list₁ ; ind
 \subsection{Free Structure}
 The non-empty lists constitute a free semigroup algebra.
 
@@ -112,7 +112,7 @@ xs ++ ys = rec (_∷ ys) (λ x xs' res → x ∷ res) xs
 
 ++-assoc : {ℓ : Level} {X : Set ℓ} {xs ys zs : List₁ X}
          → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
-++-assoc {xs = xs} {ys} {zs} = rec {X = λ xs → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs} ≐-refl (λ x xs' ind → ≡.cong (x ∷_) ind) xs         
+++-assoc {xs = xs} {ys} {zs} = rec {X = λ xs → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs} ≐-refl (λ x xs' ind → ≡.cong (x ∷_) ind) xs
 
 List₁SG : {ℓ : Level} (X : Set ℓ) → Semigroup {ℓ}
 List₁SG X = MkSG (List₁ X) _++_ (λ {x} {y} {z} → ++-assoc {X = X} {x} {y} {z})
@@ -129,10 +129,10 @@ lifted to a homomorphism of semigroups.
     → (List₁ X → Y)
 ⟦ w , o ⟧ = rec w (λ x xs res → o (w x) res)
 
--- lift 
+-- lift
 list₁ : {ℓ : Level} {X : Set ℓ} {S : Semigroup {ℓ} }
      →  (X → Carrier S)  →  Hom (List₁SG X) S
-list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  (λ {x} {y} → ⟦⟧-over-++ {x} {y}) 
+list₁ {X = X} {S = S} f = MkHom ⟦ f , Op S ⟧  (λ {x} {y} → ⟦⟧-over-++ {x} {y})
   where 𝒽  = ⟦ f , Op S ⟧
         ⟦⟧-over-++ : {xs ys : List₁ X} → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)
         ⟦⟧-over-++ {xs} {ys} = rec {X = λ xs → 𝒽 (xs ++ ys) ≡ (𝒽 xs) ⟨ S ⟩ (𝒽 ys)}
@@ -242,16 +242,16 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
 
         open Functor
 
-        {- 
+        {-
         We expect a free functor to be injective on morphisms, otherwise if
         it collides functions then it is enforcing equations and that's not
-        what is expected of a “free construction”. That is, we want the 
-        unit of the adjunction to be monic, at least. 
+        what is expected of a “free construction”. That is, we want the
+        unit of the adjunction to be monic, at least.
         Which is rather reasonable: We want the injection of our basis into
         a a free construction to not collide things, else we obtain new unfree
         equations.
         -}
-        
+
         _⟪_ : ℕ → ℕ → ℕ
         x ⟪ y = x * y + 1
         -- |(x ⟪ y) ⟪ z   ≡  x * y * z + z + 1|
@@ -263,7 +263,7 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
 
         ohno : ¬ (2 ≡.≡ 1)
         ohno ()
-        
+
         𝒩 : Magma lzero
         𝒩 = MkMagma ℕ _⟪_
 
@@ -273,7 +273,7 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
 
         inj : MagmaHom 𝒩 (Functor.F₀ (ForgetM lzero) 𝑵)
         inj = η unit 𝒩
-        
+
         inj₀ = MagmaHom.mor inj
 
         -- the components of the unit are monic precisely when the left adjoint is faithful
@@ -293,7 +293,7 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
           εY ∘  mor (𝑴 (ηY ∘ₘ F))           ≈⟨ ∘-≐-cong₂ εY (F-resp-≡ FreeM ηF≈ηG) ⟩
           εY ∘ mor (𝑴 (ηY ∘ₘ G))            ≈⟨ ∘-≐-cong₂ εY (homomorphism FreeM) ⟩
           εY ∘ (mor (𝑴 ηY)   ∘ mor (𝑴 G))  ≡⟨ ≡.refl ⟩
-          (εY ∘ mor (𝑴 ηY)) ∘ mor (𝑴 G)    ≈⟨ ∘-≐-cong₁ (mor (𝑴 G)) (≐-sym zig) ⟩                 
+          (εY ∘ mor (𝑴 ηY)) ∘ mor (𝑴 G)    ≈⟨ ∘-≐-cong₁ (mor (𝑴 G)) (≐-sym zig) ⟩
           mor (𝑴 G) ∎)
           where open import Relation.Binary.SetoidReasoning
 
@@ -305,10 +305,10 @@ NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
         --
         -- |★ It may be that monics do not correspond to the underlying/mor function being injective for MagmaCat.|
         -- |‼ .cminj-is-injective : {x y : ℕ} → {!!} -- inj₀ x ≡ inj₀ y → x ≡ y|
-        -- |‼ cminj-is-injective {x} {y} = work {𝒯} {𝒩} {F = MkHom (λ x → 0) (λ{ {tt} {tt} → {!!}})} {G = {!!}} {!!}| 
+        -- |‼ cminj-is-injective {x} {y} = work {𝒯} {𝒩} {F = MkHom (λ x → 0) (λ{ {tt} {tt} → {!!}})} {G = {!!}} {!!}|
         --
         -- |ToDo! … perhaps this lives in the libraries someplace?|
-          
+
         bad : Hom (Functor.F₀ FreeM (Functor.F₀ (ForgetM _) 𝑵)) 𝑵
         bad = η counit 𝑵
 
@@ -341,12 +341,18 @@ module ZeroAryAdjoint where
 
   open import Structures.OneCat
 
-  Forget-0 : (ℓ : Level) → Functor (SemigroupCat ℓ) (OneCat ℓ)
-  Forget-0 ℓ = 𝒦 (SemigroupCat ℓ)
+  Forget-0 : (ℓ : Level) → Functor (SemigroupCat ℓ) (OneCat ℓ ℓ ℓ)
+  Forget-0 ℓ = record
+    { F₀ = Carrier
+    ; F₁ = λ _ → ⋆
+    ; identity = ⋆
+    ; homomorphism = ⋆
+    ; F-resp-≡ = λ _ → ⋆
+    }
 
   -- OneCat can be, itself, viewed as a pointed set; i.e., an object of Pointeds.
-  Free-0 : (ℓ : Level) → Functor (OneCat ℓ) (SemigroupCat ℓ)
-  Free-0 ℓ = record
+  CoFree-0 : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (SemigroupCat ℓ)
+  CoFree-0 ℓ = record
      { F₀             =   λ _ → MkSG One (𝑲₂ ⋆) ≡.refl
      ; F₁             =   𝑲 Id
      ; identity       =   λ _ → ≡.refl
@@ -355,24 +361,35 @@ module ZeroAryAdjoint where
      }
 
   open import Data.Empty
-  
+
   ⊥SG : {ℓ : Level} → Semigroup {ℓ}
   ⊥SG {ℓ} = MkSG (Lift ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
 
-  -- The above Free-0 is not a free functor.
-  NoRight-0 : {ℓ : Level} (Forget0 : Functor (SemigroupCat ℓ) (OneCat ℓ)) → ¬ (Adjunction (Free-0 ℓ) Forget0)
-  NoRight-0 F adj = lower (mor (η counit ⊥SG) ⋆)
-   where open Adjunction adj
-         open NaturalTransformation
-         open Functor F
+  -- There is a functor to ⊥SG, which is indeed a ``small'' semigroup, but it's not
+  -- free (no counit)
+  NotFree-0  : (ℓ : Level) → Functor (OneCat ℓ ℓ ℓ) (SemigroupCat ℓ)
+  NotFree-0 ℓ = record
+    { F₀ = λ _ → ⊥SG
+    ; F₁ = λ _ → MkHom id ≡.refl
+    ; identity = λ _ → ≡.refl
+    ; homomorphism = λ _ → ≡.refl
+      ; F-resp-≡ = λ _ _ → ≡.refl
+    }
 
-  Left : (ℓ : Level) → Adjunction (Forget-0 ℓ) (Free-0 ℓ)
-  Left ℓ = record
+  -- The above Free-0 is not a free functor, essentially because OneCat is always inhabited, but
+  -- there is a semigroup structure on ⊥.
+
+  -- There is likely no such left adjoint...
+  {-
+  NoLeft-0 : {ℓ : Level} (Free-0 : Functor (OneCat ℓ ℓ ℓ)  (SemigroupCat ℓ)) → ¬ (Adjunction Free-0 (Forget-0 ℓ))
+  NoLeft-0 (record {F₀ = F₀; F₁ = F₁; identity = identity}) adj = {!!}
+    where open Adjunction adj
+          open NaturalTransformation -}
+
+  Right : (ℓ : Level) → Adjunction (Forget-0 ℓ) (CoFree-0 ℓ)
+  Right ℓ = record
     { unit        =   record { η = λ _ → MkHom (𝑲 ⋆) ≡.refl ; commute = 𝑲₂ ≡.refl } -- naturality of 𝑲
-    ; counit      =   record
-      { η         =    id
-      ; commute   =    id
-      }          
+    ; counit      =   record { η =    λ _ → ⋆                ; commute   =    id }
     ; zig         =    ⋆
     ; zag         =    λ{ ⋆ → ≡.refl }
     }

@@ -48,9 +48,9 @@ data One {ℓ : Level} : Set ℓ where
   ⋆ : One
 
 -- The One-object One-arrow Category
-OneCat : (ℓ₁ ℓ₂ ℓ₃ : Level) → Category ℓ₁ ℓ₂ ℓ₃
+OneCat : (ℓ₁ ℓ₂ ℓ₃ : Level) → Category (lsuc ℓ₁) ℓ₂ ℓ₃
 OneCat ℓ₁ ℓ₂ ℓ₃ = record
-  { Obj        =  One {ℓ₁}
+  { Obj        =  Set ℓ₁
   ; _⇒_       =   𝑲₂ (One {ℓ₂})
   ; _≡_       =   𝑲₂ (One {ℓ₃})
   ; id         =  ⋆
@@ -78,24 +78,13 @@ to a singleton set.
 -- “forget that |One| is a syntactical item, and realise it as a set.”
 Forget : {ℓ₁ ℓ₂ ℓ₃ : Level} → Functor (Sets ℓ₁) (OneCat ℓ₁ ℓ₂ ℓ₃)
 Forget {ℓ} = record
-  { F₀             =  𝑲 ⋆
+  { F₀             =  id
   ; F₁             =  𝑲 ⋆
   ; identity       =  ⋆
   ; homomorphism   =  ⋆
   ; F-resp-≡      =   𝑲 ⋆
   }
 --
--- Essentially an inclusion functor; i.e., the identity functor.
--- Might as well call this functor |Id|.
-
-𝒦 : {ℓ₁ ℓ₂ o e : Level} (C : Category ℓ₁ o e) → Functor C (OneCat ℓ₂ ℓ₂ ℓ₂)
-𝒦 _ = record
-  { F₀             = 𝑲 ⋆
-  ; F₁             = 𝑲 ⋆
-  ; identity       = ⋆
-  ; homomorphism   = ⋆
-  ; F-resp-≡      = 𝑲 ⋆
-  }
 
 Free : {ℓ : Level} → Functor (OneCat ℓ ℓ ℓ) (Sets ℓ)
 Free {ℓ} = record

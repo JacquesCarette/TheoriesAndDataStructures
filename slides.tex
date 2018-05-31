@@ -67,6 +67,10 @@ canonical term syntax for ``computing with monoids''.
 The free monoid functor is ``the'' left adjoint to the forgetful functor from
 the category (monoids, homomorphisms) to the category (types, functions). Not Set.
 
+%
+% What is the difference between ``the category (types, functions)'' and ``Set''?
+%
+
 Why on earth would we care about that? Let's see.
 
 % Go to Agda code.  Show definitions of
@@ -79,21 +83,21 @@ Why on earth would we care about that? Let's see.
 The requirements roughly translate to\\
 Monoid:
 \begin{itemize}
-\item Need a \emph{container} C of α
-\item with a distinguished container ε devoid of α's
-\item a binary operation * that puts two containers together
-\item such that ε is a left/right unit for *
+\item Need a \emph{container} $C$ of $α$
+\item with a distinguished container $ε$ devoid of $α$'s
+\item a binary operation $*$ that puts two containers together
+\item such that $ε$ is a left/right unit for $*$
 \end{itemize}
 Functor:
 \begin{itemize}
-\item a way to apply a (α → β) function to a C α to get a C β
-\item which plays well with id, ∘, ≡ and *
+\item a way to apply a $(α → β)$ function to a $C\, α$ to get a $C \, β$
+\item which plays well with $\mathsf{id}, ∘, ≡$ and $*$
 \end{itemize}
 Adjunction:
 \begin{itemize}
 \item singleton
 \item foldr (over arbitrary Monoid)
-\item foldr and singleton play well with each other
+\item foldr and singleton ``play well'' with each other
 \end{itemize}
 Bonus:
 \begin{itemize}
@@ -101,19 +105,22 @@ Bonus:
 \end{itemize}
 \end{frame}
 % Notice how I never said ``Monad'' ?
+%
+% Monads ≅ closure operators
+%
 
 \begin{frame}
 \frametitle{The real tale}
-Given an arbitrary type A : \\ \vspace*{4mm}
+Given an arbitrary type $A$ : \\ \vspace*{4mm}
 \begin{tabular}{lll}
 \textbf{Theory} & Free \textbf{Structure} & CoFree \\ \hline
-Carrier & Identity A & \\
-Pointed & Maybe A & \\ \hline
+Carrier & $Identity\, A$ & \\
+Pointed & $Maybe\, A$ & \\ \hline
 Unary & ℕ × A &  \\
-Involutive & A ⊎ A & A × A \\ \hline
-Magma & Tree A &  \\
-Semigroup & NEList A & \\ \hline
-Monoid & List A & \\
+Involutive & $A ⊎ A$ & A × A \\ \hline
+Magma & $Tree\, A$ &  \\
+Semigroup & $NEList\, A$ & \\ \hline
+Monoid & $List\, A$ & \\
 Left Unital Semigroup & List A × ℕ & \\
 Right Unital Semigroup & ℕ × List A & \\ \hline
 \end{tabular}\\ \vspace*{4mm}

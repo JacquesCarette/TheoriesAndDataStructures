@@ -301,12 +301,37 @@ Forget₁ _ = record
   }
 FreedomSad : {ℓ : Level} → Adjunction (Free₁ ℓ) (Forget₁ ℓ)
 FreedomSad = record
-  { unit     =   record { η = id ; commute = id }
-  ; counit   =   record { η = λ X → MkHom (𝑲 (Id X)) ≡.refl (≡.sym (leftId X))
+  { unit     =   record { η = id ; commute = id } -- no choice
+  ; counit   =   record { η = λ X → MkHom (𝑲 (Id X)) ≡.refl (≡.sym (leftId X)) -- no choice
                         ; commute = λ f x → ≡.sym (pres-Id f) }
   ; zig      =   {!It is here that we are forced to have the equation: ∀ x. x ≈ ε!}
   ; zag      =   ⋆
   }
+
+-- claim: If there's an adjunction, then the image of One is necessarily a singleton.
+module claim {ℓ : Level}
+  (L : Functor (OneCat₀ ℓ ℓ ℓ) (MonoidCat ℓ))
+  -- (R : Functor (MonoidCat ℓ) (OneCat₀ ℓ ℓ ℓ))
+  (adj : Adjunction L (Forget₁ ℓ))
+  where
+
+  open Functor
+  open Adjunction adj
+  open import Categories.NaturalTransformation hiding (_≡_)
+  open NaturalTransformation
+ 
+  one-mon₀ : Set ℓ
+  one-mon₀ = Carrier (F₀ L ⋆)
+
+--   mustbe : ∀ X → F₀ R X ≡ ⋆
+--   mustbe X with F₀ R X
+--   ...| ⋆ = ≡.refl
+
+  .guess : η unit ⋆ ≡ ⋆
+  guess = {!η counit!}
+
+  .uip : (x : one-mon₀) → x ≡ mor (η counit (F₀ L ⋆)) (mor (F₁ L (η unit ⋆)) x)
+  uip = zig {⋆}
 \end{code}
 %}}}
 

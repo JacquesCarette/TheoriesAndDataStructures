@@ -44,8 +44,8 @@
 \DeclareUnicodeCharacter{9675}{\ensuremath{ \boldsymbol{\circ} }} % white circle
 
 \title{A tale of theories and data-structures}
-\author{Jacques Carette, Musa Al-hassy, Wolfram Kahl}
-\institute{McMaster University, Hamilton}
+\author[Carette, Al-hassy, Kahl]{Jacques Carette, Musa Al-hassy, Wolfram Kahl}
+\institute[McMaster]{McMaster University, Hamilton}
 
 \begin{document}
 
@@ -82,35 +82,37 @@ open import Categories.Category using (Category)
 The free monoid functor is ``the'' left adjoint to the forgetful functor from
 the category (monoids, homomorphisms) to the category (types, functions). Not Set.
 
-( MA: For many people, sets = types. As such, consider making the distinction explicit:
-  Why is Set nor the same as the category of types and functions? )
-
 Why on earth would we care about that? Let's see.
 
-Monoid. Monoid Homomorphism. Forgetful functor.
-
-So we need to come up with things with types
-\begin{code}
-Forget : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
-Forget ℓ = record
-  { F₀           = {!!} -- Monoid ℓ → Set ℓ
-
-  ; F₁           = {!!} -- Hom A B → Carrier A → Carrier B
-
-  ; identity     = {!!} -- {x : Carrier A} → x ≡ x
-
-  ; homomorphism = {!!} -- {f : Hom X Y} {g : Hom Y Z}
-                        -- {x : Carrier X} → mor g (mor f x) ≡ mor g (mor f x)
-
-  ; F-resp-≡     = {!!} -- {F G : Hom A B} → ((x : Carrier A)
-                        -- → mor F x ≡ mor G x) → {x : Carrier A} → mor F x ≡ mor G x
-  }
-\end{code}
-\AgdaHide{
-\begin{code}
-\end{code}
-}
-
+% Go to Agda code.  Show definitions of
+% Monoid. Monoid Homomorphism. Forgetful functor.
+% Then definition of Free and the Adjunction.
 \end{frame}
 
+\begin{frame}
+\frametitle{Non-categorical version}
+The requirements roughly translate to\\
+Monoid:
+\begin{itemize}
+\item Need a \emph{container} C of α
+\item with a distinguished container ε devoid of α's
+\item a binary operation * that puts two containers together
+\item such that ε is a left/right unit for *
+\end{itemize}
+Functor:
+\begin{itemize}
+\item a way to apply a (α → β) function to a C α to get a C β
+\item which plays well with id, ∘, ≡ and *
+\end{itemize}
+Adjunction:
+\begin{itemize}
+\item singleton
+\item foldr (over arbitrary Monoid)
+\item foldr and singleton play well with each other
+\end{itemize}
+Bonus:
+\begin{itemize}
+\item Induction principle
+\end{itemize}
+\end{frame}
 \end{document}

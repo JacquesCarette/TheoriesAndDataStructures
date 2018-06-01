@@ -2,6 +2,7 @@
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
 module Structures.DistinguishedSubset where
 
 open import Level renaming (suc to lsuc; zero to lzero)
@@ -99,6 +100,9 @@ ToDo ∷ construct another forgetful functor
 
 %}}}
 
+
+\iffalse holes of items to be ported here
+
 %{{{ Free and CoFree
 
 Given a type, we can pair it with the empty type or the singelton type
@@ -136,7 +140,7 @@ Left : (ℓ : Level) → Adjunction (Free ℓ) (Forget ℓ)
 Left ℓ = record
   { unit   = record
     { η       = λ _ → {!!}
-    ; commute = λ _ → ≡.refl
+    ; commute = λ _ → {!!} -- ≡.refl
     }
   ; counit = record
     { η       = λ { (MkDist A R) → MkHom (λ a → {!!}) {!!} }
@@ -153,7 +157,7 @@ Right ℓ = record
     ; commute = λ _ → {!!} -- ≐-refl
     }
   ; counit   =   record { η = λ _ → {!!} ; commute = λ f → {!!} }
-  ; zig      =   ≡.refl
+  ; zig      =   {!!} -- ≡.refl
   ; zag      =   {!!} -- ≐-refl
   }
 \end{code}
@@ -167,10 +171,10 @@ and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| alg
 \begin{code}
 DepProd : (ℓ : Level) → Functor (DependentCat ℓ) (Sets ℓ)
 DepProd ℓ = record
-  { F₀             =   λ S → Σ (Index S) {!!}
-  ; F₁             =   λ F → mor F ×₁ {!!}
-  ; identity       =   ≡.refl
-  ; homomorphism   =   ≡.refl
+  { F₀             =   {!!} -- λ S → Σ (Index S) {!!}
+  ; F₁             =   {!!} -- λ F → mor F ×₁ {!!}
+  ; identity       =   {!!} -- ≡.refl
+  ; homomorphism   =   {!!} -- ≡.refl
   ; F-resp-≡      =
     λ {A} {B} F≈G → {!!}
   }
@@ -191,16 +195,18 @@ Then the proof that these two form the desired adjunction
 \begin{code}
 Right₂ : (ℓ : Level) → Adjunction (ID ℓ) (DepProd ℓ)
 Right₂ ℓ = record
-  { unit     =   record { η = λ _ → diag ; commute = λ _ → ≡.refl }
-  ; counit   =   record { η = λ _ → MkHom proj₁ {!!} ; commute = λ _ → {!!} }
-  ; zig      =   {!!} -- ≐-refl
-  ; zag      =   ≡.refl
+  { unit     =   {!!} -- record { η = λ _ → diag ; commute = λ _ → ≡.refl }
+  ; counit   =   {!!} -- record { η = λ _ → MkHom proj₁ {!!} ; commute = λ _ → {!!} }
+  ; zig      =   {!!} -- {!!} -- ≐-refl
+  ; zag      =   {!!} -- ≡.refl
   }
 \end{code}
 %}}}
 
 Note that since Σ encompasses both × and ⊎, it may not be that there is another functor
 co-adjoint to ID ---not sure though.
+
+\fi
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

@@ -2,6 +2,8 @@
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module Structures.Monoid where
 
 open import Level renaming (zero to lzero; suc to lsuc)

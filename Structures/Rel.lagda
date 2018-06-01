@@ -361,6 +361,9 @@ and going to a singleton set.
 
 %}}}
 
+%{{{ porting over other results
+\iffalse
+
 \subsection{\unfinished}
 
 It remains to port over results such as Merge, Dup, and Choice from Twos to Rels.
@@ -368,7 +371,7 @@ It remains to port over results such as Merge, Dup, and Choice from Twos to Rels
 Also to consider: sets with an equivalence relation;
 whence propositional equality.
 
-%{{{ Merge and Dup functors ; Right₂ adjunction
+  %{{{ Merge and Dup functors ; Right₂ adjunction
 
 The category of sets contains products and so |TwoSorted| algebras can be represented there
 and, moreover, this is adjoint to duplicating a type to obtain a |TwoSorted| algebra.
@@ -408,7 +411,7 @@ Right₂ ℓ = record
 \end{spec}
 %}}}
 
-%{{{ Choice ; from⊎ ; Left₂ adjunction
+  %{{{ Choice ; from⊎ ; Left₂ adjunction
 
 The category of sets admits sums and so an alternative is to represet a |TwoSorted|
 algebra as a sum, and moreover this is adjoint to the aforementioned duplication functor.
@@ -431,6 +434,10 @@ Left₂ ℓ = record
   ; zag      =   ≐-refl , ≐-refl
   }
 \end{spec}
+%}}}
+
+\fi
+
 %}}}
 
 % Quick Folding Instructions:

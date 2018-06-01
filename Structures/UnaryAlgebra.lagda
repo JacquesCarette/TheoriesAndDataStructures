@@ -102,6 +102,10 @@ This leads to an alternative presentation, |Eventually A   ≅   Σ n ∶ ℕ �
 viz |stepⁿ (base a) ↔ (n , a)| ---cf |Free²| below.
 Incidentally, or promisingly, |Eventually ⊤ ≅ ℕ|.
 
+For |(n , a)|, the tag |n| may be interpreted as “the delay time” before the value |a| is obtained.
+Alternatively, it can be interpreted to be the number of times that method |a| is to be executed.
+Finally, these can be thought of as constant lists with value |a| of length |n| ;-)
+
 We will realise this claim later on. For now, we turn to the dependent-eliminator/induction/recursion principle:
 \begin{code}
 elim : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
@@ -124,10 +128,6 @@ open import Function using (const)
 
 Notice that: The number of |𝓈|teps is preserved, |⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧|.
 Essentially, |⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x|. A similar general remark applies to |elim|.
-
-Here is an implicit version of |elim|,
-\begin{code}
-\end{code}
 %}}}
 
 %{{{ mapeE ; ⟦⟧-naturality

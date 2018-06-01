@@ -8,6 +8,8 @@ In the former view, the we have an adjunction involving dependent products.
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module Structures.Dependent where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
@@ -216,8 +218,10 @@ DepProd ℓ = record
   ; F-resp-≡      =   λ{ (F≈G , eq) → ≅.cong₂ _,_ F≈G eq } -- This was the troublesome hole; now filled!
   }
 \end{code}
+%}}}
 
-\emph{Begin inactive material}
+%{{{ inactive material
+\iffalse
 
 \begin{spec}
   where helper : {a b : Level} {S T : Dependent a b} {F G : Hom S T}

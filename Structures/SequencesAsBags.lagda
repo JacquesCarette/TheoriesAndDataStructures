@@ -48,7 +48,6 @@ private
 %{{{ Seq
 \begin{code}
 -- A “sequence” is the functional view of a list ─which are properly handled in Agda as vectors.
--- `ATable`
 record Seq {a : Level} (A : Set a) : Set a where
   constructor sequence
   field

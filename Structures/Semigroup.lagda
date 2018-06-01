@@ -210,7 +210,7 @@ ToDo ∷ Discuss streams and their realisation in Agda.
 %{{{ Free ; TreeLeft   wrt  MAGMA
 \subsection{Non-empty lists are trees}
 \begin{code}
-open import Structures.Magma renaming (Hom to MagmaHom)
+open import Structures.Magma hiding (initial ; terminal ; module ZeroAryAdjoint) renaming (Hom to MagmaHom)
 open MagmaHom using () renaming (mor to morₘ)
 
 ForgetM : (ℓ : Level) → Functor (SemigroupCat ℓ) (Magmas ℓ)

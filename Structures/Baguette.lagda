@@ -1,7 +1,7 @@
 \section{Structures.Baguette}
 
+\iffalse
 New experimental variation on |Structures.Multiset| using Brad Hardy's work.
-
 
 A “baguette” is a long and narrow loaf of French bread.
 The same modifiers are used to describe the final piece of this project.
@@ -10,6 +10,7 @@ Alternatively, a “baguette” is a form of gem, as is this the project's remai
 
 On a completely unrelated matter, we're running out of names since
 we already have files named “multiset” and “bag” in the experimental directory.
+\fi
 
 %{{{ Precisé
 
@@ -407,11 +408,8 @@ module CMUtils {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
   sumₛ-homo : {f g : Bag S₀} → sumₛ (f Seq.⊕ g) ≈ sumₛ f + sumₛ g
   sumₛ-homo {f} = Seq.sumₜ-homo CMS (len f)
 
-module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ c) where
-  open Setoid
-
-  ListMS : Multiset {ℓ} {c} X
-  ListMS = record
+ListMS : {ℓ c : Level} (X : Setoid ℓ c) → Multiset {ℓ} {c} X
+ListMS {ℓ} {c} X = record
     { commutativeContainer   =   Bag-CommutativeContainer ℓ c
     ; singleton              =   record { _⟨$⟩_ = Seq.singleton X ; cong = Seq.singleton-cong X }
     ; fold  =   λ {Y} CMY → let open CMUtils CMY in record
@@ -424,8 +422,6 @@ module ImplementationViaList {ℓ c : Level} (X : Setoid ℓ c) where
 \end{code}
 
 \begin{code}
-open ImplementationViaList
-
 open import Data.Table.Base
 
 apply-map : {ℓ ℓ′ c : Level} {X Y : Setoid ℓ c} {Z W : Set ℓ′} {g : Z → Carrier X} {h : W → Carrier X} →
@@ -463,9 +459,7 @@ ListCMHom {ℓ} {c} {X} {Y} = record
 \end{code}
 
 \begin{code}
-
-module BuildProperties where
-  open ImplementationViaList
+module BuildProperties where  
   functoriality : {ℓ c : Level} → FunctorialMSH {ℓ} (ListMS {ℓ} {c}) ListCMHom
   functoriality {ℓ} {c} = record
     { id-pres               =   λ {X} {xs} → idp Seq.⟨π⟩ λ _ → Setoid.refl X
@@ -479,15 +473,18 @@ module BuildProperties where
     open MultisetHom using (lift)
     open import Data.Table using (permute)
     import Equiv
+    
     module _ {X : Setoid ℓ c} where
       LMS = ListMS {ℓ} {c} X
       L = ListMS {ℓ} {c} (ctrSetoid LMS X)
       C = commMonoid LMS X
+      
       same-size : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
         n ≡ (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
       same-size zero bg = ≡.refl
       same-size (suc n) bg = ≡.cong suc (same-size n _)
+      
       fold-perm : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
         Permutation n (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
@@ -521,7 +518,7 @@ module BuildProperties where
 Last but not least, build the left adjoint:
 
 \begin{code}
-module FreeCommMonoid = BuildLeftAdjoint ImplementationViaList.ListMS ListCMHom
+module FreeCommMonoid = BuildLeftAdjoint ListMS ListCMHom
   BuildProperties.functoriality
 \end{code}
 %}}}

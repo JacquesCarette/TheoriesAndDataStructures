@@ -26,22 +26,13 @@ open import Function.Inverse using (_↔_)
 open import Function using () renaming (id to id₀; _∘_ to _∘₀_)
 open import Algebra   using (CommutativeMonoid)
 
-open import FinEquivPlusTimes using (module Plus; F0≃⊥)
-open import FinEquivTypeEquiv using (module PlusE; _fin≃_)
-open import TypeEquiv using (swap₊; swap₊equiv; unite₊equiv)
--- open import TypeEquivEquiv using (swap₊-nat)
-open import EquivEquiv using (_≋_)
-open import Equiv using (_●_; β₁; _⊎≃_; id≃; _⟨≃≃⟩_; ≐-trans; ≐-sym;
-  cong∘l; cong∘r; β⊎₁)
+open import Helpers.FinEquivPlusTimes using (module Plus; F0≃⊥)
+open import Helpers.FinEquivTypeEquiv using (module PlusE; _fin≃_)
+open import Helpers.TypeEquiv using (swap₊; swap₊equiv; unite₊equiv)
+open import Helpers.Equiv -- using (_●_; β₁; _⊎≃_; id≃; _⟨≃≃⟩_; cong∘l; cong∘r; β⊎₁)
+  renaming (≐-trans to _⊙_ ; ≐-sym to !_)
 
 open import Structures.CommMonoid renaming (Hom to CMArrow)
-
-infixr 10 _⊙_
-
-private
-  _⊙_ = ≐-trans
-  !_ = ≐-sym
-
 \end{code}
 %}}}
 
@@ -201,11 +192,11 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 %{{{ Permutation is equivalent to _fin≃_ (which is Fin n ≃ Fin m)
 \begin{code}
   Perm⇒fin≃ : {m n : ℕ} → Permutation m n → m fin≃ n
-  Perm⇒fin≃ p = _⟨$⟩_ (to p) , Equiv.qinv (_⟨$⟩_ (from p)) (right-inverse-of p) (left-inverse-of p)
+  Perm⇒fin≃ p = _⟨$⟩_ (to p) , Helpers.Equiv.qinv (_⟨$⟩_ (from p)) (right-inverse-of p) (left-inverse-of p)
     where open Inv.Inverse; open Function.Equality using (_⟨$⟩_)
 
   fin≃⇒Perm : {m n : ℕ} → m fin≃ n → Permutation m n
-  fin≃⇒Perm (f , Equiv.qinv b α β) = record { to = ≡.→-to-⟶ f ; from = ≡.→-to-⟶ b
+  fin≃⇒Perm (f , Helpers.Equiv.qinv b α β) = record { to = ≡.→-to-⟶ f ; from = ≡.→-to-⟶ b
     ; inverse-of = record { left-inverse-of = β ; right-inverse-of = α } }
 
   ≡⇒≈₀ : {x y : S₀} → x ≡ y → x ≈₀ y
@@ -225,7 +216,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 
   expand-swap+ : {m n : ℕ} (i : Fin (m + n)) → proj₁ (+≃⊎ {n} {m}) (proj₁ (swap+ {m}) i) ≡ swap₊ (proj₁ +≃⊎ i)
   expand-swap+ i =  ≡.cong (proj₁ +≃⊎) (β₁ i)
-             ⟨≡≡⟩ ((Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i))
+             ⟨≡≡⟩ ((Helpers.Equiv.isqinv.α (proj₂ +≃⊎) (proj₁ (swap₊equiv ● +≃⊎) i))
              ⟨≡≡⟩ (β₁ _))
 
   ⊕-comm : {f g : Seq S₀} → f ⊕ g  ≈ₛ  g ⊕ f
@@ -256,9 +247,9 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       lookup (permute (fin≃⇒Perm (assocr+ {len f})) (table (f ⊕ g ⊕ h))) i ∎
     }
     where
-    open Equiv
+    open Helpers.Equiv
     open Inv.Inverse; open import Function using (_∘_)
-    open TypeEquiv using (assocl₊equiv; assocr₊equiv)
+    open Helpers.TypeEquiv using (assocl₊equiv; assocr₊equiv)
     module _ where
       open ≡.≡-Reasoning using (begin_) renaming (_∎ to _∎≡; _≡⟨_⟩_ to _≣⟨_⟩_)
       left-cancel : {m n o : ℕ} → (i : Fin ((m + n) + o)) → proj₁ (+≃⊎ {m} {n + o}) (proj₁ (assocr+ {m} {n} {o}) i) ≡
@@ -296,7 +287,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
       absorb₂ {f = f} {g} {h} (inj₂ y) = ≡.cong [ [ f , g ]′ , h ]′ (β⊎₂ (inj₂ y))
 
   merge-map : {ℓ ℓ′ : Level} {B : Set ℓ} → (z : Fin 0 ⊎ B)
-            → TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) ≡ [ (λ ()) , id₀ ]′ z
+            → Helpers.TypeEquiv.unite₊ {ℓ′} (Data.Sum.map (proj₁ F0≃⊥) id₀ z) ≡ [ (λ ()) , id₀ ]′ z
   merge-map (inj₁ ())
   merge-map (inj₂ _) = ≡.refl
 
@@ -315,7 +306,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
     ≡⟨ ≡.sym (lookup-map {x} 𝒾) ⟩
       x ‼ ([ (λ ()) , id₀ ]′ 𝒾)
     ≡⟨ ≡.sym (≡.cong (x ‼_) (merge-map {zero} {ℓ} {Fin (len x)} 𝒾)) ⟩
-      x ‼ (TypeEquiv.unite₊ {zero} {zero} (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))
+      x ‼ (Helpers.TypeEquiv.unite₊ {zero} {zero} (Data.Sum.map (proj₁ F0≃⊥) id₀ (proj₁ +≃⊎ i)))
     ≡⟨ ≡.sym (≡.cong (x ‼_) ((β₁ ⊙ cong∘l (proj₁ unite₊equiv) (β₁ ⊙ cong∘r inj₂ β⊎₁)) i)) ⟩
       x ‼ (proj₁ (unite₊equiv {zero} {zero} ● F0≃⊥ ⊎≃ id≃ ● +≃⊎)) i
     ≡⟨ ≡.refl ⟩
@@ -363,7 +354,7 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
              [ g , k ]′ (proj₁ +≃⊎ (proj₁ (x≃y PlusE.+F u≃v) i))
             ≡⟨ ≡.cong ([ g , k ]′ ∘₀ proj₁ +≃⊎) (β₁ _ ⟨≡≡⟩ ≡.cong (proj₁ ⊎≃+) (β₁ i ⟨≡≡⟩ β⊎₁ _)) ⟩
               [ g , k ]′ (proj₁ +≃⊎ (proj₁ ⊎≃+ ((x≃₁y ⊎₁ u≃₁v) j)))
-            ≡⟨ ≡.cong [ g , k ]′ (Equiv.isqinv.β (proj₂ ⊎≃+) ((x≃₁y ⊎₁ u≃₁v) j)) ⟩
+            ≡⟨ ≡.cong [ g , k ]′ (Helpers.Equiv.isqinv.β (proj₂ ⊎≃+) ((x≃₁y ⊎₁ u≃₁v) j)) ⟩
               [ g , k ]′ ((x≃₁y ⊎₁ u≃₁v) j)
             ≡⟨ map-map (proj₁ (+≃⊎ {len F} {len u}) i) ⟩
               [ g ∘₀ x≃₁y , k ∘₀ u≃₁v ]′ j

@@ -16,17 +16,17 @@ sort for nodes and an incidence relation.
 module Structures.Rel where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
+open import Function                using   (id ; _∘_ ; const)
+
 open import Categories.Category     using   (Category)
 open import Categories.Functor      using   (Functor)
 open import Categories.Adjunction   using   (Adjunction)
 open import Categories.Agda         using   (Sets)
-open import Function                using   (id ; _∘_ ; const)
-open import Function2               using   (_$ᵢ)
 
-open import Forget
-open import EqualityCombinators
-open import DataProperties
-open import Structures.TwoSorted using (TwoSorted; Twos ; MkTwo) renaming (Hom to TwoHom ; MkHom to MkTwoHom)
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
+open import Structures.TwoSorted using (TwoSorted; Twos ; MkTwo)
+                                 renaming (Hom to TwoHom ; MkHom to MkTwoHom)
 \end{code}
 %}}}
 

@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module LeqLemmas where
+module Helpers.LeqLemmas where
 
 open import Data.Nat
   using (ℕ; suc; _+_; _*_; _<_; _≤_; _≤?_; z≤n; s≤s)

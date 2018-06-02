@@ -8,6 +8,8 @@ the notion of sum and product types.
 module Structures.InvolutiveAlgebra where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function
+
 open import Categories.Category   using (Category; module Category)
 open import Categories.Functor    using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
@@ -15,11 +17,9 @@ open import Categories.Agda       using (Sets)
 open import Categories.Monad      using (Monad)
 open import Categories.Comonad    using (Comonad)
 
-open import Function
-open import Function2    using (_$ᵢ)
-
-open import DataProperties
-open import EqualityCombinators
+open import Helpers.Function2    using (_$ᵢ)
+open import Helpers.DataProperties
+open import Helpers.EqualityCombinators
 \end{code}
 %}}}
 

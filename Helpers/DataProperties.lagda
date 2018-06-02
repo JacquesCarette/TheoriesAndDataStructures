@@ -9,11 +9,11 @@ This module re-exports (some of) the contents of the standard library's |Data.Pr
 
 %{{{ Imports
 \begin{code}
-module DataProperties where
+module Helpers.DataProperties where
 
 open import Level renaming (suc to lsuc; zero to lzero)
 open import Function using (id ; _∘_ ; const)
-open import EqualityCombinators
+open import Helpers.EqualityCombinators
 
 open import Data.Product public using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
 open import Data.Sum     public using (inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)

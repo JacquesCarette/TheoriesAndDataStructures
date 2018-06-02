@@ -9,18 +9,17 @@ module Structures.Monoid where
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.List using (List; _∷_ ; []; [_]; _++_; foldr; map)
 open import Data.List.Properties
+open import Function              using (id ; _∘_ ; const)
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
-open import Function              using (id ; _∘_ ; const)
-open import Function2             using (_$ᵢ)
 
-open import Forget
-open import EqualityCombinators
-open import DataProperties
-
+open import Helpers.Function2             using (_$ᵢ)
+open import Helpers.Forget
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
 \end{code}
 %}}}
 

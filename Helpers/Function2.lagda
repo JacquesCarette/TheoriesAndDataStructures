@@ -1,7 +1,7 @@
 \section{Function2}
 
 \begin{code}
-module Function2 where
+module Helpers.Function2 where
 
 -- should be defined in Function ?
 infix 4 _$ᵢ

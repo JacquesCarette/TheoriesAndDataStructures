@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module FinNatLemmas where
+module Helpers.FinNatLemmas where
 
 open import Data.Empty using (⊥-elim)
 open import Data.Product using (_×_; _,_)

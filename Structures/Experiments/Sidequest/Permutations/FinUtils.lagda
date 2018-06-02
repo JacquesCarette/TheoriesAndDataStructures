@@ -18,7 +18,7 @@ import Data.Fin.Properties as FinProp
 
 \begin{code}
 Fin-complement : {n : ℕ} (i : Fin n) → toℕ i Nat.+ (n ∸ toℕ i) ≡ n
-Fin-complement {n} i = NatProp.m+n∸m≡n (NatProp.≤pred⇒≤ (toℕ i) n (FinProp.prop-toℕ-≤ i))
+Fin-complement {n} i = {!!} -- NatProp.m+n∸m≡n (NatProp.≤pred⇒≤ (toℕ i) n (FinProp.prop-toℕ-≤ i))
 \end{code}
 
 \begin{code}
@@ -37,7 +37,7 @@ suc′ {suc (suc n)} (suc i) = Maybe.map suc (suc′ i)
 
 \begin{code}
 allFin′ : {n : ℕ} (i : Fin n) → List (Fin n)
-allFin′ {n} i = List.take  (toℕ i) (Vec.toList (allFin n))
+allFin′ {n} i = List.take  (toℕ i) (Vec.toList (Vec.allFin n))
 \end{code}
 
 \begin{code}

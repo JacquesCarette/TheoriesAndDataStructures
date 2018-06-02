@@ -24,7 +24,7 @@ Forgetful functor builder for single-sorted algebras to Sets.
 %{{{ Imports
 begin{ModuleHead}
 \begin{code}
-module Forget where
+module Helpers.Forget where
 
 open import Level
 
@@ -32,9 +32,9 @@ open import Categories.Category  using  (Category)
 open import Categories.Functor   using  (Functor)
 open import Categories.Agda      using  (Sets)
 
-open import Function2
+open import Helpers.Function2
 open import Function
-open import EqualityCombinators
+open import Helpers.EqualityCombinators
 \end{code}
 end{ModuleHead}
 edcomm{MA}{For one reason or another, the module head is not making the imports smaller.}

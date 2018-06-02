@@ -3,7 +3,7 @@
 \begin{code}
 {-# OPTIONS --without-K #-}
 
-module Equiv where
+module Helpers.Equiv where
 
 open import Level using (_⊔_)
 open import Function using (_∘_; id)

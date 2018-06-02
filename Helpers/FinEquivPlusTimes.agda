@@ -1,18 +1,18 @@
 {-# OPTIONS --without-K #-}
 
-module FinEquivPlusTimes where
+module Helpers.FinEquivPlusTimes where
 
 import Data.Empty as Empty
 open import Level using (Level; lift)
-open import DataProperties using (⊥; ⊥-elim; ⊤; tt)
+open import Helpers.DataProperties using (⊥; ⊥-elim; ⊤; tt)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_,_; _×_; proj₁; proj₂)
 
 open import Data.Nat
   using (ℕ; zero; suc; _+_; _*_; _<_; _≤_; ≤-pred; _≥_; _≤?_)
 open import Data.Nat.DivMod using (_divMod_; result)
-open import Data.Nat.Properties using (≰⇒>; 1+n≰n; m≤m+n; ¬i+1+j≤i;
-  module ≤-Reasoning)
+open import Data.Nat.Properties
+  using (≰⇒>; 1+n≰n; m≤m+n; ¬i+1+j≤i; module ≤-Reasoning)
 open import Data.Nat.Properties.Simple
   using (+-assoc; +-suc; +-comm; *-right-zero)
 
@@ -27,16 +27,10 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; trans; cong; cong₂; subst;
          module ≡-Reasoning; inspect; [_])
 
---
-
-open import Equiv using (_≐_; _≃_; qinv; id≃; sym≃; _●_; _⊎≃_)
-
-open import Proofs using (
-  -- LeqLemmas
-  _<?_; cong+r≤; cong+l≤; cong*r≤;
-  -- FinNatLemmas
-  inj₁-≡; inj₂-≡; inject+-injective; raise-injective; addMul-lemma
-  )
+open import Helpers.Equiv        using (_≐_; _≃_; qinv; id≃; sym≃; _●_; _⊎≃_)
+open import Helpers.LeqLemmas    using (_<?_; cong+r≤; cong+l≤; cong*r≤)
+open import Helpers.FinNatLemmas
+  using (inj₁-≡; inj₂-≡; inject+-injective; raise-injective; addMul-lemma)
 
 ------------------------------------------------------------------------------
 -- Additive unit and multiplicative unit are Fin 0 and Fin 1 which are

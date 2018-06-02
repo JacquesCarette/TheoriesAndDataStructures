@@ -5,17 +5,16 @@
 module Structures.Semigroup where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function              using (const ; id ; _∘_)
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor ; Faithful)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
-open import Function              using (const ; id ; _∘_)
-open import Data.Product          using (_×_; _,_)
 
-open import Function2 using (_$ᵢ)
-open import EqualityCombinators
-open import Forget
+open import Helpers.Function2 using (_$ᵢ)
+open import Helpers.EqualityCombinators
+open import Helpers.Forget
 \end{code}
 %}}}
 

@@ -23,13 +23,13 @@ open import Categories.Functor      using   (Functor)
 open import Categories.Adjunction   using   (Adjunction)
 open import Categories.Agda         using   (Sets)
 open import Function                using   (id ; _∘_ ; const)
-open import Function2               using   (_$ᵢ)
+open import Helpers.Function2       using   (_$ᵢ)
 
 open import Relation.Nullary  -- for showing some impossibility
 
-open import Forget
-open import EqualityCombinators
-open import DataProperties
+open import Helpers.Forget
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
 
 -- 𝑲onstant
 𝑲 : {a b : Level} {A : Set a} {B : Set b} → A → B → A

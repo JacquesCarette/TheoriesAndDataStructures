@@ -76,13 +76,11 @@ import Data.Fin as Fin
 
 open import Data.Sum using ([_,_]′)
 
-open import DataProperties hiding (⟨_,_⟩ ; ⊎-cong; _‼_)
-open import SetoidEquiv
-open import ParComp
-open import EqualityCombinators
 open import Structures.CommMonoid renaming (Hom to CMArrow)
 
-open import FinEquivPlusTimes using (module Plus)
+open import Helpers.DataProperties hiding (⟨_,_⟩ ; ⊎-cong; _‼_)
+open import Helpers.EqualityCombinators
+open import Helpers.FinEquivPlusTimes using (module Plus)
 open Plus using (+≃⊎)
 
 open CMArrow    using (_⟨$⟩_ ; mor ; pres-e ; pres-*)
@@ -469,10 +467,9 @@ module BuildProperties where
       fold-perm {X} (Bag.len xs) (Bag._‼_ xs) Seq.⟨π⟩ λ i → fold-perm-adequate {X} (Bag.len xs) (Bag._‼_ xs) i
     }
     where
-    open Multiset using (𝒞; commMonoid; ctrSetoid; fold; singleton)
-    open MultisetHom using (lift)
-    open import Data.Table using (permute)
-    import Equiv
+    open Multiset            using   (𝒞; commMonoid; ctrSetoid; fold; singleton)
+    open MultisetHom         using   (lift)
+    open import Data.Table   using   (permute)
     
     module _ {X : Setoid ℓ c} where
       LMS = ListMS {ℓ} {c} X

@@ -24,20 +24,19 @@ are completely different than classes in an imperative setting. }
 module Structures.Pointed where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Data.Empty
+open import Relation.Nullary
+open import Function using (id ; _∘_)
+open import Data.Maybe using (Maybe; just; nothing; maybe; maybe′)
+
 open import Categories.Category using (Category; module Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.NaturalTransformation using (NaturalTransformation)
 open import Categories.Agda using (Sets)
-open import Function using (id ; _∘_)
-open import Data.Maybe using (Maybe; just; nothing; maybe; maybe′)
 
-open import Forget
-
-open import Data.Empty
-open import Relation.Nullary
-
-open import EqualityCombinators
+open import Helpers.Forget
+open import Helpers.EqualityCombinators
 \end{code}
 %}}}
 

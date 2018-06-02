@@ -5,21 +5,18 @@
 module Structures.IndexedUnaryAlgebra where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
+open import Function hiding (_$_)
+open import Data.List
+
 open import Categories.Category using (Category; module Category)
 open import Categories.Functor using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
-open import Function hiding (_$_)
 
-open import Data.List
-
-open import Forget
-open import Function2
--- open import Structures.Pointed using (Pointeds; Pointed) renaming (Hom to PHom ; MkHom to MkPHom)
-
-open import EqualityCombinators
-
-open import Data.Product using (_×_; _,_)
+open import Helpers.Forget
+open import Helpers.Function2
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
 \end{code}
 %}}}
 

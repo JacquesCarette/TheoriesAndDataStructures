@@ -11,17 +11,17 @@ combinators are a result of the proof that they are indeed free.
 module Structures.Magma where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function using (const ; id ; _∘_ ; _$_)
+open import Data.Empty
+
 open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda using (Sets)
-open import Function using (const ; id ; _∘_ ; _$_)
-open import Data.Empty
 
-open import Function2 using (_$ᵢ)
-open import Forget
-
-open import EqualityCombinators
+open import Helpers.Function2 using (_$ᵢ)
+open import Helpers.Forget
+open import Helpers.EqualityCombinators
 \end{code}
 %}}}
 

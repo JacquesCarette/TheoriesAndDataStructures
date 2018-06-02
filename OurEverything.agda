@@ -11,25 +11,9 @@
 
 module OurEverything where
 
--- ============================================================================================
--- Helpers
--- ============================================================================================
-
 -- Creates forgetful functors from single sorted algebras to |Set|
 -- 
-import Forget
-
--- Re-exports all equality-related concepts
---
-import EqualityCombinators
-
--- Contains properties about sums and products not found in standard library
---
-import DataProperties
-
--- Houses contents brought over from RATH-Agda library.
--- import RATH
--- ‼ This module is not being called from anywhere ‼
+import Helpers.Forget
 
 -- ============================================================================================
 -- Variations on Sets
@@ -134,58 +118,28 @@ open import Structures.AbelianGroup
 -- ============================================================================================
 -- ============================================================================================
 -- ============================================================================================
--- The remaining modules are mostly technical ones needed for the strcuture-theory relationships.
-
--- open import FinUtils 
-open import ParComp 
--- open import Some-Alt 
--- open import Belongs 
--- open import Forget 
--- open import Some 
--- open import CounterExample 
--- Data/
-open import Function2
-open import DataProperties 
-open import ISEquiv 
-open import report 
-open import EqualityCombinators 
-
--- ============================================================================================
--- Setoids
+-- Helpers
+--
+-- The remaining modules are mostly technical ones needed for the structure-theory relationships.
 -- ============================================================================================
 
-import SetoidEquiv
-import SetoidOfIsos
-import SetoidSetoid
-import SetoidFamilyUnion
+-- Re-exports all equality-related concepts
+--
+import Helpers.EqualityCombinators
 
--- ============================================================================================
--- Equiv
--- ============================================================================================
+-- Contains properties about sums and products not found in standard library
+--
+import Helpers.DataProperties
 
-import Equiv
-import ISEquiv -- ought to be a lower-case `s`? As in `IsEquiv'?
-import TypeEquiv
+-- Implicit function application.
+--
+open import Helpers.Function2
 
--- ============================================================================================
--- Misc
--- ============================================================================================
-
-import Function2
-import ParComp
-import Belongs
-
--- ============================================================================================
--- -- JC, these are from other projects?
--- ============================================================================================
-
-open import Proofs
-open import SubstLemmas
-open import TypeEquivEquiv
-open import FinEquivPlusTimes
-open import EquivEquiv
-open import LeqLemmas
-open import FinEquivTypeEquiv
-open import VectorLemmas
-open import FiniteFunctions
-open import FinNatLemmas
+-- Files that asssit baguette.lagda ;; they are from previous work.
+-- Mostly laws about Fin and type isomorphisms for it.
+--
+open import Helpers.TypeEquiv
+open import Helpers.FinEquivPlusTimes
+open import Helpers.LeqLemmas
+open import Helpers.FinNatLemmas
+open import Helpers.FinEquivTypeEquiv

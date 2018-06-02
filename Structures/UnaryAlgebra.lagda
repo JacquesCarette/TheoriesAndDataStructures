@@ -13,20 +13,18 @@ This example algebra serves to set-up the approach we take in more involved sett
 module Structures.UnaryAlgebra where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function
+open import Data.Nat using (ℕ; suc ; zero)
 
 open import Categories.Category   using (Category; module Category)
 open import Categories.Functor    using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
-open import Forget
 
-open import Data.Nat using (ℕ; suc ; zero)
-open import DataProperties
-
-open import Function2
-open import Function
-
-open import EqualityCombinators
+open import Helpers.Function2
+open import Helpers.Forget
+open import Helpers.DataProperties
+open import Helpers.EqualityCombinators
 \end{code}
 %}}}
 

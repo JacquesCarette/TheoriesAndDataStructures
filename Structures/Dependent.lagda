@@ -17,12 +17,12 @@ open import Categories.Category using (Category)
 open import Categories.Functor using (Functor)
 open import Categories.Adjunction using (Adjunction)
 
-open import Function using (id ; _∘_ ; const)
-open import Function2 using (_$ᵢ)
+open import Function          using (id ; _∘_ ; const)
+open import Helpers.Function2 using (_$ᵢ)
 
-open import Forget
-open import EqualityCombinators hiding (_≡_ ; module ≡)
-open import DataProperties
+open import Helpers.Forget
+open import Helpers.EqualityCombinators hiding (_≡_ ; module ≡)
+open import Helpers.DataProperties
 
 import Relation.Binary.HeterogeneousEquality
 module ≅ = Relation.Binary.HeterogeneousEquality

@@ -4,20 +4,21 @@
 module Structures.AbelianGroup where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
+
 open import Function              using (const ; id ; _∘_ ; _$_)
-open import Function2             using (_$ᵢ)
-open import Relation.Unary        using (Pred; _∈_; _∪_; _∩_)
-
-open import EqualityCombinators
-open import DataProperties hiding (⊥ ; ⊥-elim)
 open import Data.Empty
-
+open import Relation.Unary        using (Pred; _∈_; _∪_; _∩_)
 open import Algebra hiding (Monoid)
 open import Algebra.Structures
+
+open import Helpers.Function2             using (_$ᵢ)
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties hiding (⊥ ; ⊥-elim)
 
 open import Data.Nat                using (ℕ; suc) renaming (_+_ to _+ℕ_)
 open import Data.Fin                using (Fin; inject+; raise)

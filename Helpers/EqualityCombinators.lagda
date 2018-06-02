@@ -4,7 +4,7 @@ Here we export all equality related concepts, including those for propositional 
 function extensional equality.
 
 \begin{code}
-module EqualityCombinators where
+module Helpers.EqualityCombinators where
 
 open import Level
 \end{code}
@@ -53,7 +53,7 @@ module _ {a b : Level} {A : Set a} {B : Set b} where
   open IsEquivalence ≐-isEquivalence public
     renaming (refl to ≐-refl ; sym to ≐-sym ; trans to ≐-trans)
 
-  open import Equiv public using (∘-resp-≐) -- To do: port this over here!
+  open import Helpers.Equiv public using (∘-resp-≐) -- To do: port this over here!
     renaming (cong∘l to ∘-≐-cong₂ ; cong∘r to ∘-≐-cong₁)
 
 infixr 5 _⟨≐≐⟩_
@@ -86,7 +86,7 @@ cong₂D : ∀ {a b c} {A : Set a} {B : A → Set b} {C : Set c}
             → (x₂≡x₁ : x₂ ≡ x₁) → ≡.subst B x₂≡x₁ y₂ ≡ y₁ → f x₁ y₁ ≡ f x₂ y₂
 cong₂D f ≡.refl ≡.refl = ≡.refl
 
-open import Equiv public using (_≃_; id≃; sym≃; trans≃; qinv)
+open import Helpers.Equiv public using (_≃_; id≃; sym≃; trans≃; qinv)
 
 infix  3 _◻
 infixr 2 _≃⟨_⟩_

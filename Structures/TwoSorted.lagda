@@ -10,16 +10,16 @@ by starting the simplest possible case: Two type and no required interaction wha
 module Structures.TwoSorted where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function                using   (id ; _∘_ ; const)
+
 open import Categories.Category     using   (Category)
 open import Categories.Functor      using   (Functor)
 open import Categories.Adjunction   using   (Adjunction)
 open import Categories.Agda         using   (Sets)
-open import Function                using   (id ; _∘_ ; const)
-open import Function2               using   (_$ᵢ)
 
-open import Forget
-open import EqualityCombinators
-open import DataProperties
+open import Helpers.Function2       using   (_$ᵢ)
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
 \end{code}
 %}}}
 

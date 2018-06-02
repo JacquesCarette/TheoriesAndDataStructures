@@ -6,19 +6,17 @@
 module Structures.DistinguishedSubset where
 
 open import Level renaming (suc to lsuc; zero to lzero)
+open import Function              using (id ; _∘_ ; const)
+open import Data.Bool             using (Bool; true; false)
+open import Relation.Nullary      using (¬_)
 
 open import Categories.Category   using (Category)
 open import Categories.Functor    using (Functor)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
-open import Function              using (id ; _∘_ ; const)
-open import Function2             using (_$ᵢ)
-open import Data.Bool             using (Bool; true; false)
-open import Relation.Nullary      using (¬_)
 
-open import Forget
-open import EqualityCombinators
-open import DataProperties
+open import Helpers.EqualityCombinators
+open import Helpers.DataProperties
 
 \end{code}
 %}}}

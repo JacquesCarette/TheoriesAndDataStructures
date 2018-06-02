@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module FinEquivTypeEquiv where
+module Helpers.FinEquivTypeEquiv where
 
 -- The goal is to establish that finite sets and equivalences form a
 -- commutative semiring.
@@ -15,13 +15,13 @@ open import Algebra using (CommutativeSemiring)
 open import Algebra.Structures
   using (IsSemigroup; IsCommutativeMonoid; IsCommutativeSemiring)
 
-open import Equiv using (_≃_; id≃; sym≃; trans≃; _●_; _⊎≃_; _×≃_)
-open import TypeEquiv
+open import Helpers.Equiv using (_≃_; id≃; sym≃; trans≃; _●_; _⊎≃_; _×≃_)
+open import Helpers.TypeEquiv
   using (assocl₊equiv; unite₊equiv; unite₊′equiv; swap₊equiv;
          unite⋆equiv; unite⋆′equiv; swap⋆equiv; assocl⋆equiv;
          distzequiv; distzrequiv; distequiv; distlequiv)
 
-open import FinEquivPlusTimes using (F0≃⊥; module Plus; Fin1≃⊤; module Times)
+open import Helpers.FinEquivPlusTimes using (F0≃⊥; module Plus; Fin1≃⊤; module Times)
 open Plus using (+≃⊎; ⊎≃+)
 open Times using (*≃×; ×≃*)
 

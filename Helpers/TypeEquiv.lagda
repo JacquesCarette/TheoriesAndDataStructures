@@ -4,10 +4,9 @@
 
 {-# OPTIONS --without-K #-}
 
-module TypeEquiv where
+module Helpers.TypeEquiv where
 
 open import Level using (Level; zero; suc)
-open import DataProperties
 
 open import Algebra using (CommutativeSemiring)
 open import Algebra.Structures
@@ -16,7 +15,8 @@ open import Algebra.Structures
 open import Function renaming (_∘_ to _○_)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-open import Equiv
+open import Helpers.DataProperties
+open import Helpers.Equiv
   using (_≐_; ≐-refl; _≃_; id≃; sym≃; ≃IsEquiv; qinv; _⊎≃_; _×≃_)
 
 ------------------------------------------------------------------------------

@@ -9,6 +9,20 @@
 
 \usepackage{color}
 \definecolor{grey}{gray}{0.6}
+\definecolor{slidered}{rgb}{1,0,0}
+\definecolor{slidegreen}{rgb}{0,1,0}
+\definecolor{slideblue}{rgb}{0,0,1}
+\definecolor{slidepurple}{rgb}{0,1,1}
+\definecolor{slidegray}{rgb}{0.5,0.5,0.5}
+\definecolor{slideivory}{rgb}{1,1,0.9}
+\definecolor{slideblueb}{rgb}{0,0.5,0.8}
+\newcommand{\highlight}[1]{\textcolor{slidered}{#1}}
+\newcommand{\sred}[1]{\textcolor{slidered}{#1}}
+\newcommand{\sblue}[1]{\textcolor{slideblue}{#1}}
+\newcommand{\sblueb}[1]{\textcolor{slideblueb}{#1}}
+\newcommand{\sgreen}[1]{\textcolor{slidegreen}{#1}}
+\newcommand{\sgray}[1]{\textcolor{slidegray}{#1}}
+\newcommand{\spurple}[1]{\textcolor{purple}{#1}}
 
 \beamertemplatenavigationsymbolsempty
 \usetheme{Boadilla}
@@ -46,36 +60,46 @@
 \author[Carette, Al-hassy, Kahl]{Jacques Carette, Musa Al-hassy, Wolfram Kahl}
 \institute[McMaster]{McMaster University, Hamilton}
 
+\newtheorem{claim}{Claim}
+
 \begin{document}
 
 \frame{\titlepage}
 
-% Start to fill the slides with verbiage that needs to evolve into something
-% slide-like, with few words and many illustrations. But the words embody the
-% plan and, to a certain extent, the verbal delivery of parts of the story.
 \begin{frame}
 \frametitle{Lists and Monoids}
-Lists and Monoids are pervasive in functional programming.
-They are related. A |List| is really a |Free Monoid|. What does that really mean?
-Can it be explained more simply? One explanation is that |List| (with its |map| and
-|fold| operations) is the \emph{language of monoids}. In other words, |List| is the
-canonical term syntax for ``computing with monoids''.
-\end{frame}
+\begin{claim}
+A \sred{List} is a \sred{Free Monoid}
+\end{claim}
+What does that really mean? \\
 
-\begin{frame}
-\frametitle{A formal relation}
-The free monoid functor is ``the'' left adjoint to the forgetful functor from
-the category (monoids, homomorphisms) to the category (types, functions). Not Set.
-
+\pause
+\vspace*{4mm}
+\sred{Fancy explanation}: the functor from the category \textsf{Types} of \sgreen{types and function}, with
+\texttt{List} as its object mapping and \texttt{map} for homomorphism,
+to the category \textsf{Monoid} of \sgreen{monoids and monoid homomorphisms}, is \sblue{left
+adjoint} to the forgetful functor (from \textsf{Monoid} to \textsf{Types}).
 %
 % What is the difference between ``the category (types, functions)'' and ``Set''?
 %
 
-Why on earth would we care about that? Let's see.
+\pause
+\vspace*{4mm}
+\texttt{List} (equipped with constructors \texttt{[]}, \texttt{::} and
+functions \texttt{map}, \texttt{++},
+\texttt{singleton}, and \texttt{foldr}) is the
+\sblue{language of monoids}. In other words, \texttt{List} 
+is the canonical term syntax for 
+\sblue{computing with monoids}.
+
+\pause
+\vspace*{4mm}
+Why on earth would we care about that? Let's see!
 
 % Go to Agda code.  Show definitions of
 % Monoid. Monoid Homomorphism. Forgetful functor.
 % Then definition of Free and the Adjunction.
+\vfill
 \end{frame}
 
 \begin{frame}
@@ -99,7 +123,7 @@ Adjunction:
 \item foldr (over arbitrary Monoid)
 \item foldr and singleton ``play well'' with each other
 \end{itemize}
-Bonus:
+Extremely handy:
 \begin{itemize}
 \item Induction principle
 \end{itemize}
@@ -110,23 +134,23 @@ Bonus:
 %
 
 \begin{frame}
-\frametitle{The real tale}
+\frametitle{The plot thickens}
 Given an arbitrary type $A$ : \\ \vspace*{4mm}
 \begin{tabular}{lll}
-\textbf{Theory} & Free \textbf{Structure} & CoFree \\ \hline
-Carrier & $Identity\, A$ & \\
-Pointed & $Maybe\, A$ & \\ \hline
-Unary & ℕ × A &  \\
+\textbf{Theory} & \textbf{Free Structure} & CoFree \\ \hline
+Carrier & Identity $A$ & \\
+Pointed & Maybe $A$ & \\ \hline
+Unary & $ℕ × A$ &  \\
 Involutive & $A ⊎ A$ & A × A \\ \hline
-Magma & $Tree\, A$ &  \\
-Semigroup & $NEList\, A$ & \\ \hline
-Monoid & $List\, A$ & \\
-Left Unital Semigroup & List A × ℕ & \\
-Right Unital Semigroup & ℕ × List A & \\ \hline
+Magma & Tree $A$ &  \\
+Semigroup & NEList $A$ & \\ \hline
+Monoid & List\, $A$ & \\
+Left Unital Semigroup & List $A × ℕ$ & \\
+Right Unital Semigroup & $ℕ ×$ List $A$ & \\ \hline
 \end{tabular}\\ \vspace*{4mm}
 \pause
-What is the ``Free Structure''? It is the
-\textbf{Normal form term language} associated to the theory.\\
+What is the \sblue{Free Structure}? It is the
+\sred{\textbf{term language in normal form}} associated to the theory.\\
 \end{frame}
 
 \begin{frame}
@@ -134,39 +158,41 @@ What is the ``Free Structure''? It is the
 Benefits of the formal approach:
 \begin{itemize}
 \item Obvious: dispell silly conjectures/errors
+\item Discover some neat relationships between algebraic theories and data-structures
 \item fold (aka the counit)
 \item induction
 \end{itemize} \vspace*{4mm}
 \pause
 Example: counit for Involutive is ...
+\vfill
 \end{frame}
 
 \begin{frame}
 \frametitle{Extending the tale}
 Given an arbitrary type A : \\ \vspace*{4mm}
 \begin{tabular}{lll}
-\textbf{Theory} & Free \textbf{Structure} & CoFree \\ \hline
-Carrier & Identity A & \\
-Pointed & Maybe A & \\ \hline
-Unary & ℕ × A &  \\
-Involutive & A ⊎ A & A × A \\ \hline
-Magma & Tree A &  \\
-Semigroup & NEList A & \\ \hline
-Monoid & List A & \\
-Left Unital Semigroup & List A × ℕ & \\
-Right Unital Semigroup & ℕ × List A & \\ \hline
-Commutative Monoid & ? & \\
-Group & ? & \\
-Abelian Group & ? & \\
-Idempotent Commutative Monoid & ? & \\
+\textbf{Theory} & \textbf{Free Structure} & CoFree \\ \hline
+Carrier & Identity $A$ & \\
+Pointed & Maybe $A$ & \\ \hline
+Unary & $ℕ × A$ &  \\
+Involutive & $A ⊎ A$ & $A × A$ \\ \hline
+Magma & Tree $A$ &  \\
+Semigroup & NEList $A$ & \\ \hline
+Monoid & List $A$ & \\
+Left Unital Semigroup & List $A × ℕ$ & \\
+Right Unital Semigroup & $ℕ ×$ List $A$ & \\ \hline
+\sred{Commutative Monoid} & \sred{?} & \\
+\sred{Group} & \sred{?} & \\
+\sred{Abelian Group} & \sred{?} & \\
+\sred{Idempotent Comm. Monoid} & \sred{?} & \\
 \end{tabular}
 \end{frame}
 
 \begin{frame}
-\frametitle{Bag and Commutative Monoid}
+\frametitle{Commutative Monoid and Bag}
 \begin{definition}
 A \emph{Bag} (over a type A) is an unordered finite collection
-of $x$ s.t. $x~:~A$.
+of $x$ s.t. $x\,:\,A$.
 \end{definition}
 \pause
 Implementation?
@@ -191,7 +217,8 @@ Implementation?
 \item<12-> Commutative Monoid uses $\equiv$
 \end{itemize}
 \end{itemize}
-\begin{theorem}<13->There is no \emph{Bag} over an arbitrary type (in MLTT).
+\begin{theorem}<13->$\neg\exists$ \emph{left adjoint} to Commutative
+  Monoids over an arbitrary type (in MLTT).
 \end{theorem}
 \end{frame}
 
@@ -228,19 +255,19 @@ Implementation attempts:
 \item<11->Still assumes $\equiv$.
 \end{itemize}
 \item<12->Experimental lib. with perms over tables
-$\rightarrow$ proof that \texttt{fold} is well-behaved!
+$\rightarrow$ proof that \texttt{fold} is well-behaved
 \begin{itemize}
-\item<13->Worked!
+\item<13->Success!
 \end{itemize}
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Key ingredients of Bag}
-Distilling the insights from \textasciitilde1000 lines of Agda 
+Distilling the insights from \textasciitilde1000 lines of Agda \pause
 \begin{itemize}
 \item Internalize length of ``list'' into a record Seq (subst is evil)
-\item Table of A is $\texttt{Fin} \mathbb{N} \rightarrow A$ (finite
+\item Table of A is $\texttt{Fin}\, \mathbb{N} \rightarrow A$ (finite
   support!)
 \item Equivalence of Seq S and Seq T is
 \begin{itemize}

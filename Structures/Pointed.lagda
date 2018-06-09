@@ -191,7 +191,7 @@ initial = record
 
 %{{{ 0-ary adjoint
 \begin{code}
-module ZeroAryAdjoint where  
+module ZeroAryAdjoint where
 
   Forget-0 : (ℓ : Level) → Functor (Pointeds ℓ) (OneCat ℓ ℓ ℓ)
   Forget-0 ℓ = MakeForgetfulFunctor Carrier

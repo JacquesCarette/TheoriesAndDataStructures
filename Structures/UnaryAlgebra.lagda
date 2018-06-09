@@ -14,12 +14,14 @@ module Structures.UnaryAlgebra where
 
 open import Level renaming (suc to lsuc; zero to lzero)
 open import Function
+open import Relation.Nullary using (¬_)
 open import Data.Nat using (ℕ; suc ; zero)
 
 open import Categories.Category   using (Category; module Category)
 open import Categories.Functor    using (Functor; Contravariant)
 open import Categories.Adjunction using (Adjunction)
 open import Categories.Agda       using (Sets)
+open import Categories.NaturalTransformation using (NaturalTransformation)
 
 open import Helpers.Function2
 open import Helpers.Forget
@@ -157,8 +159,6 @@ extract : ∀{ℓ} {A : Set ℓ} → Eventually A → A
 extract = ⟦ id , id ⟧ -- cf |from⊎| ;)
 \end{code}
 
-\edcomm{MA}{Mention comonads?}
-
 More generally,
 \begin{code}
 iterate : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
@@ -227,7 +227,7 @@ Notice that the adjunction proof forces us to come-up with the operations and pr
   time algorithm, namely, |id|.
 \item |map-∘|: sequential substitutions on syntax can be efficiently replaced with a single substitution.
 \item |map-cong|: observably indistinguishable substitutions can be used in place of one another, similar to the
-      transparency principle of Haskell programs.      
+      transparency principle of Haskell programs.
 \item |iterate|: given a function |f|, we have |stepⁿ base x ↦ fⁿ x|. Along with properties of this operation.
 \end{itemize}
 
@@ -310,6 +310,28 @@ Notice that the adjunction proof forces us to come-up with the operations and pr
 \end{itemize}
 %}}}
 
+%{{{ Right Adjoint - can't decide if it has none, or I just can't quite find it.
+\begin{code}
+
+Right : (ℓ : Level) → Functor (Sets ℓ) (Unarys ℓ)
+Right ℓ = record
+            { F₀ = λ A → MkUnary {!!} {!!}
+            ; F₁ = λ f → MkHom {!!} {!!}
+            ; identity = {!!}
+            ; homomorphism = {!!}
+            ; F-resp-≡ = {!!}
+            }
+
+Adj : (ℓ : Level) → Adjunction (Forget ℓ) (Right ℓ)
+Adj ℓ = {!!}
+
+NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Unarys ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
+NoRight {ℓ} record { F₀ = F₀ ; F₁ = F₁ ; identity = identity ; homomorphism = homomorphism ; F-resp-≡ = F-resp-≡ } adj =
+  {!zag adj!}
+  where open Adjunction
+        open NaturalTransformation
+\end{code}
+%}}}
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

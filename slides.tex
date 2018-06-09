@@ -138,18 +138,18 @@ Extremely handy:
 Given an arbitrary type $A$ : \\ \vspace*{4mm}
 \begin{tabular}{lll}
 \textbf{Theory} & \textbf{Free Structure} & CoFree \\ \hline
-Carrier & Identity $A$ & \\
-Pointed & Maybe $A$ & \\ \hline
-Unary & $ℕ × A$ &  \\
+Carrier & Identity $A$ & Identity $A$ \\
+Pointed & Maybe $A$ & --\\ \hline
+Unary & Eventually $A$, $ℕ × A$ &  ? \\
 Involutive & $A ⊎ A$ & A × A \\ \hline
-Magma & Tree $A$ &  \\
-Semigroup & NEList $A$ & \\ \hline
-Monoid & List\, $A$ & \\
-Left Unital Semigroup & List $A × ℕ$ & \\
-Right Unital Semigroup & $ℕ ×$ List $A$ & \\ \hline
+Magma & Tree $A$ &  ? \\
+Semigroup & NEList $A$ & ? \\ \hline
+Monoid & List\, $A$ & ? \\
+Left Unital Semigroup & List $A × ℕ$ & ? \\
+Right Unital Semigroup & $ℕ ×$ List $A$ & ? \\ \hline
 \end{tabular}\\ \vspace*{4mm}
 \pause
-What is the \sblue{Free Structure}? It is the
+What is the \sblue{Free Structure}? It is ``the''
 \sred{\textbf{term language in normal form}} associated to the theory.\\
 \end{frame}
 
@@ -163,28 +163,28 @@ Benefits of the formal approach:
 \item Induction
 \end{itemize} \vspace*{4mm}
 \pause
-Example: counit for Involutive is ...
+Examples: counit for Unary, Involutive
 \vfill
 \end{frame}
 
 \begin{frame}
 \frametitle{Extending the tale}
 Given an arbitrary type A : \\ \vspace*{4mm}
-\begin{tabular}{lll}
-\textbf{Theory} & \textbf{Free Structure} & CoFree \\ \hline
-Carrier & Identity $A$ & \\
-Pointed & Maybe $A$ & \\ \hline
-Unary & $ℕ × A$ &  \\
-Involutive & $A ⊎ A$ & $A × A$ \\ \hline
-Magma & Tree $A$ &  \\
-Semigroup & NEList $A$ & \\ \hline
-Monoid & List $A$ & \\
-Left Unital Semigroup & List $A × ℕ$ & \\
-Right Unital Semigroup & $ℕ ×$ List $A$ & \\ \hline
-\sred{Commutative Monoid} & \sred{?} & \\
-\sred{Group} & \sred{?} & \\
-\sred{Abelian Group} & \sred{?} & \\
-\sred{Idempotent Comm. Monoid} & \sred{?} & \\
+\begin{tabular}{ll}
+\textbf{Theory} & \textbf{Free Structure} \\ \hline
+Carrier & Identity $A$ \\
+Pointed & Maybe $A$ \\ \hline
+Unary & $ℕ × A$  \\
+Involutive & $A ⊎ A$ \\ \hline
+Magma & Tree $A$  \\
+Semigroup & NEList $A$  \\ \hline
+Monoid & List $A$ \\
+Left Unital Semigroup & List $A × ℕ$ \\
+Right Unital Semigroup & $ℕ ×$ List $A$ \\ \hline
+\sred{Commutative Monoid} & \sred{?} \\
+\sred{Group} & \sred{?} \\
+\sred{Abelian Group} & \sred{?} \\
+\sred{Idempotent Comm. Monoid} & \sred{?} \\
 \end{tabular}
 \end{frame}
 
@@ -209,7 +209,7 @@ Implementation?
 \begin{itemize}
 \item<7-> ``Finite support'' is hard to say constructively $\ldots$
 \item<8-> Summing over all elements of $A$ is even harder $\ldots$
-\item<9-> Can build a decidable equiv. relation on $A$ from $A \rightarrow \mathbb{N} \ldots$!
+\item<9-> Can build a decidable equiv. relation on $A$ from $A \rightarrow \mathbb{N}$!
 \end{itemize}
 \item<10-> $\texttt{List}\ A$ up to bag-equality (aka permutations)
 \begin{itemize}
@@ -268,7 +268,7 @@ Distilling the insights from $\sim \! 1000$ lines of Agda \pause
 \begin{itemize}
 \item<1-> Internalize length of ``list'' into a record \texttt{Seq} ---\texttt{subst} is evil!
 \item<2-> Table of A is $\texttt{Fin}\, \mathbb{N} \rightarrow A$ (finite
-  support!)
+  support)
 \item<3-> Equivalence of sequences $S$ and $T$ is
 \begin{itemize}
 \item<4-> A permutation between $|S|$ and $|T|$, i.e.
@@ -313,12 +313,64 @@ Idemp. Comm. Monoid & Set & Setoid &  logical equivalence \\
 
 \begin{frame}
 \frametitle{What's the deal with those axioms?}
-linearity, context operations
+\begin{itemize}
+\item Works easily:
+\begin{itemize}
+\item Associativity: $\forall x, y, z.\ x * (y * z) \equiv (x * y) *z$;
+\item Left-unit: $\forall x.\ e * x \equiv x$;
+\item Right-unit: $\forall x.\ x * e \equiv x$
+\item Involutive: $\forall x.\ inv (inv x) \equiv x$
+\end{itemize}
+\item Hard:
+\begin{itemize}
+\item Commutativity: $\forall x, y.\ x * y \equiv y * x$
+\end{itemize}
+\item Very Hard:
+\begin{itemize}
+\item Idempotence: $\forall x.\ x * x \equiv x$
+\end{itemize}
+\end{itemize}
+\pause
+Found the secret ingredient in \textit{Algebraic Theories in Monoidal
+  Categories} by L. Mauri: structural context rules (weakening,
+exchange, contraction).
 \end{frame}
 
 \begin{frame}
 \frametitle{More tale to tell}
-Bivariate. Indexed. Signatures and term algebras.
+\begin{itemize}
+\item $\bot$, $\top$, $\mathbb{B}$, $\mathbb{N}$, $\mathbb{Z}$ show up
+as \sred{initial objects}.
+\item Bivariate (but $\times$ and $\uplus$ are adjoint to diagonal,
+  not forgetful functor)
+\item Indexed sets of operations
+\end{itemize}
+\end{frame}
+
+% Where do these (math theories) show up?
+\begin{frame}
+\frametitle{Potential data-structures}
+\sred{left-zero monoid}, pointed unary, idempotent unary, commutative
+magma, pointed magma, quasigroup, loop, semilattice, medial magma,
+left semimedial magma, left distributive magma, idempotent magma,
+zeropotent magma, left unary magma, Steiner magma, null semigroup, BCI algebra, BCK
+algebra, squag, sloop, Moufang quasigroup, loop, left shelf, shelf,
+rack, spindle, quandle, Kei, involutive semigroup, band, rectangular
+band, hemigroup, pseudo inverse algebra, ringoid, left near semiring,
+near semiring, semifield, semiring, semirng, pre-dioid, dioid, star semiring,
+idempotent dioid, ring, commutative ring, idempotent semiring, Stone algebra,
+Kleene lattice, Kleene algebra, Heyting algebra, Goedel algebra, ortho
+lattice, directoid, semiheap, idempotent semiheap, heap, meadow, wheel.
+\end{frame}
+
+% Where do these (data structures) show up?
+\begin{frame}
+\frametitle{Structures looking for a home}
+Difference list, stack, queue, finite map, rose tree, digraph,
+multigraph, partitions, oriented cycles, colorings, tri-colorings,
+hedges, derangements, ballots, commutative parenthesizations, linear
+order, permutations, even permutations, chains, oriented sets, even
+sets, octopus, vertebrae.
 \end{frame}
 
 \begin{frame}
@@ -340,6 +392,9 @@ Group & ? & ? & ? \\
 Abelian Group & Hybrid Sets & Setoid &  proof-relevant permutations\\
 Idemp. Comm. Monoid & Set & Setoid &  logical equivalence \\
 \end{tabular}
+
+\vspace*{3mm}
+\url{https://github.com/JacquesCarette/TheoriesAndDataStructures}
 \end{frame}
 
 

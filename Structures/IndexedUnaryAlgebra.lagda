@@ -8,10 +8,7 @@ open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Function hiding (_$_)
 open import Data.List
 
-open import Categories.Category using (Category; module Category)
-open import Categories.Functor using (Functor; Contravariant)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
+open import Categorical
 
 open import Helpers.Forget
 open import Helpers.Function2

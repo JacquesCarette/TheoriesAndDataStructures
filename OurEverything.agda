@@ -5,8 +5,9 @@
 --
 -- Other experimental approaches can be found in the directory Experiments/
 --
--- We are using Agda 2.5.3 with Brad Hardy's variant of the standard library:
--- https://github.com/bch29/agda-stdlib
+-- We are using Agda 2.5.4 with Brad Hardy's variant of the standard library,
+-- https://github.com/bch29/agda-stdlib,
+-- and some material from copumkin's categories library placed in Helpers.Categories
 -----------------------------------------------------------------------------------------------
 
 module OurEverything where
@@ -14,6 +15,8 @@ module OurEverything where
 -- Creates forgetful functors from single sorted algebras to |Set|
 -- 
 import Helpers.Forget
+
+import Helpers.Categorical
 
 -- ============================================================================================
 -- Variations on Sets

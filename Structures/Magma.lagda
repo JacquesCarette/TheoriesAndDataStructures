@@ -14,11 +14,7 @@ open import Level renaming (suc to lsuc; zero to lzero)
 open import Function using (const ; id ; _∘_ ; _$_)
 open import Data.Empty
 
-open import Categories.Category using (Category)
-open import Categories.Functor using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda using (Sets)
-
+open import Helpers.Categorical
 open import Helpers.Function2 using (_$ᵢ)
 open import Helpers.Forget
 open import Helpers.EqualityCombinators
@@ -183,8 +179,6 @@ forms the initial magma.
 
 \begin{code}
 open import Structures.OneCat hiding (initial ; terminal)
-open import Categories.Object.Initial
-open import Categories.Object.Terminal
 
 One-Magma : {ℓ : Level} → Magma ℓ
 One-Magma = MkMagma One (𝑲₂ ⋆)

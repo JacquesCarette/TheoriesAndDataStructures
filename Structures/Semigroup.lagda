@@ -7,11 +7,7 @@ module Structures.Semigroup where
 open import Level renaming (suc to lsuc; zero to lzero)
 open import Function              using (const ; id ; _∘_)
 
-open import Categories.Category   using (Category)
-open import Categories.Functor    using (Functor ; Faithful)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
-
+open import Helpers.Categorical
 open import Helpers.Function2 using (_$ᵢ)
 open import Helpers.EqualityCombinators
 open import Helpers.Forget
@@ -237,7 +233,6 @@ see |_⟪_| below.
 
 \begin{code}
 open import Relation.Nullary
-open import Categories.NaturalTransformation hiding (id ; _≡_)
 NoLeft : {ℓ : Level} (FreeM : Functor (Magmas lzero) (SemigroupCat lzero)) → Faithful FreeM → ¬ (Adjunction FreeM (ForgetM lzero))
 NoLeft FreeM faithfull Adjunct = ohno (inj-is-injective crash)
   where open Adjunction Adjunct
@@ -344,8 +339,6 @@ This category has both a terminal and an initial object.
 
 \begin{code}
 open import Structures.OneCat hiding (terminal ; initial)
-open import Categories.Object.Terminal
-open import Categories.Object.Initial
 open import Data.Empty
 
 One-SG : {ℓ : Level} → Semigroup {ℓ}

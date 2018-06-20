@@ -28,9 +28,7 @@ module Helpers.Forget where
 
 open import Level
 
-open import Categories.Category  using  (Category)
-open import Categories.Functor   using  (Functor)
-open import Categories.Agda      using  (Sets)
+open import Helpers.Categorical
 
 open import Helpers.Function2
 open import Function

@@ -13,10 +13,7 @@ open import Data.List using (List; _∷_ ; []; [_]; _++_; foldr; map)
 open import Data.List.Properties
 open import Function              using (id ; _∘_ ; const)
 
-open import Categories.Category   using (Category)
-open import Categories.Functor    using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
+open import Helpers.Categorical
 
 open import Helpers.Function2             using (_$ᵢ)
 open import Helpers.Forget
@@ -218,8 +215,6 @@ Singleton sets form both the initial and terminal monoid.
 
 \begin{code}
 open import Structures.OneCat hiding (initial ; terminal)
-open import Categories.Object.Initial
-open import Categories.Object.Terminal
 
 {- In some sense this is a degenerate monoid since
 we have the non-free equation: ∀ x. x ≈ ε.
@@ -313,11 +308,12 @@ fromℕ = MkHom (λ n → replicate n ⋆) ≡.refl (λ {m} → replicate-homo m
 toℕ : Hom OneFreeMonoid ℕ-monoid
 toℕ = MkHom length ≡.refl (λ {x} → length-++ x)
 import Level as Level
-open import Categories.Morphisms (MonoidCat Level.zero)
+-- open import Categories.Morphisms (MonoidCat Level.zero)
+_≅ₘ_ = _≅_ (MonoidCat Level.zero)
 from-to : (x : List (One {Level.zero})) → replicate (length x) ⋆ ≡ x
 from-to [] = ≡.refl
 from-to (⋆ ∷ x) = ≡.cong (⋆ ∷_) (from-to x)
-OneFreeMonoid≅ℕ : OneFreeMonoid ≅ ℕ-monoid
+OneFreeMonoid≅ℕ : OneFreeMonoid ≅ₘ ℕ-monoid
 OneFreeMonoid≅ℕ = record
   { f = toℕ
   ; g = fromℕ
@@ -352,7 +348,6 @@ module claim {ℓ : Level}
 
   open Functor
   open Adjunction adj
-  open import Categories.NaturalTransformation hiding (_≡_)
   open NaturalTransformation
  
   one-mon₀ : Set ℓ

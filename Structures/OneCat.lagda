@@ -15,17 +15,18 @@ ignore their input and always yield the same output.
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module Structures.OneCat where
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Categories.Category     using   (Category)
-open import Categories.Functor      using   (Functor)
-open import Categories.Adjunction   using   (Adjunction)
-open import Categories.Agda         using   (Sets)
+open import Helpers.Categorical
 open import Function                using   (id ; _∘_ ; const)
 open import Helpers.Function2       using   (_$ᵢ)
 
 open import Relation.Nullary  -- for showing some impossibility
+
+open import Relation.Binary using (module IsEquivalence)
 
 open import Helpers.Forget
 open import Helpers.EqualityCombinators
@@ -98,9 +99,9 @@ Forget {ℓ} = MakeForgetfulFunctor id
 𝒦 {D = D} X = let module D = Category D in record
    { F₀             =   λ _ → X
    ; F₁             =   𝑲 D.id
-   ; identity       =   D.Equiv.refl
-   ; homomorphism   =   D.Equiv.sym D.identityˡ
-   ; F-resp-≡       =   𝑲 D.Equiv.refl
+   ; identity       =   IsEquivalence.refl {!!} -- D.Equiv.refl
+   ; homomorphism   =   IsEquivalence.sym {!!} {!!} -- D.Equiv.sym D.identityˡ
+   ; F-resp-≡       =   𝑲 {!!} -- D.Equiv.refl
    }
 
 -- Given an elected object in any target category, we obtain a functor.
@@ -131,7 +132,7 @@ and so we are forced to define `F₀ = 𝑲 One`.
 NoLeftAdjoint : {ℓ : Level} → ¬ Adjunction (Free {ℓ}) (Forget {ℓ})
 NoLeftAdjoint {ℓ} adj = ⊥-elim (η counit ⊥ ⋆)
   where open Adjunction adj
-        open import Categories.NaturalTransformation hiding (id ; _≡_)
+        -- open import Categories.NaturalTransformation hiding (id ; _≡_)
         open NaturalTransformation
 
 -- Since ⊥ is not a pointed set, this argument does not carry over to
@@ -140,7 +141,6 @@ NoLeftAdjoint {ℓ} adj = ⊥-elim (η counit ⊥ ⋆)
 -- If a (concrete) category C were to have a terminal object then
 -- there would be an (co)adjunction!
 
-open import Categories.Object.Terminal
 module _ {a b c d e f : Level} {C : Category a b c}
     (obj : Category.Obj C → Set d) (Uno : Terminal C)
     where    
@@ -160,7 +160,7 @@ module _ {a b c d e f : Level} {C : Category a b c}
     { unit        =   record { η = λ X → ! {X} ; commute = λ f → !-unique₂ _ _ }
     ; counit      =   record { η = 𝑲 ⋆ ; commute = 𝑲 ⋆ }
     ; zig         =   ⋆
-    ; zag         =   C.Equiv.sym (C.Equiv.trans C.identityˡ (⊤-id !))
+    ; zag         =   {!!} -- C.Equiv.sym (C.Equiv.trans C.identityˡ (⊤-id !))
     }
 
 uip-One : {ℓ : Level} {x : One {ℓ}} → ⋆ ≡ x
@@ -182,7 +182,7 @@ RightAdjoint = Make-Forget⊢CoFree id terminal
 -- open import Categories.Functor hiding (equiv; assoc; identityˡ; identityʳ; ∘-resp-≡) renaming (id to idF; _≡_ to _≡F_; _∘_ to _∘F_)
 -- open import Categories.NaturalTransformation hiding (equiv; setoid) renaming (id to idT; _≡_ to _≡T_)
 
-open import Categories.Object.Initial
+-- open import Categories.Object.Initial
 module _ {a b c d e f : Level} {C : Category a b c}
     (obj : Category.Obj C → Set d) (Uno : Initial C)
     -- (uno : Category.Obj C)
@@ -206,7 +206,7 @@ module _ {a b c d e f : Level} {C : Category a b c}
       { η         =   λ X → ! {X}
       ; commute   =   λ f → !-unique₂ _ _
       }
-    ; zig         =   C.Equiv.sym (C.Equiv.trans C.identityʳ (⊥-id !))
+    ; zig         =   {!!} -- C.Equiv.sym (C.Equiv.trans C.identityʳ (⊥-id !))
     ; zag         =   ⋆
     }
 

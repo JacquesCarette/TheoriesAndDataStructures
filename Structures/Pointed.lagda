@@ -29,12 +29,7 @@ open import Relation.Nullary
 open import Function using (id ; _∘_)
 open import Data.Maybe using (Maybe; just; nothing; maybe; maybe′)
 
-open import Categories.Category using (Category; module Category)
-open import Categories.Functor using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.NaturalTransformation using (NaturalTransformation)
-open import Categories.Agda using (Sets)
-
+open import Helpers.Categorical
 open import Helpers.Forget
 open import Helpers.EqualityCombinators
 \end{code}
@@ -178,7 +173,6 @@ A singleton set with a single point determines an initial object in this categor
 
 \begin{code}
 open import Structures.OneCat hiding (initial)
-open import Categories.Object.Initial
 initial : {ℓ : Level} → Initial (Pointeds ℓ)
 initial = record
   { ⊥         =   MkPointed One ⋆

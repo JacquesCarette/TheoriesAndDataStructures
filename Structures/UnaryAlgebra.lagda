@@ -1,3 +1,7 @@
+\begin{code}
+{-# OPTIONS --allow-unsolved-metas #-}
+\end{code}
+
 \section{UnaryAlgebra}
 
 Unary algebras are tantamount to an OOP interface with a single operation.
@@ -17,12 +21,7 @@ open import Function
 open import Relation.Nullary using (¬_)
 open import Data.Nat using (ℕ; suc ; zero)
 
-open import Categories.Category   using (Category; module Category)
-open import Categories.Functor    using (Functor; Contravariant)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
-open import Categories.NaturalTransformation using (NaturalTransformation)
-
+open import Helpers.Categorical
 open import Helpers.Function2
 open import Helpers.Forget
 open import Helpers.DataProperties

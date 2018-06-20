@@ -1,3 +1,5 @@
+\DeclareUnicodeCharacter{8759}{\ensuremath{8759}}
+
 \section{Monoids: Lists}
 
 %{{{ Imports
@@ -27,7 +29,7 @@ open import Helpers.DataProperties
 \subsection{Some remarks about recursion principles}
 ( To be relocated elsewhere )
 
-\begin{spec}
+\begin{verbatim}
 open import Data.List
 
 rcList : {X : Set} {Y : List X → Set} (g₁ : Y []) (g₂ : (x : X) (xs : List X) → Y xs → Y (x ∷ xs)) → (xs : List X) → Y xs
@@ -70,9 +72,9 @@ record Hom {ℓ} (Src Tgt : Monoid ℓ) : Set ℓ where
   open Monoid Src renaming (_*_ to _*₁_)
   open Monoid Tgt renaming (_*_ to _*₂_)
   field
-    mor     :  Carrier Src → Carrier Tgt
-    pres-Id : mor (Id Src) ≡ Id Tgt
-    pres-Op : {x y : Carrier Src} → mor (x *₁ y)  ≡  mor x *₂ mor y
+    mor     :  Monoid.Carrier Src → Monoid.Carrier Tgt
+    pres-Id : mor (Monoid.Id Src) ≡ Monoid.Id Tgt
+    pres-Op : {x y : Monoid.Carrier Src} → mor (x *₁ y)  ≡  mor x *₂ mor y
 
 open Hom
 \end{code}
@@ -136,6 +138,38 @@ ind P n c (x ∷ xs)   =   c x xs (ind P n c xs)
 }}}%
 
 %{{{ Free functor; ListLeft
+
+We conjecture that words using only symbols from the signature of monoids suffices
+as producing a free monoid, with the empty word denoted `ε`  and the catentation operation
+denoted `_·_`. Such a triple `(A⋆, ε, _·_)` is easily shown to be a monoid.
+
+We have a monoid for any given type; it remains to provide a monoid homomorphism between
+such induced monoids. Let's take this in stages.
+
+We need prove: `∀{A B : Set} (f : A → B) → Hom (A⋆) (B⋆)`.
+
+Let `A` and `B` be any sets and let `f` be a function from the former to the latter.
+It now remains to provide a function `f⋆ : A⋆ → B⋆` such that it is a monoid homomorphism:
+`f⋆ ε ≈ ε` and `f⋆ (s · t) ≈ f⋆ s · f⋆ t`.
+
+We have no clue what to define `f⋆` to be, but we know that word catenation may be obtained
+from suffixing operation: A word is either the empty word ε or is formed by prepending an existing word `w`
+by a alphabet symbol `a` to obtain a new word denoted `a ∷ w`. This view gives us an induction principle for words.
+
+Now instantiating the required laws using the suffix operation yields (modulo typing)
+`f⋆ ε ≈ ε` and `f⋆ (a ∷ w) ≈ f⋆ a ∷ f⋆ w`. Now we know `f : A → B` and `a : A`, so
+the phrase with unknowns `f⋆ a` with `f a`, a phrase only containing known constituents.
+
+We know have: `f⋆ ε ≈ ε` and `f⋆ (a ∷ w) ≈ f a ∷ f⋆ w`.
+However we accidentally defined `f⋆` over all constructors for words and the recursive calls
+are on structurally smaller elements and so we have a well defined function! This is the usual
+“map f” function from functional programming.
+
+It seems the \emph{need} to produce a monoid homomorphism from an arbitrary function
+forces the construction of the “map” functional! In turn, this also explains how
+the laws for `map` “come up” --they are not proven after defining the operation but
+rather are used guide posts to produce a correct-by-construction definition of `map`.
+
 \begin{code}
 Free : (ℓ : Level) → Functor (Sets ℓ) (MonoidCat ℓ)
 Free ℓ = record

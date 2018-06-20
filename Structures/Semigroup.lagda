@@ -21,6 +21,7 @@ open import Helpers.Forget
 %{{{ Semigroup ; _⟨_⟩_ ; Hom
 \subsection{Definition}
 A Free Semigroup is a Non-empty list
+
 \begin{code}
 record Semigroup {a} : Set (lsuc a) where
   constructor MkSG
@@ -34,7 +35,7 @@ open Semigroup renaming (_*_ to Op)
 bop = Semigroup._*_
 syntax bop A x y = x ⟨ A ⟩ y
 
-record Hom {ℓ} (Src Tgt : Semigroup {ℓ}) : Set ℓ where
+record Hom {a} (Src Tgt : Semigroup {a}) : Set a where
   constructor MkHom
   field
     mor   :  Carrier Src → Carrier Tgt
@@ -44,6 +45,10 @@ open Hom
 \end{code}
 
 %}}}
+
+hello
+\iffalse
+
 
 %{{{ SGAlg ; SemigroupCat ; Forget
 \subsection{Category and Forgetful Functor}
@@ -400,7 +405,7 @@ module ZeroAryAdjoint where
 \end{code}
 %}}}
 
-
+\fi
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

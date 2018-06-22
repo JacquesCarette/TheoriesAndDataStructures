@@ -322,11 +322,17 @@ Right ℓ = record
             }
 
 Adj : (ℓ : Level) → Adjunction (Forget ℓ) (Right ℓ)
-Adj ℓ = {!!}
+Adj ℓ = record
+  { unit = record { η = λ X → MkHom {!!} {!!}
+                  ; commute = λ { (MkHom mor₁ pres-op₁) x → {!!} } }
+  ; counit = record { η = λ X x → {!!}
+                    ; commute = λ f → {!!} }
+  ; zig = {!!}
+  ; zag = λ x → {!!}}
 
 NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Unarys ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
 NoRight {ℓ} record { F₀ = F₀ ; F₁ = F₁ ; identity = identity ; homomorphism = homomorphism ; F-resp-≡ = F-resp-≡ } adj =
-  {!zag adj!}
+  ⊥-elim (η (counit adj) ⊥ {!mor (η (unit adj) (F₀ ⊥))!})
   where open Adjunction
         open NaturalTransformation
 \end{code}

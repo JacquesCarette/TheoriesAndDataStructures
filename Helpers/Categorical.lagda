@@ -1,18 +1,12 @@
 \section{Categorical -- material taken from copumkin's library to make our development self-contained}
 
-open import Helpers.Categorical
-
 \begin{code}
-{-# OPTIONS --allow-unsolved-metas #-}
 
 module Helpers.Categorical where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Relation.Binary using (Setoid ; Rel ; IsEquivalence)
-
--- open import Function hiding (_$_)
 open import Data.List
-
 
 open import Helpers.Function2
 import Relation.Binary.PropositionalEquality as ≡ ; open ≡ using () renaming (_≡_ to _≣_)
@@ -45,6 +39,14 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
     ; _≈_ = _≡_
     ; isEquivalence = equiv
     }
+
+  infixr 4 _⟨≈≈⟩_ _⟨≈≈˘⟩_
+  
+  ._⟨≈≈⟩_ : ∀ {A B} → ∀ {f g h : A ⇒ B} → f ≡ g → g ≡ h → f ≡ h
+  _⟨≈≈⟩_ {A} {B} = IsEquivalence.trans (equiv {A} {B})
+
+  ._⟨≈≈˘⟩_ : ∀ {A B} → ∀ {f g h : A ⇒ B} → f ≡ g → h ≡ g → f ≡ h
+  _⟨≈≈˘⟩_ f≈g h≈g = f≈g ⟨≈≈⟩ IsEquivalence.sym equiv h≈g
 
 infix 10  _[_,_] _[_≡_] _[_∘_]
 
@@ -130,30 +132,16 @@ _∘F_ {C = C} {D = D} {E = E} F G = record
   open F
   open G renaming (F₀ to G₀; F₁ to G₁; F-resp-≡ to G-resp-≡)
 
+  open import Relation.Binary.SetoidReasoning
+
+  open E using (_⟨≈≈⟩_)
+
   .identity′ : ∀ {A} → E [ F₁ (G₁ (C.id {A})) ≡ E.id ]
-  identity′ = {! begin
-                F₁ (G₁ C.id)
-              ≈⟨ F-resp-≡ G.identity ⟩
-                F₁ D.id
-              ≈⟨ F.identity ⟩
-                E.id
-              ∎ !}
-    where
-   -- open import Categories.Support.EqReasoning
-   -- open SetoidReasoning ? -- E.hom-setoid
+  identity′ {A} =  F-resp-≡ G.identity ⟨≈≈⟩ F.identity
 
   .homomorphism′ : ∀ {X Y Z} {f : C [ X , Y ]} {g : C [ Y , Z ]}
                  → E [ F₁ (G₁ (C [ g ∘ f ])) ≡ E [ F₁ (G₁ g) ∘ F₁ (G₁ f) ] ]
-  homomorphism′ {f = f} {g = g} = {! begin
-                                    F₁ (G₁ (C [ g ∘ f ]))
-                                  ≈⟨ F-resp-≡ G.homomorphism ⟩
-                                    F₁ (D [ G₁ g ∘ G₁ f ])
-                                  ≈⟨ F.homomorphism ⟩
-                                    (E [ F₁ (G₁ g) ∘ F₁ (G₁ f) ])
-                                  ∎ !}
-    where
---    open import Categories.Support.EqReasoning
---    open SetoidReasoning E.hom-setoid
+  homomorphism′ {f = f} {g = g} = F-resp-≡ G.homomorphism ⟨≈≈⟩ F.homomorphism
 
   .∘-resp-≡′ : ∀ {A B} {F G : C [ A , B ]} 
             → C [ F ≡ G ] → E [ F₁ (G₁ F) ≡ F₁ (G₁ G) ]
@@ -195,17 +183,10 @@ idT {C = C} {D} {F} = record
   module F = Functor F
   open F
 
+  open D using (_⟨≈≈˘⟩_)
+
   .commute′ : ∀ {X Y} (f : C [ X , Y ]) → D [ D [ D.id ∘ F₁ f ] ≡ D [ F₁ f ∘ D.id ] ]
-  commute′ f = {! begin
-                 D [ D.id ∘ F₁ f ]
-               ↓⟨ D.identityˡ ⟩
-                 F₁ f
-               ↑⟨ D.identityʳ ⟩
-                 D [ F₁ f ∘ D.id ]
-               ∎
-               !}
-    where 
-    -- open D.HomReasoning
+  commute′ f =  D.identityˡ ⟨≈≈˘⟩ D.identityʳ 
 
 infix 4 _≡T_
 _≡T_ : ∀ {o ℓ e o′ ℓ′ e′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} {F G : Functor C D} → Rel (NaturalTransformation F G) (o ⊍ e′)
@@ -226,24 +207,16 @@ _∘ˡ_ {C = C} {D} {E} {F} {G} H η′ = record
   module D = Category D renaming (_∘_ to _∘D_; _≡_ to _≡D_)
   module E = Category E renaming (_∘_ to _∘E_; _≡_ to _≡E_)
   module H = Functor H
-  open D
-  open E
+  -- open D
+  open E using (_∘E_ ; _≡E_)
 
   .commute′ : ∀ {X Y} (f : C [ X , Y ]) →
       Functor.F₁ H (NaturalTransformation.η η′ Y) ∘E Functor.F₁ H (Functor.F₁ F f) ≡E
       Functor.F₁ H (Functor.F₁ G f) ∘E Functor.F₁ H (NaturalTransformation.η η′ X)
-  commute′ {X} {Y} f = {!
-      begin
-        Functor.F₁ H (NaturalTransformation.η η′ Y) ∘E Functor.F₁ H (Functor.F₁ F f)
-      ↑⟨ H.homomorphism ⟩
-        Functor.F₁ H (NaturalTransformation.η η′ Y ∘D Functor.F₁ F f)
-      ↓⟨ H.F-resp-≡ (NaturalTransformation.commute η′ f) ⟩
-        Functor.F₁ H (Functor.F₁ G f ∘D NaturalTransformation.η η′ X)
-      ↓⟨ H.homomorphism ⟩
-        Functor.F₁ H (Functor.F₁ G f) ∘E Functor.F₁ H (NaturalTransformation.η η′ X)
-      ∎
-    where
-    open E.HomReasoning !}
+  commute′ {X} {Y} f =  let open E in
+        IsEquivalence.sym equiv H.homomorphism
+    ⟨≈≈⟩ H.F-resp-≡ (NaturalTransformation.commute η′ f)
+    ⟨≈≈⟩ H.homomorphism
 
 _∘ʳ_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁ o₂ ℓ₂ e₂}
      → {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁} {E : Category o₂ ℓ₂ e₂}
@@ -276,23 +249,12 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   open H renaming (F₀ to H₀; F₁ to H₁)
 
   .commute′ : ∀ {A B} (f : C [ A , B ]) → D [ D [ D [ X.η B ∘ Y.η B ] ∘ F₁ f ] ≡ D [ H₁ f ∘ D [ X.η A ∘  Y.η A ] ] ]
-  commute′ {A} {B} f = {!
-           begin
-             D [ D [ X.η B ∘ Y.η B ] ∘ F₁ f ]
-           ↓⟨ D.assoc ⟩
-             D [ X.η B ∘ D [ Y.η B ∘ F₁ f ] ]
-           ↓⟨ D.∘-resp-≡ʳ (Y.commute f) ⟩
-             D [ X.η B ∘ D [ G₁ f ∘ Y.η A ] ]
-           ↑⟨ D.assoc ⟩
-             D [ D [ X.η B ∘ G₁ f ] ∘ Y.η A ]
-           ↓⟨ D.∘-resp-≡ˡ (X.commute f) ⟩
-             D [ D [ H₁ f ∘ X.η A ] ∘ Y.η A ]
-           ↓⟨ D.assoc ⟩
-             D [ H₁ f ∘ D [ X.η A ∘ Y.η A ] ]
-           ∎
-    where
-    open D.HomReasoning
-     !}
+  commute′ {A} {B} f =  let open D in
+         assoc
+    ⟨≈≈⟩ (( ∘-resp-≡ (IsEquivalence.refl equiv) (Y.commute f) 
+    ⟨≈≈˘⟩ assoc)
+    ⟨≈≈⟩  ∘-resp-≡ (X.commute f) (IsEquivalence.refl equiv) )
+    ⟨≈≈⟩ assoc
 
 -- open import Categories.Adjunction using (Adjunction)
 record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Category o₁ ℓ₁ e₁} (F : Functor D C) (G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o₁ ⊍ ℓ₁ ⊍ e₁) where
@@ -313,16 +275,7 @@ module _ {o ℓ e} (C : Category o ℓ e) where
        .!-unique : ∀ {A} → (f : ⊥ ⇒ A) → ! ≡ f
     
      .!-unique₂ : ∀ {A} → (f g : ⊥ ⇒ A) → f ≡ g
-     !-unique₂ f g = {!
-         begin
-           f
-         ↑⟨ !-unique f ⟩
-           !
-         ↓⟨ !-unique g ⟩
-           g
-         ∎
-       where
-       open HomReasoning !}
+     !-unique₂ f g =  IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g
    
      .⊥-id : (f : ⊥ ⇒ ⊥) → f ≡ id
      ⊥-id f = !-unique₂ f id
@@ -335,15 +288,7 @@ module _ {o ℓ e} (C : Category o ℓ e) where
        .!-unique : ∀ {A} → (f : A ⇒ ⊤) → ! ≡ f
    
      .!-unique₂ : ∀ {A} → (f g : A ⇒ ⊤) → f ≡ g
-     !-unique₂ f g = {!
-       begin
-         f
-       ↑⟨ !-unique f ⟩
-         !
-       ↓⟨ !-unique g ⟩
-         g
-       ∎
-       where open HomReasoning !}
+     !-unique₂ f g = IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g 
    
      .⊤-id : (f : ⊤ ⇒ ⊤) → f ≡ id
      ⊤-id f = !-unique₂ f id

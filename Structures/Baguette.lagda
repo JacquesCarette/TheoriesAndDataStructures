@@ -382,7 +382,9 @@ module CMUtils {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
   open CommMonoid CMS renaming (_*_ to _+_)
   open import Data.Table.Base
   open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
-  open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
+  -- open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
+  open import Helpers.Hardy
+  open HardyCommutativeMonoid (asCommutativeMonoid CMS)
 
   sumₛ : Bag S₀ → S₀
   sumₛ = λ f → sumₜ (table f)

@@ -8,7 +8,7 @@ open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Function hiding (_$_)
 open import Data.List
 
-open import Categorical
+open import Helpers.Categorical
 
 open import Helpers.Forget
 open import Helpers.Function2

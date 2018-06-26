@@ -204,7 +204,6 @@ module _ {ℓ c : Level} (S : Setoid ℓ c) where
 \end{code}
 %}}}
 
-
 %{{{ commutativeMonoid
 \begin{code}
   -- Swap flips arguments of sum functor.
@@ -376,7 +375,6 @@ module _ {ℓ c : Level} {S : Setoid ℓ c} (CMS : CommMonoid S) where
   open CommMonoid CMS
   open import Data.Table.Base
   open import Algebra.Operations.CommutativeMonoid (asCommutativeMonoid CMS)
-  open import Algebra.Properties.CommutativeMonoid (asCommutativeMonoid CMS)
   open import Data.Fin using () renaming (suc to fsuc ; zero to fzero)
 
   sumₛ = λ s → sumₜ (table s)

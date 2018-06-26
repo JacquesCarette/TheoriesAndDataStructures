@@ -5,9 +5,7 @@
 --
 -- Other experimental approaches can be found in the directory Experiments/
 --
--- We are using Agda 2.5.4 with Brad Hardy's variant of the standard library,
--- https://github.com/bch29/agda-stdlib,
--- and some material from copumkin's categories library placed in Helpers.Categories
+-- We are using Agda 2.5.4 with standard library version 0.16.
 -----------------------------------------------------------------------------------------------
 
 module OurEverything where
@@ -18,22 +16,22 @@ import Helpers.Forget
 
 import Helpers.Categorical
 
+import Helpers.Hardy
+
 -- ============================================================================================
 -- Variations on Sets
 -- ============================================================================================
 
+-- “The” one-object one-arrow category, along with general free, forgetful, and adjoint constructions.
+--
 -- Arrows in the one-object one-arrow category correspond to the functions to a singleton set.
-import Structures.OneCat
+open import Structures.OneCat
 
 -- Category of algebras consisting of an index set and a family of sets on the index set. 
 -- Along with forgetful functor to Sets with heterogenous equality and free functor, think “Σ”. 
 --
 -- Currently has a hole.
 open import Structures.Dependent
-
--- “The” one-object one-arrow category, along with general free, forgetful, and adjoint constructions.
---
-open import Structures.OneCat
 
 -- Category of heterogenous relations along with a few forgetful and (co)free functors and
 -- associated adjunction proofs.

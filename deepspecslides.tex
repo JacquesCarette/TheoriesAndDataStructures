@@ -1,0 +1,431 @@
+%
+% Slides to be used by Musa to present at DeepSpec2018 in Princeton.
+%
+% Some of the slides are dense but this is because I only have 5 minutes!
+%
+
+%% Tentative abstract.
+%%
+%% Simple mathematical theories give rise to common data-structures such as
+%% natural numbers, lists, trees, and nullables. Why and how do these structures
+%% arise? We argue that they are the result of minimal constructions of associated
+%% theories. Moreover the usual toolkit of combinators associated with a data-structure
+%% is “built into” it. We point out that the average programmer *thinks* in the
+%% category of classical Sets but actually *works* in the category Types, consisting
+%% of types with computable functions, which lacks quotients and hence certain
+%% “expected” constructions cannot be realised. We argue that bags, among others,
+%% are not a construction in Types and hence not as accessible to programmers
+%% as other inductive datatypes.
+
+\documentclass[serif,mathserif,10pt]{beamer}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage{etex}
+\usepackage{graphicx}
+\usepackage{textgreek}
+
+\usepackage{multicol}
+
+% \usepackage{pgf}
+\usepackage{tikz}
+
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{picture,xcolor}
+\def\Id{\mathsf{Id}}
+
+\usepackage{color}
+\definecolor{grey}{gray}{0.6}
+\definecolor{slidered}{rgb}{1,0,0}
+\definecolor{slidegreen}{rgb}{0,1,0}
+\definecolor{slideblue}{rgb}{0,0,1}
+\definecolor{slidepurple}{rgb}{0,1,1}
+\definecolor{slidegray}{rgb}{0.5,0.5,0.5}
+\definecolor{slideivory}{rgb}{1,1,0.9}
+\definecolor{slideblueb}{rgb}{0,0.5,0.8}
+\newcommand{\highlight}[1]{\textcolor{slidered}{#1}}
+\newcommand{\sred}[1]{\textcolor{slidered}{#1}}
+\newcommand{\sblue}[1]{\textcolor{slideblue}{#1}}
+\newcommand{\sblueb}[1]{\textcolor{slideblueb}{#1}}
+\newcommand{\sgreen}[1]{\textcolor{slidegreen}{#1}}
+\newcommand{\sgray}[1]{\textcolor{slidegray}{#1}}
+\newcommand{\spurple}[1]{\textcolor{purple}{#1}}
+
+\beamertemplatenavigationsymbolsempty
+\usetheme{Boadilla}
+\usecolortheme{beaver}
+
+\DeclareUnicodeCharacter{7472}{\ensuremath{^\mathsf{D}}} % MODIFIER LETTER CAPITAL D
+\DeclareUnicodeCharacter{9723}{\ensuremath{\square}} % WHITE MEDIUM SQUARE
+\DeclareUnicodeCharacter{119920}{\ensuremath{\mathbf{I}}} % MATHEMATICAL BOLD ITALIC CAPITAL I
+\DeclareUnicodeCharacter{119991}{\ensuremath{_\mathsf{B}}} % MATHEMATICAL SCRIPT SMALL B
+\DeclareUnicodeCharacter{120008}{\ensuremath{_\mathsf{S}}} % MATHEMATICAL SCRIPT SMALL S
+\DeclareUnicodeCharacter{120001}{\ensuremath{_\mathsf{L}}} % MATHEMATICAL SCRIPT SMALL L
+\DeclareUnicodeCharacter{119997}{\ensuremath{_\mathsf{H}}} % MATHEMATICAL SCRIPT SMALL H
+\DeclareUnicodeCharacter{8348}{\ensuremath{_\mathsf{t}}} % MATHEMATICAL SCRIPT SMALL T
+\DeclareUnicodeCharacter{8339}{\ensuremath{_\mathsf{x}}} % MATHEMATICAL SCRIPT SMALL X
+\DeclareUnicodeCharacter{119925}{\ensuremath{\mathcal{N}}} % MATHEMATICAL BOLD ITALIC CAPITAL N
+\DeclareUnicodeCharacter{119924}{\ensuremath{\mathcal{M}}} % MATHEMATICAL BOLD ITALIC CAPITAL M
+\DeclareUnicodeCharacter{7484}{\ensuremath{\mathsf{O}}} % MODIFIER LETTER CAPITAL O
+\DeclareUnicodeCharacter{9678}{\ensuremath{\mathsf{BULLSEYE}}} % BULLSEYE
+\DeclareUnicodeCharacter{8667}{\ensuremath{\Rrightarrow}} % rightwards triple arrow
+\DeclareUnicodeCharacter{8255}{\ensuremath{\smile}} % undertie, subscript-converse
+\DeclareUnicodeCharacter{8265}{\ensuremath{! \! ? }} % exclamation question mark
+\DeclareUnicodeCharacter{9632}{\ensuremath{ \square }} % black square
+\DeclareUnicodeCharacter{9679}{\ensuremath{ \boldsymbol{\cdot} }} % black circle
+\DeclareUnicodeCharacter{9675}{\ensuremath{ \boldsymbol{\circ} }} % white circle
+
+% \title{A tale of theories and data-structures}
+% \title{Computing Science is Adjoint to Mathematics}
+\title{The Treasure's in the Details}
+\author[Carette, Al-hassy, Kahl]{Jacques Carette, Musa Al-hassy, Wolfram Kahl}
+\institute[McMaster]{McMaster University, Hamilton}
+% 
+
+\newtheorem{claim}{Claim}
+
+
+% for adding a forced line break inside a table cell; e.g., \thead{line1 \\ line2}
+\usepackage{makecell}
+
+\begin{document}
+
+% ====================================================================================
+
+
+\frame{
+  \titlepage
+  
+  \centerline{\color{blue} \url{https://github.com/JacquesCarette/TheoriesAndDataStructures}}
+  \centerline{\sc work in progress}
+  \vspace{2em}
+  \centerline{\underline{\color{white}{.\hspace{20em}.} }}
+  \centerline{DeepSpec 2018, Princeton University}
+}
+
+\begin{frame} \frametitle{A Relationship Between Mathematics and Computing Science}
+
+  \begin{block}{ The Curry-Howard Correspondence \hfill{\small ---``Propositions as Types''} }
+    \begin{tabular}{cll}
+      \textbf{Logic} & \textbf{Programming} & Example Use in Programming \\ \hline
+      % \thead{proof \\ p is a proof of P } & \thead{typing \\ p is of type P} & hi \\ \hline
+      
+      $true$ & singleton type
+           &{\footnotesize return type of side-effect only methods} \\
+                            % similar to C's \texttt{void} \\
+
+      $false$ & empty type
+           &{\footnotesize return type for non-terminating methods } \\ \hline\pause
+
+      ⇒ & function type \hfill →
+         &{\footnotesize methods with an input and output type } \\
+
+      ∧ & product type \hfill ×
+         &{\footnotesize simple records of data and methods } \\
+
+      ∨ & sum type \hfill +
+         &{\footnotesize enumerations or tagged unions} \\ \hline\pause
+      
+      ∀ & dependent function type \hfill Π
+         & {\footnotesize return type varies according to input \emph{value} } \\
+      
+      ∃ & dependent product type \hfill Σ
+         &{\footnotesize record fields depend on each other's \emph{values} } \\ \hline\pause
+      
+      \thead{natural \\ deduction} & type system
+           &{\footnotesize ensuring only ``meaningful'' programs } \\
+
+      {\footnotesize hypothesis} & free variables
+           &{\footnotesize global variables, closures } \\
+
+      \thead{implication \\ elimination} & function application
+           &{\footnotesize executing methods on arguments } \\
+      
+      \thead{implication \\ introduction} & λ-abstraction
+      & \thead{\hspace{-3.5em}parameters acting as local variables
+        \\ \hspace{-9.5em}to method definitions } \\
+      
+    \end{tabular}
+  \end{block}
+
+% X-axis to the right and Y-axis upwards
+\begin{picture}(0,0)(0,0)
+  \pause
+  \put(0,225){\LARGE \spurple{\textbf{\emph{\fbox{Proposition}} $P$ is either $true$ or $false$.}}}
+  
+  \pause
+  \put(0,40){\LARGE \spurple{\textbf{\emph{\fbox{Type}} $P$ may have more than 2 elements!}}}
+  
+  \pause
+  \put(90,210){\rotatebox{-45}{\huge \sred{\textbf{Not An Isomorphism!}}}}
+\end{picture}
+  
+\end{frame}
+
+\begin{frame} \frametitle{Adjunctions, à la \texttt{Prop} }
+  
+  \begin{enumerate}
+  \item Try to understand \emph{complex notion} via a transformation
+    to a \emph{simpler notion}. \pause
+  \item Methodology: Transport $complex$-problems into $simple$-setting where they are
+    \alert{easier to solve}, then go back. \pause
+  \item Usually transformation is not invertible, but has a \alert{best approximate inverse}: \pause
+  \end{enumerate}  
+  
+  \begin{block}{Galois Connections}
+    \[ f \,⊣\, g \qquad≡\qquad ∀x,y \;\bullet\; f\, x ≤₁ y  \;≡\; x ≤₂ g\, y\] 
+  \end{block}
+
+  \pause
+  For example, we can understand the complicated notion of supremum
+  % ---the least upper bound, what a mouthful!---
+  by the trivial notion of constant function:
+  % {\footnotesize --then showing $\sup(h \sqcup k) = \sup\, h \sqcup \sup k$ is easy!}
+  \[ ∀ h, z \;\bullet\; \sup\, h ≤ z \;≡\; h \overset{.}{≤} \mathsf{K}\, z \] 
+
+  \begin{picture}(0,0)(0,0)
+    \pause
+    \put(120,225){\footnotesize Easy now to show that supremum distributes over maximum}
+    \put(170,213){\bf \sblue{$\sup(h \overset{.}{\sqcup} k) = \sup\, h \sqcup \sup k$}}
+  \end{picture}
+  %
+  \pause
+  Ubiquitous! {\footnotesize Integer division: $(× k) ⊣ (÷ n)$,
+  floor: $\iota_\mathbb{R} ⊣ \lfloor-\rfloor$,
+  \\ Prefix extraction: $\mathsf{length} × \mathsf{Id} ⊣ \mathsf{take}$,
+  Binary joins: $\max ⊣ \Delta$, Power sets: $\bigcup ⊢ \mathbb{P}$,
+  \\ Unit \& empty types, residuals, colimits, Kan extensions,
+  \alert{Free ⊢ Forgetful}  }
+  
+\end{frame}
+
+\begin{frame} \frametitle{Adjunctions, Constructively}
+
+  \alert{Proof relevance:} We care about \emph{which proof} witnesses the Galois Connection. \pause
+  We make a few replacements, \pause
+  \begin{tabular}{lcl}
+    Order `≤'    &   $\quad↦\quad$ & Morphism type constructor `⟶' \\ \pause
+    Equivalence `≡' & $\quad↦\quad$ & Isomorphism `≅' \\ \pause
+    Functions $f,g$ between sets   & $\quad↦\quad$ & Functors $F,G$ between categories \pause
+  \end{tabular}
+  
+  \begin{block}{Adjunctions, Global Characterisation}
+    \[ F \,⊣\, G \qquad≡\qquad
+    ∀x,y \;\bullet\; (F\, x ⟶₁ y) \;≅\; (x ⟶₂ G\, y)\]
+    Where the isomorphism is natural in $x$ and $y$.
+  \end{block} \pause
+  
+  \begin{block}{Adjunctions, Local Characterisation}
+    % counit ε, unit η
+    \centering $\epsilon : FG \overset{.}{⟶} \Id
+    \qquad \text{ and } \qquad \eta : \Id \overset{.}{⟶} GF$
+    \\ such that the nonsensical “inverse equation $\Id = \epsilon ∘ \eta$” holds.
+
+      {\footnotesize
+        $\eta$ is called the \alert{unit} since $FG$ is a monad;
+        dually $\epsilon$ is the \alert{counit} since $GF$ is a comonad. }
+  \end{block} \pause
+  
+  $\eta$ embeds, or \emph{inserts}, “elements” \emph{as} “singleton structures”; \\
+  whereas $\epsilon$ \emph{extracts} “elements” \emph{from} “singleton structures.”
+  
+\end{frame}
+
+\begin{frame} \frametitle{Computing Science $\;\;\dashv\;\;$ Mathematics}
+  Given an arbitrary type $A$, \\ \vspace*{0mm}
+  \pause
+  \begin{block}{}
+  \begin{tabular}{llll}
+    \textbf{Theory} & \textbf{Structure} & Over & Equality \\ \hline
+    Carrier & Identity A & Type  & Propositional \\
+    Pointed & Maybe A & Type & Propositional\\ \hline \pause
+    Unary & ℕ × A &  Type & Propositional\\
+    Involutive & A ⊎ A & Type & Propositional \\ \hline\pause
+    Magma & Tree A &  Type & Propositional\\
+    Semigroup & NEList A & Type & Propositional\\ \hline\pause
+    Monoid & List A & Type & Propositional\\
+    Left Unital Semigroup & List A × ℕ & Type & Propositional\\
+    Right Unital Semigroup & ℕ × List A & Type & Propositional\\ \hline\pause
+    Commutative Monoid & Bag & Setoid &  Proof-relevant permutations \\
+    Group & ? & ? & ? \\
+    Abelian Group & Hybrid Sets & Setoid &  Proof-relevant permutations\\
+    Idemp. Comm. Monoid & Set & Setoid &  Logical equivalence \\
+  \end{tabular}
+  \end{block}
+
+  {\footnotesize
+    \pause
+    $\diamond$ \sblue{Free Structure} is ``the''
+  \sred{\textbf{term language in normal form}} associated to the theory.
+
+  \pause
+  $\diamond \; \bot$, $\top$, $\mathbb{B}$, $\mathbb{N}$, $\mathbb{Z}$ show up
+  as \emph{initial objects}.
+  }
+  
+  % X-axis to the right and Y-axis upwards
+  \setlength{\unitlength}{1cm}
+  \begin{picture}(0,0)(0,0)      
+   \pause
+   \put(3,3.3){\rotatebox{45}{\huge \sblue{\textbf{Easy! $\sim\!$Three Months!}}}}
+  
+   \pause
+   \put(3.6,2.8){\LARGE \spurple{\textbf{\emph{⇐ This took one year}}!}}
+   
+   \pause 
+   \put(-1, -0.4){\colorbox{white}{ \framebox(30,3){}}}
+   \put(0.2,2.3){ Implementation issues!  }
+   \pause \put(0.5, 1.9){ $\diamond$ Inductive type ⇒ Ordering! Thus not free! }
+   \pause \put(0.5,1.5){ $\diamond \; A → ℕ$ \hspace{3em} ⇒ No finite support }
+   \pause \put(0.5,1.1){
+     \hspace{7.2em} ⇒ Finiteness hard to express constructively!  }
+   \pause \put(0.5,0.7){
+     \hspace{7.2em} ⇒ Decidable equality on $A$! Thus not free! }
+   \pause \put(0.5,0.3){ $\diamond \; \mathsf{List}\, A$ with permutations! \sred{Works!} }
+
+   \pause
+   \put(0.5, 4.8){\colorbox{yellow}{ \framebox(11,1.1){}}}
+   \put(0.8, 5.5){ Theorem :: Within Martin-Löf Type Theory, there's no \emph{free} functor}
+   \put(0.8, 5.0){  from \emph{Types} to \emph{Commutative Monoids} using propositional equality.}
+   
+  \end{picture}
+
+  \iffalse
+  + Implementation issues!
+     - inductive type ⇒ ordering!
+     - A → ℕ   ⇒ no finite support; finiteness hard to express constructively!
+                ⇒ decidble equality on A
+     - `List A` with permutations!
+
+
+  \fi
+
+  
+\end{frame}
+
+\begin{frame} \frametitle{Why the Mechanisation \hfill
+    {\footnotesize $\sim1000$ lines of Agda code}}
+
+{\footnotesize
+
+  \pause
+  \vspace{-1em}
+  \begin{block}{Benefits of the formal approach}
+    \begin{itemize} \itemsep0em      
+    \item Give solid grounding to folklore; e.g., there are no associative
+      extensions of non-associative operators: There is no free functor from magmas to semigroups.
+
+    \pause
+    \item Unicode and mixfix operators ⇒ Mechanisation is readable and not significantly more effort than a conventional presentation in LaTeX.
+
+    \pause
+    \item Agda as a type checker for doing mathematics —manipulating symbols according to specified rules. Mechanised mathematical notation ⇒ \alert{Confidence in results!} Dispell silly conjectures/errors!
+
+    \pause      
+    \item Agda enables a natural treatment of theories and their direct use as modules of executable programs.
+      % \item formalisations can be used both for theoretical reasoning and for executable implementations
+
+    \pause      
+    \item Finally, formal proofs are fool-proof! \textbf{No “an exercise to the reader”!}      
+    \end{itemize}
+  \end{block}
+  
+  \pause
+  \vspace{-0.8em}
+  \def\map{\mathsf{map}\,}  
+  \begin{block}{By working out the details we \alert{discovered} }
+    \begin{itemize} \itemsep0em
+    \item Common recursion principles % for trees, lists, nullables, ….
+      ; “Evaluate” the \alert{syntax} under a given \alert{semantics}.
+
+    \pause      
+    \item \texttt{map}~operators~and~their~optimisation~rewrites:~$\map \Id \mapsto \Id \; ; \; \map f \circ \map g \mapsto \map (f ∘ g)$
+
+    \pause      
+    \item (Haskell's \texttt{return}) Unit transformations take on familiar forms:
+      \texttt{[-], Leaf, Just,} $…$
+      Along with proven optimisation laws:
+      $\map f (\mathsf{return}\, x) \mapsto \mathsf{return}\, (f\, x)$
+      
+      \pause      
+    \item \alert{Boom Hierarchy does not necessarily work for type theory!}
+
+    \pause      
+    \item New-ish relationships: Lists may be specified as a \emph{free monoid}
+      but may also be specified as \emph{initial pointed indexed unary algebra}.
+      % roughly put, “a minimal semiautomaton”.
+      Single-sorted unary algebras also have a surprising relationship with temporal logic. %: The \texttt{Eventually A}.
+    \end{itemize}
+  \end{block}
+
+}
+  
+\end{frame}
+
+\begin{frame} \frametitle{Adventurous Avenues To Explore
+    \hfill {\footnotesize ---Where do these show up?}}
+
+  \pause
+  \vspace{-1.4em}
+  \begin{block}{Math theories yielding potential data structures}
+    {\small left-zero monoid \sred{(Prolog's cut!?)}, pointed unary \sred{(natural numbers!?)}, idempotent unary, commutative
+magma, pointed magma, quasigroup, loop, semilattice, medial magma,
+left semimedial magma, left distributive magma, idempotent magma,
+zeropotent magma, left unary magma, Steiner magma, null semigroup, BCI algebra, BCK
+algebra, squag, sloop, Moufang quasigroup, loop, left shelf, shelf,
+rack, spindle, quandle, Kei, involutive semigroup, band, rectangular
+band, hemigroup, pseudo inverse algebra, ringoid, left near semiring,
+near semiring, semifield, semiring, semirng, pre-dioid, dioid, star semiring,
+idempotent dioid, ring, commutative ring, idempotent semiring, Stone algebra,
+Kleene lattice, Kleene algebra, Heyting algebra, Goedel algebra, ortho
+lattice, directoid, semiheap, idempotent semiheap, heap, meadow, wheel. }
+\end{block}
+
+  \pause
+  \begin{block}{Structures possibly arising from mathematical theories}
+        Difference list \sred{(Yoneda on Monoids!?)}, stack, queue, finite map, rose tree, digraph,
+multigraph, partitions, oriented cycles, colorings, tri-colorings,
+hedges, derangements, ballots, commutative parenthesizations, linear
+order, permutations, even permutations, chains, oriented sets, even
+sets, octopus, vertebrae, automata \sred{(pointed indexed algebras!?)}.
+  \end{block}  
+\end{frame}
+
+\iffalse
+\begin{frame}
+\frametitle{Lists and Monoids}
+\begin{claim}
+A \sred{List} is a \sred{Free Monoid}
+\end{claim}
+What does that really mean? \\
+
+\pause
+\vspace*{4mm}
+\sred{Fancy explanation}: The functor from the category \textsf{Types} of \sgreen{types and function}, with
+\texttt{List} as its object mapping and \texttt{map} for homomorphism,
+to the category \textsf{Monoid} of \sgreen{monoids and monoid homomorphisms}, is \sblue{left
+adjoint} to the forgetful functor (from \textsf{Monoid} to \textsf{Types}).
+
+\pause
+\vspace*{4mm}
+\texttt{List} (equipped with constructors \texttt{[]}, \texttt{::} and
+functions \texttt{map}, \texttt{++},
+\texttt{singleton}, and \texttt{foldr}) is the
+\sblue{language of monoids}. In other words, \texttt{List} 
+is the canonical term syntax for 
+\sblue{computing with monoids}.
+
+\pause
+\vspace*{4mm}
+Why on earth would we care about that? Let's see!
+\end{frame}
+\fi
+
+\end{document}
+
+% Local Variables:
+% eval: (setq NAMEtex (buffer-name) NAME (file-name-sans-extension (buffer-name)))
+% eval: (defun makepdf () (shell-command (concat "pdflatex " NAMEtex)))
+% eval: (defun showpdf () (shell-command (concat "evince " NAME ".pdf &")))
+% compile-command: (progn (save-buffer) (makepdf) (makepdf))
+% End:

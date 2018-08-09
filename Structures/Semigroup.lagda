@@ -1,4 +1,4 @@
-\section{Semigroups: Non-empty Lists}
+\section{Semigroups: Non-empty Lists -- has a postulate!}
 
 %{{{ Imports
 \begin{code}
@@ -398,8 +398,31 @@ module ZeroAryAdjoint where
 \end{code}
 %}}}
 
-\fi
 
+\begin{code}
+module RelationshipToMonoids where
+
+  open import Structures.Monoid
+  open import Data.Maybe renaming (map to _⟨$⟩_)
+
+  raise : ∀{M} → (M → M → M) → Maybe M → Maybe M → Maybe M
+  raise _op_ 𝓁 = maybe (λ r → just (maybe (_op r) r 𝓁)) 𝓁
+
+  Freeₘ : (ℓ : Level) → Functor (MonoidCat ℓ) (SemigroupCat ℓ)
+  Freeₘ ℓ = record
+    { F₀             =  λ ℳ →
+      let
+        open Monoid ℳ renaming (Carrier to M)
+      in MkSG (Maybe M) (raise _*_) {!assoc!}
+    ; F₁             =  {!!}
+    ; identity       =  {!!}
+    ; homomorphism   =  {!!}
+    ; F-resp-≡      =  {!!}
+    }
+\end{code}
+
+
+\fi
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

@@ -169,7 +169,7 @@ NoRight (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ⊥) (p
 
 %{{{ Initial object
 
-A singleton set with a single point determines an initial object in this category.
+A singleton set with its only point determines an initial object in this category.
 
 \begin{code}
 open import Structures.OneCat hiding (initial)

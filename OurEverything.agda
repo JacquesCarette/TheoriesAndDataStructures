@@ -93,6 +93,7 @@ open import Structures.Magma
 -- Also an involved proof of the non-existence of a certain adjunction:
 -- There cannot be a (free) associative “extension” of an arbitrary binary operator.
 --
+-- Contains a postulate.
 open import Structures.Semigroup
 
 -- Category of setoid-based commutative monoids over a given type, with a forgetful functor.

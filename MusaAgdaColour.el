@@ -140,6 +140,10 @@
          InsertPreMatter
      " ; " InsertPostMatter
 
+     ;; replace spec with verbatim
+     ;; " ; sed -i 's/\\\\begin{spec}/\\\\begin{verbatim}/g' DirNAMELagda "
+     ;; " ; sed -i 's/\\\\end{spec}/\\\\end{verbatim}/g' DirNAMELagda "
+     
      " ; " (concat "DirNAME=" DirNAME "; Dir=" Dir "; NAME=" NAME
          "; agda --latex $DirNAME.lagda "
           "&& cd latex && pdflatex $DirNAME.tex ")

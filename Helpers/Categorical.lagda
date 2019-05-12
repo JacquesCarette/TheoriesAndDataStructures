@@ -6,14 +6,14 @@ module Helpers.Categorical where
 
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Relation.Binary using (Setoid ; Rel ; IsEquivalence)
-open import Data.List
+open import Data.List using ()
 
 open import Helpers.Function2
 import Relation.Binary.PropositionalEquality as ≡ ; open ≡ using () renaming (_≡_ to _≣_)
 open import Helpers.DataProperties using (_⊎_)
 
 -- open import Categories.Category using (Category; module Category)
-record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where 
+record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
 
   infix  4 _≡_ _⇒_
   infixr 9 _∘_
@@ -34,14 +34,14 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
     .{∘-resp-≡}  : ∀ {A B C} {f h : B ⇒ C} {g i : A ⇒ B} → f ≡ h → g ≡ i → f ∘ g ≡ h ∘ i
 
   .hom-setoid : ∀ {A B} → Setoid _ _
-  hom-setoid {A} {B} = record 
+  hom-setoid {A} {B} = record
     { Carrier = A ⇒ B
     ; _≈_ = _≡_
     ; isEquivalence = equiv
     }
 
   infixr 4 _⟨≈≈⟩_ _⟨≈≈˘⟩_
-  
+
   ._⟨≈≈⟩_ : ∀ {A B} → ∀ {f g h : A ⇒ B} → f ≡ g → g ≡ h → f ≡ h
   _⟨≈≈⟩_ {A} {B} = IsEquivalence.trans (equiv {A} {B})
 
@@ -84,7 +84,7 @@ Sets o = record
 
   ∘-resp-≡′ : {A B C : Set o} {f h : B → C} {g i : A → B} →
              (∀ {x} → f x ≣ h x) →
-             (∀ {x} → g x ≣ i x) → 
+             (∀ {x} → g x ≣ i x) →
              (∀ {x} → f (g x) ≣ h (i x))
   ∘-resp-≡′ {g = g} f≡h g≡i {x} rewrite f≡h {g x} | g≡i {x} = ≡.refl
 
@@ -103,7 +103,7 @@ record Functor {o ℓ e o′ ℓ′ e′} (C : Category o ℓ e) (D : Category o
     .{F-resp-≡} : ∀ {A B} {F G : C [ A , B ]} → C [ F ≡ G ] → D [ F₁ F ≡ F₁ G ]
 
 idF : ∀ {o ℓ e} {C : Category o ℓ e} → Functor C C
-idF {C = C} = record 
+idF {C = C} = record
   { F₀ = λ x → x
   ; F₁ = λ x → x
   ; identity = IsEquivalence.refl equiv
@@ -114,9 +114,9 @@ idF {C = C} = record
 
 infixr 9 _∘F_
 
-_∘F_ : ∀ {o ℓ e} {o′ ℓ′ e′} {o′′ ℓ′′ e′′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} {E : Category o′′ ℓ′′ e′′} 
+_∘F_ : ∀ {o ℓ e} {o′ ℓ′ e′} {o′′ ℓ′′ e′′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} {E : Category o′′ ℓ′′ e′′}
     → Functor D E → Functor C D → Functor C E
-_∘F_ {C = C} {D = D} {E = E} F G = record 
+_∘F_ {C = C} {D = D} {E = E} F G = record
   { F₀ = λ x → F₀ (G₀ x)
   ; F₁ = λ f → F₁ (G₁ f)
   ; identity = identity′
@@ -143,13 +143,13 @@ _∘F_ {C = C} {D = D} {E = E} F G = record
                  → E [ F₁ (G₁ (C [ g ∘ f ])) ≡ E [ F₁ (G₁ g) ∘ F₁ (G₁ f) ] ]
   homomorphism′ {f = f} {g = g} = F-resp-≡ G.homomorphism ⟨≈≈⟩ F.homomorphism
 
-  .∘-resp-≡′ : ∀ {A B} {F G : C [ A , B ]} 
+  .∘-resp-≡′ : ∀ {A B} {F G : C [ A , B ]}
             → C [ F ≡ G ] → E [ F₁ (G₁ F) ≡ F₁ (G₁ G) ]
   ∘-resp-≡′ = λ x → F-resp-≡ (G-resp-≡ x)
 
 Faithful : ∀ {o ℓ e} {o′ ℓ′ e′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} → Functor C D → Set (o ⊍ ℓ ⊍ e ⊍ e′)
 Faithful {C = C} {D} F = ∀ {X Y} → (f g : C [ X , Y ]) → D [ F₁ f ≡ F₁ g ] → C [ f ≡ g ]
-  where 
+  where
   module C = Category C
   module D = Category D
   open Functor F
@@ -173,7 +173,7 @@ record NaturalTransformation {o ℓ e o′ ℓ′ e′}
     .commute : ∀ {X Y} (f : C [ X , Y ]) → let open Category D in η Y ∘ F₁ f ≡ G₁ f ∘ η X
 
 idT : ∀ {o ℓ e o′ ℓ′ e′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} {F : Functor C D} → NaturalTransformation F F
-idT {C = C} {D} {F} = record 
+idT {C = C} {D} {F} = record
   { η = λ _ → D.id
   ; commute = commute′
   }
@@ -186,7 +186,7 @@ idT {C = C} {D} {F} = record
   open D using (_⟨≈≈˘⟩_)
 
   .commute′ : ∀ {X Y} (f : C [ X , Y ]) → D [ D [ D.id ∘ F₁ f ] ≡ D [ F₁ f ∘ D.id ] ]
-  commute′ f =  D.identityˡ ⟨≈≈˘⟩ D.identityʳ 
+  commute′ f =  D.identityˡ ⟨≈≈˘⟩ D.identityʳ
 
 infix 4 _≡T_
 _≡T_ : ∀ {o ℓ e o′ ℓ′ e′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′} {F G : Functor C D} → Rel (NaturalTransformation F G) (o ⊍ e′)
@@ -196,9 +196,9 @@ infixr 9 _∘ˡ_ _∘ʳ_
 
 _∘ˡ_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁ o₂ ℓ₂ e₂}
      → {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁} {E : Category o₂ ℓ₂ e₂}
-     → {F G : Functor C D} 
+     → {F G : Functor C D}
      → (H : Functor D E) → (η : NaturalTransformation F G) → NaturalTransformation (H ∘F F) (H ∘F G)
-_∘ˡ_ {C = C} {D} {E} {F} {G} H η′ = record 
+_∘ˡ_ {C = C} {D} {E} {F} {G} H η′ = record
   { η       = λ X → Functor.F₁ H (NaturalTransformation.η η′ X)
   ; commute = commute′
   }
@@ -220,7 +220,7 @@ _∘ˡ_ {C = C} {D} {E} {F} {G} H η′ = record
 
 _∘ʳ_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁ o₂ ℓ₂ e₂}
      → {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁} {E : Category o₂ ℓ₂ e₂}
-     → {F G : Functor C D} 
+     → {F G : Functor C D}
      → (η : NaturalTransformation F G) → (K : Functor E C) → NaturalTransformation (F ∘F K) (G ∘F K)
 _∘ʳ_ η K = record
   { η       = λ X → NaturalTransformation.η η (Functor.F₀ K X)
@@ -232,7 +232,7 @@ _∘₁_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁}
         {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁}
         {F G H : Functor C D}
     → NaturalTransformation G H → NaturalTransformation F G → NaturalTransformation F H
-_∘₁_ {C = C} {D} {F} {G} {H} X Y = record 
+_∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   { η = λ q → D [ X.η q ∘ Y.η q ]
   ; commute = commute′
   }
@@ -251,7 +251,7 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   .commute′ : ∀ {A B} (f : C [ A , B ]) → D [ D [ D [ X.η B ∘ Y.η B ] ∘ F₁ f ] ≡ D [ H₁ f ∘ D [ X.η A ∘  Y.η A ] ] ]
   commute′ {A} {B} f =  let open D in
          assoc
-    ⟨≈≈⟩ (( ∘-resp-≡ (IsEquivalence.refl equiv) (Y.commute f) 
+    ⟨≈≈⟩ (( ∘-resp-≡ (IsEquivalence.refl equiv) (Y.commute f)
     ⟨≈≈˘⟩ assoc)
     ⟨≈≈⟩  ∘-resp-≡ (X.commute f) (IsEquivalence.refl equiv) )
     ⟨≈≈⟩ assoc
@@ -273,10 +273,9 @@ module _ {o ℓ e} (C : Category o ℓ e) where
        ⊥ : Obj
        ! : ∀ {A} → (⊥ ⇒ A)
        .!-unique : ∀ {A} → (f : ⊥ ⇒ A) → ! ≡ f
-    
+
      .!-unique₂ : ∀ {A} → (f g : ⊥ ⇒ A) → f ≡ g
-     !-unique₂ f g =  IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g
-   
+     !-unique₂ f g = IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g
      .⊥-id : (f : ⊥ ⇒ ⊥) → f ≡ id
      ⊥-id f = !-unique₂ f id
 
@@ -286,10 +285,10 @@ module _ {o ℓ e} (C : Category o ℓ e) where
        ⊤ : Obj
        ! : ∀ {A} → (A ⇒ ⊤)
        .!-unique : ∀ {A} → (f : A ⇒ ⊤) → ! ≡ f
-   
+
      .!-unique₂ : ∀ {A} → (f g : A ⇒ ⊤) → f ≡ g
-     !-unique₂ f g = IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g 
-   
+     !-unique₂ f g = IsEquivalence.sym equiv (!-unique f) ⟨≈≈⟩ !-unique g
+
      .⊤-id : (f : ⊤ ⇒ ⊤) → f ≡ id
      ⊤-id f = !-unique₂ f id
 
@@ -298,7 +297,7 @@ module _ {o ℓ e} (C : Category o ℓ e) where
      field
        .isoˡ : g ∘ f ≡ id
        .isoʳ : f ∘ g ≡ id
-   
+
    infix 4 _≅_
    record _≅_ (A B : Obj) : Set (o ⊍ ℓ ⊍ e) where
      field
@@ -323,4 +322,3 @@ module _ {o ℓ e} (C : Category o ℓ e) where
 % eval: (fold-whole-buffer)
 % fold-internal-margins: 0
 % end:
-

@@ -18,10 +18,7 @@ module Structures.Rel where
 open import Level renaming (suc to lsuc; zero to lzero ; _⊔_ to _⊍_)
 open import Function                using   (id ; _∘_ ; const)
 
-open import Categories.Category     using   (Category)
-open import Categories.Functor      using   (Functor)
-open import Categories.Adjunction   using   (Adjunction)
-open import Categories.Agda         using   (Sets)
+open import Helpers.Categorical
 
 open import Helpers.EqualityCombinators
 open import Helpers.DataProperties
@@ -145,7 +142,7 @@ Free¹ ℓ ℓ′ = record
   ; F₁             =   λ f → MkHom f id (λ{ {y = ()} })
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
-  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl  
+  ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
   }
 
 -- | (MkRel X ⊥ ⊥ ⟶ Alg) ≅ (X ⟶ One Alg)|
@@ -166,7 +163,7 @@ Left¹ ℓ ℓ′ = record
 CoFree¹ : (ℓ : Level) → Functor (Sets ℓ) (Rels ℓ ℓ)
 CoFree¹ ℓ = record
   { F₀             =   λ A → MkHRel A ⊤ (λ _ _ → A)
-  ; F₁             =   λ f → MkHom f id f 
+  ; F₁             =   λ f → MkHom f id f
   ; identity       =   ≐-refl , ≐-refl
   ; homomorphism   =   ≐-refl , ≐-refl
   ; F-resp-≡      =   λ f≈g → (λ x → f≈g {x}) , ≐-refl
@@ -274,7 +271,7 @@ Right² ℓ = record
 %}}}
 
    %{{{ adjoints to forgetting the THIRD component of a HetroRel
-\subsubsection*{Candidate adjoints to forgetting the \emph{third} component of a |Rels|}   
+\subsubsection*{Candidate adjoints to forgetting the \emph{third} component of a |Rels|}
 \begin{code}
 Free³ : (ℓ : Level) → Functor (Twos ℓ) (Rels ℓ ℓ)
 Free³ ℓ = record
@@ -425,7 +422,7 @@ Choice ℓ =   record
   ; homomorphism   =   λ{ {x = x} → ⊎-∘ x }
   ; F-resp-≡      =   λ F≈G {x} → uncurry ⊎-cong F≈G x
   }
-  
+
 Left₂ : (ℓ : Level) → Adjunction (Choice ℓ) (Dup ℓ)
 Left₂ ℓ = record
   { unit     =   record { η = λ _ → MkHom inj₁ inj₂ ; commute = λ _ → ≐-refl , ≐-refl }

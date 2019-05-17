@@ -12,10 +12,7 @@ module Structures.TwoSorted where
 open import Level renaming (suc to lsuc; zero to lzero)
 open import Function                using   (id ; _∘_ ; const)
 
-open import Categories.Category     using   (Category)
-open import Categories.Functor      using   (Functor)
-open import Categories.Adjunction   using   (Adjunction)
-open import Categories.Agda         using   (Sets)
+open import Helpers.Categorical
 
 open import Helpers.Function2       using   (_$ᵢ)
 open import Helpers.EqualityCombinators
@@ -180,7 +177,7 @@ Left ℓ = record
 Right :  (ℓ : Level) → Adjunction (Forget ℓ) (Cofree ℓ)
 Right ℓ = record
   { unit = record
-    { η = λ _ → MkHom id (λ _ → tt) 
+    { η = λ _ → MkHom id (λ _ → tt)
     ; commute = λ _ → ≐-refl , ≐-refl
     }
   ; counit   =   record { η = λ _ → id ; commute = λ _ → ≡.refl }
@@ -272,7 +269,7 @@ Choice ℓ =   record
   ; homomorphism   =   λ{ {x = x} → ⊎-∘ x }
   ; F-resp-≡      =   λ F≈G {x} → uncurry ⊎-cong F≈G x
   }
-  
+
 Left₂ : (ℓ : Level) → Adjunction (Choice ℓ) (Dup ℓ)
 Left₂ ℓ = record
   { unit     =   record { η = λ _ → MkHom inj₁ inj₂ ; commute = λ _ → ≐-refl , ≐-refl }

@@ -14,10 +14,7 @@ module OurEverything where
 --
 import Helpers.Forget
 
-{-
-
 import Helpers.Categorical
-
 import Helpers.Hardy
 
 -- ============================================================================================
@@ -27,18 +24,20 @@ import Helpers.Hardy
 -- “The” one-object one-arrow category, along with general free, forgetful, and adjoint constructions.
 --
 -- Arrows in the one-object one-arrow category correspond to the functions to a singleton set.
-open import Structures.OneCat
+-- ‼ open import Structures.OneCat
 
 -- Category of algebras consisting of an index set and a family of sets on the index set.
 -- Along with forgetful functor to Sets with heterogenous equality and free functor, think “Σ”.
 --
 -- Currently has a hole.
-open import Structures.Dependent
+-- ‼ open import Structures.Dependent
 
 -- Category of heterogenous relations along with a few forgetful and (co)free functors and
 -- associated adjunction proofs.
 --
+
 open import Structures.Rel
+{-
 
 -- Category of algebras of a predicate furnished type; c.f., Dependents.
 -- Along with a forgetful functor to Sets.
@@ -119,6 +118,8 @@ open import Structures.SequencesAsBags
 -- Contains a postulate.
 open import Structures.AbelianGroup
 
+-}
+
 -- ============================================================================================
 -- ============================================================================================
 -- ============================================================================================
@@ -139,6 +140,7 @@ import Helpers.DataProperties
 --
 open import Helpers.Function2
 
+{-
 -- Files that asssit baguette.lagda ;; they are from previous work.
 -- Mostly laws about Fin and type isomorphisms for it.
 --

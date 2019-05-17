@@ -41,7 +41,6 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
     ; isEquivalence = equiv
     }
 
-
   infixr 4 _⟨≈≈⟩_ _⟨≈≈˘⟩_
 
   ._⟨≈≈⟩_ : ∀ {A B} → ∀ {f g h : A ⇒ B} → f ≡ g → g ≡ h → f ≡ h
@@ -230,8 +229,6 @@ _∘ʳ_ η K = record
   ; commute = λ f → NaturalTransformation.commute η (Functor.F₁ K f)
   }
 
-{- causes internal error
-
 -- "Vertical composition"
 _∘₁_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁}
         {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁}
@@ -239,8 +236,14 @@ _∘₁_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁}
     → NaturalTransformation G H → NaturalTransformation F G → NaturalTransformation F H
 _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   { η = λ q → D [ X.η q ∘ Y.η q ]
-  ; commute = commute′
+  ; commute = λ f → let open D in
+            assoc
+       ⟨≈≈⟩ (∘-resp-≡ (IsEquivalence.refl equiv) (Y.commute f)
+       ⟨≈≈˘⟩ assoc)
+       ⟨≈≈⟩ ∘-resp-≡ (NaturalTransformation.commute X f) (IsEquivalence.refl equiv)
+       ⟨≈≈⟩ assoc
   }
+
   where
   module C = Category C
   module D = Category D
@@ -249,18 +252,10 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   module H = Functor H
   module X = NaturalTransformation X
   module Y = NaturalTransformation Y
+
   open F
   open G renaming (F₀ to G₀; F₁ to G₁)
   open H renaming (F₀ to H₀; F₁ to H₁)
-
-  .commute′ : ∀ {A B} (f : C [ A , B ]) → D [ D [ D [ X.η B ∘ Y.η B ] ∘ F₁ f ] ≡ D [ H₁ f ∘ D [ X.η A ∘  Y.η A ] ] ]
-  commute′ {A} {B} f =  let open D in
-         assoc
-    ⟨≈≈⟩ (( ∘-resp-≡ (IsEquivalence.refl equiv) (Y.commute f)
-    ⟨≈≈˘⟩ assoc)
-    ⟨≈≈⟩  ∘-resp-≡ (X.commute f) (IsEquivalence.refl equiv) )
-    ⟨≈≈⟩ assoc
-
 
 -- open import Categories.Adjunction using (Adjunction)
 record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Category o₁ ℓ₁ e₁} (F : Functor D C) (G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o₁ ⊍ ℓ₁ ⊍ e₁) where
@@ -270,8 +265,6 @@ record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Categ
 
     .zig : idT ≡T (counit ∘ʳ F) ∘₁ (F ∘ˡ unit)
     .zag : idT ≡T (G ∘ˡ counit) ∘₁ (unit ∘ʳ G)
-
--}
 
 -- Categories.Object.Initial {o ℓ e} (C : Category o ℓ e) where
 module _ {o ℓ e} (C : Category o ℓ e) where

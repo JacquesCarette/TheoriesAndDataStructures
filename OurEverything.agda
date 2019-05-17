@@ -37,13 +37,12 @@ import Helpers.Hardy
 --
 
 open import Structures.Rel
-{-
 
 -- Category of algebras of a predicate furnished type; c.f., Dependents.
 -- Along with a forgetful functor to Sets.
 --
 -- Many simple-looking holes.
-open import Structures.DistinguishedSubset
+-- ‼ open import Structures.DistinguishedSubset
 
 -- Category of pairs of sets with a few (co)free constructions.
 -- Along with a proof that sum is adjoint to squaring which is adjoint to product.
@@ -68,6 +67,8 @@ open import Structures.UnaryAlgebra
 -- adjunctions, and (co)monads.
 --
 open import Structures.InvolutiveAlgebra
+
+{- open import Helpers.Categorical
 
 -- Category of algebras consisting of a carrier with a family of operations on it; i.e., actions.
 -- Along with a forgetful functor to Sets and an initial algebra.

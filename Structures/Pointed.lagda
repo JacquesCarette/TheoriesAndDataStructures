@@ -161,7 +161,7 @@ corresponding to any given set. That is, there is no co-free functor.
 
 \begin{code}
 NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Pointeds ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
-NoRight (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ⊥) (point (f (Lift ⊥))))
+NoRight {ℓ} (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ℓ ⊥) (point (f (Lift ℓ ⊥))))
   where open Adjunction
         open NaturalTransformation
 \end{code}

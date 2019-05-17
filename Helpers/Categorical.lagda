@@ -309,6 +309,37 @@ module _ {o ℓ e} (C : Category o ℓ e) where
      isoˡ = Iso.isoˡ iso
      .isoʳ : _
      isoʳ = Iso.isoʳ iso
+
+-- open import Categories.Monad      using (Monad)
+
+record Monad {o ℓ e} (C : Category o ℓ e) : Set (o ⊍ ℓ ⊍ e) where
+  field
+    F : Functor C C
+    η : NaturalTransformation idF F
+    μ : NaturalTransformation (F ∘F F) F
+
+  open Functor F
+
+  field
+    .assoc     : (μ ∘₁ (F ∘ˡ μ)) ≡T (μ ∘₁ (μ ∘ʳ F))
+    .identityˡ : μ ∘₁ (F ∘ˡ η) ≡T idT
+    .identityʳ : μ ∘₁ (η ∘ʳ F) ≡T idT
+
+-- open import Categories.Comonad    using (Comonad)
+
+record Comonad {o ℓ e} (C : Category o ℓ e) : Set (o ⊍ ℓ ⊍ e) where
+  field
+    F : Functor C C
+    ε : NaturalTransformation F idF
+    δ : NaturalTransformation F (F ∘F F)
+
+  open Functor F
+
+  field
+    .assoc     : (δ ∘ʳ F) ∘₁ δ ≡T (F ∘ˡ δ) ∘₁ δ
+    .identityˡ : (F ∘ˡ ε) ∘₁ δ ≡T idT
+    .identityʳ : (ε ∘ʳ F) ∘₁ δ ≡T idT
+
 \end{code}
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

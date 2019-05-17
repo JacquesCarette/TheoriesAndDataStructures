@@ -10,13 +10,7 @@ module Structures.InvolutiveAlgebra where
 open import Level renaming (suc to lsuc; zero to lzero)
 open import Function
 
-open import Categories.Category   using (Category; module Category)
-open import Categories.Functor    using (Functor; Contravariant)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
-open import Categories.Monad      using (Monad)
-open import Categories.Comonad    using (Comonad)
-
+open import Helpers.Categorical
 open import Helpers.Function2    using (_$ᵢ)
 open import Helpers.DataProperties
 open import Helpers.EqualityCombinators
@@ -131,7 +125,7 @@ Notice that the adjunction proof forces us to come-up with the operations and pr
   time algorithm, namely, |id|.
 \item |2×-∘|: sequential substitutions on syntax can be efficiently replaced with a single substitution.
 \item |2×-cong|: observably indistinguishable substitutions can be used in place of one another, similar to the
-      transparency principle of Haskell programs.      
+      transparency principle of Haskell programs.
 \item |2×-over-swap|: \unfinished
 \item |swap₊|: \unfinished
 \item |swap²|: \unfinished

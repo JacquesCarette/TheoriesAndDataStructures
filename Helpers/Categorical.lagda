@@ -13,6 +13,83 @@ open import Helpers.Function2
 import Relation.Binary.PropositionalEquality as ≡ ; open ≡ using () renaming (_≡_ to _≣_)
 open import Helpers.DataProperties using (_⊎_)
 
+module C/SetoidReasoning {s₁ s₂} (S : Setoid s₁ s₂) where
+  open Setoid S
+
+  infix  4 _IsRelatedTo_
+  infix  1 begin_
+  infixr 2 _≈⟨_⟩_ _↓⟨_⟩_ _↑⟨_⟩_ _↓≣⟨_⟩_ _↑≣⟨_⟩_ _↕_
+  infix  3 _∎
+
+  -- This seemingly unnecessary type is used to make it possible to
+  -- infer arguments even if the underlying equality evaluates.
+
+  data _IsRelatedTo_ (x y : Carrier) : Set s₂ where
+    relTo : (x∼y : x ≈ y) → x IsRelatedTo y
+
+  .begin_ : ∀ {x y} → x IsRelatedTo y → x ≈ y
+  begin relTo x∼y = x∼y
+
+  ._↓⟨_⟩_ : ∀ x {y z} → x ≈ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ↓⟨ x∼y ⟩ relTo y∼z = relTo (trans x∼y y∼z)
+    -- where open IsEquivalence isEquivalence
+
+  ._↑⟨_⟩_ : ∀ x {y z} → y ≈ x → y IsRelatedTo z → x IsRelatedTo z
+  _ ↑⟨ y∼x ⟩ relTo y∼z = relTo (trans (sym y∼x) y∼z)
+    -- where open IsEquivalence isEquivalence
+
+  -- the syntax of the ancients, for compatibility
+  ._≈⟨_⟩_ : ∀ x {y z} → x ≈ y → y IsRelatedTo z → x IsRelatedTo z
+  _≈⟨_⟩_ = _↓⟨_⟩_
+
+  ._↓≣⟨_⟩_ : ∀ x {y z} → x ≣ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ↓≣⟨ ≡.refl ⟩ y∼z = y∼z
+
+  ._↑≣⟨_⟩_ : ∀ x {y z} → y ≣ x → y IsRelatedTo z → x IsRelatedTo z
+  _ ↑≣⟨ ≡.refl ⟩ y∼z = y∼z
+
+  ._↕_ : ∀ x {z} → x IsRelatedTo z → x IsRelatedTo z
+  _ ↕ x∼z = x∼z
+
+  ._∎ : ∀ x → x IsRelatedTo x
+  _∎ _ = relTo refl
+    -- where open IsEquivalence isEquivalence
+
+module C/≣-reasoning {ℓ} (S : Set ℓ) where
+
+  infix  4 _IsRelatedTo_
+  infix  3 _∎
+  infixr 2 _≈⟨_⟩_
+  infixr 2 _↓⟨_⟩_
+  infixr 2 _↑⟨_⟩_
+  infixr 2 _↕_
+  infix  1 begin_
+
+  -- This seemingly unnecessary type is used to make it possible to
+  -- infer arguments even if the underlying equality evaluates.
+
+  data _IsRelatedTo_ (x y : S) : Set ℓ where
+    relTo : (x∼y : x ≣ y) → x IsRelatedTo y
+
+  begin_ : ∀ {x y} → x IsRelatedTo y → x ≣ y
+  begin relTo x∼y = x∼y
+
+  -- the syntax of the ancients, for compatibility
+  _≈⟨_⟩_ : ∀ x {y z} → x ≣ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ≈⟨ x∼y ⟩ relTo y∼z = relTo (≡.trans x∼y y∼z)
+
+  _↓⟨_⟩_ : ∀ x {y z} → x ≣ y → y IsRelatedTo z → x IsRelatedTo z
+  _ ↓⟨ x∼y ⟩ relTo y∼z = relTo (≡.trans x∼y y∼z)
+
+  _↑⟨_⟩_ : ∀ x {y z} → y ≣ x → y IsRelatedTo z → x IsRelatedTo z
+  _ ↑⟨ y∼x ⟩ relTo y∼z = relTo (≡.trans (≡.sym y∼x) y∼z)
+
+  _↕_ : ∀ x {z} → x IsRelatedTo z → x IsRelatedTo z
+  _ ↕ x∼z = x∼z
+
+  _∎ : ∀ x → x IsRelatedTo x
+  _∎ _ = relTo ≡.refl
+
 -- open import Categories.Category using (Category; module Category)
 record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
 
@@ -31,10 +108,10 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
     .{assoc}     : ∀ {A B C D} {f : A ⇒ B} {g : B ⇒ C} {h : C ⇒ D} → (h ∘ g) ∘ f ≡ h ∘ (g ∘ f)
     .{identityˡ} : ∀ {A B} {f : A ⇒ B} → id ∘ f ≡ f
     .{identityʳ} : ∀ {A B} {f : A ⇒ B} → f ∘ id ≡ f
-    .{equiv}     : ∀ {A B} → IsEquivalence (_≡_ {A} {B})
+    {equiv}     : ∀ {A B} → IsEquivalence (_≡_ {A} {B})
     .{∘-resp-≡}  : ∀ {A B C} {f h : B ⇒ C} {g i : A ⇒ B} → f ≡ h → g ≡ i → f ∘ g ≡ h ∘ i
 
-  .hom-setoid : ∀ {A B} → Setoid _ _
+  hom-setoid : ∀ {A B} → Setoid _ _
   hom-setoid {A} {B} = record
     { Carrier = A ⇒ B
     ; _≈_ = _≡_
@@ -48,6 +125,30 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
 
   ._⟨≈≈˘⟩_ : ∀ {A B} → ∀ {f g h : A ⇒ B} → f ≡ g → h ≡ g → f ≡ h
   _⟨≈≈˘⟩_ f≈g h≈g = f≈g ⟨≈≈⟩ IsEquivalence.sym equiv h≈g
+
+  module HomReasoning {A B : Obj} where
+    open C/SetoidReasoning (hom-setoid {A} {B}) public
+
+    infixr 4 _⟩∘⟨_
+    ._⟩∘⟨_ : ∀ {M} {f h : M ⇒ B} {g i : A ⇒ M} → f ≡ h → g ≡ i → f ∘ g ≡ h ∘ i
+    _⟩∘⟨_ = ∘-resp-≡
+
+ -- with irrelevant modules this would be:
+  -- module .Equiv {A B : Obj} = IsEquivalence (equiv {A} {B})
+  module Equiv {A B : Obj} where
+    module e = IsEquivalence
+    private
+      .q : IsEquivalence _≡_
+      q = equiv {A} {B}
+
+    -- .refl : Reflexive _≡_
+    -- refl = e.refl q
+    -- .trans : Transitive _≡_
+    -- trans = e.trans q
+    .sym : ∀ {x y} → x ≡ y → y ≡ x
+    sym = e.sym q
+    -- .reflexive : _≣_ ⊆ _≡_
+    -- reflexive = e.reflexive q
 
 infix 10  _[_,_] _[_≡_] _[_∘_]
 
@@ -257,15 +358,6 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   open G renaming (F₀ to G₀; F₁ to G₁)
   open H renaming (F₀ to H₀; F₁ to H₁)
 
--- open import Categories.Adjunction using (Adjunction)
-record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Category o₁ ℓ₁ e₁} (F : Functor D C) (G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o₁ ⊍ ℓ₁ ⊍ e₁) where
-  field
-    unit   : NaturalTransformation idF (G ∘F F)
-    counit : NaturalTransformation (F ∘F G) idF
-
-    .zig : idT ≡T (counit ∘ʳ F) ∘₁ (F ∘ˡ unit)
-    .zag : idT ≡T (G ∘ˡ counit) ∘₁ (unit ∘ʳ G)
-
 -- Categories.Object.Initial {o ℓ e} (C : Category o ℓ e) where
 module _ {o ℓ e} (C : Category o ℓ e) where
    open Category C
@@ -340,7 +432,109 @@ record Comonad {o ℓ e} (C : Category o ℓ e) : Set (o ⊍ ℓ ⊍ e) where
     .identityˡ : (F ∘ˡ ε) ∘₁ δ ≡T idT
     .identityʳ : (ε ∘ʳ F) ∘₁ δ ≡T idT
 
+-- open import Categories.Adjunction using (Adjunction)
+record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Category o₁ ℓ₁ e₁} (F : Functor D C) (G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o₁ ⊍ ℓ₁ ⊍ e₁) where
+  field
+    unit   : NaturalTransformation idF (G ∘F F)
+    counit : NaturalTransformation (F ∘F G) idF
+
+    .zig : idT ≡T (counit ∘ʳ F) ∘₁ (F ∘ˡ unit)
+    .zag : idT ≡T (G ∘ˡ counit) ∘₁ (unit ∘ʳ G)
+
+
+  private module C = Category C
+  private module D = Category D
+
+  private module F = Functor F
+  private module G = Functor G renaming (F₀ to G₀; F₁ to G₁; F-resp-≡ to G-resp-≡)
+  open F
+  open G
+
+  private module unit   = NaturalTransformation unit
+  private module counit = NaturalTransformation counit
+
+  monad : Monad D
+  monad = record
+    { F = G ∘F F
+    ; η = unit
+    ; μ = G ∘ˡ (counit ∘ʳ F)
+    ; assoc = assoc′
+    ; identityˡ = identityˡ′
+    ; identityʳ = identityʳ′
+    }
+    where
+
+    .assoc′ : ∀ {x}
+           → G₁ (counit.η (F₀ x)) D.∘ G₁ (F₁ (G₁ (counit.η (F₀ x)))) D.≡ G₁ (counit.η (F₀ x)) D.∘ G₁ (counit.η (F₀ (G₀ (F₀ x))))
+    assoc′ {x} = let open D.HomReasoning in
+      begin
+        G₁ (counit.η (F₀ x)) D.∘ G₁ (F₁ (G₁ (counit.η (F₀ x))))
+        ↑⟨ G.homomorphism ⟩
+          G₁ ((counit.η (F₀ x)) C.∘ (F₁ (G₁ (counit.η (F₀ x)))))
+        ↓⟨ G-resp-≡ (NaturalTransformation.commute counit (counit.η (F₀ x))) ⟩
+          G₁ (counit.η (F₀ x) C.∘ counit.η (F₀ (G₀ (F₀ x))))
+        ↓⟨ G.homomorphism ⟩
+          G₁ (counit.η (F₀ x)) D.∘ G₁ (counit.η (F₀ (G₀ (F₀ x))))
+        ∎
+
+    .identityˡ′ : ∀ {x} → G₁ (counit.η (F₀ x)) D.∘ G₁ (F₁ (unit.η x)) D.≡ D.id
+    identityˡ′ {x} =
+        begin
+          G₁ (counit.η (F₀ x)) D.∘ G₁ (F₁ (unit.η x))
+        ↑⟨ G.homomorphism ⟩
+          G₁ ((counit.η (F₀ x)) C.∘ (F₁ (unit.η x)))
+        ↑⟨ G-resp-≡ zig ⟩
+          G₁ C.id
+        ↓⟨ G.identity ⟩
+          D.id
+        ∎
+      where
+      open D.HomReasoning
+
+    .identityʳ′ : ∀ {x} → G₁ (counit.η (F₀ x)) D.∘ unit.η (G₀ (F₀ x)) D.≡ D.id
+    identityʳ′ = D.Equiv.sym zag
+
+  comonad : Comonad C
+  comonad = record
+    { F = F ∘F G
+    ; ε = counit
+    ; δ = F ∘ˡ (unit ∘ʳ G)
+    ; assoc = assoc′
+    ; identityˡ = identityˡ′
+    ; identityʳ = identityʳ′
+    }
+    where
+      open C.HomReasoning
+      .assoc′ : ∀ {x} → F₁ (unit.η (G₀ (F₀ (G₀ x)))) C.∘ F₁ (unit.η (G₀ x)) C.≡ F₁ (G₁ (F₁ (unit.η (G₀ x)))) C.∘ F₁ (unit.η (G₀ x))
+      assoc′ {x} =
+        begin
+          F₁ (unit.η (G₀ (F₀ (G₀ x)))) C.∘ F₁ (unit.η (G₀ x))
+        ↑⟨ F.homomorphism ⟩
+          F₁ (unit.η (G₀ (F₀ (G₀ x))) D.∘ unit.η (G₀ x))
+        ↓⟨ F-resp-≡ (NaturalTransformation.commute unit (unit.η (G₀ x))) ⟩
+          F₁ (G₁ (F₁ (unit.η (G₀ x))) D.∘ unit.η (G₀ x))
+        ↓⟨ F.homomorphism ⟩
+          F₁ (G₁ (F₁ (unit.η (G₀ x)))) C.∘ F₁ (unit.η (G₀ x))
+        ∎
+
+      .identityˡ′ : ∀ {x} → (F₁ (G₁ (counit.η x))) C.∘ F₁ (unit.η (G₀ x)) C.≡ C.id
+      identityˡ′ {x} =
+        begin
+          (F₁ (G₁ (counit.η x))) C.∘ F₁ (unit.η (G₀ x))
+        ↑⟨ F.homomorphism ⟩
+          F₁ (G₁ (counit.η x) D.∘ unit.η (G₀ x))
+        ↓⟨ F-resp-≡ (D.Equiv.sym zag) ⟩
+          F₁ D.id
+        ↓⟨ F.identity ⟩
+          C.id
+        ∎
+
+      .identityʳ′ : ∀ {x} → counit.η (F₀ (G₀ x)) C.∘ F₁ (unit.η (G₀ x)) C.≡ C.id
+      identityʳ′ {x} = C.Equiv.sym zig
 \end{code}
+
+
+
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

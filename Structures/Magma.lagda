@@ -64,7 +64,7 @@ MagmaAlg {ℓ} = record
   ; Id          =   MkHom id ≡.refl
   ; Id-is-id    =   ≐-refl
   }
-   
+
 Magmas : (ℓ : Level) → Category (lsuc ℓ) ℓ ℓ
 Magmas ℓ = oneSortedCategory ℓ MagmaAlg
 
@@ -144,7 +144,7 @@ TreeLeft ℓ = record
   ; counit  =  record
     { η        =  λ A → MkHom (eval A) ≡.refl
     ; commute  =  eval-naturality
-    } 
+    }
   ; zig   =   as-id
   ; zag   =   ≡.refl
   }
@@ -158,7 +158,7 @@ Notice that the adjunction proof forces us to come-up with the operations and pr
   time algorithm, namely, |id|.
 \item |map-∘|: sequential substitutions on syntax can be efficiently replaced with a single substitution.
 \item |map-cong|: observably indistinguishable substitutions can be used in place of one another, similar to the
-      transparency principle of Haskell programs.      
+      transparency principle of Haskell programs.
 \item |eval| : \unfinished
 \item |eval-naturality| : \unfinished
 \item |as-id| : \unfinished
@@ -192,10 +192,10 @@ terminal = record
 
 open import Data.Empty
 initial : {ℓ : Level} → Initial (Magmas ℓ)
-initial = record
-  { ⊥        =  MkMagma (Lift ⊥) λ{ (lift ()) }
+initial {ℓ} = record
+  { ⊥        =  MkMagma (Lift ℓ ⊥) λ{ (lift ()) }
   ; !         =  MkHom (λ{ (lift ()) }) λ{ {lift ()} }
-  ; !-unique  =  λ{ _ ( lift() ) }
+  ; !-unique  =  λ{ _ ( lift () ) }
   }
 \end{code}
 %}}}

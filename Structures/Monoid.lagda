@@ -4,7 +4,7 @@
 
 %{{{ Imports
 \begin{code}
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --allow-unsolved-metas --irrelevant-projections #-}
 
 module Structures.Monoid where
 
@@ -115,7 +115,7 @@ Forget ℓ = record
   ; homomorphism   =   ≡.refl
   ; F-resp-≡       =   _$ᵢ
   }
-  
+
 -- Why do we have both?
 
 Forget-alg : (ℓ : Level) → Functor (MonoidCat ℓ) (Sets ℓ)
@@ -349,7 +349,7 @@ module claim {ℓ : Level}
   open Functor
   open Adjunction adj
   open NaturalTransformation
- 
+
   one-mon₀ : Set ℓ
   one-mon₀ = Carrier (F₀ L ⋆)
 

@@ -6,6 +6,7 @@
 -- Other experimental approaches can be found in the directory Experiments/
 --
 -- We are using Agda 2.6.0 with standard library version 1.0.1.
+-- Items marked with “‼” are not yet up to date and so have been commented out.
 -----------------------------------------------------------------------------------------------
 
 module OurEverything where
@@ -68,8 +69,6 @@ open import Structures.UnaryAlgebra
 --
 open import Structures.InvolutiveAlgebra
 
-{- open import Helpers.Categorical
-
 -- Category of algebras consisting of a carrier with a family of operations on it; i.e., actions.
 -- Along with a forgetful functor to Sets and an initial algebra.
 --
@@ -83,7 +82,7 @@ open import Structures.IndexedUnaryAlgebra
 -- Interface for multisets over a given type, along with a free construction
 -- via sequences.
 --
-open import Structures.Baguette
+-- ‼ open import Structures.Baguette
 
 -- Category of Magmas along with explicit toolkit of operations for binary trees.
 -- Also initial & terminal objects, along with adjunctions with OneCat.
@@ -101,7 +100,7 @@ open import Structures.Semigroup
 -- Category of setoid-based commutative monoids over a given type, with a forgetful functor.
 -- Free constructions can be found in baguette.lagda .
 --
-open import Structures.CommMonoid
+-- ‼ open import Structures.CommMonoid
 
 -- Category of monoids with adjunctions with Sets and OneCat.
 -- There are holes left intentionally for exposition purposes.
@@ -111,15 +110,13 @@ open import Structures.Monoid
 -- A theory of bags; intend to be the free multisets.
 -- ( A difficult read! )
 --
-open import Structures.SequencesAsBags
+-- ‼ open import Structures.SequencesAsBags
 
 -- The category of Set-based Abelian groups, forgetful functor to Sets.
 -- Work towards free construction; no free functor yet.
 --
 -- Contains a postulate.
-open import Structures.AbelianGroup
-
--}
+-- ‼ open import Structures.AbelianGroup
 
 -- ============================================================================================
 -- ============================================================================================

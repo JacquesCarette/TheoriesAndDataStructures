@@ -2,6 +2,8 @@
 
 %{{{ Imports
 \begin{code}
+{-# OPTIONS  --irrelevant-projections #-}
+
 module Structures.Semigroup where
 
 open import Level renaming (suc to lsuc; zero to lzero)
@@ -352,7 +354,7 @@ terminal = record
   }
 
 ⊥-SG : {ℓ : Level} → Semigroup {ℓ}
-⊥-SG {ℓ} = MkSG (Lift ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
+⊥-SG {ℓ} = MkSG (Lift ℓ ⊥) (λ{ (lift ()) }) (λ{ {(lift ())} })
 
 initial : {ℓ : Level} → Initial (SemigroupCat ℓ)
 initial = record
@@ -388,7 +390,7 @@ module ZeroAryAdjoint where
   NoLeft-0 (record {F₀ = F₀; F₁ = F₁; identity = identity}) adj = {!!}
     where open Adjunction adj
           open NaturalTransformation -}
-  --          
+  --
   -- MA: There is!
   Left : (ℓ : Level) → Adjunction (NotFree-0 ℓ) (Forget-0 ℓ)
   Left _ = Make-Free⊢Forget Carrier initial
@@ -399,7 +401,7 @@ module ZeroAryAdjoint where
 %}}}
 
 
-\begin{code}
+\begin{spec}
 module RelationshipToMonoids where
 
   open import Structures.Monoid
@@ -419,7 +421,7 @@ module RelationshipToMonoids where
     ; homomorphism   =  {!!}
     ; F-resp-≡      =  {!!}
     }
-\end{code}
+\end{spec}
 
 
 \fi

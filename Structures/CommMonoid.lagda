@@ -9,9 +9,7 @@ module Structures.CommMonoid where
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
 open import Relation.Binary using (Setoid; Rel; _Preserves₂_⟶_⟶_; IsEquivalence)
 
-open import Categories.Category   using (Category)
-open import Categories.Functor    using (Functor)
-open import Categories.Agda       using (Setoids)
+open import Helpers.Categorical
 
 open import Data.Product      using (Σ; proj₁; proj₂; _,_)
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)

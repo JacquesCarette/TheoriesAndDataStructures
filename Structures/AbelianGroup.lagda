@@ -5,10 +5,7 @@ module Structures.AbelianGroup where
 
 open import Level renaming (suc to lsuc; zero to lzero)
 
-open import Categories.Category   using (Category)
-open import Categories.Functor    using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Sets)
+open import Helpers.Categorical
 
 open import Function              using (const ; id ; _∘_ ; _$_)
 open import Data.Empty
@@ -83,14 +80,14 @@ record Hom {o ℓ} (X Y : AbelianGroup o ℓ) : Set (o ⊔ ℓ) where
     pres-0    :  mor 0₁ ≡ 0₂
     pres-inv  :  ∀ x → mor (-₁ x) ≡ -₂ (mor x)
 
-  inv-char : {x y : Carrier Y} → x +₂ y ≈₂ 0₂ → y ≈₂ -₂ x 
+  inv-char : {x y : Carrier Y} → x +₂ y ≈₂ 0₂ → y ≈₂ -₂ x
   inv-char {x} {y} x+y≈0 = begin⟨ (record {AbelianGroup Y }) ⟩
     y                 ≈˘⟨ proj₁ identity y                   ⟩
     0₂ +₂ y           ≈˘⟨ ∙-cong (proj₁ inverse x) refl      ⟩
     (-₂ x +₂ x) +₂ y  ≈⟨ assoc _ _ _                         ⟩
      -₂ x +₂ (x +₂ y) ≈⟨ ∙-cong refl x+y≈0                   ⟩
      -₂ x +₂ 0₂       ≈⟨ proj₂ identity _                    ⟩
-    -₂ x              ∎ 
+    -₂ x              ∎
     where open import Relation.Binary.SetoidReasoning
           open AbelianGroup Y
 
@@ -101,7 +98,7 @@ record Hom {o ℓ} (X Y : AbelianGroup o ℓ) : Set (o ⊔ ℓ) where
     mor (x +₁ -₁ x)     ≈⟨  expected (proj₂ (AbelianGroup.inverse X) _) ⟩
     mor 0₁              ≡⟨ pres-0                                     ⟩
     0₂                  ∎)
-    where open import Relation.Binary.SetoidReasoning          
+    where open import Relation.Binary.SetoidReasoning
 
 open Hom
 \end{code}
@@ -154,7 +151,7 @@ open import Relation.Nullary using (¬_)
 record DirectSum {o : Level} (A : Set o) : Set (lsuc o) where
   constructor FormalSum
   field
-    f       :   A → ℤ       
+    f       :   A → ℤ
     B        :   Pred A o                     -- basis?
     finite   :   Σ ℕ (λ n → (Σ A B ↣ Fin n))
 
@@ -172,7 +169,7 @@ private
   -- JC: why is this defined in Data.Fin.Properties but not exported?
   drop-suc : ∀ {o} {m n : Fin o} → Fin.suc m ≡ Fin.suc n → m ≡ n
   drop-suc ≡.refl = ≡.refl
-  
+
   inject+-inject : ∀ {m n} → {i j : Fin m} → inject+ n i ≡ inject+ n j → i ≡ j
   inject+-inject {i = Fin.zero} {Fin.zero} ≡.refl = ≡.refl
   inject+-inject {i = Fin.zero} {Fin.suc _} ()
@@ -193,7 +190,7 @@ private
 
   on-right₂ : {ℓ ℓ′ : Level} {A : Set ℓ} {B₁ B₂ : A → Set ℓ′} {a₁ a₂ : A} {b₁ : B₂ a₁} {b₂ : B₂ a₂}
             → (a₁ , b₁) ≡ (a₂ , b₂) → _≡_ {_} {Σ A (B₁ ∪ B₂)} (a₁ , inj₂ b₁) (a₂ , inj₂ b₂)
-  on-right₂ ≡.refl = ≡.refl  
+  on-right₂ ≡.refl = ≡.refl
 \end{code}
 
 %}}}
@@ -210,7 +207,7 @@ G2 c A = record
   ; _≈_ = λ a₁ a₂ → f a₁ ≐ f a₂
   ; _∙_ = λ{ (FormalSum f₁ B₁ (n₁ , fin₁)) (FormalSum f₂ B₂ (n₂ , fin₂)) → record
     { f       =  λ e → f₁ e + f₂ e
-    ; B       =  B₁ ∪ B₂ 
+    ; B       =  B₁ ∪ B₂
     ; finite  =  n₁ +ℕ n₂ , record
       { to        = record
         { _⟨$⟩_ = λ { (a , inj₁ b) → inject+ n₂ (to fin₁ ⟨$⟩ (a , b))

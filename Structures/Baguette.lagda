@@ -57,9 +57,7 @@ module Structures.Baguette where
 
 open import Level renaming (zero to lzero; suc to lsuc ; _⊔_ to _⊍_) hiding (lift)
 
-open import Categories.Functor    using (Functor)
-open import Categories.Adjunction using (Adjunction)
-open import Categories.Agda       using (Setoids)
+open import Helpers.Categorical
 
 open import Function.Equality using (Π ; _⟶_ ; id ; _∘_)
 open Π                        using () renaming (_⟨$⟩_ to _⟨$⟩₀_)
@@ -459,7 +457,7 @@ ListCMHom {ℓ} {c} {X} {Y} = record
 \end{code}
 
 \begin{code}
-module BuildProperties where  
+module BuildProperties where
   functoriality : {ℓ c : Level} → FunctorialMSH {ℓ} (ListMS {ℓ} {c}) ListCMHom
   functoriality {ℓ} {c} = record
     { id-pres               =   λ {X} {xs} → idp Seq.⟨π⟩ λ _ → Setoid.refl X
@@ -472,18 +470,18 @@ module BuildProperties where
     open Multiset            using   (𝒞; commMonoid; ctrSetoid; fold; singleton)
     open MultisetHom         using   (lift)
     open import Data.Table   using   (permute)
-    
+
     module _ {X : Setoid ℓ c} where
       LMS = ListMS {ℓ} {c} X
       L = ListMS {ℓ} {c} (ctrSetoid LMS X)
       C = commMonoid LMS X
-      
+
       same-size : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
         n ≡ (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))
       same-size zero bg = ≡.refl
       same-size (suc n) bg = ≡.cong suc (same-size n _)
-      
+
       fold-perm : (n : ℕ) (bg : Fin.Fin n → Carrier X) →
         let xs = Bag.sequence n bg in
         Permutation n (Bag.len (fold LMS C ⟨$⟩ (lift ListCMHom (singleton LMS) ⟨$⟩ xs)))

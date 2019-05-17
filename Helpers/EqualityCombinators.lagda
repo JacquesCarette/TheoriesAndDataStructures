@@ -102,30 +102,6 @@ X ◻ = id≃
 \edcomm{MA}{Consider moving pertinent material here from |Equiv.lagda| at the end.}
 %}}}
 
-%{{{ _≈˘⟨_⟩_
-\subsection{Making |sym|metry calls less intrusive}
-
-It is common that we want to use an equality within a calculation as a right-to-left rewrite rule which
-is accomplished by utilizing its symmetry property. We simplify this rendition, thereby saving an explicit
-call and parenthesis in-favour of a less hinder-some notation.
-
-Among other places, I want to use this combinator in module |Forget|'s proof of associativity for |oneSortedCategory|
-
-\begin{code}
-module _ {c l : Level} {S : Setoid c l} where
-
-  open import Relation.Binary.SetoidReasoning using (_≈⟨_⟩_)
-  open import Relation.Binary.EqReasoning     using (_IsRelatedTo_)
-  open Setoid S
-
-  infixr 2 _≈˘⟨_⟩_
-  _≈˘⟨_⟩_ : ∀ (x {y z} : Carrier) → y ≈ x → _IsRelatedTo_ S y z → _IsRelatedTo_ S x z
-  x ≈˘⟨ y≈x ⟩ y≈z = x ≈⟨ sym y≈x ⟩ y≈z
-\end{code}
-
-A host of similar such combinators can be found within the RATH-Agda library.
-%}}}
-
 %{{{ _⟨≈⁺≈⁺⟩_
 \subsection{More Equational Reasoning for |Setoid|}
 

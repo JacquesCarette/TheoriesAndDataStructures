@@ -5,14 +5,16 @@
 --
 -- Other experimental approaches can be found in the directory Experiments/
 --
--- We are using Agda 2.5.4 with standard library version 0.16.
+-- We are using Agda 2.6.0 with standard library version 1.0.1.
 -----------------------------------------------------------------------------------------------
 
 module OurEverything where
 
 -- Creates forgetful functors from single sorted algebras to |Set|
--- 
+--
 import Helpers.Forget
+
+{-
 
 import Helpers.Categorical
 
@@ -27,8 +29,8 @@ import Helpers.Hardy
 -- Arrows in the one-object one-arrow category correspond to the functions to a singleton set.
 open import Structures.OneCat
 
--- Category of algebras consisting of an index set and a family of sets on the index set. 
--- Along with forgetful functor to Sets with heterogenous equality and free functor, think “Σ”. 
+-- Category of algebras consisting of an index set and a family of sets on the index set.
+-- Along with forgetful functor to Sets with heterogenous equality and free functor, think “Σ”.
 --
 -- Currently has a hole.
 open import Structures.Dependent
@@ -61,7 +63,7 @@ open import Structures.Pointed
 -- adjunctions with Sets.
 -- The free structure corresponds to “performing a method” a number of times.
 --
-open import Structures.UnaryAlgebra 
+open import Structures.UnaryAlgebra
 
 -- Category of involutive algebras with a forgetful functor to Sets,
 -- adjunctions, and (co)monads.
@@ -145,3 +147,4 @@ open import Helpers.FinEquivPlusTimes
 open import Helpers.LeqLemmas
 open import Helpers.FinNatLemmas
 open import Helpers.FinEquivTypeEquiv
+-}

@@ -1,6 +1,7 @@
 \section{Categorical -- material taken from copumkin's library to make our development self-contained}
 
 \begin{code}
+{-# OPTIONS --irrelevant-projections #-}
 
 module Helpers.Categorical where
 
@@ -39,6 +40,7 @@ record Category (o ℓ e : Level) : Set (lsuc (o ⊍ ℓ ⊍ e)) where
     ; _≈_ = _≡_
     ; isEquivalence = equiv
     }
+
 
   infixr 4 _⟨≈≈⟩_ _⟨≈≈˘⟩_
 
@@ -87,6 +89,7 @@ Sets o = record
              (∀ {x} → g x ≣ i x) →
              (∀ {x} → f (g x) ≣ h (i x))
   ∘-resp-≡′ {g = g} f≡h g≡i {x} rewrite f≡h {g x} | g≡i {x} = ≡.refl
+
 
 -- open import Categories.Functor using (Functor; Contravariant)
 record Functor {o ℓ e o′ ℓ′ e′} (C : Category o ℓ e) (D : Category o′ ℓ′ e′) : Set (o ⊍ ℓ ⊍ e ⊍ o′ ⊍ ℓ′ ⊍ e′) where
@@ -227,6 +230,8 @@ _∘ʳ_ η K = record
   ; commute = λ f → NaturalTransformation.commute η (Functor.F₁ K f)
   }
 
+{- causes internal error
+
 -- "Vertical composition"
 _∘₁_ : ∀ {o₀ ℓ₀ e₀ o₁ ℓ₁ e₁}
         {C : Category o₀ ℓ₀ e₀} {D : Category o₁ ℓ₁ e₁}
@@ -256,6 +261,7 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
     ⟨≈≈⟩  ∘-resp-≡ (X.commute f) (IsEquivalence.refl equiv) )
     ⟨≈≈⟩ assoc
 
+
 -- open import Categories.Adjunction using (Adjunction)
 record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Category o₁ ℓ₁ e₁} (F : Functor D C) (G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o₁ ⊍ ℓ₁ ⊍ e₁) where
   field
@@ -264,6 +270,8 @@ record Adjunction {o ℓ e} {o₁ ℓ₁ e₁} {C : Category o ℓ e} {D : Categ
 
     .zig : idT ≡T (counit ∘ʳ F) ∘₁ (F ∘ˡ unit)
     .zag : idT ≡T (G ∘ˡ counit) ∘₁ (unit ∘ʳ G)
+
+-}
 
 -- Categories.Object.Initial {o ℓ e} (C : Category o ℓ e) where
 module _ {o ℓ e} (C : Category o ℓ e) where
@@ -309,7 +317,6 @@ module _ {o ℓ e} (C : Category o ℓ e) where
      .isoʳ : _
      isoʳ = Iso.isoʳ iso
 \end{code}
-
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region
 % C-c C-h :: hide/fold region

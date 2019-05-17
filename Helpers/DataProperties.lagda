@@ -144,7 +144,7 @@ syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
 \begin{code}
 open import Data.Nat.Properties
 suc-inj : ∀ {i j} → ℕ.suc i ≡ ℕ.suc j → i ≡ j
-suc-inj = cancel-+-left (ℕ.suc ℕ.zero)
+suc-inj = +-cancelˡ-≡ (ℕ.suc ℕ.zero)
 \end{code}
 or
 \begin{spec}
@@ -157,11 +157,7 @@ suc-inj {ℕ.suc i} _≡_.refl = _≡_.refl
 %{{{ vectors: _‼_
 
 \begin{code}
-open import Data.Fin using (Fin)
-open import Data.Vec using (Vec ; lookup)
-
-_‼_ : {a : Level} {A : Set a} {n : ℕ} → Vec A n → Fin n → A
-_‼_ = λ xs i → lookup i xs
+open import Data.Vec public using () renaming (lookup to _‼_)
 \end{code}
 %}}}
 

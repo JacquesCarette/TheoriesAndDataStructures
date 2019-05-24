@@ -1,0 +1,258 @@
+#+TITLE: Theories and Data Structures
+#+SUBTITLE: ---Draft---
+#+DESCRIPTION: Work done at McMaster University, 2019.
+#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+#+EMAIL: alhassy@gmail.com
+#+OPTIONS: toc:nil d:nil
+#+PROPERTY: header-args :tangle no :comments link
+
+* Preamble :ignore:
+
+# Top level editorial comments.
+#+LATEX: \def\edcomm#1#2{ \fbox{\textbf{Comment: #1 }} #2 \fbox{\textbf{End Comment}}}
+
+** Minted setup -- colouring code blocks                            :ignore:
+
+#+LATEX_HEADER: \usepackage[]{minted}
+#+LATEX_HEADER: \usepackage{tcolorbox}
+#+LATEX_HEADER: \usepackage{etoolbox}
+#+LATEX_HEADER: \def\mytitle{??? Program Code ???}
+#+LATEX_HEADER: \BeforeBeginEnvironment{minted}{\begin{tcolorbox}[title=\hfill \mytitle]}%
+#+LATEX_HEADER: \AfterEndEnvironment{minted}{\end{tcolorbox}}%
+
+# Before a code block, write {{{code(title-of-block)}}}
+#
+#+MACRO: code     #+LaTeX: \def\mytitle{$1}
+
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize}
+#+LaTeX: \setminted[agda]{fontsize=\footnotesize}
+
+# Removing the red box that appears in "minted" when using unicode.
+# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
+#
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
+#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+#+LATEX_HEADER: \makeatother
+** LaTeX setup                                                      :ignore:
+
+# LATEX_HEADER: \usepackage[hmargin=25mm,vmargin=25mm]{geometry}
+#+LATEX_HEADER: \usepackage[hmargin=15mm,vmargin=15mm]{geometry}
+#+LaTeX_HEADER: \setlength{\parskip}{1em}
+#+latex_class_options: [12pt]
+#+LATEX_CLASS: article
+# Defined below.
+#
+# Double spacing:
+# LaTeX: \setlength{\parskip}{3em}\renewcommand{\baselinestretch}{2.0}
+#
+#+LATEX_HEADER: \setlength{\parskip}{1em}
+
+#+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
+#+LATEX_HEADER: \addbibresource{MyReferences.bib}
+
+# LATEX_HEADER: \usepackage{../MyUnicodeSymbols/MyUnicodeSymbols}
+#+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+#+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
+#+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
+#+LATEX_HEADER: \newunicodechar{Γ}{\ensuremath{\Gamma}}
+#+LATEX_HEADER: \newunicodechar{Π}{\ensuremath{\Pi}}
+#+LATEX_HEADER: \newunicodechar{Θ}{\ensuremath{\theta}}
+#+LATEX_HEADER: \newunicodechar{∎}{\ensuremath{\qedsymbol}}
+#+LATEX_HEADER: \newunicodechar{′}{'}
+#+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}}
+#+LATEX_HEADER: \newunicodechar{⦃}{\ensuremath{ \{\{ }}  % this is not correct
+#+LATEX_HEADER: \newunicodechar{⦄}{\ensuremath{ \}\} }}   % this is not correct
+#+LATEX_HEADER: \newunicodechar{⊎}{\ensuremath{\cupdot}}  % should be in myunicode; go #regenerate# it!
+#+LATEX_HEADER: \def\with{\kern0.7em \withrule \kern0.7em }
+#+LATEX_HEADER: \def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
+#+LATEX_HEADER: \newunicodechar{❙}{\ensuremath{\mathop{\with}}}
+
+#+LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
+#+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+#+LATEX_HEADER: \definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
+#+LATEX_HEADER: \definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
+#+LATEX_HEADER: \definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
+#+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+
+#+NAME: symbols for itemisation environment
+#+BEGIN_EXPORT latex
+\def\labelitemi{$\diamond$}
+\def\labelitemii{$\circ$}
+\def\labelitemiii{$\star$}
+
+% Level 0                 Level 0
+% + Level 1               ⋄ Level 1
+%   - Level 2       --->      ∘ Level 2
+%     * Level 3                   ⋆ Level 3
+%
+#+END_EXPORT
+
+# Having small-font code blocks.
+# LATEX_HEADER: \RequirePackage{fancyvrb}
+# LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+* Abstract :ignore:
+:PROPERTIES:
+:CUSTOM_ID: abstract
+:END:
+
+# Use:  x vs.{{{null}}} ys
+# This informs LaTeX not to put the normal space necessary after a period.
+#
+#+MACRO: null  @@latex:\null{}@@
+
+#+begin_abstract
+
+
+Showing how some simple mathematical theories naturally give rise to some common data-structures
+
+#+begin_center org
+#+begin_small
+---Source: https://github.com/JacquesCarette/TheoriesAndDataStructures---
+#+end_small
+#+end_center
+#+end_abstract
+
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+
+* README ─ JC & WK
+
+  + ~C-c C-e~ then ~l o~ to produce the PDF from the org file.
+
+    Or simply press ~f7~ if you've allowed the local variables in this file.
+
+  + ~\edcomm{Person}{Comment}~ to make first-class literate comments:
+
+    \edcomm{MA}{Please read this document; \newline thanks}
+
+    \vspace{2em}
+    Since ~remark~ is a macro that takes 2 arguments, separated by commas,
+    so not use any ~,~ in the your editorial comment.
+
+
++ "From monoids to near-semirings: the essence of MonadPlus and Alternative",
+   https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
+
+   Very good paper indeed.
+
+* We want to be systematic about
+
++ Exploring Magma-based theories :: see
+    https://en.wikipedia.org/wiki/Magma_(algebra)
+   where we want to at least explore all the properties that are
+   affine.  These are interesting things said at
+    https://en.wikipedia.org/wiki/Category_of_magmas which should be
+   better understood.
+
++ Pointed theories ::
+
+   There is not much to be said here. Although I guess 'contractible'
+   can be defined already here.
+
++  Pointed Magma theories ::
+
+   Interestingly, non-associative pointed Magma theories don't show up
+   in the nice summary above.
+   Of course, this is where Monoid belongs. But it is worth exploring
+   all of the combinations too.
+
++ unary theories ::
+
+   wikipedia sure doesn't spend much time on these (see
+   https://en.wikipedia.org/wiki/Algebraic_structure)
+   but there are some interesting ones, because if the unary operation
+   is 'f' things like
+   forall x. f (f x) = x
+   is *linear*, because x is used exactly once on each side. The
+   non-linearity of 'f' doesn't count (else associativity wouldn't work
+   either, as _*_ is used funnily there too).  So "iter 17 f x = x" is a
+   fine axiom here too. [iter is definable in the ground theory]
+
+   This is actually where things started, as 'involution' belongs here.
+
+    And is the first weird one.
+
++ Pointed unary theories :: E.g., the natural numbers
+
++ Pointer binary theories :: need to figure out which are expressible
+
++ more :: semiring, near-ring, etc. Need a sampling. But quasigroup
+  (with 3 operations!) would be neat to look at.
+
+
+Also, I think we want to explore
+- Free Theories
+- Initial Objects
+- Cofree Theories (when they exist)
+
+Then the potential 'future work' is huge. But that can be left for
+later. We want to have all the above rock solid first.
+
+* Relationship with 700 modules
+
+To make it a POPL paper, as well as related to your module work, it is
+also going to be worthwhile to notice and abstract the patterns. Such as
+generating induction principles and recursors.
+
+A slow-paced introduction to reflection in Agda:
+https://github.com/alhassy/gentle-intro-to-reflection
+
+* Timeline
+
+Regarding POPL:
+https://popl20.sigplan.org/track/POPL-2020-Research-Papers#POPL-2020-Call-for-Papers
+There is no explicit Pearl category, nor any mention of that style.
+Nevertheless, I think it's worth a shot, as I think by being systematic,
+we'll "grab" in a lot of things that are not usually considered part of
+one's basic toolkit.
+
+However, to have a chance, the technical content of the paper should be
+done by June 17th, and the rest of the time should be spent on the
+presentation of the material.  The bar is very high at POPL.
+
+* COMMENT Making README.md                                                 :noexport:
+
+#+NAME: make-readme
+#+BEGIN_SRC emacs-lisp :results none
+(with-temp-buffer
+    (insert
+    "#+EXPORT_FILE_NAME: README.md
+     ,#+OPTIONS: toc:nil
+
+     ,#+HTML: <h1> TheoriesAndDataStructures </h1>
+
+Showing how some simple mathematical theories naturally give rise to some common data-structures.
+
+Attempting to answer the following questions:
+
++ Why do lists pop-up more frequently to the average programmer than, say, their duals: bags?
+
++ More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
+
++ Why is it that dependent sums and products do not pop-up expicitly to the average programmer? They arise naturally all the time as tuples and as classes.
+
++ How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
+
++ Is it that the average programmer works in the category of classical Sets,   with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in `Sets` ---where quotienting is not computably feasible, in `Sets` at-least; and why is that?
+
+    ")
+    (org-mode)
+    (org-md-export-to-markdown)
+)
+#+END_SRC
+
+* COMMENT footer                                                     :ignore:
+
+f7 ∷ make and open pdf
+f8 ∷ make readme
+
+# Local Variables:
+# eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
+# eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
+# End:

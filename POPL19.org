@@ -107,6 +107,18 @@
 \author{Wolfram Kahl}
 #+END_EXPORT
 
+** COMMENT acmart Emacs setup
+#+NAME: make-acmart-class
+#+BEGIN_SRC emacs-lisp :results none
+(with-eval-after-load "ox-latex"
+   (add-to-list 'org-latex-classes
+		'("acmart" "\\documentclass{acmart}"
+		  ("\\section{%s}" . "\\section*{%s}")
+		  ("\\subsection{%s}" . "\\subsection*{%s}")
+		  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		  ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
 * Abstract :ignore:
 :PROPERTIES:
 :CUSTOM_ID: abstract
@@ -421,6 +433,42 @@ However, to have a chance, the technical content of the paper should be
 done by June 17th, and the rest of the time should be spent on the
 presentation of the material.  The bar is very high at POPL.
 
+* Task list items below
++ [X] JC start learning about org mode
+
++ [X] JC Figure out how to expand collapsed entries
+
++ [ ] JC See §4, first code block, of https://alhassy.github.io/init/ to setup ~:ignore:~ correctly on your machine.
+      - This may require you to look at sections 2.1 and 2.2.
+
+      This also shows you how to get ‘minted’ colouring.
+
++ [ ] JC Write introduction/outline
+
++ [ ] MA To read:
+  /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
+     https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
+
+* DONE Literate Agda in Org-mode
+
+  JC, for now, use “haskell” labelled src blocks to get basic colouring, and I will demonstrate org-agda
+  for you in person, if you like. Alternatively, I can generate coloured org-agda on my machine at the very end.
+
+  + A basic setup for /actually/ doing Agda development within org-mode
+    can be found at: https://alhassy.github.io/literate/
+
+  + Example uses of org-agda include
+    - https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html ; also ⋯.org
+      * Shallow use of org-agda merely for colouring ;;  Prototype for Package Formers
+
+	+ Source mentions org-agda features that have not been pushed to the org-agda repo.
+
+    - https://alhassy.github.io/PathCat/
+      * Large development with categories ;; Graphs are to categories as lists are to monoids
+    - https://github.com/alhassy/gentle-intro-to-reflection
+      * Medium-sized development wherein Agda is actually coded within org-mode.
+
+
 * COMMENT Making README.md                                                 :noexport:
 
 #+NAME: make-readme
@@ -461,14 +509,8 @@ f8 ∷ make readme
 (load-file "~/org-agda-mode/literate.el")
 
 # Local Variables:
+
+# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
 # eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
 # End:
-
-* Task list items below
-** DONE JC start learning about org mode
-** DONE JC Figure out how to expand collapsed entries
-** TODO JC Write introduction/outline
-** TODO MA To read:
-  /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
-     https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.

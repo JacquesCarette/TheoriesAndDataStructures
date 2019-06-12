@@ -1,8 +1,9 @@
 #+TITLE: Theories and Data Structures
 #+SUBTITLE: ---Draft---
 #+DESCRIPTION: Work done at McMaster University, 2019.
-#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+# AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
 #+EMAIL: alhassy@gmail.com
+#+EMAIL: carette@mcmaster.ca
 #+OPTIONS: toc:nil d:nil
 #+PROPERTY: header-args :tangle no :comments link
 
@@ -24,13 +25,11 @@
 #+LATEX_HEADER: \usepackage{multicol}
 #+NAME: parallel enviro
 #+BEGIN_EXPORT latex
-% \setlength{\columnseprule}{2pt}
-
-\renewenvironment{parallel}[1][2] % one argument, whose default value is literal `2`.
+\renewenvironment{parallel}[1][2]
  {
   \setlength{\columnseprule}{2pt}
-  \begin{minipage}[t]{\linewidth} % width of minipage is 100% times of \linewidth
-  \begin{multicols}{#1}  % default is `2`
+  \begin{minipage}[t]{\linewidth}
+  \begin{multicols}{#1}
  }
  {
  \setlength{\columnseprule}{0pt}
@@ -40,21 +39,21 @@
 #+END_EXPORT
 
 ** LaTeX setup                                                      :ignore:
+#+latex_class_options: [acmsmall,review,anonymous]
+#+LATEX_CLASS: acmart
 
-# LATEX_HEADER: \usepackage[hmargin=25mm,vmargin=25mm]{geometry}
-#+LATEX_HEADER: \usepackage[hmargin=15mm,vmargin=15mm]{geometry}
-#+LaTeX_HEADER: \setlength{\parskip}{1em}
-#+latex_class_options: [12pt]
-#+LATEX_CLASS: article
-# Defined below.
-#
-# Double spacing:
-# LaTeX: \setlength{\parskip}{3em}\renewcommand{\baselinestretch}{2.0}
-#
-#+LATEX_HEADER: \setlength{\parskip}{1em}
-
+#+LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
 #+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
 #+LATEX_HEADER: \addbibresource{MyReferences.bib}
+
+#+LATEX_HEADER: \acmJournal{PACMPL}
+#+LATEX_HEADER: \acmVolume{1}
+#+LATEX_HEADER: \acmNumber{POPL}
+#+LATEX_HEADER: \acmArticle{1}
+#+LATEX_HEADER: \acmYear{2020}
+#+LATEX_HEADER: \acmMonth{1}
+#+LATEX_HEADER: \acmDOI{}
+#+LATEX_HEADER: \setcopyright{none}
 
 #+LATEX_HEADER: \usepackage{MyUnicodeSymbols}
 #+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
@@ -89,17 +88,24 @@
 \def\labelitemi{$\diamond$}
 \def\labelitemii{$\circ$}
 \def\labelitemiii{$\star$}
-
-% Level 0                 Level 0
-% + Level 1               ⋄ Level 1
-%   - Level 2       --->      ∘ Level 2
-%     * Level 3                   ⋆ Level 3
-%
 #+END_EXPORT
 
 # Having small-font code blocks.
 # LATEX_HEADER: \RequirePackage{fancyvrb}
 # LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+#+BEGIN_EXPORT latex
+\author{Musa Al-hassy}
+\affiliation{
+  \institution{McMaster University}
+  \streetaddress{1280 Main St. W.}
+  \city{Hamilton}
+  \state{ON}
+  \postcode{L8S 4K1}
+  \country{Canada}}
+\email{alhassym@mcmaster.ca}
+\author{Jacques Carette}
+\author{Wolfram Kahl}
+#+END_EXPORT
 
 * Abstract :ignore:
 :PROPERTIES:
@@ -113,11 +119,13 @@
 
 #+begin_abstract
 
-Showing how some simple mathematical theories naturally give rise to some common data-structures
-
-To read:
-/From monoids to near-semirings: the essence of MonadPlus and Alternative/,
-   https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
+*placeholder* We give a rational reconstruction of some common (and
+not-so-common) data-structures that arise in functional
+programming. Our categorical approach also leads us to defining
+standard functions which ought to be in all reasonable libraries of
+data-structures. Being systematic in the exploration of the design
+space reveals quite a lot of structure and information about
+data-structures and their origins.
 
 #+begin_center org
 #+begin_small
@@ -125,11 +133,6 @@ To read:
 #+end_small
 #+end_center
 #+end_abstract
-
-\newpage
-\thispagestyle{empty}
-\tableofcontents
-\newpage
 
 * Background
 
@@ -461,3 +464,11 @@ f8 ∷ make readme
 # eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
 # eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
 # End:
+
+* Task list items below
+** DONE JC start learning about org mode
+** DONE JC Figure out how to expand collapsed entries
+** TODO JC Write introduction/outline
+** TODO MA To read:
+  /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
+     https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.

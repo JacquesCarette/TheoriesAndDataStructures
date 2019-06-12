@@ -1,11 +1,25 @@
 #+TITLE: Theories and Data Structures
 #+SUBTITLE: ---Draft---
 #+DESCRIPTION: Work done at McMaster University, 2019.
-# AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
 #+EMAIL: alhassy@gmail.com
 #+EMAIL: carette@mcmaster.ca
 #+OPTIONS: toc:nil d:nil
 #+PROPERTY: header-args :tangle no :comments link
+
+#+TODO: TODO | STARTED | DONE
+
+# Top level editorial comments.
+#+latex_header: \def\edcomm#1#2{ \fbox{\textbf{Comment: #1 }} \emph{#2} \fbox{\textbf{End Comment}}}
+
+# Use:  x vs.{{{null}}} y
+# This informs LaTeX not to put the normal space necessary after a period.
+#
+#+MACRO: null  @@latex:\null{}@@
+
+#+MACRO: edcomm  @@latex:\edcomm{$1}{$2}@@
+#
+# Warning: {{{edcomm(this, that)}}} cannot contain any commas in ‘this’ nor in ‘that’!
 
 * Preamble :ignore:
 
@@ -119,7 +133,7 @@
 		  ("\\paragraph{%s}" . "\\paragraph*{%s}")
 		  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 #+END_SRC
-* Abstract :ignore:
+* TODO Abstract                                                      :ignore:
 :PROPERTIES:
 :CUSTOM_ID: abstract
 :END:
@@ -146,7 +160,7 @@ data-structures and their origins.
 #+end_center
 #+end_abstract
 
-* Introduction
+* STARTED Introduction
 
 It is relatively well-known in functional programming folklore that lists and monoids
 are somewhow related. With a little prodding, most functional programmers will recall
@@ -158,15 +172,18 @@ that make up the adjunction between the forgetful functor from the category of m
 monoid homomorphisms) and the category of types (and functions) and
 the free monoid functor. To do so in full detail is, however, quite
 informative --- and we will proceed to do so below.
+{{{edcomm(MA, It is important to mention that this has been worked out in numerous
+other writings. That this is not the prime novelty of the work. E.g.; when
+a library claims to support X does it actually provide the necessaity ‘kit’ that
+that X /intersincly/ comes with?
+)}}}
 
 So as to never be able to cheat, cut corners, etc, we will do all of
-our work in Agda, with this document%
-\footnote{Sources available at
-\url{https://github.com/JacquesCarette/TheoriesAndDataStructures/POPL19.org}}
+our work in Agda, with this document[fn:1]
 being literate (and, in fact, written in ultra-literate style via org-mode).
 But when we do, something interesting happens: we are forced to write
-some rather useful functions over lists. Somehow \verb|map|,
-\verb|_++_| and \verb|fold| are all \emph{required}.
+some rather useful functions over lists. Somehow ~map~,
+~_++_~ and ~fold~ are all /required/.
 
 But is this somehow a fluke? Of course not! So, what happens when we
 try to explore this relationship?
@@ -180,9 +197,9 @@ requirements of having a ``left adjoint to the forgetful
 functor''. This turns out to be very fruitful, and the approach we
 will take here.
 
-Naturally, we are far from the first to look at this. \edcomm{JC}{Fill
+Naturally, we are far from the first to look at this. {{{edcomm(JC, Fill
 in the related work here. From Universal Algebra through to many
-papers of Hinze, Gibbons, etc}. In other words, the \emph{theory}
+papers of Hinze, Gibbons, etc)}}}. In other words, the \emph{theory}
 behind what we'll be talking about here is well known.
 
 So why bother? Because, in practice, there is just as much beauty in
@@ -200,7 +217,8 @@ understand what is going on: classical mathematics is not
 constructive! So even when type theorists were busy translating
 results for use in functional programming, by not actually proving
 their results in a purely constructive meta-theory, they did not
-notice these roadblocks. Surmounting these problems will highlight how
+notice these roadblocks. {{{edcomm(MA, Nice!)}}}
+Surmounting these problems will highlight how
 different axioms, via their \emph{shape}, will naturally give rise to
 data-structures easily implementable with inductive types, and which
 require much more machinery.
@@ -211,9 +229,9 @@ In short, our contributions:
 - highlighting the ``kit'' that arises from fully deriving all the
   adjunctions
 - a survey of which languages' standard library offers what structures
-  (and what kit) 
+  (and what kit)
 
-* Monoids and lists
+* TODO Monoids and lists
 
 \edcomm{JC}{Give the full details}
 
@@ -229,16 +247,16 @@ open import Data.Vec as Vec hiding (map)
 open import Relation.Binary.PropositionalEquality
 #+END_SRC
 
-* Exploring simple theories
+* TODO Exploring simple theories
 \edcomm{JC}{Not fully sure how to go about this, while staying
 leisurely}
 
-* Trouble in paradise
+* TODO Trouble in paradise
 Commutative Monoid, idempotence, and so on.
 
-* Survey of implementations
+* TODO Survey of implementations
 
-* We want to be systematic about
+* TODO We want to be systematic about
 
 + Exploring Magma-based theories :: see
     https://en.wikipedia.org/wiki/Magma_(algebra)
@@ -291,7 +309,7 @@ Also, I think we want to explore
 Then the potential 'future work' is huge. But that can be left for
 later. We want to have all the above rock solid first.
 
-* Relationship with 700 modules
+* TODO Relationship with 700 modules
 
 To make it a POPL paper, as well as related to your module work, it is
 also going to be worthwhile to notice and abstract the patterns. Such as
@@ -300,7 +318,7 @@ generating induction principles and recursors.
 A slow-paced introduction to reflection in Agda: \\
 https://github.com/alhassy/gentle-intro-to-reflection
 
-* Timeline
+* TODO Timeline
 
 Regarding POPL: \\
 https://popl20.sigplan.org/track/POPL-2020-Research-Papers#POPL-2020-Call-for-Papers \\
@@ -313,7 +331,7 @@ However, to have a chance, the technical content of the paper should be
 done by June 17th, and the rest of the time should be spent on the
 presentation of the material.  The bar is very high at POPL.
 
-* Task list items below
+* TODO Task list items below
 + [X] JC start learning about org mode
 
 + [X] JC Figure out how to expand collapsed entries
@@ -379,6 +397,12 @@ Attempting to answer the following questions:
     (org-md-export-to-markdown)
 )
 #+END_SRC
+
+
+* Footnotes
+
+[fn:1] Sources available at https://github.com/JacquesCarette/TheoriesAndDataStructures
+
 
 * COMMENT footer                                                     :ignore:
 

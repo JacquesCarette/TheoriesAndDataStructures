@@ -146,9 +146,76 @@ data-structures and their origins.
 #+end_center
 #+end_abstract
 
-* Background
+* Introduction
 
-  In this section, we introduce our problem and our exposition language, Agda.
+It is relatively well-known in functional programming folklore that lists and monoids
+are somewhow related. With a little prodding, most functional programmers will recall
+(or reconstruct) that lists are, in fact, an instance of a monoid. But when asked if there
+is a deeper relation, fewer are able to conjure up ``free
+monoid''. Fewer still would be able formally prove this relation, in
+other words, to actually fill in all the parts
+that make up the adjunction between the forgetful functor from the category of monoids (and
+monoid homomorphisms) and the category of types (and functions) and
+the free monoid functor. To do so in full detail is, however, quite
+informative --- and we will proceed to do so below.
+
+So as to never be able to cheat, cut corners, etc, we will do all of
+our work in Agda, with this document%
+\footnote{Sources available at
+\url{https://github.com/JacquesCarette/TheoriesAndDataStructures/POPL19.org}}
+being literate (and, in fact, written in ultra-literate style via org-mode).
+But when we do, something interesting happens: we are forced to write
+some rather useful functions over lists. Somehow \verb|map|,
+\verb|_++_| and \verb|fold| are all \emph{required}.
+
+But is this somehow a fluke? Of course not! So, what happens when we
+try to explore this relationship?
+
+A programmer's instinct might be to start poking around various
+data-structures to try and see which also give rise to a similar
+relation. This is a rather difficult task: not all of them arise this
+way. Instead, we start from the opposite end: systematically write
+down ``simple'' theories, and look at what pops out of the
+requirements of having a ``left adjoint to the forgetful
+functor''. This turns out to be very fruitful, and the approach we
+will take here.
+
+Naturally, we are far from the first to look at this. \edcomm{JC}{Fill
+in the related work here. From Universal Algebra through to many
+papers of Hinze, Gibbons, etc}. In other words, the \emph{theory}
+behind what we'll be talking about here is well known.
+
+So why bother? Because, in practice, there is just as much beauty in
+the details as there was in the theory! By \emph{systematically} going
+through simple theories, we will create a dictionary between theories
+and a host of useful data-structures. Many of which do not in fact
+exist in the standard libraries of common (and uncommon) functional
+languages. And even when they do exist, all the ``kit'' that is derived
+from the theory is not uniformly provided.
+
+Along the way, we meet several roadblocks, some of which are rather
+surprising, as results from the (theory) literature tell us that there
+really ought to be no problems there. Only when we dig deeper do we
+understand what is going on: classical mathematics is not
+constructive! So even when type theorists were busy translating
+results for use in functional programming, by not actually proving
+their results in a purely constructive meta-theory, they did not
+notice these roadblocks. Surmounting these problems will highlight how
+different axioms, via their \emph{shape}, will naturally give rise to
+data-structures easily implementable with inductive types, and which
+require much more machinery.
+
+In short, our contributions:
+- a systematic exploration of the space of simple theories
+- giving a complete dictionary
+- highlighting the ``kit'' that arises from fully deriving all the
+  adjunctions
+- a survey of which languages' standard library offers what structures
+  (and what kit) 
+
+* Monoids and lists
+
+\edcomm{JC}{Give the full details}
 
 #+BEGIN_SRC haskell
 module POPL19 where
@@ -162,201 +229,14 @@ open import Data.Vec as Vec hiding (map)
 open import Relation.Binary.PropositionalEquality
 #+END_SRC
 
-A /(non-dependently-typed) signature/ is what programmers refer to as an ‘interface’:
-It is a collection of ‘sort’, or type, symbols; along with a collection of ‘function’ symbols,
-and a collection of ‘relation’ symbols. For our discussion, we are only interested in
-single-sorted non-relational signatures, which means there is only one anonoymous sort symbol
-and a collection of function symbols. In Agda:
-#+BEGIN_SRC haskell
-record Signature₀ : Set₁ where
-  field
-    FuncSymbs : Set
-    arity     : FuncSymbs → ℕ
-#+END_SRC
+* Exploring simple theories
+\edcomm{JC}{Not fully sure how to go about this, while staying
+leisurely}
 
-In a dependently-typed language, we may simplify this further
-since a pair ~A × (A → B)~ corresponds to a /single/ dependent type ~A′ : B → Set~.
-#+BEGIN_SRC haskell
-record Signature₁ : Set₁ where
-  field
-    {- “FunSymbs n” denotes the function symbols of arity “n”. -}
-    FuncSymbs : (n : ℕ) → Set
-#+END_SRC
-Of-course a one-field record is silly, so we simplify further:
-#+BEGIN_SRC haskell
-Signature : Set₁
-Signature = ℕ → Set
-#+END_SRC
+* Trouble in paradise
+Commutative Monoid, idempotence, and so on.
 
-Here is a few examples of signatures:
-#
-#+begin_parallel org
-#+BEGIN_SRC haskell
-data Type𝒮 : Signature where
-
-data Unary𝒮 : Signature where
-  next : Unary𝒮 1
-
-data Magma𝒮 : Signature where
-  _⨾_ : Magma𝒮 2
-
-data Pointed𝒮 : Signature where
-  point : Pointed𝒮 0
-#+END_SRC
-\columnbreak
-#+BEGIN_SRC haskell
-{- Pointed Magma -}
-data Semigroup𝒮 : Signature where
-  Id  : Semigroup𝒮 0
-  _⨾_ : Semigroup𝒮 2
-
-{- Alias -}
-Monoid𝒮 : Signature
-Monoid𝒮 = Semigroup𝒮
-
-{- Pointed Unary Magma -}
-data Group𝒮 : Signature where
-  Id : Group𝒮 0
-  _˘ : Group𝒮 1
-  _⨾_ : Group𝒮 2
-#+END_SRC
-#+end_parallel
-
-Just as a signature can be construed as an interface,
-an /algebra/ can be thought of as an implementation:
-#+BEGIN_SRC haskell
-record _Algebra (FuncSymbs : Signature) : Set₁ where
-  field
-    Carrier : Set
-    reify   : ∀ {n : ℕ} (f : FuncSymbs n) → Vec Carrier n → Carrier
-
-open _Algebra
-
-{- syntactic sugar -}
-infixl 5 ⟦_⟧_$_
-⟦_⟧_$_ : {FuncSymbs : Signature} {n : ℕ} → FuncSymbs n → (𝒜 : FuncSymbs Algebra)
-     → Vec (Carrier 𝒜) n → Carrier 𝒜
-⟦ f ⟧ 𝒜 $ xs = reify 𝒜 f xs
-#+END_SRC
-
-Here are two examples algebra:
-#+BEGIN_SRC haskell
-numbers : Type𝒮 Algebra
-numbers = record { Carrier = ℕ ; reify = λ { () _ } }
-
-additive-ℕ : Semigroup𝒮 Algebra
-additive-ℕ = record { Carrier = ℕ
-		    ; reify = λ { Id [] → 0; _⨾_ (x ∷ y ∷ []) → x + y}
-		    }
-#+END_SRC
-
-To define the notion of /free algebra/, we only need the concept of /homomorphism/:
-Functions that preserve the interpretations of the function symbols.
-#+BEGIN_SRC haskell
-record _Homomorphism (FuncSymbs : Signature) (Src Tgt : FuncSymbs Algebra) : Set where
-  field
-    map          : Carrier Src → Carrier Tgt
-    preservation :   ∀ {n : ℕ} {f : FuncSymbs n} {xs : Vec (Carrier Src) n}
-		   → map (⟦ f ⟧ Src $ xs) ≡ ⟦ f ⟧ Tgt $ Vec.map map xs
-
-open _Homomorphism
-
-{- Syntactic Sugar -}
-_⟨$⟩_ : {𝒮 : Signature} {Src Tgt : 𝒮 Algebra}
-      → (𝒮 Homomorphism) Src Tgt → Carrier Src → Carrier Tgt
-h ⟨$⟩ xs = map h xs
-#+END_SRC
-
-We are now in a position for our prime definition:
-One says  /𝒜 is a free 𝒮-algebra for a type G of ‘generators’/
-provided ~𝒜~ is an 𝒮-algebra that ‘contains’ ~G~ and every
-𝒮-homomorphisms ~𝒜 → ℬ~ correspond to functions ~G → Carrier ℬ~.
-
-#+BEGIN_SRC haskell
-record _free-for_ {𝒮 : Signature} (𝒜 : 𝒮 Algebra) (G : Set) : Set₁ where
-  field
-    embed      : G → Carrier 𝒜
-    extend     : {ℬ : 𝒮 Algebra} → (G → Carrier ℬ) → (𝒮 Homomorphism) 𝒜 ℬ
-    {- “Homomorphisms are determined by their behaviour on embeded elements.” -}
-    uniqueness : {ℬ : 𝒮 Algebra} (H : (𝒮 Homomorphism) 𝒜 ℬ) → H ≡ extend (map H ∘ embed)
-
-  restrict : {ℬ : 𝒮 Algebra} (H : (𝒮 Homomorphism) 𝒜 ℬ) → G → Carrier ℬ
-  restrict H g = H ⟨$⟩ embed g
-#+END_SRC
-
-This paper aims to solve ~𝒜 free-for G~ where ~𝒜~ is the unknown.
-
-An interface generally comes with a collection of coherence laws enforcing desirable behaviour.
-Likewise, we want to speak of “equational algebras”. This requires we speak of “equations”,
-which are pairs of “terms”:
-
-#+BEGIN_SRC haskell
-data _Term-over_ (𝒮 : Signature) (X : Set) : Set where
-  var : X → 𝒮 Term-over X
-  _$_ : {n : ℕ} (f : 𝒮 n) → Vec (𝒮 Term-over X) n → 𝒮 Term-over X
-
-{- Example semigroup term -}
-x⨾Id⨾y : Semigroup𝒮 Term-over (Fin 2)
-x⨾Id⨾y = _⨾_ $ (_⨾_ $ (var 𝓍 ∷ Id $ [] ∷ []) ∷ var 𝓎 ∷ [])
-  where 𝓍 = zero ; 𝓎 = suc zero
-
-{- Ever term is a function of its variables -}
-arity : {X : Set} {𝒮 : Signature} → 𝒮 Term-over X → ℕ
-arity _ = 0
--- arity (var x) = 1
--- arity (f $ xs) = sum (Vec.map arity xs)
--- Fails termination checking.
-
-⟦_⟧t : {X : Set} {𝒮 : Signature} → (t : 𝒮 Term-over X) → (𝒜 : 𝒮 Algebra)
-     → Vec (Carrier 𝒜) (arity t) → Carrier 𝒜
-⟦ t ⟧t 𝒜 = {!!}
-
-data _Equation-over_ (𝒮 : Signature) (X : Set) : Set where
-  _≈_ : (lhs rhs : 𝒮 Term-over X) → 𝒮 Equation-over X
-
-lhs rhs : {𝒮 : Signature} {X : Set} → 𝒮 Equation-over X → 𝒮 Term-over X
-lhs (l ≈ r) = l
-rhs (l ≈ r) = r
-
-{- Example semigroup axiom -}
-sg-assoc : Semigroup𝒮 Equation-over (Fin 3)
-sg-assoc =   (_⨾_ $ (𝓍 ∷ (_⨾_ $ (𝓎 ∷ 𝓏 ∷ [])) ∷ []))
-	   ≈ (_⨾_ $ ((_⨾_ $ (𝓍 ∷ 𝓎 ∷ [])) ∷ 𝓏 ∷ []))
-  where 𝓍 = var zero ; 𝓎 = var (suc zero) ; 𝓏 = var (suc (suc zero))
-#+END_SRC
-
-We can now define an equational theory:
-#+BEGIN_SRC haskell
-record EquationalSpecfication : Set₁ where
-  field
-    -- Interface
-    FuncSymbs : Signature
-
-    -- Constraints, with numbers as variables
-    Axioms    : FuncSymbs Equation-over ℕ → Set
-
-open EquationalSpecfication
-
-record _Theory (ℰ : EquationalSpecfication) : Set₁ where
-  field
-    Carrier′ : Set
-    reify′   : ∀ {n : ℕ} (f : FuncSymbs ℰ n) → Vec Carrier′ n → Carrier′
-
-  algebra : (FuncSymbs ℰ) Algebra
-  algebra = record { Carrier = Carrier′ ; reify = reify′ }
-
-  field
-    satisfy : ∀ {e} {_ : Axioms ℰ e} → ⟦ lhs e ⟧t algebra ≡ ⟦ rhs e ⟧t algebra
-#+END_SRC
-* COMMENT README ─ JC & WK
-
-  + ~C-c C-e~ then ~l o~ to produce the PDF from the org file.
-
-    Or simply press ~f7~ if you've allowed the local variables in this file.
-
-  + ~\edcomm{Person}{Comment}~ to make first-class literate comments:
-
-    \edcomm{MA}{Please read this document; \newline thanks}
+* Survey of implementations
 
 * We want to be systematic about
 
@@ -513,3 +393,13 @@ f8 ∷ make readme
 # eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
 # eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
 # End:
+
+* COMMENT README ─ JC & WK
+
+  + ~C-c C-e~ then ~l o~ to produce the PDF from the org file.
+
+    Or simply press ~f7~ if you've allowed the local variables in this file.
+
+  + ~\edcomm{Person}{Comment}~ to make first-class literate comments:
+
+    \edcomm{MA}{Please read this document; \newline thanks}

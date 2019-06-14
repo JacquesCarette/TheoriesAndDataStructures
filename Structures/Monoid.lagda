@@ -4,7 +4,7 @@
 
 %{{{ Imports
 \begin{code}
-{-# OPTIONS --allow-unsolved-metas --irrelevant-projections #-}
+{-# OPTIONS --irrelevant-projections #-}
 
 module Structures.Monoid where
 
@@ -330,12 +330,13 @@ Forget₁ _ = record
   ; homomorphism   =  ⋆
   ; F-resp-≡      =   𝑲 ⋆
   }
+{-
 FreedomSad : {ℓ : Level} → Adjunction (Free₁ ℓ) (Forget₁ ℓ)
 FreedomSad = record
   { unit     =   record { η = id ; commute = id } -- no choice
   ; counit   =   record { η = λ X → MkHom (𝑲 (Id X)) ≡.refl (≡.sym (leftId X)) -- no choice
                         ; commute = λ f x → ≡.sym (pres-Id f) }
-  ; zig      =   {!It is here that we are forced to have the equation: ∀ x. x ≈ ε!}
+  ; zig      =   {!!} -- need ∀x . x ≈ e
   ; zag      =   ⋆
   }
 
@@ -362,6 +363,7 @@ module claim {ℓ : Level}
 
   .uip : (x : one-mon₀) → x ≡ mor (η counit (F₀ L ⋆)) (mor (F₁ L (η unit ⋆)) x)
   uip = zig {⋆}
+-}
 \end{code}
 %}}}
 

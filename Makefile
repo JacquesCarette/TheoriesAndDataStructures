@@ -1,4 +1,7 @@
-all: tale.pdf
+all: TandDS.pdf
 
-tale.pdf: slides.tex
+TandDS.pdf: TandDS.tex
+	pdflatex TandDS.tex
+
+slides: slides.tex
 	pdflatex slides.tex

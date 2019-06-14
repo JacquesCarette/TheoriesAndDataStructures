@@ -1,0 +1,201 @@
+% This started out as a .org file, but it's simpler to edit the .tex (for now)
+% POPL format
+\documentclass[acmsmall,review,anonymous,prologue,dvipsnames]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+% We intend to use Agda. But not in this file. Still:
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath,amssymb}
+\usepackage{textcomp}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{multicol}
+
+% Might upgrade to minted later, right now, go with Agda default
+% \usepackage[]{minted}
+% \makeatletter
+% \AtBeginEnvironment{minted}{\dontdofcolorbox}
+% \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+% \makeatother
+
+% use biblatex -- but will want to insure we use the right ACM format
+%\usepackage[backend=biber,style=alphabetic]{biblatex}
+%\addbibresource{MyReferences.bib}
+
+% POPL-related
+\acmJournal{PACMPL}
+\acmVolume{1}
+\acmNumber{POPL}
+\acmArticle{1}
+\acmYear{2020}
+\acmMonth{1}
+\acmDOI{}
+\setcopyright{none}
+
+% Unicode - needed?
+\usepackage{MyUnicodeSymbols}
+\def\with{\kern0.7em \withrule \kern0.7em }
+\def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
+\newunicodechar{❙}{\ensuremath{\mathop{\with}}}
+
+% set up some colours
+\definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
+\definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+\definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
+\definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
+\definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
+\hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+
+\date{\today}
+\title{Theories and Data Structures\\\medskip
+\large ---Draft---}
+\hypersetup{
+ pdfauthor={\href{mailto:alhassm@mcmaster.ca}{Musa Al-hassy}, \href{mailto:carette@mcmaster.ca}{Jacques Carette}, \href{mailto:kahl@cas.mcmaster.ca}{Wolfram Kahl}},
+ pdftitle={Theories and Data Structures},
+ pdfkeywords={},
+ pdfsubject={Work done at McMaster University, 2017--2019.},
+ pdflang={English}}
+
+\begin{document}
+\maketitle
+
+% super-cheap edcomm macro. Might want to upgrade this
+\def\edcomm#1#2{ \fbox{\textbf{Comment: #1 }} #2 \fbox{\textbf{End Comment}}}
+
+\author{Musa Al-hassy}
+\affiliation{
+  \institution{McMaster University}
+  \streetaddress{1280 Main St. W.}
+  \city{Hamilton}
+  \state{ON}
+  \postcode{L8S 4K1}
+  \country{Canada}}
+\email{alhassym@mcmaster.ca}
+\author{Jacques Carette}
+\author{Wolfram Kahl}
+
+\begin{abstract}
+
+
+\textbf{placeholder} We give a rational reconstruction of some common (and
+not-so-common) data-structures that arise in functional
+programming. Our categorical approach also leads us to defining
+standard functions which ought to be in all reasonable libraries of
+data-structures. Being systematic in the exploration of the design
+space reveals quite a lot of structure and information about
+data-structures and their origins.
+
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+It is relatively well-known in functional programming folklore that lists and monoids
+are somewhow related. With a little prodding, most functional programmers will recall
+(or reconstruct) that lists are, in fact, an instance of a monoid. But when asked if there
+is a deeper relation, fewer are able to conjure up ``free
+monoid''. Fewer still would be able formally prove this relation, in
+other words, to actually fill in all the parts
+that make up the adjunction between the forgetful functor from the category of monoids (and
+monoid homomorphisms) and the category of types (and functions) and
+the free monoid functor. To do so in full detail is, however, quite
+informative --- and we will proceed to do so below.
+\edcomm{MA}{ It is important to mention that this has been worked out in
+numerous other writings. That this is not the prime novelty of the work. E.g.;
+when a library claims to support X does it actually provide the necessaity
+‘kit’ that that X /intersincly/ comes with?}
+
+So as to never be able to cheat, cut corners, etc, we will do all of
+our work in Agda, with this document\footnote{Sources are available on github}
+being literate.  But when we do, something interesting happens: we are forced
+to write some rather useful functions over lists. Somehow \texttt{map},
+\texttt{\_++\_} and \texttt{fold} are all \emph{required}.
+
+But is this somehow a fluke? Of course not! So, what happens when we
+try to explore this relationship?
+
+A programmer's instinct might be to start poking around various
+data-structures to try and see which also give rise to a similar
+relation. This is a rather difficult task: not all of them arise this
+way. Instead, we start from the opposite end: systematically write
+down ``simple'' theories, and look at what pops out of the
+requirements of having a ``left adjoint to the forgetful
+functor''. This turns out to be very fruitful, and the approach we
+will take here.
+
+Naturally, we are far from the first to look at this. 
+\edcomm{JC}{ Fill in the related work here. From Universal Algebra through to many papers of Hinze}. In other words, the \emph{theory}
+behind what we'll be talking about here is well known.
+
+So why bother? Because, in practice, there is just as much beauty in
+the details as there was in the theory! By \emph{systematically} going
+through simple theories, we will create a dictionary between theories
+and a host of useful data-structures. Many of which do not in fact
+exist in the standard libraries of common (and uncommon) functional
+languages. And even when they do exist, all the ``kit'' that is derived
+from the theory is not uniformly provided.
+
+Along the way, we meet several roadblocks, some of which are rather
+surprising, as results from the (theory) literature tell us that there
+really ought to be no problems there. Only when we dig deeper do we
+understand what is going on: classical mathematics is not
+constructive! So even when type theorists were busy translating
+results for use in functional programming, by not actually proving
+their results in a purely constructive meta-theory, they did not
+notice these roadblocks.
+Surmounting these problems will highlight how
+different axioms, via their \emph{shape}, will naturally give rise to
+data-structures easily implementable with inductive types, and which
+require much more machinery.
+
+In short, our contributions:
+\begin{itemize}
+\item a systematic exploration of the space of simple theories
+\item giving a complete dictionary
+\item highlighting the ``kit'' that arises from fully deriving all the
+adjunctions
+\item a survey of which languages' standard library offers what structures
+(and what kit)
+\end{itemize}
+
+\section{ Monoids and lists}
+\label{sec:monoid}
+
+\edcomm{JC}{Give the full details}
+
+\begin{verbatim}
+module POPL19 where
+
+open import Helpers.DataProperties
+
+open import Function using (_∘_)
+open import Data.Nat
+open import Data.Fin  as Fin hiding (_+_)
+open import Data.Vec as Vec hiding (map)
+open import Relation.Binary.PropositionalEquality
+\end{verbatim}
+
+\section{Exploring simple theories}
+\label{sec:exploring}
+\edcomm{JC}\{Not fully sure how to go about this, while staying
+leisurely\}
+
+\section{Trouble in paradise}
+\label{sec:trouble}
+Commutative Monoid, idempotence, and so on.
+
+\section{Survey of implementations}
+
+\section{Conclusion}
+
+\label{sec:survey}
+
+\end{document}

@@ -1,7 +1,7 @@
 \section{Involutive Algebras: Sum and Product Types}
 
 Free and cofree constructions wrt these algebras ``naturally'' give rise to
-the notion of sum and product types.
+the notion of single-variable sum and product types.
 
 %{{{ Imports
 \begin{code}

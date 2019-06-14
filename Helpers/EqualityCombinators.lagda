@@ -47,7 +47,7 @@ open import Relation.Binary using (IsEquivalence ; Setoid)
 
 module _ {a b : Level} {A : Set a} {B : Set b} where
 
-  ≐-isEquivalence : IsEquivalence (_≐_ {A = A} {B})
+  ≐-isEquivalence : IsEquivalence (_≐_ {A = A} {B = B})
   ≐-isEquivalence =  record {Setoid (≐-setoid A B) }
 
   open IsEquivalence ≐-isEquivalence public

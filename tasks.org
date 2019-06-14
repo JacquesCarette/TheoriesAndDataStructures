@@ -1,0 +1,103 @@
+#+TODO: TODO | STARTED | DONE
+
+The TODOs with respect to writing the paper.
+
++ [X] JC start learning about org mode
++ [X] JC Figure out how to expand collapsed entries
+
++ [X] JC Write introduction pass 1
++ [ ] JC Write outline pass 1
+
++ [ ] MA To read:
+  /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
+     https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
+
++ [ ] MA Write section on Monoids and lists
++ [ ] MA code for Pointed
++ [ ] MA code for Pointed + isContr
++ [ ] MA code for Carrier + all equal
++ [ ] MA code for Unary
++ [ ] MA code for Involutive
++ [ ] MA code for Unary + cyclic-n rule (Involutive is n=2)
++ [ ] MA code for Unary + Pointed
++ [ ] MA code for Unary + Pointed + unit
++ [ ] WK other theories in the Carrier / Pointed / Unary /
+  UnaryPointed realm?
++ [ ] MA code for Magma
++ [ ] MA code for semigroup (aka associative magma)
++ [ ] MA code for Pointed Magma
++ [ ] MA code for left-unital
++ [ ] MA code for left-unital semigroup
++ [ ] MA code for monoid (unital semigroup)
++ [ ] MA code for x*y = x Magma
++ [ ] MA code for y*x = x Magma
++ [ ] JC figure out which other Magmas should be looked at
++ [ ] MA code for Unary Magma
++ [ ] MA code for Unary Magma with -(y * x) = (-x) * (-y)
++ [ ] MA code for Involutive Magma with "
++ [ ] JC explain why commutative monoid (but also Magma) is a problem
++ [ ] Spot the patterns in all of the above code
++ [ ] MA Survey Haskell, Ocaml, Scala, Racket, Clojure for DS above;
+  for 'kit' to go with data-structures
++ [ ] Write abstract
+ 
+Reminders:
++ Exploring Magma-based theories :: see
+    https://en.wikipedia.org/wiki/Magma_(algebra)
+   where we want to at least explore all the properties that are
+   affine.  These are interesting things said at
+    https://en.wikipedia.org/wiki/Category_of_magmas which should be
+   better understood.
+
+
++ unary theories ::
+
+   wikipedia sure doesn't spend much time on these (see
+   https://en.wikipedia.org/wiki/Algebraic_structure)
+   but there are some interesting ones, because if the unary operation
+   is 'f' things like
+   forall x. f (f x) = x
+   is *linear*, because x is used exactly once on each side. The
+   non-linearity of 'f' doesn't count (else associativity wouldn't work
+   either, as _*_ is used funnily there too).  So "iter 17 f x = x" is a
+   fine axiom here too. [iter is definable in the ground theory]
+
+   This is actually where things started, as 'involution' belongs here.
+
+    And is the first weird one.
+
++ Pointed unary theories :: E.g., the natural numbers
++ Pointer binary theories :: need to figure out which are expressible
++ more :: semiring, near-ring, etc. Need a sampling. But quasigroup
+  (with 3 operations!) would be neat to look at.
+
+
+Also, I think we want to explore
+- Free Theories
+- Initial Objects
+- Cofree Theories (when they exist)
+
+Then the potential 'future work' is huge. But that can be left for
+later. We want to have all the above rock solid first.
+
+Attempting to answer the following questions:
+
++ Why do lists pop-up more frequently to the average programmer than,
+  say, their commutative cousins: bags?
+
++ More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
+
++ Why is it that dependent sums and products do not pop-up expicitly to the average programmer? They arise naturally all the time as tuples and as classes.
+
++ How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
+
++ Is it that the average programmer works in the category of classical Sets,   with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in `Sets` ---where quotienting is not computably feasible, in `Sets` at-least; and why is that?
+
+(load-file "~/org-agda-mode/org-agda-mode.el")
+(load-file "~/org-agda-mode/literate.el")
+
+# Local Variables:
+# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
+# eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
+# End:

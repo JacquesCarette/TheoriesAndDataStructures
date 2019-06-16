@@ -33,7 +33,7 @@ record LeftMagma ℓ : Set (lsuc ℓ) where
   field
     Carrier : Set ℓ
     _*_      : Carrier → Carrier → Carrier
-    left    : ∀ x y → x * y ≡ x
+    left    : ∀ x y → x ≡ x * y
 
 open LeftMagma
 
@@ -55,7 +55,9 @@ is associativity:
 \begin{code}
 LeftMagmas-associative : {ℓ : Level} → (A : LeftMagma ℓ) →
   let _+_ = _*_ A in ∀ x y z → x + (y + z) ≡ (x + y) + z
-LeftMagmas-associative A x y z = ≡.trans (left A x _) (≡.sym (≡.trans (left A _ z) (left A x y)))
+LeftMagmas-associative A x y z = ≡.trans (≡.sym $ l x _) (≡.trans (l x y) (l (x + y) z))
+  where l = left A
+        _+_ = _*_ A
 \end{code}
 
 %{{{ MagmaAlg ; MagmaCat ; Forget
@@ -128,7 +130,7 @@ LeftLeft : (ℓ : Level) → Adjunction (LeftF ℓ) (Forget ℓ)
 LeftLeft ℓ = record
   { unit    =  record { η = λ _ → Leaf ; commute = λ _ → ≡.refl }
   ; counit  =  record
-    { η        =  λ A → hom (eval A) λ { {Leaf x} {Leaf y} → ≡.sym (left A x y)}
+    { η        =  λ A → hom (eval A) λ { {Leaf x} {Leaf y} → left A x y}
     ; commute  =  eval-naturality
     }
   ; zig   =   λ {(Leaf _) → ≡.refl}

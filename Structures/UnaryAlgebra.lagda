@@ -105,6 +105,12 @@ For |(n , a)|, the tag |n| may be interpreted as “the delay time” before the
 Alternatively, it can be interpreted to be the number of times that method |a| is to be executed.
 Finally, these can be thought of as constant lists with value |a| of length |n| ;-)
 
+\begin{code}
+delay : ∀ {ℓ} {A : Set ℓ} → ℕ → A → Eventually A
+delay zero    = base
+delay (suc n) = step ∘ delay n
+\end{code}
+
 We will realise this claim later on. For now, we turn to the dependent-eliminator/induction/recursion principle:
 \begin{code}
 elim : {ℓ a : Level} {A : Set a} {P : Eventually A → Set ℓ}
@@ -127,6 +133,11 @@ open import Function using (const)
 
 Notice that: The number of |𝓈|teps is preserved, |⟦ 𝒷 , 𝓈 ⟧ ∘ stepⁿ ≐ 𝓈ⁿ ∘ ⟦ 𝒷 , 𝓈 ⟧|.
 Essentially, |⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x|. A similar general remark applies to |elim|.
+
+\begin{code}
+reflection : {a : Level} {A : Set a} → ⟦ base , step ⟧ ≐ id {A = Eventually A}
+reflection = elim ≡.refl (≡.cong step)
+\end{code}
 %}}}
 
 %{{{ mapeE ; ⟦⟧-naturality
@@ -135,6 +146,10 @@ Eventually is clearly a functor,
 \begin{code}
 map : {a b : Level} {A : Set a} {B : Set b} → (A → B) → (Eventually A → Eventually B)
 map f = ⟦ base ∘ f , step ⟧
+
+map-computation : {a b : Level} {A : Set a} {B : Set b} {f : A → B} {e : Eventually A}
+                → map f (step e) ≡ step (map f e)
+map-computation = ≡.refl
 \end{code}
 
 Whence the folding operation is natural,
@@ -154,13 +169,14 @@ Whence the folding operation is natural,
 Other instances of the fold include:
 
 \begin{code}
+{- “force” -}
 extract : ∀{ℓ} {A : Set ℓ} → Eventually A → A
 extract = ⟦ id , id ⟧ -- cf |from⊎| ;)
 \end{code}
 
 More generally,
 \begin{code}
-iterate : ∀ {ℓ } {A : Set ℓ} (f : A → A) → Eventually A → A
+iterate : ∀ {ℓ} {A : Set ℓ} (f : A → A) → Eventually A → A
 iterate  f = ⟦ id , f ⟧
 --
 -- that is, |iterateE f (stepⁿ base x) ≈ fⁿ x|
@@ -189,6 +205,9 @@ map-∘ = elim ≡.refl (≡.cong step)
 
 map-cong : ∀{o} {A B : Set o} {F G : A → B} → F ≐ G → map F ≐ map G
 map-cong eq = elim (≡.cong base ∘ eq $ᵢ) (≡.cong step)
+
+map-congᵢ : ∀{o} {A B : Set o} {F G : A → B} → F ≐ᵢ G → map F ≐ map G
+map-congᵢ eq = elim (≡.cong base eq) (≡.cong step)
 \end{code}
 
 These results could be generalised to |⟦_,_⟧| if needed.

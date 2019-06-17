@@ -1,6 +1,22 @@
 \section{First}
 
-JC: Just made the Agda work, this needs massively cleaned up (names, etc).
+A \emph{Right Unar} is a magma whose operation is constant in the first argument
+and in some sense is an \emph{indexed} unary algebra since every element gives rise
+to a unique unary operation.
+
+\edcomm{MA}{
+
+According to wikipedia, https://en.wikipedia.org/wiki/Magma_(algebra),
+what we have below is actually a “left unar”! However, if we change perspective
+by thinking of “*” as backwards composition, as WK does with “⨾”, then our name
+is “not wrong”. However, such duality is pervasive in categorial settings.
+
+Instead, it may be prudent to simply call our structures “Pre-Unars”
+since it is the argument at the ‘pre’ position for which the axiom focuses on.
+Likewise, “post-unars”.
+
+JC, please provide links to where more info on unars can be found.
+}
 
 %{{{ Imports
 \begin{code}
@@ -16,19 +32,18 @@ open import Helpers.Function2 using (_$ᵢ)
 open import Helpers.Forget
 open import Helpers.EqualityCombinators
 
-import Structures.UnaryAlgebra as U
+import Structures.UnaryAlgebra as U hiding (Forget)
 \end{code}
 %}}}
 
 %{{{ RightUnar ; Hom
 \subsection{Definition}
 \begin{code}
-
 record RightUnar ℓ : Set (lsuc ℓ) where
   constructor RU
   field
-    Carrier : Set ℓ
-    _*_      : Carrier → Carrier → Carrier
+    Carrier      : Set ℓ
+    _*_          : Carrier → Carrier → Carrier
     ignore-right : ∀ x y z → x * y ≡ x * z
 
 open RightUnar
@@ -38,7 +53,7 @@ record Hom {ℓ} (X Y : RightUnar ℓ) : Set ℓ where
   open RightUnar X using () renaming (_*_ to _*₁_)
   open RightUnar Y using () renaming (_*_ to _*₂_)
   field
-    mor          : Carrier X → Carrier Y
+    mor    : Carrier X → Carrier Y
     pres-* : {x y : Carrier X} → mor (x *₁ y) ≡ mor x *₂ mor y
 
 open Hom
@@ -73,111 +88,149 @@ Forget ℓ = mkForgetful ℓ RightUnarAlg
 
 %}}}
 
-%{{{
+%{{{ The free pre-unar
 \subsection{Syntax}
+
+Suppose we wish to construct right unar terms over some set $A$, then our options are
+\begin{enumerate}
+\item A variable of type $A$,
+\item An expression $l * r$ for two existing terms $l$ and $r$.
+\end{enumerate}
+Unfolding this definition shows that terms are of the form
+$x_0 * x_1 * ⋯ * x_n$ for some parenthesising.
+
+If we parenthesise right-wards, then we find that by the “ignore-right”
+axiom, the important pieces of the term are its left-most element
+and how many arguments ---the remaining right side--- were used in
+producing the term. Note that “ignore-right” informs us that any
+right hand expression would do, even $x_0$ itself, so since the remaining
+$x_i$ do not matter, semantically, the term can be \emph{reconstructed}
+provided we supply $n$ arbitrary elements of $A$. This is nearly a “cons”
+for the free monoid, but since only the length of the tail of the list
+is important, that is all we keep.
+
+Hence, we could use $A × ℕ$ as a representation of the free algebra of this type.
+However, we have hinted at the resemblance ot unary algebras and indeed we find
+the type $Eventually A \;≅\; A × ℕ$ already there. Let's use it.
 \begin{code}
-data Thing {a : Level} (A : Set a) : Set a where
-  Raw : A → ℕ → Thing A
-
-open Thing
-
-map : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → Thing A → Thing B
-map f (Raw a n) = Raw (f a) n
+open import Structures.UnaryAlgebra hiding (Forget ; Hom)
+{-
+data Eventually {ℓ} (A : Set ℓ) : Set ℓ where
+  base   :              A → Eventually A
+  step   :   Eventually A → Eventually A
+-}
 \end{code}
 
-The \AgdaField{ignore-right} law tells us what to do when we 'act'.
+Before conjecturing further, let's write an interpreter to gain confidence
+that we're moving in the correct trajectory (•̀ᴗ•́)و
+
+Our interpreter, fold, eval, whatever you wish to call it applies the
+action “n” times, but we know we can pick any value on the ‘right’, so we
+may as well pick the base element. Incidentally, the “extract” below
+could have been renamed “force”.
+
 \begin{code}
-combine : {a : Level} {A : Set a} → Thing A → Thing A → Thing A
-combine (Raw x n) _ = Raw x (suc n)
+eval : {ℓ : Level} (M : RightUnar ℓ) → Eventually (Carrier M) → Carrier M
+eval M (base x) = x -- *_ M x x
+eval M (step x) = _*_ M (eval M x) (extract x)
+
+-- eval M e ≡ iterate (_*_ M (extract e)) e
+-- Would require _*_ to be associative.
 \end{code}
 
-and that \AgdaFunction{combine} generally ignores its right argument
+The \AgdaField{ignore-right} law tells us what to do when we “act”:
 \begin{code}
-combine-ignores-right : ∀ {ℓ : Level} {X : Set ℓ} (x y z : Thing X) → combine x y ≡ combine x z
-combine-ignores-right (Raw x _) _ _ = ≡.refl
+_⟪_ : {a : Level} {A : Set a} → Eventually A → Eventually A → Eventually A
+l ⟪ r = step l  {- “LHS l gains another arbitrary argument. ” -}
 \end{code}
-%}}}
+That is to say, in the alternate representation: $(x, n) ⟪ r  =  (x, n + 1)$.
 
-%{{{
+This operation unquestionablly ignores its second argument and so we have
+a functor that produces such pre-unars.
 \begin{code}
-map-cong : {ℓ : Level} {A B : Set ℓ} {f g : A → B}
-         → f ≐ᵢ g
-         → map f ≐ map g
-map-cong f≡g (Raw x n) = ≡.cong (λ z → Raw z n) (f≡g {x})
-
 RightUnarF : (ℓ : Level) → Functor (Sets ℓ) (RightUnars ℓ)
 RightUnarF ℓ = record
-  { F₀ = λ A → RU (Thing A) combine combine-ignores-right
-  ; F₁ = λ f → hom (map f) λ { {Raw x n} → ≡.refl}
-  ; identity = λ { (Raw x n) → ≡.refl}
-  ; homomorphism = λ { (Raw x n) → ≡.refl}
-  ; F-resp-≡ = map-cong
+  { F₀            =  λ A → RU (Eventually A) _⟪_ (λ _ _ _ → ≡.refl)
+  ; F₁            =  λ f → hom (map f) ≡.refl
+  ; identity      =  reflection
+  ; homomorphism  =  elim ≡.refl (≡.cong step)
+  ; F-resp-≡      =  map-congᵢ
   }
 \end{code}
 
-``fold'' in this case is perhaps just as well called eval. It applies the
-action n times, but we know we can pick any value on the 'right', so we
-may as well pick x.
+Note that from “Eventually” we already have induction and elimination rules, and a number of
+naturality laws. Here's a direct proof of eval's naturality.
 
-\begin{code}
-eval : {ℓ : Level} (M : RightUnar ℓ) → Thing (Carrier M) → Carrier M
-eval M (Raw x zero) = x
-eval M (Raw x (suc n)) = _*_ M (eval M (Raw x n)) x
-\end{code}
-
-We also have an induction principle:
-\begin{code}
-ind : {ℓ ℓ′ : Level} {Y : Set ℓ}
-      (P : Thing Y → Set ℓ′)
-    → ((y : Y) → P (Raw y zero))
-    → ((y : Y) (n : ℕ) → P (Raw y n) → P (Raw y (suc n)))
-    → (z : Thing Y) → P z
-ind P zp sp (Raw x zero) = zp x
-ind P zp sp (Raw x (suc n)) = sp x n (ind P zp sp (Raw x n))
-\end{code}
-
-We can now use induction to prove that eval is natural.
 \begin{code}
 eval-naturality : {ℓ : Level} {M N : RightUnar ℓ} (F : Hom M N)
                 → eval N ∘ map (mor F) ≐ mor F ∘ eval M
-eval-naturality {ℓ} {M} {N} F = ind (λ x → eval N (map (mor F) x) ≡ mor F (eval M x))
-  (λ _ → ≡.refl) λ y n ev-nat-n → ≡.trans (≡.cong (λ z → _*_ N z (mor F y)) ev-nat-n)
-  (≡.sym (pres-* F))
+eval-naturality {ℓ} {M} {N} F (base x) = ≡.refl -- ≡.sym (pres-* F)
+eval-naturality {ℓ} {M} {N} F (step x) = let open ≡.≡-Reasoning in
+  begin
+   (eval N ∘ map (mor F)) (step x)
+  ≡⟨ ≡.refl ⟩
+   (eval N ∘ step) (map (mor F) x)
+  ≡⟨ ≡.refl ⟩
+   _*_ N (eval N ((map (mor F) x))) (extract ((map (mor F) x)))
+  ≡⟨ ≡.cong (λ it → _*_ N it (extract ((map (mor F) x)))) (eval-naturality F x) ⟩
+   _*_ N (mor F (eval M x)) (extract ((map (mor F) x)))
+  ≡⟨ ignore-right N _ _ _ ⟩
+   _*_ N (mor F (eval M x)) (mor F (extract x))
+  ≡⟨ ≡.sym (pres-* F) ⟩
+   mor F (_*_ M (eval M x) (extract x))
+  ≡⟨ ≡.refl ⟩
+   (mor F ∘ eval M) (step x)
+  ∎
 \end{code}
 
-But that eval ``computes'' does not need induction per se, so a direct proof is nicer.
+Moreover, interpreter is a homomorphism.
 \begin{code}
-eval-compute : {ℓ : Level} (A : RightUnar ℓ) (x : Carrier A) (n : ℕ) (y : Thing (Carrier A)) →
-  _*_ A (eval A (Raw x n)) x ≡ _*_ A (eval A (Raw x n)) (eval A y)
-eval-compute A x zero y = ignore-right A x x _
-eval-compute A x (suc n) y = ignore-right A (_*_ A (eval A (Raw x n)) x) x (eval A y)
+eval-compute : {ℓ : Level} (M : RightUnar ℓ) -- (x : Carrier A) {n : ℕ}
+    (x y : Eventually (Carrier M))
+  → let _⊕_ = _*_ M
+  in
+       eval M (x ⟪ y)
+    ≡  eval M x ⊕ eval M y
+
+eval-compute M (base x) y = ignore-right M x x (eval M y)
+eval-compute M 𝓍@(step x) y = ignore-right M (_*_ M (eval M x) (extract x)) (extract x) (eval M y)
+
+
+eval-combine : ∀ {ℓ : Level} {X : Set ℓ} (e : Eventually X)
+  → e ≡ eval (RU (Eventually X) _⟪_ λ _ _ _ → ≡.refl) (iterate step (base (base e)))
+eval-combine _  = ≡.refl
 \end{code}
 
-Lastly, we need to show that ``folding'' combine over a nested composition recovers
-the thing we started with. We'll do this one by Agda-level induction.
+% Lastly, we need to show that ``folding'' combine over a nested composition recovers
+% the thing we started with. We'll do this one by Agda-level induction.
 
+Here's a reason for our naming.
 \begin{code}
-eval-combine : ∀ {ℓ : Level} {X : Set ℓ} (x : X) (n : ℕ) →
-  Raw x n ≡ eval (RU (Thing X) combine (combine-ignores-right {X = X} )) (Raw (Raw x 0) n)
-eval-combine x zero = ≡.refl
-eval-combine x (suc n) = ≡.cong (λ z → combine z (Raw x 0)) (eval-combine x n)
+_≈_ : ∀ {ℓ} {A : Set ℓ} (x y : Eventually A) → Set ℓ
+l ≈ r  =  extract l  ≡  extract r
+
+{- neato! -}
+_ : ∀ {ℓ} {A : Set ℓ} {x y : Eventually A}
+  → (x ⟪ y) ≈  x
+_ = ≡.refl
 \end{code}
 
 And we can put everything together to show that indeed we have an adjunction.
+
 \begin{code}
 LeftThing : (ℓ : Level) → Adjunction (RightUnarF ℓ) (Forget ℓ)
 LeftThing ℓ = record
-  { unit    =  record { η = λ _ x → Raw x 0 ; commute = λ _ → ≡.refl }
+  { unit    =  record { η = λ _ → base ; commute = λ _ → ≡.refl }
   ; counit  =  record
-    { η        =  λ A → hom (eval A) λ { {Raw x n} {y} → eval-compute A x n y }
+    { η        =  λ M → hom (eval M) λ { {x} {y} → eval-compute M x y }
     ; commute  =  eval-naturality
     }
-  ; zig   =   λ { (Raw x n) → eval-combine x n}
+  ; zig   =   λ e → elim  ≡.refl (λ _ → ≡.refl) e
   ; zag   =   ≡.refl
   }
 \end{code}
 
-What is perhaps not immediately apparent is that this is a structure we've seen before.
+As mentioned, this merely a different presentation of a structure we have already seen.
 \begin{code}
 iso : (ℓ : Level) → StrongEquivalence (RightUnars ℓ) (U.Unarys ℓ)
 iso ℓ = record

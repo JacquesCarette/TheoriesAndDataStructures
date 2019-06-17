@@ -358,6 +358,53 @@ _∘₁_ {C = C} {D} {F} {G} {H} X Y = record
   open G renaming (F₀ to G₀; F₁ to G₁)
   open H renaming (F₀ to H₀; F₁ to H₁)
 
+-- Categories.Morphisms (part of)
+module Morphisms {o ℓ e} (C : Category o ℓ e) where
+  open Category C
+
+  record Iso {A B} (f : A ⇒ B) (g : B ⇒ A) : Set (o ⊍ ℓ ⊍ e) where
+    field
+      .isoˡ : g ∘ f ≡ id
+      .isoʳ : f ∘ g ≡ id
+
+-- Categories.NaturalIsomorphism
+record NaturalIsomorphism {o ℓ e o′ ℓ′ e′}
+                          {C : Category o ℓ e}
+                          {D : Category o′ ℓ′ e′}
+                          (F G : Functor C D) : Set (o ⊍ ℓ ⊍ e ⊍ o′ ⊍ ℓ′ ⊍ e′) where
+  private module C = Category C
+  private module D = Category D
+  private module F = Functor F
+  private module G = Functor G
+  open F
+  open G renaming (F₀ to G₀; F₁ to G₁)
+
+  field
+    F⇒G : NaturalTransformation F G
+    F⇐G : NaturalTransformation G F
+
+  module ⇒ = NaturalTransformation F⇒G
+  module ⇐ = NaturalTransformation F⇐G
+
+  open Morphisms D
+
+  field
+    .iso : ∀ X → Iso (⇒.η X) (⇐.η X)
+
+-- Categories.Equivalence.Strong
+record WeakInverse {o ℓ e o′ ℓ′ e′} {C : Category o ℓ e} {D : Category o′ ℓ′ e′}
+ (F : Functor C D) (G : Functor D C) : Set (o ⊍ ℓ ⊍ e ⊍ o′ ⊍ ℓ′ ⊍ e′) where
+  field
+    F∘G≅id : NaturalIsomorphism (F ∘F G) idF
+    G∘F≅id : NaturalIsomorphism (G ∘F F) idF
+
+record StrongEquivalence {o ℓ e o′ ℓ′ e′} (C : Category o ℓ e) (D : Category o′ ℓ′ e′) : Set (o ⊍ ℓ ⊍ e ⊍ o′ ⊍ ℓ′ ⊍ e′) where
+  field
+    F : Functor C D
+    G : Functor D C
+    weak-inverse : WeakInverse F G
+  open WeakInverse weak-inverse public
+
 -- Categories.Object.Initial {o ℓ e} (C : Category o ℓ e) where
 module _ {o ℓ e} (C : Category o ℓ e) where
    open Category C

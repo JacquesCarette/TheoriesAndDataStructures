@@ -5,17 +5,18 @@
 We consider the theory of \emph{pointed algebras} which consist of a type
 along with an elected value of that type.\footnote{Note that this definition
 is phrased as a ``dependent product''!}
+
 Software engineers encounter such
 scenarios all the time in the case of an object-type and a default value of
 a ``null'', or undefined, object. In the more explicit setting of pure functional
 programming, this concept arises in the form of |Maybe|, or |Option| types.
 
-\verb+Some programming languages, such as |C#| for example, provide a |default| keyword to access a default value of a given data type.+
+Some programming languages, such as |C#| for example, provide a |default| keyword to access a default value of a given data type.
 
-edinsert{MA}{Haskell's typeclass analogue of |default|?}
-
-edcomm{MA}{Perhaps discuss ``types as values'' and the subtle issue of how pointed algebras
-are completely different than classes in an imperative setting. }
+% edinsert{MA}{Haskell's typeclass analogue of |default|?}
+%
+% edcomm{MA}{Perhaps discuss ``types as values'' and the subtle issue of how pointed algebras
+% are completely different than classes in an imperative setting. }
 
 %{{{ Imports
 \begin{code}
@@ -24,8 +25,6 @@ are completely different than classes in an imperative setting. }
 module Structures.Pointed where
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Data.Empty
-open import Relation.Nullary
 open import Function using (id ; _∘_)
 open import Data.Maybe using (Maybe; just; nothing; maybe; maybe′)
 
@@ -82,7 +81,8 @@ oneSortedAlg = record
    ; Carrier     =   Carrier
    ; Hom         =   Hom
    ; mor         =   mor
-   ; comp        =   λ F G → MkHom (mor F ∘ mor G) (≡.cong (mor F) (preservation G) ⟨≡≡⟩ preservation F)
+   ; comp        =   λ F G → MkHom (mor F ∘ mor G)
+                             (≡.cong (mor F) (preservation G) ⟨≡≡⟩ preservation F)
    ; comp-is-∘   =   ≐-refl
    ; Id          =   Id
    ; Id-is-id    =   ≐-refl
@@ -99,27 +99,72 @@ Forget : (ℓ : Level) → Functor (Pointeds ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ oneSortedAlg
 \end{code}
 
-The naming |Pointeds| is to be consistent with the category theory library we are using, which
-names the category of sets and functions by |Sets|. That is, the category name is the objects'
-name suffixed with an `s'.
+The naming |Pointeds| is to be consistent with the category theory library we are using,
+which names the category of sets and functions by |Sets|. That is, the category name is
+the objects' name suffixed with an ‘s’.
 
 Of-course, as hinted in the introduction, this structure ---as are many--- is defined in a
 dependent fashion and so we have another forgetful functor:
 
-\begin{spec}
-open import Data.Product
+\begin{code}
+open import Helpers.DataProperties
+open ≡
+
 Forgetᴰ : (ℓ : Level) → Functor (Pointeds ℓ) (Sets ℓ)
-Forgetᴰ ℓ = record { F₀ = λ P → Σ (Carrier P) (λ x → x ≡ point P)
-    ; F₁ = λ {P} {Q} F → λ{ (val , val≡ptP) → mor F val , (≡.cong (mor F) val≡ptP ⟨≡≡⟩ preservation F) }
-    ; identity = λ {P} → λ{ {val , val≡ptP} → ≡.cong (λ x → val , x) (≡.proof-irrelevance _ _) }
-    ; homomorphism = λ {P} {Q} {R} {F} {G} → λ{ {val , val≡ptP} → ≡.cong (λ x → mor G (mor F val) , x) (≡.proof-irrelevance _ _) }
-    ; F-resp-≡ = λ {P} {Q} {F} {G} F≈G → λ{ {val , val≡ptP} → {!≡.cong₂ _,_ (F≈G val) ?!} }
-    }
-\end{spec}
+Forgetᴰ ℓ = record
+  { F₀ = λ P → Σ x ∶ Carrier P  • x ≡ point P
+  ; F₁ = λ {P} {Q} F → λ{ (val , val≡ptP)
+    → mor F val , ≡.cong (mor F) val≡ptP ⟨≡≡⟩ preservation F }
+  ; identity = λ {P} → λ{ {val , val≡ptP} → cong (val ,_) let open ≡-Reasoning in
+      begin
+         trans (≡.cong id val≡ptP) refl
+      ≡⟨ trans-reflʳ _ ⟩
+         cong id val≡ptP
+      ≡⟨ cong-id _ ⟩
+         val≡ptP
+      ∎ }
+  ; homomorphism = λ {P} {Q} {R} {F} {G} → λ{ {val , val≡ptP} → cong (_ ,_) let open ≡-Reasoning in
+       begin
+             cong (mor G ∘ mor F) val≡ptP
+        ⟨≡≡⟩ cong (mor G) (preservation F)
+        ⟨≡≡⟩ preservation G
+
+      ≡⟨ sym (trans-assoc (cong (mor G ∘ mor F) val≡ptP)) ⟩
+
+             (cong (mor G ∘ mor F) val≡ptP
+        ⟨≡≡⟩ cong (mor G) (preservation F))
+        ⟨≡≡⟩ preservation G
+
+      ≡⟨ cong (_⟨≡≡⟩ preservation G)
+         (begin
+             cong (mor G ∘ mor F) val≡ptP ⟨≡≡⟩ cong (mor G) (preservation F)
+
+             ≡⟨ cong (_⟨≡≡⟩ cong (mor G) (preservation F)) (cong-∘ val≡ptP) ⟩
+
+             cong (mor G) (cong (mor F) val≡ptP) ⟨≡≡⟩ cong (mor G) (preservation F)
+
+             ≡⟨ cong-over-trans (preservation F) ⟩
+
+             cong (mor G) (cong (mor F) val≡ptP ⟨≡≡⟩ preservation F)
+             ∎)
+       ⟩
+
+      cong (mor G) (cong (mor F) val≡ptP ⟨≡≡⟩ preservation F)
+      ⟨≡≡⟩ preservation G
+      ∎}
+  ; F-resp-≡ = λ {P} {Q} {F} {G} F≈G → λ{ {val , val≡ptP} → cong₂ _,_ (F≈G val)
+    {! let open ≡-Reasoning in begin
+        ((cong (mor F) val≡ptP) ⟨≡≡⟩ preservation F)
+      ≡⟨ {!!} ⟩
+        ((cong (mor G) val≡ptP) ⟨≡≡⟩ preservation G)
+      ∎ !} }
+  } -- MA: Stuck :'(
+\end{code}
 
 That is, we ``only remember the point''.
 
-edinsert{MA}{An adjoint to this functor?}
+Since this functor is rather proof-heavy, we will not explore
+any adjoint for it.
 
 %}}}
 
@@ -154,14 +199,14 @@ MaybeLeft ℓ = record
   }
 \end{code}
 
-edcomm{MA}{Develop |Maybe| explicitly so we can ``see'' how the utility |maybe| ``pops up naturally''.}
+% edcomm{MA}{Develop |Maybe| explicitly so we can ``see'' how the utility |maybe| ``pops up naturally''.}
 
 While there is a ``least'' pointed object for any given set, there is, in-general, no ``largest'' pointed object
 corresponding to any given set. That is, there is no co-free functor.
 
 \begin{code}
-NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Pointeds ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
-NoRight {ℓ} (record { F₀ = f }) Adjunct = lower (η (counit Adjunct) (Lift ℓ ⊥) (point (f (Lift ℓ ⊥))))
+NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Pointeds ℓ)) → Adjunction (Forget ℓ) CoFree → ⊥
+NoRight {ℓ} (record { F₀ = f }) Adjunct = η (counit Adjunct) ⊥ (point (f ⊥))
   where open Adjunction
         open NaturalTransformation
 \end{code}
@@ -198,6 +243,8 @@ module ZeroAryAdjoint where
   Left ℓ =  Make-Free⊢Forget {C = Pointeds ℓ} Carrier initial
 \end{code}
 %}}}
+
+So much for structures with an elected element.
 
 % Quick Folding Instructions:
 % C-c C-s :: show/unfold region

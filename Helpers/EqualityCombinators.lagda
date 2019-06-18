@@ -26,11 +26,34 @@ open ≡ using (_≡_) public
 We also provide two handy-dandy combinators for common uses of transitivity proofs.
 
 \begin{code}
+infixr 5 _⟨≡≡⟩_ _⟨≡≡˘⟩_
+
 _⟨≡≡⟩_ = ≡.trans
 
 _⟨≡≡˘⟩_ : {a : Level} {A : Set a} {x y z : A} → x ≡ y → z ≡ y → x ≡ z
 x≈y ⟨≡≡˘⟩ z≈y = x≈y ⟨≡≡⟩ ≡.sym z≈y
 \end{code}
+
+Besides brevity, another reason for this naming is that transitivity
+acts as a group operator with inverses provided by for symmetry
+and identity is the reflexitivity proof. See trans-reflʳ for example
+from the standard library.
+
+Here's a nifty result: The cong operatrion is functorial in its first argument
+via function composition and identity function, but its also functorial in
+its second argument a la the previously mentioned group!
+The fact “cong p refl ≈ refl” is true by definition, and the second functor law
+is as follows:
+
+\begin{code}
+{- Maybe make a PR to agda-std-lib -}
+cong-over-trans : ∀ {i j} {A : Set i} {B : Set j} {f : A → B}
+                → {x y z : A} {p : x ≡ y} (q : y ≡ z)
+                →    ≡.cong f p ⟨≡≡⟩ ≡.cong f q
+                  ≡  ≡.cong f (p ⟨≡≡⟩ q)
+cong-over-trans {p = ≡.refl} ≡.refl = ≡.refl
+\end{code}
+
 %}}}
 
 %{{{ Function Extensionality

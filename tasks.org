@@ -8,14 +8,14 @@ The TODOs with respect to writing the paper.
 + [X] JC Write introduction pass 1
 + [ ] JC Write outline pass 1
 
-+ [ ] MA To read:
++ [X] MA To read:
   /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
      https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
 
 + [ ] MA Write section on Monoids and lists
-+ [ ] MA code for Pointed
-+ [ ] MA code for Pointed + isContr
-+ [ ] MA code for Carrier + all equal
++ [X] MA code for Pointed
++ [X] MA code for Pointed + isContr
++ [X] MA code for Carrier + all equal
 + [ ] MA code for Unary
 + [ ] MA code for Involutive
 + [ ] MA code for Unary + cyclic-n rule (Involutive is n=2)
@@ -40,7 +40,7 @@ The TODOs with respect to writing the paper.
 + [ ] MA Survey Haskell, Ocaml, Scala, Racket, Clojure for DS above;
   for 'kit' to go with data-structures
 + [ ] Write abstract
- 
+
 Reminders:
 + Exploring Magma-based theories :: see
     https://en.wikipedia.org/wiki/Magma_(algebra)

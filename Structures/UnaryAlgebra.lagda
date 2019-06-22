@@ -1,5 +1,5 @@
 \begin{code}
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --irrelevant-projections --allow-unsolved-metas #-}
 \end{code}
 
 \section{UnaryAlgebra}
@@ -80,7 +80,6 @@ Unarys ℓ = oneSortedCategory ℓ UnaryAlg
 Forget : (ℓ : Level) → Functor (Unarys ℓ) (Sets ℓ)
 Forget ℓ = mkForgetful ℓ UnaryAlg
 \end{code}
-
 %}}}
 
 %{{{ \subsection{Free Structure} Eventually ; ⟦_,_⟧ ; indE
@@ -135,7 +134,7 @@ Notice that: The number of |𝓈|teps is preserved, |⟦ 𝒷 , 𝓈 ⟧ ∘ ste
 Essentially, |⟦ 𝒷 , 𝓈 ⟧ (stepⁿ base x) ≈ 𝓈ⁿ 𝒷 x|. A similar general remark applies to |elim|.
 
 \begin{code}
-reflection : {a : Level} {A : Set a} → ⟦ base , step ⟧ ≐ id {A = Eventually A}
+reflection : {a : Level} {A : Set a}  →  ⟦ base , step ⟧  ≐  id {A = Eventually A}
 reflection = elim ≡.refl (≡.cong step)
 \end{code}
 %}}}
@@ -263,12 +262,14 @@ iter-swap : {ℓ : Level} {A : Set ℓ} {f : A → A} (n : ℕ) → (f ^ n) ∘ 
 iter-swap zero = ≐-refl
 iter-swap {f = f} (suc n) = ∘-≐-cong₁ f (iter-swap n)
 
--- iteration of commutable functions
+-- iteration of commuting functions
 iter-comm : {ℓ : Level} {B C : Set ℓ} {f : B → C} {g : B → B} {h : C → C}
   → (leap-frog : f ∘ g ≐ᵢ h ∘ f)
   → {n : ℕ} → h ^ n ∘ f ≐ᵢ f ∘ g ^ n
 iter-comm leap {zero} = ≡.refl
-iter-comm {ℓ} {B} {C} {f} {g = g} {h} leap {suc n} {x} = ≡.cong (h ^ n) (≡.sym (leap {x})) ⟨≡≡⟩ iter-comm {ℓ} {B} {C} {f} {g} {h} leap {n} {g x}
+iter-comm {f = f} {g} {h} leap {suc n} {x}
+  =      ≡.cong (h ^ n) (≡.sym (leap {x}))
+    ⟨≡≡⟩ iter-comm {f = f} leap {n} {g x}
 
 -- exponentation distributes over product
 ^-over-× : {a b : Level} {A : Set a} {B : Set b} {f : A → A} {g : B → B}
@@ -328,32 +329,167 @@ Notice that the adjunction proof forces us to come-up with the operations and pr
 \end{itemize}
 %}}}
 
-%{{{ Right Adjoint - can't decide if it has none, or I just can't quite find it.
-\begin{code}
+%{{{ No Right Adjoint
 
+Suppose Forget ⊣ Right as follows:
+
+  f : Forget (X, op) → Y
+⇔ f : X → Y
+⇔ { magic yields a nice Op Y }
+⇔ f : X → Y  ∧  f ∘ Op X ≈ Op Y ∘ f
+⇔ f : (X, Op X) → (Y, Op Y)
+⇔ f : (X, Op X) → Right Y
+
+Step “magic” is the crux I could not pass and so is it is instructive to
+select and “f” and an “Op X” such that the resulting magical “Op Y” results
+in a contradiction.
+
+It's not clear how to select these items, so let's reduce the number of choices.
+For example, if we take Y = 𝟚, then (Op Y)³ ≈ Op Y.
+Now we can select f, Op X so s to obtain a contradiction:
+
+\begin{verbatim}
+  f ∘ Op X ≈ Op Y ∘ f                  (0)
+⇒ Op Y ∘ Op Y ∘ f ∘ Op X ≈ Op Y ∘ f    (leibniz)
+⇒ Op Y ∘ f ∘ Op X ∘ Op X ≈ Op Y ∘ f    (0 & leibniz)
+⇒ f ∘ Op X ∘ Op X ∘ Op X ≈ Op Y ∘ f    (0)
+⇒ f ∘ (Op X)³ ≈ f ∘ Op X               (0)
+\end{verbatim}
+
+Neato! We found an equation that is completely independent of the magical
+results ---the crucial step was that unary Boolean functions have a period of 3.
+Thus if we can select an f and an Op X such that the above equation is false,
+then no magical right adjoint could exist.
+
+We can immediately dismiss two cases:
++ f cannot be the identity, otherwise X = 𝟚 and (Op X)³ ≈ Op X is provable.
++ f cannot be a constant function, since the final line would then be trivially true.
++ Op X cannot be involutionary, otherwise (Op X)³ ≈ Op X is provable.
++ Op X cannot have period 3.
+
+Let's try X = 𝟚 × 𝟚, f = proj₁, and Op X = shuffle = λ (a, b) ↦ (a × b, 0)
+then:
+
+\begin{verbatim}
+  f ∘ (Op X)³ ≈ f ∘ Op X               (above)
+⇒ proj₁ (shuffle³ (a, b)) ≈ proj₁ (shuffle (a, b)
+⇒ proj₁ (shuffle² (a × b, 0)) ≈ proj₁ (a × b, 0)
+⇒ proj₁ (shuffle  (a × b × 0, 0)) ≈ a × b
+⇒ proj₁ (0, 0) ≈ a × b
+⇒ 0 ≈ a × b
+⇒ false , provided we take a = b = 1
+\end{verbatim}
+
+This took a number of trials to find.
+
+\begin{code}
+open import Structures.OneCat hiding (Forget)
+open ≡
+open import Data.Maybe
+
+NoRight : let ℓ = lzero in (CoFree : Functor (Sets ℓ) (Unarys ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
+NoRight record { F₀ = R₀ ; F₁ = R₁ ; identity = identity ; homomorphism = homomorphism ; F-resp-≡ = R-resp-≡ } adj
+  = {!!} -- ⊥-elim (η (counit adj) ⊥ {!mor (η (unit adj) (F₀ ⊥))!})
+  where
+
+  open Adjunction adj
+  open NaturalTransformation
+
+  open import Data.Product
+  open import Data.Bool renaming (Bool to 𝟚)
+
+  Y = 𝟚; X = 𝟚 × 𝟚; f = proj₁
+  shuffle : X → X
+  shuffle (a , b) = (a ∧ b , false)
+
+  {- Suppose we have an f : X → Y -}
+
+  {- Then we find a unary object -}
+  𝒴 = R₀ Y
+
+  {- That contains a copy of Y -}
+  extract₂ : Carrier 𝒴 → Y
+  extract₂ = η counit Y
+
+  {- With its unary operation being -}
+  op : Carrier 𝒴 → Carrier 𝒴
+  op = Op 𝒴
+
+  {- For the source, X, we have an embedding -}
+
+  𝒳 = R₀ X
+
+  ι : X → Carrier 𝒳
+  ι = mor (η unit (MkUnary X shuffle))
+
+  ι-shuffle : ι ∘ shuffle  ≐ᵢ  Op 𝒳 ∘ ι
+  ι-shuffle = pres-op (η unit (MkUnary X shuffle))
+
+  {- and an extraction -}
+
+  extract₁ : Carrier 𝒳 → X
+  extract₁ = η counit X
+
+  {- Now our f = proj₁ is lifted -}
+
+  𝑭 : Carrier 𝒳 → Carrier 𝒴
+  𝑭 = mor (R₁ f)
+
+  𝑭-pres : 𝑭 ∘ Op 𝒳  ≐ᵢ  Op 𝒴 ∘ 𝑭
+  𝑭-pres = pres-op (R₁ f)
+
+  {- Putting these together as in the informal reasoning from earlier;
+     namely, “(0)”, f ∘ Op X ≈ Op Y ∘ f, from earlier.
+  -}
+
+  .transport : ∀ {x} → extract₂ (𝑭 x) ≡ f (extract₁ x)
+  transport = commute counit f
+
+  {-
+       𝑭-pres
+    ⇒  𝑭 ∘ Op 𝒳  ≐ᵢ  Op 𝒴 ∘ 𝑭
+    ⇒  extract₂ ∘ 𝑭 ∘ Op 𝒳  ≐ᵢ  extract₂ ∘ Op 𝒴 ∘ 𝑭
+    ⇒  f ∘ extract₁ ∘ Op 𝒳  ≐ᵢ  extract₂ ∘ Op 𝒴 ∘ 𝑭       (Z)
+
+    Hmm...call this (Z) and let's see what we get:
+       𝑭 ∘ Op 𝒳  ≐ᵢ  Op 𝒴 ∘ 𝑭
+    ⇒  Op 𝒴 ∘ 𝑭 ∘ Op 𝒳  ≐ᵢ  Op 𝒴 ∘ Op 𝒴 ∘ 𝑭
+    ⇒  𝑭 ∘ Op 𝒳 ∘ Op 𝒳  ≐ᵢ  Op 𝒴 ∘ Op 𝒴 ∘ 𝑭
+    ⇒  Op 𝒴 ∘ 𝑭 ∘ Op 𝒳 ∘ Op 𝒳  ≐ᵢ Op 𝒴 ∘ Op 𝒴 ∘ Op 𝒴 ∘ 𝑭
+    ⇒  𝑭 ∘ (Op 𝒳)³  ≐ᵢ (Op 𝒴)³ ∘ 𝑭
+  -}
+
+  opx : Carrier 𝒳 → X
+  opx = extract₁ ∘ Op 𝒳
+
+  formula-zero : extract₂ ∘ 𝑭 ∘ Op 𝒳  ≐ᵢ  extract₂ ∘ Op 𝒴 ∘ 𝑭
+  formula-zero {x} = let open ≡-Reasoning in
+    begin
+      {!!}
+    ≡⟨ {!!} ⟩
+      {!η counit!}
+    ∎
+
+{-
 Right : (ℓ : Level) → Functor (Sets ℓ) (Unarys ℓ)
 Right ℓ = record
-            { F₀ = λ A → MkUnary {!!} {!!}
-            ; F₁ = λ f → MkHom {!!} {!!}
-            ; identity = {!!}
-            ; homomorphism = {!!}
-            ; F-resp-≡ = {!!}
+            { F₀           = λ A → MkUnary (Maybe A) (const nothing) -- MkUnary A id
+            ; F₁           = λ f → MkHom (const nothing) refl -- λ f → MkHom f refl
+            ; identity     = {!!} -- λ _ → refl
+            ; homomorphism = {!!} -- λ _ → refl
+            ; F-resp-≡     = {!!} -- λ eq _ → eq
             }
 
 Adj : (ℓ : Level) → Adjunction (Forget ℓ) (Right ℓ)
 Adj ℓ = record
-  { unit = record { η = λ X → MkHom {!!} {!!}
-                  ; commute = λ { (MkHom mor₁ pres-op₁) x → {!!} } }
+  { unit = record { η = λ X → MkHom (const nothing) refl
+                  ; commute = λ { (MkHom mor₁ pres-op₁) x → refl } }
   ; counit = record { η = λ X x → {!!}
                     ; commute = λ f → {!!} }
   ; zig = {!!}
   ; zag = λ x → {!!}}
 
-NoRight : {ℓ : Level} → (CoFree : Functor (Sets ℓ) (Unarys ℓ)) → ¬ (Adjunction (Forget ℓ) CoFree)
-NoRight {ℓ} record { F₀ = F₀ ; F₁ = F₁ ; identity = identity ; homomorphism = homomorphism ; F-resp-≡ = F-resp-≡ } adj =
-  ⊥-elim (η (counit adj) ⊥ {!mor (η (unit adj) (F₀ ⊥))!})
-  where open Adjunction
-        open NaturalTransformation
+-}
 \end{code}
 %}}}
 % Quick Folding Instructions:

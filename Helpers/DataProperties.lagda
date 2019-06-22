@@ -18,6 +18,14 @@ open import Helpers.EqualityCombinators
 open import Data.Product public using (_×_; proj₁; proj₂; Σ; _,_; swap ; uncurry) renaming (map to _×₁_ ; <_,_> to ⟨_,_⟩)
 open import Data.Sum     public using (inj₁; inj₂; [_,_])  renaming (map to _⊎₁_)
 open import Data.Nat            using (ℕ; zero; suc)
+
+foldn : {ℓ : Level} {P : ℕ → Set ℓ}
+      → P zero
+      → (∀ {x} → P x → P (suc x))
+      →
+        (n : ℕ) → P n
+foldn {P = P} pz ps zero = pz
+foldn {P = P} pz ps (suc x) = ps (foldn {P = P} pz ps x)
 \end{code}
 
 \subsection*{Precedence Levels}

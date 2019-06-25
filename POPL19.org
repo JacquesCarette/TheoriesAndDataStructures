@@ -1,0 +1,1038 @@
+#+TITLE: Theories and Data Structures
+#+SUBTITLE: ---Draft---
+#+DESCRIPTION: Work done at McMaster University, 2019.
+#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+#+EMAIL: alhassy@gmail.com
+#+EMAIL: carette@mcmaster.ca
+#+OPTIONS: toc:nil d:nil
+#+PROPERTY: header-args :tangle no :comments link
+
+#+TODO: TODO | STARTED OLD  | DONE
+
+# Top level editorial comments.
+#+latex_header: \def\edcomm#1#2{ \fbox{\textbf{Comment: #1 }} \emph{#2} \fbox{\textbf{End Comment}}}
+
+# Use:  x vs.{{{null}}} y
+# This informs LaTeX not to put the normal space necessary after a period.
+#
+#+MACRO: null  @@latex:\null{}@@
+
+#+MACRO: edcomm  @@latex:\edcomm{$1}{$2}@@
+#
+# Warning: {{{edcomm(this, that)}}} cannot contain any commas in ‘this’ nor in ‘that’!
+
+* Preamble :ignore:
+
+# Top level editorial comments.
+#+LATEX: \def\edcomm#1#2{ \fbox{\textbf{Comment: #1 }} #2 \fbox{\textbf{End Comment}}}
+
+#+LATEX_HEADER: \usepackage[]{minted}
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize}
+# Removing the red box that appears in "minted" when using unicode.
+# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
+#
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
+#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+#+LATEX_HEADER: \makeatother
+
+#+LATEX_HEADER: \usepackage{multicol}
+#+NAME: parallel enviro
+#+BEGIN_EXPORT latex
+\renewenvironment{parallel}[1][2]
+ {
+  \setlength{\columnseprule}{2pt}
+  \begin{minipage}[t]{\linewidth}
+  \begin{multicols}{#1}
+ }
+ {
+ \setlength{\columnseprule}{0pt}
+  \end{multicols}
+  \end{minipage}
+ }
+#+END_EXPORT
+
+** LaTeX setup                                                      :ignore:
+# latex_class_options: [acmsmall,review,anonymous]
+#+LATEX_CLASS: acmart
+
+#+LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
+#+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
+#+LATEX_HEADER: \addbibresource{MyReferences.bib}
+
+#+LATEX_HEADER: \acmJournal{PACMPL}
+#+LATEX_HEADER: \acmVolume{1}
+#+LATEX_HEADER: \acmNumber{POPL}
+#+LATEX_HEADER: \acmArticle{1}
+#+LATEX_HEADER: \acmYear{2020}
+#+LATEX_HEADER: \acmMonth{1}
+#+LATEX_HEADER: \acmDOI{}
+#+LATEX_HEADER: \setcopyright{none}
+
+#+LATEX_HEADER: \usepackage{MyUnicodeSymbols}
+#+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+#+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
+#+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
+#+LATEX_HEADER: \newunicodechar{Γ}{\ensuremath{\Gamma}}
+#+LATEX_HEADER: \newunicodechar{Π}{\ensuremath{\Pi}}
+#+LATEX_HEADER: \newunicodechar{⟦}{\ensuremath{\llbracket}}
+#+LATEX_HEADER: \newunicodechar{⟧}{\ensuremath{\rrbracket}}
+#+LATEX_HEADER: \newunicodechar{Θ}{\ensuremath{\theta}}
+#+LATEX_HEADER: \newunicodechar{∎}{\ensuremath{\qedsymbol}}
+#+LATEX_HEADER: \newunicodechar{′}{'}
+#+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}}
+#+LATEX_HEADER: \newunicodechar{⦃}{\ensuremath{ \{\{ }}  % this is not correct
+#+LATEX_HEADER: \newunicodechar{⦄}{\ensuremath{ \}\} }}   % this is not correct
+#+LATEX_HEADER: \newunicodechar{⊎}{\ensuremath{\cupdot}}  % should be in myunicode; go #regenerate# it!
+#+LATEX_HEADER: \def\with{\kern0.7em \withrule \kern0.7em }
+#+LATEX_HEADER: \def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
+#+LATEX_HEADER: \newunicodechar{❙}{\ensuremath{\mathop{\with}}}
+
+#+LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
+#+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+#+LATEX_HEADER: \definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
+#+LATEX_HEADER: \definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
+#+LATEX_HEADER: \definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
+#+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+
+#+NAME: symbols for itemisation environment
+#+BEGIN_EXPORT latex
+\def\labelitemi{$\diamond$}
+\def\labelitemii{$\circ$}
+\def\labelitemiii{$\star$}
+#+END_EXPORT
+
+# Having small-font code blocks.
+# LATEX_HEADER: \RequirePackage{fancyvrb}
+# LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+#+BEGIN_EXPORT latex
+\author{Musa Al-hassy}
+\affiliation{
+  \institution{McMaster University}
+  \streetaddress{1280 Main St. W.}
+  \city{Hamilton}
+  \state{ON}
+  \postcode{L8S 4K1}
+  \country{Canada}}
+\email{alhassym@mcmaster.ca}
+\author{Jacques Carette}
+\author{Wolfram Kahl}
+#+END_EXPORT
+
+** COMMENT acmart Emacs setup
+#+NAME: make-acmart-class
+#+BEGIN_SRC emacs-lisp :results none
+(with-eval-after-load "ox-latex"
+   (add-to-list 'org-latex-classes
+        '("acmart" "\\documentclass{acmart}"
+          ("\\section{%s}" . "\\section*{%s}")
+          ("\\subsection{%s}" . "\\subsection*{%s}")
+          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
+* Abstract :ignore:
+
+  #+begin_center
+  *Abstract*
+  #+end_center
+  #+begin_small
+  The ubiquitous data structures found in computing are accompanied by a core interface
+  for their manipulation. Irrespective of the language, this core interface arises naturally.
+
+  With a bit of elementary mathematics, we demonstrate that this is no accident: Data structures
+  provide abstract syntax trees corresponding to meaningful conceptual theories and the coherency of the
+  interface is nothing more than the structure abiding by the laws of the theory.
+  #+end_small
+
+* Introduction
+
+  Our story begins with abstract syntax trees.
+
+  Programmers write code, which they may want to execute remotely and so they serialise it
+  in a coherent format, transmit it, then have it re-interpreted as meaningful code and executed.
+  We will demonstrate some concepts in an ambient language, discuss what it means for them to be coherent,
+  show that their associated ‘free’ structures provide a means to serialise them, then demonstrate that
+  the proof obligations for ‘free’ necessitate an interpretation, or compilation, function.
+
+  The essence of our exposition is the adjunction, which requires understanding naturality, functoriality,
+  and categories. In section 2, we review these basic concepts to make this work accessible; then we illustrate the process of obtaining data structures from theories by considering adjunctions.
+  Section 3 demonstrates this process by obtaining concepts such as for-loops from pointed unary theories
+  and section 4 demonstrates how linked-lists and their interface are obtained from the theory of monoids.
+  Finally, section 5 concludes by providing a tabulation of a number of theories and their corresponding
+  data structures.
+
+  Our exposition will be informal for brevity and accessibility, however the fact that the proof obligations
+  /forced/ the common interfaces to arise was due to exploration in mechanising theories in the proof assistant Agda,
+  which did not allow us to elide any “trivial details”. The full details of the theories mentioned in section 5
+  can be found at: https://github.com/JacquesCarette/TheoriesAndDataStructures
+
+* Compositionality Schemes
+
+  ‘Stepwise refinement’ is the idea that programming beings with the
+  empty, or do-nothing, program ~skip~ then new programs ~S ⨾ T~ are formed
+  by sequencing other programs together. Moreover, sequencing is associative
+  ---that is, ~(S ⨾ T) ⨾ R = S ⨾ (T ⨾ R)~--- and so languages, such as C or Python, do not require parentheses.
+  This is an instance of a /monoid/, which is a structure that consists of a collection called the ~Carrier~
+  and operation ~_⨾_ : Carrier → Carrier → Carrier~ which is associative and has a no-op identity ~Id : Carrier~.
+
+  In strongly typed languages we cannot just sequence arbitrary programs as we would in, say,
+  Python, only to obtain an incompatibility error at runtime. Instead, we would like to be able
+  to discuss sequencing ‘well-typed’ programs. This naturally gives rise to /categories/, which
+  consist of a collection called ~Objects~ ---the ‘types’ of the language--- and for each
+  objects ~A, B~ a collection ~A ⟶ B~ of “ morphisms, programs, from ~A~ to ~B~ ”
+  ---sometimes also denoted ~Hom A B~--- such that compatible morphisms can be composed to yield
+  new morphisms by means of an operation ~_⨾_ : ∀{A B C} → (A ⟶ B) → (B ⟶ C) → (A ⟶ C)~
+  which is associative and has a no-op identity ~Id : ∀{A} → A ⟶ A~.
+  We are using a long arrow ‘⟶’ to refer to morphisms, programs, of a category and
+  a short arrow ‘→’ to refer to usual function typing.
+
+  #+begin_quote
+  Slogan 0: Monoids model untyped programming, categories model typed programming.
+  #+end_quote
+
+  A common task for a programmer is to make inferences about large data sets.
+  One begins with an empty database then aggregates data ---here's a monoid!
+  Does it matter /when/ inferences are made? If we have no data, then we should be able
+  to make no new, useful, inference. If we have we have two data-sets $x$ and $y$,
+  we may aggregate them to produce a new data-set ~x ⨾ y~ from which we may make an
+  inference ~𝑰(x ⨾ y)~. If we have multiple people working together, it may be ideal
+  to make inferences ~𝑰 x~ and ~𝑰 y~ in ‘parallel’ then combine the inferences together
+  to obtain a new inference ~𝑰 x ⨾′ 𝑰 y~. Of-course, we would like these different approaches
+  to yield the same results, which they may not. In the case they do, we say
+  ~𝑰 : DataSets → Inferences~ is a /(homo)morphism/.
+
+  As ‘(homo)morphism’, the name of structure-preserving operations between monoids, suggests,
+  we have a category whose objects consist of monoids! Formally, a morphism of monoids
+  ~𝑰 : M ⟶ N~ is a function ~Carrier M → Carrier N~ that sends ~Id M~ to ~Id N~ and
+  distributes over composition in ~M~ to obtain composition in ~N~.
+
+  The typed analogue of homomorphism is called a ‘functor’.
+  A functor ~F = (F₀, F₁) : 𝓒 ⟶ 𝒟~ between categories is a homomorphism ---in that it must preserve
+  the identities and the compositional structure--- and it must also preserve the typing:
+  If ~f : A ⟶ B~ in 𝒞, then ~F₁ f : F₀ A ⟶ F₀ B~ in 𝒟. For example, if 𝓒 were Haskell
+  and 𝒞 where C, and ~F₀~ was an assignment of Haskell types to C types, then ~F₁~ must
+  preserve typing in that the type of a transformed program ~F₁ f~ is obtainable from
+  the type of the original program ~f~. It is traditional to drop the subscripts and refer
+  to ~F₀, F₁~ simply by ~F~ ---contextual inference eliminates any ambiguity.
+
+  Since categories have nebulous objects, functors also act as a means to endow
+  objects with structure. For example, pairs of integers are just integers under
+  the “pairs of” operation. More formally, let ~Bin₀ A = A × A = { (x, y) | x, y ∈ A }~
+  and ~Bin₁ f (x, y) = (f x, f y)~.
+  Since ~Bin₁ id (x, y) = (id x, id y) = (x , y) = id (x, y)~
+  and ~Bin₁ (f ⨾ g) (x, y) = ( g (f x), g (f y) ) = (Bin₁ f ⨾ Bin g) (x, y)~,
+  one easily finds ~Bin = (Bin₀, Bin₁)~ to be a functor that forms pairs.
+  The operation of forming pairs in general, for any ~A~ and ~B~,~ is a bifunctor
+  denoted “×”, with no subscripts as in ~A × B~ and ~f × g~.
+  Likewise, lists of characters are just characters under the “lists of” operation.
+  We encourage the reader to formalise the lists functor and check that it, and the pairs functor,
+  indeed satisfy the functor laws.
+
+  #+begin_quote
+  Slogan 1: Homomorphisms are structure-preserving operations, functors are homomorphisms
+  that also preserve typing. Moreover, functors are structure.
+  #+end_quote
+
+  Any general programming language worth its name would support a form of polymorphism
+  ---the ability to declare a cookie-cutter recipe applicable to a family of different types.
+  Monoids no longer provide for such an abstraction ---they have no notion of types, how could they!
+  Consider the doubling functions:
+  #+BEGIN_SRC haskell
+  dupInt : Int → Int × Int
+  dupInt x = (x , x)
+
+  dupChar : Char → Char × Char
+  dupChar c = (c, c)
+  #+END_SRC
+  We are forced to repeat the definition for each type we are interested in.
+  Polymorphic functions remedy this shortcoming by allowing a
+  /write once, use many/ approach:
+  #+BEGIN_SRC haskell
+  {- A natural transformation from the identity functor to the pairing functor -}
+  dup : ∀{A} → A → A × A
+  dup a = (a , a)
+  #+END_SRC
+  When such a function makes /no dependence on A/, we say that it is
+  /parametric polymorphic/ and that it comes with an optimisation law
+  known as ‘naturality’: For any operation ~f~ we have ~(f × f) ∘ dup  = dup ∘ f~.
+  Less cryptically, this says that expressions of the form
+  ~let (x, y) = dup a; (x′, y′) = (f x, f y) in ⋯~
+  may be replaced with the ~let a′ = f a; (x′ , y′) = dup a′ in ⋯~.
+  However, polymorphism does not always come in this form; for example,
+  languages such as ~C#~ which allow type inspection would allow us to form
+  the following polymorphic method which is not natural:
+  #+BEGIN_SRC haskell
+  first : ∀{A} → A × A → A
+  first {A} (x, y) = if A is Int then 0 else x
+  #+END_SRC
+
+  A /natural transformation/ is a family ~η : ∀{A} : F A ⟶ G A~
+  of morphisms such that for any $f : A ⟶ B$ we have $F f ⨾ η_B = η_A ⨾ G f$.
+  If one thinks of ~F~ and ~G~ as structures or formats, then ~η~ is tantamount to uniform restructuring.
+  Less cryptically, the constraint says that the ways to ‘rename’, ‘relabel’, ‘transform’ ~F A~ to ~G B~
+  using any ~f~, are identical: We may rename by operating over the F-structure then reorganise using $η$,
+  or reorganise using $η$ first then rename by operating over the resulting G-structure.
+
+  The reader is encouraged at this point to find an ~f : A → B~ showing
+  that ~first~ above fails to be a natural transformation.
+
+  #+begin_quote
+  Slogan 2: Functors are structures and natural transformations are uniform restructuring schemes.
+  #+end_quote
+
+  A program ~A ⟶ B~ can be thought of as the careful manipulation of ~A~-data to yield ~B~-data.
+  When ~A~ and ~B~ are different representations of the same data, the operation is invertible.
+  Just as categories model typed programming languages, the notion of non-lossy protocols
+  is modelled by the concept of /isomorphism/. An isomorphism, denoted ~A ≅ B~,
+  is a pair of morphisms ~f : A ⟶ B~ and ~g : B ⟶ A~ that “undo” each other: ~f ⨾ g = Id = g ⨾ f~.
+  More concretely, this condition becomes:
+  \[
+  \forall a, b \bullet\qquad f\, a = b \quad\equiv\quad a = g\, b
+  \]
+  More often than nought, programs ~A ⟶ B~ are not invertible but do have a /best approximate inverse/.
+  One writes $f ⊣ g$ to indicate this relationship. When there are notions of ‘approximation’,
+  denoted ‘≤’, the constraint becomes:
+  \[
+  \forall a, b \bullet\qquad f\, a ≤_B b \quad\equiv\quad a ≤_A g\, b
+  \]
+  Strict equalties have been replaced with approximations instead.
+
+  For example, the injection $ℤ ↪ ℝ$ and the ~dup~-lication function
+  from earlier have no inverse. However, they do have best approximate inverses:
+  \begin{align*}
+     & ⌈r⌉ ≤_ℤ n \quad\equiv\quad r ≤_ℝ n
+  \\ & x ↑ y ≤_ℝ z \quad\equiv\quad (x, y) ≤_{ℝ × ℝ} \mathsf{dup}\, z
+  \\ & p ∧ q ⇒ r \quad\equiv\quad (p ⇒ r) ∧ (q ⇒ r) \text{ i.e., } (p, q) ⇒_{𝔹 × 𝔹} \mathsf{dup}\, r
+  \end{align*}
+
+  + The ceiling $⌈r⌉$ of a number is the largest /whole/ number that is approximated by $r$:
+    0. It is a whole number, $⌈\_{}⌉ : ℝ → ℤ$.
+    1. It is approximated by $r$: Taking $n ≔ ⌈r⌉$ in the characterisation yields
+      $r ≤ ⌈r⌉$.
+    2. If $r$ approximates another number, say $n$, then $⌈r⌉$ approximates it too!
+       This is just the ‘⇐’ reading of the characterisation.
+  + The maximum x↑y is the largest /single/ number that is approximated by both /x/ and /y/.
+  + The conjunction $p ∧ q$ is the largest /single/ Boolean approximating both Booleans $p$ and $q$.
+
+  Generalising on the duplication example, the reader is encouraged to verify $\sup ⊣ K$,
+  where the constant function $K : ℝ → (ℝ → ℝ)$ takes an element $z$ to the function $(K z) x = z$
+  and $\sup : (ℝ → ℝ) → ℝ$ takes a function $f$ to its supremum $\sup f$.
+
+  #+begin_quote
+  Slogan 3: For familiar or simple $g$, one can find useful or complex $f$ with ~f ⊣ g~.
+  #+end_quote
+
+  For two types ~A~ and ~B~, there may be a number of ways that one “approximates” the other.
+  In a category, we may simply say any morphism ~f : A ⟶ B~ witnesses such an approximation.
+  With this in-hand, the previous formulation lifts to the categorical setting as follows.
+  For functors ~L : 𝒞 ⟶ 𝒟 : R~, one says that /L is adjoint to R/, denoted ~L ⊣ R~, when
+  there is an isomorphism, as follows, natural in ~A, B~.
+  \[
+  \forall A, B \bullet\qquad L\, A ⟶_𝒟 B \quad\equiv\quad A ≤_𝒞 R\, B
+  \]
+
+  This formulation is terse and easily motivated from the simpler setting,
+  however for verification purposes it is a bit difficult to work with.
+  There is a more ‘local’ formulation.
+
+  An /adjunction/ $L ⊣ R$ consists of two (not necessarily natural!) transformations
+  $η : Id → RL$ and $ε : LR → Id$ such that
+  \[
+  \forall f, g \bullet\qquad f = η ⨾ R\, g \quad\equiv\quad L\, f ⨾ ε = g
+  \]
+   Recall that we may construe functors $F$ as structure, then
+   maps $X → F X$ provide ways to produce structured elements and so are
+   referred to as /F-algebras/./ In particular, transformations $X → F X$ may be
+   thought of as injecting or “boxing up” elements with a trivial F-structure
+   whereas transformations $F X → X$ can be thought of as “compiling down”
+   the structure to obtain a concrete value.
+
+   With such a terminology, the above characterisation reads:
+   /Each L-algebra g is uniquely determined ---as an L-map followed by an ε-reduction---
+   by its restriction to the unit η./ Later in the setting of monoids and lists,
+   this becomes: List homomorphisms are uniquely determined, as a map followed by a
+   reduce, by their restriction to the singleton lists.
+
+   It can be shown that the transformations are actually natural.
+   As such, a more local formulation of $L ⊣ R$ consists of a pair of natural
+   transformations $η : Id → RL$ and $ε : LR → Id$ such that the “zig-zag” laws
+   holds: $Id = η ⨾ Rε$ and $Id = Lη ⨾ ε$. This is the formulation we shall follow
+   in the remainder of the exposition.
+
+   The remainder of the exposition moves slogan 3 from primitive types to the
+   more complex types that programmers are generally interested in.
+   We begin with simple theories, form the forgetful functor $R$, then seek
+   to find the free functor $L$. In the process of establishing the adjunction $L ⊣ R$
+   we are forced to construct the following tool-kit:
+
+   + Type Constructor ::
+        We have a type constructor $L$ that furnishes raw types with structure.
+   + Map ::
+        Functions $A → B$ can be lifted to work on L-structures
+        yielding maps $L\, A → L\, B$. In database/C# settings, this is known as
+        ~select~. Moreover, this operation is a homomorphism. In Haskell notation,
+     - ~map id = id~
+     - ~map (f ⨾ g) = map f ⨾ map g~
+   + Wrap :: We obtain a way η to construe raw data as having ‘singleton’ structure.
+   + Interpreter :: We obtain a way ε to (recursively) “fold” over a structured
+                    value to obtain a single value.
+
+                    Moreover, the zig-zag laws ensure that forming a singleton
+                    then reducing it is a no-op, as expected.
+
+* DynamicalSystems ---Pointed Unary Theories
+
+  A /pointed unary theory/ consists of a type, a default value of that type,
+  and an operation on that type. Think of a box with a screen displaying
+  the current state and a button that alters the state.
+  Since such basic computing automata are an instance of such a theory
+  and there is no standard name for the theory's operation, we shall
+  refer to the operation as the “next operation” since it provides a next value
+  in the type. Moreover, we may also refer to these theories as “dynamical systems”
+  since they mimic automata.
+
+  Nearly any useful data-structure is an instance of this interface.
+  As such, two simple examples more than suffice.
+  + The naturals numbers ℕ with starting state 0 and next operation
+    being the successor function.
+  + The automata with state space ~{even, odd}~, starting state ~even~, and next operation
+    ~even ↦ odd ↦ even~. Consequently, the induced finite-state machine,
+    ~foldl (const next) start xs~,
+    informs us whether a string input ~xs~ has even or odd length.
+
+#+latex: \def\next{\mathsf{next}}
+
+ If we wish to take dynamical systems to be the objects of a category, call it 𝒟𝒮,
+ we must form a notion of homomorphism. The obvious thing to do is to say a
+ homomorphism $h : X ⟶ Y$
+ is a function between the state spaces that preserves the point
+ ---i.e., it sends the default point of $X$ to the default point of /Y/---
+ and it commutes with the ‘next’ operation: $∀ x •\; h(\next_X\, x) = \next_Y (h\, x)$.
+ It is then a simple exercise to show that the identity function is a homomorphism
+ and the functional composition of homomorphisms results in a homomorphism.
+
+ Let $ℛ : 𝒟𝒮 → 𝒮ℯ𝓉$ be the function that yields the underlying state space of
+ a dynamical system. In particular, on objects it ‘forgets’ the default point and the
+ next operation, simply yielding a set. On homomorphisms, it forgets the
+ structural-preservation proofs and simply yields a function on sets.
+ This is our “forgetful” functor.
+
+ How do we form a “free functor” $ℒ : 𝒮ℯ𝓉 → 𝒟𝒮$?
+ We could serialise programs over dynamical systems by simply keeping track of the
+ constructors for the default element and the next operation. Then we could interpret,
+ execute, or run such a program later provided we have a way dyanmical system in hand.
+ Whence, we consider forming /terms/ over dynamical systems:
+#+BEGIN_SRC haskell
+  {- Dynamic system terms over a variable set A. -}
+  data Term (A : Set) where
+    {- variables are terms -}
+    inject  : A → Term A
+    {- Function “names” applied to terms are again terms -}
+    default : Term A
+    next    : Term A → Term A
+#+END_SRC
+ Let's provide a more informative renaming:
+#+BEGIN_SRC haskell
+data Possibly (A : Set) where
+  never  : Possibly A
+  now    : A → Possibly A
+  later  : Possibly A → Possibly A
+#+END_SRC
+Well that is definitely interesting; it seems we have stumbled upon a modal-like
+data-structure. A value of type ~Possibly A~ may ~never~ be obtained, or it can be
+obtained ~now x~ or it is deferred to a later time ~later p~.
+By traversing such abstract syntax trees and altering elements as one sees them,
+we obtain a ~map~ operation that makes this type into a functor, call it ℒ.
+Moreover, for each type ~A~ this functor yields a dynamical system
+~(Possibly A, never, later)~.
+
+We are nearly done with our analysis of pointed unary theories.
+To show that $ℒ ⊣ ℛ$, we need embedding and evaluation polymorphic functions.
+#+BEGIN_SRC haskell
+η : ∀ {D} → D → Possibly (States D)  {- ≈  Id D → ℒ (ℛ D)  -}
+η = now
+
+ε : ∀ {D} → Possibly D → States D    {- ≈ ℛ (ℒ D) → Id D -}
+ε {D} never      =  default D
+ε {D} (now d)    =  d
+ε {D} (later pd) =  next D (ε pd)
+#+END_SRC
+Since no type inspection is performed, there are easily shown to be natural
+transformation. The zig-zag laws are equally trivial.
+
+The type ~Possibly A~ consists of dynamical system terms /over/ the ‘variable set’ ~A~.
+What if we considered closed terms; i.e., omitting variables altogether.
+Then the injection ~now~ can never be invoked and so may be removed; along with
+renaming the other constructors we obtain:
+#+BEGIN_SRC haskell
+data 𝒩 where
+  zero : 𝒩
+  succ : 𝒩 → 𝒩
+#+END_SRC
+It seems that the natural numbers were not just an instance of dynamical systems
+but rather were canonically so: This type contains the minimum to be considered
+a dynamical system! There is the carrier state space 𝓝, the default ~zero~, and
+the next operation ~succ~. Moreover, its relationship to other dynamical systems
+is that it is “initial”: There is a homomorphism from it to any other dynamical system,
+as follows.
+#+BEGIN_SRC haskell
+{- Essentially: succⁿ zero ↦ nextⁿ(default D) -}
+for-loop : ∀ {D} → 𝒩 → States D
+for-loop {D} zero     =  default D
+for-loop {D} (succ n) =  next D (for-loop)
+#+END_SRC
+
+Perhaps the last thing we would have expected would have been for the humble C-style
+for-loop to appear.
+
+In summary, by looking at the free structures of pointed unary theories we have obtained:
+0. the ~Possibly~ data type, which is functorial;
+1. ways to serialise programs over dynamical systems and evaluate them;
+2. the natural numbers;
+3. the for-loop.
+
+* Lists ---Monoidal Theories
+
+  Unsurprising monoids along with monoid homomorphisms also form a category,
+  call it ℳℴ𝓃.
+
+  Let $ℛ : ℳℴ𝓃 ⟶ 𝒮ℯ𝓉$ be the functor that forgets the structure
+  ---the composition operator and the no-op element--- to yield a set.
+  On morphisms, it forgets the proofs to yield a function on sets.
+  This is our forgetful functor.
+
+  As we mentioned earlier, to find the free structure associated with this
+  theory we turn to terms over the theory:
+#+BEGIN_SRC haskell
+{- Monoidal terms over ‘variables’ A -}
+data Term (A : Set) where
+  {- Variables are terms -}
+  inj  : A → Term A
+  {- Function “names” applied to terms are terms. -}
+  Id   : Term A
+  _⨾_  : Term A → Term A → Term A
+#+END_SRC
+  The pointed unary setting was lawless, whereas monoids have laws
+  stating how the pieces interact: Composition is associative with unit the no-op.
+  In particular, ~inj x ⨾ Id = inj x~  /should/ hold but it does not.
+  This issue is the lack of canonicity: There are multiple forms for items that should be identical.
+
+  If we view the monoid laws as rewrite rules, then it suffices to consider
+  a type of only normal forms and have arbitrary terms rewrite down to them.
+#+BEGIN_SRC haskell
+ Id ⨾ t      ↦  t
+ s  ; Id     ↦  s
+ (r ⨾ s) ⨾ t  ↦  r ⨾ (s ⨾ t)
+#+END_SRC
+ With these rewrites, an arbitrary term reduces to the form
+ ~inj x0 ⨾ (inj x1 ⨾ (inj x2 ⨾ (⋯ ⨾ inj xN)))~; this immediately suggests
+ the so-called “cons lists”: We force this right-parenthesising by
+ having the left be a raw element and the right be a complex element.
+#+BEGIN_SRC haskell
+data List (A : Set) where
+  []  : List A
+  _∷_ : A → List A → List A
+#+END_SRC
+
+ Had we use the associativity rule as a rewrite rule
+ the other way around, we would have obtained “snoc lists”, which are lists
+ with constant time access to the last element. Hence there are multiple
+ /presentations/ of canonical terms, it is enough to pick one and continue with that.
+ The composition operator is regained by rewriting down into the canonical form
+ ---by discarding units and parenthesising right-wards:
+#+BEGIN_SRC haskell
+_++_ : ∀ {A} → List A → List B
+[] ++ ys       = ys
+(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+#+END_SRC
+
+Walking along the pointers of a linked-list and altering values as we see them
+provides the ~map~ operation, which is also known as ~foreach~ loop in Java and imperative languages.
+It is easily seen to be functorial and so we have a functor, call it $ℒ : 𝒮ℯ𝓉 ⟶ ℳℴ𝓃$.
+
+In order to show that $ℒ ⊣ ℛ$, we need to formulate embedding and evaluation polymorphic functions.
+#+BEGIN_SRC haskell
+wrap : ∀ {M} → Carrier M → List (Carrier M)
+wrap m = m ∷ []
+
+fold : ∀ {M} → List (Carrier M) → Carrier M
+fold {M} []       = Id M
+fold {M} (x ∷ xs) = x ⨾ fold xs where _⨾_ = _⨾_ M
+#+END_SRC
+
+Notice that there is only one closed canonical term:
+If we take the variable set ~A~ to be empty, we can never invoke the ~_∷_~ constructor
+and so only have the one value ~[]~. If we instead consider the free structure over
+a /singleton/ set, taking ~A~ to have one irrelevant value, and renaming, yields the naturals again:
+#+BEGIN_SRC haskell
+{- 𝒩 ≅ List ⊤ -}
+data 𝒩 : Set where
+  zero : 𝒩
+  succ : 𝒩 → 𝒩
+#+END_SRC
+
+In summary, by considering the free structure associated with the most ubiquitous form
+of composition we obtained:
+
+1. The linked-list data-structures, forwards with cons and backwards with snoc;
+2. The ~map~, or “foreach”, looping construct; along with its optimisation laws:
+   ~map id = id~ and ~map (f ⨾ g) = map f ⨾ map g~;
+3. The helpful ~wrap~ function that embeds a type into the assocaited type of lists;
+4. The fold recursion scheme, which is essentially looping.
+5. The adjunction property is tantamount to:
+   List homomorphisms are uniquely determined, as a map followed by a
+   reduce, by their restriction to the singleton lists.
+
+All this from the tiny theory of monoids!
+
+* DataStructures ⊣ Theories
+
+Our [[https://github.com/JacquesCarette/TheoriesAndDataStructures][repository]] contains many worked out details of how simple theories give rise to
+interesting or common data-structures. The previous two sections demonstrated the
+general process, when possible, and there is little to be gained by such repetition.
+Instead we shall settle for a listing of results followed by remarks about some
+theories that gave us unexpected trouble.
+
++ Two Sorted :: A two sorted theory consists of just two types and nothing more.
+
+                There are two forgetful functors, depending on which sort is kept.
+                The free structure is then to keep the current sort and declare the
+                new other sort to be empty.
+
+                Interestingly, another way to ‘forget’ the two sorts is to produce
+                the Cartesian product, which is a single type. This gives rise to
+                the pairing “×” functor, whose left adjoint is then the duplication
+                functor ---c.f., ~dup~ from earlier. Surprisingly, duplication,
+                denote it by Δ, itself has left-adjoint: If we think of ~ΔA~ as
+                ‘forgetting’ we had a single type and instead thinking we have two
+                types, then given any two types, the free single type is obtained
+                from their disjoint union.
+
+                Whence, ⊎ ⊣ Δ ⊣ ×.
+
+                Notable programming combinators:
+                - Records from products;
+                - Projections and structural maps over products;
+                - Enumerations from disjoint sums;
+                - injections and structural maps over sums;
+                - duplication combinators and optimisation laws
+                  from naturality conditions.
+
++ Relations :: A /heterogenous relation/ is essentially a binary predicate.
+
+               There are at least two forgetful functors to 𝒮ℯ𝓉, depending on whether
+               we keep the source or the target of the relation. The free structures
+               are, surprisingly, the empty relations.
+
+               Upon further reflection, this is rather reasonable.
+               A relation is essentially a graph and if we are given a set of vertices,
+               then the smallest graph that contains such a set must be the empty graph
+               on that vertex set.
+
++ Pointed :: A pointed theory consists of a type along with a single elected point.
+
+             These model types with default values, as in the case in C#.
+
+             The forgetful functor is obtained by dropping the point.
+             The free structure is obtained by adjoining a type with a new
+             formal element, sometimes called ~null~.
+
+             Notable programming combinators:
+             + Nullable types;
+             + the Maybe monad
+
++ Unary ::  A unary theory is a type along with a single unary function on it.
+
+            Dropping the function gives us a forgetful functor, whereas the free
+            structure gives us a modal-like data-structure:
+            #+BEGIN_SRC haskell
+            data Eventually (A : Set) where
+              now   : A → Eventually A
+              later : Eventually A → Eventually A
+            #+END_SRC
+            This type appears silently in the form of ~A~ values tagged by natural
+            numbers, since ~Eventually A ≅ A × ℕ~. It gives us a structure for indicating
+            “how many (delayed) steps” were needed before we obtained a value.
+
+            Notable programming combinators:
+            + A novel modal-like type;
+            + The evaluator is iteration, ~laterⁿ (now a) ↦ fⁿ a~, along with
+              an array of useful utility properties required for the proof obligations.
+
++ Involutive :: An involutive theory consists of a type along with a unary function ~f~
+                on that type such ~f ∘ f = id~.
+
+                Keeping only the type gives us a forgetful functor.
+                The free structure is obtained by tagging elements with Booleans
+                ---the involution then becomes negating the Boolean tag.
+
+                Interestingly, there are /two adjunction proofs/ corresponding to
+                whether we embed elements by tagging them with ‘true’ or with ‘false’.
+
+                Notable programming combinators:
+                + The Booleans;
+                + Boolean negation to swap the tag;
+                + ~map~ that works on the elements, regardless of the tag.
+
++ Indexed Unary :: An indexed unary theory consists of a sort along with an indexed family
+                   of operations on it: There is a type ~Carrier~ and an indexing type ~I~
+                   and a family of “actions” ~Op : {i : I} → Carrier → Carrier~.
+
+                   These model weak forms of automata.
+
+                   Keeping only the carrier set yields a forgetful functor.
+                   The free structure on ~A~ is obtained by using ~NonEmptyLists A~ as
+                   the carrier and ~A~ as the index set, with list concatenation as the
+                   family of operators: For each ~a : A~, we have an action ~a ∷_~.
+
+                   Notable programming combinators:
+                   + Fold is a homomorphism from lists from the index set to an indexed
+                     unary theory, over the same index set.
+                   + Non-empty lists.
+
++ Magma  :: A magma is just a sort along with a binary operation.
+
+            Dropping the operation yields a forgetful functor.
+            The data type of binary trees provides a free structure.
+
+            Notable programming combinators:
+            + Binary tree data structure;
+            + Recursion schemes over binary trees;
+            + Many coherency laws on how the recursion schemes interact with one another.
+
++ N-ary :: For given natural number $N$, an /N/-ary theory consists of a type along with
+           an endo-operation of $N$ arguments.
+
+           Dropping the operation yields a forgetful functor, whereas
+           a free structure is obtained by rose trees.
+
++ Semigroup :: A semigroup consists of a sort and an associative binary operation.
+
+               Keeping only the carrier sort yields a forgetful operation,
+               the type of non-empty lists provides a free structure.
+
+               # There is no free functor from mamgmas to semigroups:
+               # Non-associative operations do not ‘extend’ to associative ones!
+               #
+
+            Notable programming combinators:
+            + Non empty lists data structure;
+            + Catenation of non-empty lists, along with associativity proof;
+            + Recursion schemes;
+
+
++ Monoid :: A monoid consists is a semigroup with a point that acts as the operation's unit.
+            Keeping only the carrier yields a forgetful operation,
+            whereas linked-lists provide a free structure.
+
++ Bag :: This is a monoid with the additional law that compositional order does not matter.
+
+         Keeping only the carrier yields a forgetful operation,
+         but there is no free structure in a constructive setting.
+
+         Viewing the bag axioms as rewrite rules does not yield canonical forms;
+         in particular the commutativity axioms provides a rule ~l ⨾ r ↦ r ⨾ l~ that
+         can be applied infinitely often.
+
+In classical, non-constructive settings, bags and other theories admit free constructions:
+One simply forms the terms over the theory than quotients by the equivalence relation
+induced from the axioms. However, in computing, we want to be able to actually manipulate
+particular data-values rather than consider nebulous equivalence classes.
+It seems the leap is not that large, with /decidable equality/ in hand, we can form
+a free structure for bags ---but we're no longer in 𝒮ℯ𝓉 and so no longer in the traditional domain of computing.
+
+* TODO COMMENT OLD Abstract                                          :ignore:
+:PROPERTIES:
+:CUSTOM_ID: abstract
+:END:
+
+# Use:  x vs.{{{null}}} ys
+# This informs LaTeX not to put the normal space necessary after a period.
+#
+#+MACRO: null  @@latex:\null{}@@
+
+#+begin_abstract
+
+*placeholder* We give a rational reconstruction of some common (and
+not-so-common) data-structures that arise in functional
+programming. Our categorical approach also leads us to defining
+standard functions which ought to be in all reasonable libraries of
+data-structures. Being systematic in the exploration of the design
+space reveals quite a lot of structure and information about
+data-structures and their origins.
+
+#+begin_center org
+#+begin_small
+---Source: https://github.com/JacquesCarette/TheoriesAndDataStructures---
+#+end_small
+#+end_center
+#+end_abstract
+
+* STARTED COMMENT Introduction
+
+It is relatively well-known in functional programming folklore that lists and monoids
+are somewhow related. With a little prodding, most functional programmers will recall
+(or reconstruct) that lists are, in fact, an instance of a monoid. But when asked if there
+is a deeper relation, fewer are able to conjure up ``free
+monoid''. Fewer still would be able formally prove this relation, in
+other words, to actually fill in all the parts
+that make up the adjunction between the forgetful functor from the category of monoids (and
+monoid homomorphisms) and the category of types (and functions) and
+the free monoid functor. To do so in full detail is, however, quite
+informative --- and we will proceed to do so below.
+{{{edcomm(MA, It is important to mention that this has been worked out in numerous
+other writings. That this is not the prime novelty of the work. E.g.; when
+a library claims to support X does it actually provide the necessaity ‘kit’ that
+that X /intersincly/ comes with?
+)}}}
+
+So as to never be able to cheat, cut corners, etc, we will do all of
+our work in Agda, with this document[fn:1]
+being literate (and, in fact, written in ultra-literate style via org-mode).
+But when we do, something interesting happens: we are forced to write
+some rather useful functions over lists. Somehow ~map~,
+~_++_~ and ~fold~ are all /required/.
+
+But is this somehow a fluke? Of course not! So, what happens when we
+try to explore this relationship?
+
+A programmer's instinct might be to start poking around various
+data-structures to try and see which also give rise to a similar
+relation. This is a rather difficult task: not all of them arise this
+way. Instead, we start from the opposite end: systematically write
+down ``simple'' theories, and look at what pops out of the
+requirements of having a ``left adjoint to the forgetful
+functor''. This turns out to be very fruitful, and the approach we
+will take here.
+
+Naturally, we are far from the first to look at this. {{{edcomm(JC, Fill
+in the related work here. From Universal Algebra through to many
+papers of Hinze, Gibbons, etc)}}}. In other words, the \emph{theory}
+behind what we'll be talking about here is well known.
+
+So why bother? Because, in practice, there is just as much beauty in
+the details as there was in the theory! By \emph{systematically} going
+through simple theories, we will create a dictionary between theories
+and a host of useful data-structures. Many of which do not in fact
+exist in the standard libraries of common (and uncommon) functional
+languages. And even when they do exist, all the ``kit'' that is derived
+from the theory is not uniformly provided.
+
+Along the way, we meet several roadblocks, some of which are rather
+surprising, as results from the (theory) literature tell us that there
+really ought to be no problems there. Only when we dig deeper do we
+understand what is going on: classical mathematics is not
+constructive! So even when type theorists were busy translating
+results for use in functional programming, by not actually proving
+their results in a purely constructive meta-theory, they did not
+notice these roadblocks. {{{edcomm(MA, Nice!)}}}
+Surmounting these problems will highlight how
+different axioms, via their \emph{shape}, will naturally give rise to
+data-structures easily implementable with inductive types, and which
+require much more machinery.
+
+In short, our contributions:
+- a systematic exploration of the space of simple theories
+- giving a complete dictionary
+- highlighting the ``kit'' that arises from fully deriving all the
+  adjunctions
+- a survey of which languages' standard library offers what structures
+  (and what kit)
+
+* TODO COMMENT Monoids and lists
+
+\edcomm{JC}{Give the full details}
+
+#+BEGIN_SRC haskell
+module POPL19 where
+
+open import Helpers.DataProperties
+
+open import Function using (_∘_)
+open import Data.Nat
+open import Data.Fin  as Fin hiding (_+_)
+open import Data.Vec as Vec hiding (map)
+open import Relation.Binary.PropositionalEquality
+#+END_SRC
+
+* TODO COMMENT Exploring simple theories
+\edcomm{JC}{Not fully sure how to go about this, while staying
+leisurely}
+
+* TODO COMMENT Trouble in paradise
+Commutative Monoid, idempotence, and so on.
+
+* TODO COMMENT Survey of implementations
+
+* TODO COMMENT We want to be systematic about
+
++ Exploring Magma-based theories :: see
+    https://en.wikipedia.org/wiki/Magma_(algebra)
+   where we want to at least explore all the properties that are
+   affine.  These are interesting things said at
+    https://en.wikipedia.org/wiki/Category_of_magmas which should be
+   better understood.
+
++ Pointed theories ::
+
+   There is not much to be said here. Although I guess 'contractible'
+   can be defined already here.
+
++  Pointed Magma theories ::
+
+   Interestingly, non-associative pointed Magma theories don't show up
+   in the nice summary above.
+   Of course, this is where Monoid belongs. But it is worth exploring
+   all of the combinations too.
+
++ unary theories ::
+
+   wikipedia sure doesn't spend much time on these (see
+   https://en.wikipedia.org/wiki/Algebraic_structure)
+   but there are some interesting ones, because if the unary operation
+   is 'f' things like
+   forall x. f (f x) = x
+   is *linear*, because x is used exactly once on each side. The
+   non-linearity of 'f' doesn't count (else associativity wouldn't work
+   either, as _*_ is used funnily there too).  So "iter 17 f x = x" is a
+   fine axiom here too. [iter is definable in the ground theory]
+
+   This is actually where things started, as 'involution' belongs here.
+
+    And is the first weird one.
+
++ Pointed unary theories :: E.g., the natural numbers
+
++ Pointer binary theories :: need to figure out which are expressible
+
++ more :: semiring, near-ring, etc. Need a sampling. But quasigroup
+  (with 3 operations!) would be neat to look at.
+
+
+Also, I think we want to explore
+- Free Theories
+- Initial Objects
+- Cofree Theories (when they exist)
+
+Then the potential 'future work' is huge. But that can be left for
+later. We want to have all the above rock solid first.
+
+* TODO COMMENT Relationship with 700 modules
+
+To make it a POPL paper, as well as related to your module work, it is
+also going to be worthwhile to notice and abstract the patterns. Such as
+generating induction principles and recursors.
+
+A slow-paced introduction to reflection in Agda: \\
+https://github.com/alhassy/gentle-intro-to-reflection
+
+* TODO COMMENT Timeline
+
+Regarding POPL: \\
+https://popl20.sigplan.org/track/POPL-2020-Research-Papers#POPL-2020-Call-for-Papers \\
+There is no explicit Pearl category, nor any mention of that style.
+Nevertheless, I think it's worth a shot, as I think by being systematic,
+we'll "grab" in a lot of things that are not usually considered part of
+one's basic toolkit.
+
+However, to have a chance, the technical content of the paper should be
+done by June 17th, and the rest of the time should be spent on the
+presentation of the material.  The bar is very high at POPL.
+
+* TODO COMMENT Task list items below
++ [X] JC start learning about org mode
+
++ [X] JC Figure out how to expand collapsed entries
+
++ [ ] JC See §4, first code block, of https://alhassy.github.io/init/ to setup ~:ignore:~ correctly on your machine.
+      - This may require you to look at sections 2.1 and 2.2.
+
+      This also shows you how to get ‘minted’ colouring.
+
++ [ ] JC Write introduction/outline
+
++ [ ] MA To read:
+  /From monoids to near-semirings: the essence of MonadPlus and Alternative/,
+     https://usuarios.fceia.unr.edu.ar/~mauro/pubs/FromMonoidstoNearsemirings.pdf.
+
+* DONE COMMENT Literate Agda in Org-mode
+
+  JC, for now, use “haskell” labelled src blocks to get basic colouring, and I will demonstrate org-agda
+  for you in person, if you like. Alternatively, I can generate coloured org-agda on my machine at the very end.
+
+  + A basic setup for /actually/ doing Agda development within org-mode
+    can be found at: https://alhassy.github.io/literate/
+
+  + Example uses of org-agda include
+    - https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html ; also ⋯.org
+      * Shallow use of org-agda merely for colouring ;;  Prototype for Package Formers
+
+    + Source mentions org-agda features that have not been pushed to the org-agda repo.
+
+    - https://alhassy.github.io/PathCat/
+      * Large development with categories ;; Graphs are to categories as lists are to monoids
+    - https://github.com/alhassy/gentle-intro-to-reflection
+      * Medium-sized development wherein Agda is actually coded within org-mode.
+
+* COMMENT Making README.md                                                 :noexport:
+
+#+NAME: make-readme
+#+BEGIN_SRC emacs-lisp :results none
+(with-temp-buffer
+    (insert
+    "#+EXPORT_FILE_NAME: README.md
+     ,#+OPTIONS: toc:nil
+
+     ,#+HTML: <h1> TheoriesAndDataStructures </h1>
+
+Showing how some simple mathematical theories naturally give rise to some common data-structures.
+
+Attempting to answer the following questions:
+
++ Why do lists pop-up more frequently to the average programmer than, say, their duals: bags?
+
++ More simply, why do unit and empty types occur so naturally? What about enumerations/sums and records/products?
+
++ Why is it that dependent sums and products do not pop-up expicitly to the average programmer? They arise naturally all the time as tuples and as classes.
+
++ How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they ``built into'' the type?
+
++ Is it that the average programmer works in the category of classical Sets,   with functions and propositional equality? Does this result in some ``free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in `Sets` ---where quotienting is not computably feasible, in `Sets` at-least; and why is that?
+
+    ")
+    (org-mode)
+    (org-md-export-to-markdown)
+)
+#+END_SRC
+
+* COMMENT Footnotes
+
+[fn:1] Sources available at https://github.com/JacquesCarette/TheoriesAndDataStructures
+
+
+* COMMENT footer                                                     :ignore:
+
+f7 ∷ make and open pdf
+f8 ∷ make readme
+
+(load-file "~/org-agda-mode/org-agda-mode.el")
+(load-file "~/org-agda-mode/literate.el")
+
+# Local Variables:
+# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# eval: (global-set-key (kbd "<f8>") (lambda () (interactive) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1)))
+# eval: (global-set-key (kbd "<f7>") (lambda () (interactive) (org-babel-tangle) (async-shell-command (concat  "open " (org-latex-export-to-pdf) ))))
+# End:
+
+* COMMENT README ─ JC & WK
+
+  + ~C-c C-e~ then ~l o~ to produce the PDF from the org file.
+
+    Or simply press ~f7~ if you've allowed the local variables in this file.
+
+  + ~\edcomm{Person}{Comment}~ to make first-class literate comments:
+
+    \edcomm{MA}{Please read this document; \newline thanks}

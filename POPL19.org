@@ -70,6 +70,7 @@
 #+LATEX_HEADER: \setcopyright{none}
 
 #+LATEX_HEADER: \usepackage{MyUnicodeSymbols}
+#+LATEX_HEADER: \newunicodechar{𝒫}{\ensuremath{\mathcal{P}}}
 #+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
 #+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
 #+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
@@ -133,7 +134,7 @@
           ("\\paragraph{%s}" . "\\paragraph*{%s}")
           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 #+END_SRC
-* Abstract :ignore:
+* COMMENT Abstract :ignore:
 
   #+begin_center
   *Abstract*
@@ -147,7 +148,7 @@
   interface is nothing more than the structure abiding by the laws of the theory.
   #+end_small
 
-* Introduction
+* COMMENT Introduction
 
   Our story begins with abstract syntax trees.
 
@@ -169,7 +170,7 @@
   which did not allow us to elide any “trivial details”. The full details of the theories mentioned in section 5
   can be found at: https://github.com/JacquesCarette/TheoriesAndDataStructures
 
-* Compositionality Schemes
+* COMMENT Compositionality Schemes
 
   ‘Stepwise refinement’ is the idea that programming beings with the
   empty, or do-nothing, program ~skip~ then new programs ~S ⨾ T~ are formed
@@ -383,7 +384,154 @@
                     Moreover, the zig-zag laws ensure that forming a singleton
                     then reducing it is a no-op, as expected.
 
-* DynamicalSystems ---Pointed Unary Theories
+* Theories Yield Data-Structures
+
+ :JC:
+ I believe (but am quite willing to discuss this) that we should take theories as primary, and structure the paper around theories and their names.
+
+What we should not do then, is structure things around our interpretation of the data-structure underlying the 'free theories' (and their names). Yes, we do need to provide that interpretation, it is a useful result. But the exposition of the ideas need to have an order. And I believe that
+
+Theory --> Free Theory --> Interpretation of underlying data-structure
+is the right order in which to expose the ideas.
+ :End:
+
+ Since our readership is intended to be a computing audience, there is little
+ to be gained by starting out with data-structures then observing they have a particular
+ algebraic structure. Instead, we propose to begin with tremendously simple interfaces
+ which may arise in computing situations, then briefly form outline their theory.
+ From there, we may then obtain a free theory and discuss its interpretation
+ as a familiar data-structure.
+
+ Let us begin with a situation that one encounters almost immediately when learning
+ programming: What default value should you use when writing a loop to aggregate
+ the values in some structure? For example, when multiplying or adding values in a list one
+ may use 1 or 0, respectively, as an initial value for the aggregation ---which then acts
+ as the default value for empty lists. Likewise, we may wish to implement a “safe head”
+ operation: Given a list of numbers, we return the first number if it is non-empty and
+ otherwise we return 0 or 1? Hard-coding the default return value forces users to form
+ superfluous conditional expressions, as such it may be better to request a default value
+ to begin with. This gives rise to the following program.
+
+#+BEGIN_SRC haskell
+{- Types that have a ‘default’ value -}
+record Pointed : Set₁ where
+  field
+    Carrier : Set
+    Point   : Carrier
+
+open Pointed
+
+safe-head : {P : Pointed} → List (Carrier P) → Carrier P
+safe-head {P} []       = Point P
+safe-head {P} (x ∷ xs) = x
+#+END_SRC
+
+ Now that we have demonstrated the utility of the interface, let us analyse its theory.
+
+ A “pointed theory” consists of a type along with an elected value of that type;
+ there are no further constraints. A homomorphism, or structure-preserving function,  ~P ⟶ Q~
+ of pointed theories is a function between the carries that sends the point of ~P~ to the
+ point of ~Q~. For example, lists over any type form a pointed theory with the point being
+ the empty list, and so the above ~safe-head~, by definition, is actually a homomorphism.
+ It is instructive to verify that the identity function is a homomorphism
+ and that the composition of homomorphisms is again a homomorphism.
+ Consequently, pointed theories form a category that we shall call 𝒫𝒮ℯ𝓉.
+
+ If we drop the point from a pointed theory, we are left with a type and so have
+ a ‘forgetful functor’, say, $ℛ : 𝒫𝒮ℯ𝓉 ⟶ 𝒮ℯ𝓉$. As per our slogans, let us
+ search for a functor ℒ that is left adjoint to ℛ.
+ Rather than guess an ℒ, we shall attempt to calculate it by using the adjunction
+ characterisation. Indeed, for any $X, Y, y$, we aim to find an ℒ such that
+ $ℒ X ⟶ (Y, y) \quad≅\quad X → ℛ(Y, y)$:
+
+# Readme: http://ctan.math.ca/tex-archive/macros/latex/contrib/calculation/calculation.pdf
+#+LATEX_HEADER: \usepackage{calculation}
+
+#
+#+begin_export latex
+\begin{calculation}
+    f \in X → ℛ (Y, y)  \comment{ ---In category $𝒮ℯ𝓉$ }
+\step[≡]{ Definition of ℛ }
+    f \;\in\; X → Y
+\step[≅]{ Wish we could transform $f ↦ f′, X ↦ X′$ and have $x′ : X′$ }
+    f′ \;\in\; X′ → Y \quad\land\quad f′\, x′ = y
+\step[≡]{ Definition of homomorphism }
+    f′ \;\in\; (X′, x′) ⟶ (Y, y)
+\step[≡]{ \textbf{Define} $ℒ\, X = (X′, x′)$ }
+    f′ \;\in\; ℒ\, X ⟶ (Y, y)  \comment{ ---In category $𝒫𝒮ℯ𝓉$ }
+\end{calculation}
+#+end_export
+To completely define ℒ, it seems we must associate to any set $X$ a new non-empty
+set $X′$ such that functions $X → Y$ correspond exactly to homomorphisms $(X′, x′) ⟶ (Y, y)$. The simplest thing to do is to adjoin $X$ with a new formal element,
+then $f′$ is defined by sending the new element to $y$ and otherwise acts like $f$.
+Conversely, given such an $f′$ we regain $f$ by simply embedding the existing elements
+of $X$ into $X′$. We may code up $X′, f′$ as ~Maybe X, ⟦ f ⟧~ below, and the inverse
+operation as ~lower f~.
+
+#+BEGIN_SRC haskell
+data Maybe (X : Set) : Set where
+  Just    : X → Maybe X   {- Keeping existing elements of X -}
+  Nothing : Maybe X       {- Adjoining a new element -}
+
+⟦_⟧ : {X : Set} {Y : Pointed} (f : X → Carrier Y) → Maybe X → Carrier Y
+⟦ f ⟧ Nothing  = Point Y  {- The new forced equation for the new element -}
+⟦ f ⟧ (Just x) = f x      {- Leaving f to behave on existing elements    -}
+
+lower : {X : Set} {Y : Pointed} (f′ : Maybe X ⟶ Y)  →  X → Y
+lower f′ x = f′ (Just x)  {- Embed existing elements of X into X′ -}
+#+END_SRC
+
+Clearly these operations are inverses and being parametric polymorphic,
+they are natural transformations. However, for ℒ to be a functor we also
+need to define its behaviour on functions, which we do below via ~map~,
+and so we have the necessary pieces for the adjunction.
+In verifying the full details of $ℒ ⊣ ℛ$, we find that
+/every pointed homomorphism is determined uniquely as ~map~ followed by an interpretation ⟦⟧!/
+
+#+BEGIN_SRC haskell
+map : {A B : Set} → (A → B) → (Maybe A → Maybe B)
+map f Nothing  = Nothing
+map f (Just a) = Just (f a)
+#+END_SRC
+
+It is at this stage that we may enumerate the benefits of exploring the simple theory
+of pointed structures. The goal of finding an adjoint for discarding the pointed structure
+has resulting in the following useful toolkit.
+
+0. The ~Maybe~ data-structure: When one is unsure what would be a useful
+   default value to return, they may simply return ~Nothing~.
+
+   This provides a standard mechanism to handle unexpected situations:
+   Rather than crash the system or request a default value,
+   yield a formal value and let the user handle it.
+   In particular, object-oriented languages users, such as of C# and Java,
+   do this all the time by returning ~null~ as a default value.
+
+0. We have elected to use the name ~Maybe~; however this data-structure arises under
+   a number of different names, according to intended usage. Names include:
+
+   - ‘Nullable’: In object-oriented settings, it denotes a value that is completely
+      ‘undefined’ but in a first-class fashion.
+
+   - ‘Optional’: In an method argument location, it denotes arguments that need not be
+     present.
+
+0. The ‘interpretation’ operation ⟦⟧ is the method to coerce the formal element
+   into a legitimate element of another data-type.
+
+   # Being a natural transformation, it satisfies the following optimisation law
+   # ~⟦ ℛ f ∘ g ∘ h ⟧ = f ∘ ⟦ g ⟧ ∘ ℒ h~.
+
+0. We have a traversal function, ~map~, for working over such structures.
+
+   It comes with two immediate optimisation rules: ~map id = id~
+   and ~map (f ∘ g) = map f ∘ map g~.
+
+The useful observation and primary contribution of our work is that a data-structure
+/along/ with a minimal infrastructure “falls out” of the adjunction details for discarding
+additional complexity.
+
+* COMMENT DynamicalSystems ---Pointed Unary Theories
 
   A /pointed unary theory/ consists of a type, a default value of that type,
   and an operation on that type. Think of a box with a screen displaying
@@ -494,7 +642,7 @@ In summary, by looking at the free structures of pointed unary theories we have 
 2. the natural numbers;
 3. the for-loop.
 
-* Lists ---Monoidal Theories
+* COMMENT Lists ---Monoidal Theories
 
   Unsurprising monoids along with monoid homomorphisms also form a category,
   call it ℳℴ𝓃.
@@ -588,7 +736,7 @@ of composition we obtained:
 
 All this from the tiny theory of monoids!
 
-* DataStructures ⊣ Theories
+* COMMENT DataStructures ⊣ Theories
 
 Our [[https://github.com/JacquesCarette/TheoriesAndDataStructures][repository]] contains many worked out details of how simple theories give rise to
 interesting or common data-structures. The previous two sections demonstrated the

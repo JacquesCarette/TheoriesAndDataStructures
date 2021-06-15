@@ -13,3 +13,5 @@ Attempting to answer the following questions:
 -   How do we get the usual toolbox of functions and helpful combinators for a particular data type? Are they \`\`built into'' the type?
 
 -   Is it that the average programmer works in the category of classical Sets,   with functions and propositional equality? Does this result in some \`\`free constructions'' not easily made computable since mathematicians usually work in the category of Setoids but tend to quotient to arrive in \`Sets\` &#x2014;where quotienting is not computably feasible, in \`Sets\` at-least; and why is that?
+
+And lots of other stuff.

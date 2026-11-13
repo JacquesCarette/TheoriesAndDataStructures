@@ -17,7 +17,7 @@ enumerate_theory : Integer -> Integer
 type theory1 = int list
 
 (* size: the k-th operation (1-indexed) with arity t costs k + t + 1 *)
-let sze (ts : theory1) : int =
+let size (ts : theory1) : int =
 (* Haskell to ocaml (under Base library definition) translation
   sum                            $ zipWith (+)              [1..]    (map ((+1).toInteger) ts)*)
   List.sum (module Int) ~f:Fn.id (List.mapi ~f:(fun i t -> (i + 1) + (t + 1)) ts)
@@ -45,10 +45,11 @@ let enumerate_theories (n : int) : string list = List.concat_map (List.range 1 (
 let () =
   let n =
     match Sys.get_argv () with
-    | [| _; s |] -> Int.of_string s
+      (* | executable; int |.    Maybe value*)
+    | [| _; s |] -> Option.value (Int.of_string_opt s) ~default:5 (*Maybe*)
     | _ -> 5
   in
   List.iter (enumerate_theories n) ~f:print_endline;
   printf "-- with sizes --\n";
   List.iter (enumerates n) ~f:(fun ts ->
-      printf "%s   (size %d)\n" (to_code ts) (sze ts))
+      printf "%s   (size %d)\n" (to_code ts) (size ts))

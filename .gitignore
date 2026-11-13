@@ -185,3 +185,8 @@ TSWLatexianTemp*
 
 # Apple-isms
 .DS_Store
+
+# ocaml and emacs
+*._build/
+*.utop
+*.cmi

@@ -52,13 +52,3 @@ let () =
   printf "-- with sizes --\n";
   List.iter (enumerates n) ~f:(fun ts ->
       printf "%s   (size %d)\n" (to_code ts) (sze ts))
-
-(*
-I/0 is annoying try, but I only need it to get new ints
-before runtime
-let () =
-  Out_channel.output_string "Enter a natural:";
-  Out_channel.flush stdout;
-
-  match In_channel
-*)

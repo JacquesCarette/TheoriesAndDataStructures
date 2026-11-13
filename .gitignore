@@ -186,7 +186,36 @@ TSWLatexianTemp*
 # Apple-isms
 .DS_Store
 
-# ocaml and emacs
-*._build/
+# ocaml
 *.utop
 *.cmi
+
+# Build directories
+_build/
+build/
+
+# Local opam switch
+_opam/
+
+# Dune and Merlin generated files
+*.install
+.merlin
+
+# Standalone compiler artifacts (if compiling manually without Dune)
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+*.cmt
+*.cmti
+*.byte
+*.native
+
+# emacs
+\#*#
+.#*

@@ -1,3 +1,4 @@
+
 \section{Structures.Baguette}
 
 \iffalse

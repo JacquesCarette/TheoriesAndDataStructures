@@ -1,0 +1,29 @@
+#+TITLE: org-mode cheat sheet
+#+AUTHOR: Jacques Carette
+#+EMAIL: carette@mcmaster.ca
+
+* Preamble
+Yes, there are others out there, but this way I can order things in the way
+I'm most likely to remember them!
+
+* org-mode specific
+** Ordered by command
+shift-tab - cycle between outline views (whole doc)
+tab       - fold/unfold single section (if on lhs of title)
+C-c C-t   - mark task done
+f7        - compile latex to pdf
+
+** Ordered by task
+cycle between outline views: shift-tab
+fold/unfold: tab
+task done: C-c C-t
+latex to pdf: f7
+
+* emacs specific
+** Ordered by command
+C-x C-s: save
+C-x C-f: open file
+
+** Ordered by task
+save: C-x C-s
+open: C-x C-f
